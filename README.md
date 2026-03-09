@@ -184,7 +184,8 @@ export const categorias = [
 | `direccion` | TEXT | Solo cuando es envío a domicilio |
 | `total` | NUMERIC | Total del pedido en MXN |
 | `estado` | TEXT | Ver estados abajo |
-| `detalles_json` | JSONB | Array con los productos del carrito — campos: `id`, `nombre`, `precio`, `cantidad`, `imagen_url`, `tamano`, `familia_mayoreo` |
+| `detalles_json` | JSONB | Array con los productos del carrito — campos: `id`, `nombre`, `precio`, `cantidad`, `imagen_url`, `tamano`, `familia_mayoreo`, `encontrado` |
+| `notificado_estado` | TEXT | Estado en que se notificó al cliente por última vez — compartido entre sesiones vía Realtime |
 | `created_at` | TIMESTAMPTZ | Auto |
 | `updated_at` | TIMESTAMPTZ | Auto via trigger |
 
@@ -232,26 +233,33 @@ export const categorias = [
 - **Login protegido** con Supabase Auth — email y contraseña
 - **Tarjetas resumen** filtrables: Total / Por Surtir / Armando Pedido / Listo para Entrega
 - **Buscador** por folio, nombre de cliente o teléfono
-- **Cambio de estado** con botones de un toque y actualización optimista (sin esperar a Supabase)
+- **Cambio de estado** con botones de un toque y actualización optimista
 - **Realtime automático** vía `postgres_changes`:
   - `INSERT` → nuevo pedido aparece arriba sin recargar
-  - `UPDATE` → solo esa tarjeta se actualiza
+  - `UPDATE` → solo esa tarjeta se actualiza en todas las sesiones abiertas
   - `DELETE` → la tarjeta desaparece
-- **Lista de artículos expandible** — acordeón "🛒 Lista de Artículos" en cada tarjeta que muestra:
-  - Miniatura del producto con fallback al ícono `<Package>` si la imagen falla o es nula
-  - Nombre, tamaño, familia de mayoreo, cantidad y precio unitario + subtotal
-  - El color del acordeón se adapta al estado actual del pedido
-- **Notificación al cliente por WhatsApp** — botón verde en cada tarjeta que genera un mensaje personalizado según el estado actual
-  - Se desactiva ("✓ Cliente notificado") tras enviarlo
-  - Se reactiva automáticamente al cambiar el estado del pedido
+- **Lista de artículos expandible** — acordeón en cada tarjeta con miniatura, nombre, tamaño, familia de mayoreo, cantidad y precio. El color del acordeón se adapta al estado del pedido
+- **Picking dinámico** — cuando el pedido está en "Armando Pedido" el acordeón cambia a modo surtido:
+  - Checkboxes táctiles grandes por artículo, todos marcados por defecto
+  - Al desmarcar un artículo: se tacha visualmente, imagen en escala de grises, y se actualiza `activo = false` en la tabla `productos` para marcarlo como agotado en el catálogo público en tiempo real
+  - Al volver a marcar: restaura `activo = true`
+  - Panel de totales dinámico con total original, descuento por faltantes y nuevo total
+  - Badge del encabezado muestra `entregados/total` cuando hay faltantes
+  - Botón **"Pasar a Listo"** que en un solo `UPDATE` a Supabase: cambia el estado, guarda el total ajustado, persiste `encontrado: true/false` por artículo en `detalles_json`, y abre WhatsApp con mensaje detallado automáticamente
+- **Vista "Listo para Entrega"**: los artículos no entregados se muestran con imagen en escala de grises, nombre y precio tachados, y el panel de descuento visible para referencia
+- **Notificación al cliente por WhatsApp** — sincronizada entre sesiones via `notificado_estado` en Supabase:
+  - Se desactiva ("✓ Cliente notificado") tras enviarlo en todas las sesiones simultáneamente
+  - Se reactiva al cambiar el estado del pedido
+  - Al usar "Pasar a Listo" desde picking, el botón queda desactivado automáticamente ya que el mensaje se envía en el mismo acto
 
 #### Mensajes de notificación por estado
 
-| Estado | Mensaje enviado |
+| Estado | Contenido del mensaje |
 |---|---|
 | Por Surtir | Confirmación de recepción del pedido |
 | Armando Pedido | Aviso de que el pedido está en preparación |
-| Listo para Entrega | Notificación de que ya puede pasar o sale a domicilio |
+| Listo para Entrega (picking) | Lista de ✅ artículos entregados, ❌ faltantes si los hay, y 💰 nuevo total ajustado |
+| Listo para Entrega (manual) | Notificación de que ya puede pasar o sale a domicilio |
 
 ### PWA
 
