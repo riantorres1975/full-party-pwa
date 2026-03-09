@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, ChevronDown, Package } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { SIMBOLO_MONEDA } from '../data/productos';
 
 const ESTADOS = ['Por Surtir', 'Armando Pedido', 'Listo para Entrega'];
 
-// Estos se quedan igual porque seguramente los usas para el UI (botones, badges, etc.)
-// y ahí el navegador sí los renderiza sin problema.
 const ESTADO_META = {
   'Por Surtir':         { color: '#ef4444', bg: '#fee2e2', emoji: '🛍️' },
   'Armando Pedido':     { color: '#eab308', bg: '#fef9c3', emoji: '🎀' },
@@ -14,44 +12,126 @@ const ESTADO_META = {
 };
 
 // ── Notificación WhatsApp al cliente ────────────────────────────────────────
-export function notificarCliente(pedido) {
+function notificarCliente(pedido) {
   const { cliente_nombre: nombre, cliente_telefono: tel, folio, estado } = pedido;
-
-  // Diccionario de emojis blindado para la URL de WhatsApp
-  const EMOJI = {
-    bolsa: String.fromCodePoint(0x1F6CD),   // 🛍️
-    mono: String.fromCodePoint(0x1F380),    // 🎀
-    fiesta: String.fromCodePoint(0x1F389),  // 🎉
-    globo: String.fromCodePoint(0x1F388),   // 🎈
-    festejo: String.fromCodePoint(0x1F973)  // 🥳
-  };
 
   let mensaje = '';
   switch (estado) {
     case 'Por Surtir':
-      mensaje = `¡Hola ${nombre}! ${EMOJI.fiesta} Recibimos tu pedido *${folio}* y ya está en nuestro sistema. En breve comenzamos a prepararlo. ¡Gracias por tu compra! ${EMOJI.bolsa}`;
+      mensaje = `¡Hola ${nombre}! 🎉 Recibimos tu pedido *${folio}* y ya está en nuestro sistema. En breve comenzamos a prepararlo. ¡Gracias por tu compra! 🛍️`;
       break;
     case 'Armando Pedido':
-      mensaje = `¡Hola ${nombre}! ${EMOJI.mono} Te confirmamos que ya estamos preparando tu pedido *${folio}*. En cuanto esté listo te avisamos. ¡Pronto la fiesta! ${EMOJI.globo}`;
+      mensaje = `¡Hola ${nombre}! 🎀 Te confirmamos que ya estamos preparando tu pedido *${folio}*. En cuanto esté listo te avisamos. ¡Pronto la fiesta! 🎈`;
       break;
     case 'Listo para Entrega':
-      mensaje = `¡Buenas noticias ${nombre}! ${EMOJI.fiesta} Tu pedido *${folio}* ya está listo. Puedes pasar a recogerlo o en breve saldrá a domicilio. ¡A celebrar! ${EMOJI.festejo}`;
+      mensaje = `¡Buenas noticias ${nombre}! 🎉 Tu pedido *${folio}* ya está listo. Puedes pasar a recogerlo o en breve saldrá a domicilio. ¡A celebrar! 🥳`;
       break;
     default:
       mensaje = `Hola ${nombre}, hay una actualización en tu pedido *${folio}*. Estado actual: ${estado}.`;
   }
 
-  // Limpiamos el número y le dejamos el 52 de México fijo como ya lo tenías
   const telefonoLimpio = tel.replace(/[\s\-\(\)]/g, '');
-  
-  // Usamos URLSearchParams para asegurar el UTF-8 en Desktop
-  const params = new URLSearchParams({
-    phone: `52${telefonoLimpio}`,
-    text: mensaje
-  });
-
-  const url = `https://api.whatsapp.com/send?${params.toString()}`;
+  const url = `https://wa.me/52${telefonoLimpio}?text=${encodeURIComponent(mensaje)}`;
   window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+// ── Lista de artículos expandible (acordeón) ────────────────────────────────
+function ItemArticulo({ item }) {
+  const [imgError, setImgError] = useState(false);
+  const subtotal = (item.precio * item.cantidad).toFixed(2);
+
+  return (
+    <div className="flex gap-3 py-3 border-b border-ink-100 last:border-0">
+      {/* Miniatura */}
+      <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-ink-50
+                      border-2 border-ink-100 flex items-center justify-center">
+        {item.imagen_url && !imgError ? (
+          <img
+            src={item.imagen_url}
+            alt={item.nombre}
+            loading="lazy"
+            onError={() => setImgError(true)}
+            className="w-full h-full object-cover object-center"
+          />
+        ) : (
+          <Package size={24} className="text-ink-300" />
+        )}
+      </div>
+
+      {/* Detalles */}
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-body font-black text-ink-800 leading-snug line-clamp-2">
+          {item.nombre}
+        </p>
+        {item.tamano && (
+          <p className="text-[11px] font-body text-ink-400 mt-0.5">
+            Tamaño: {item.tamano}
+          </p>
+        )}
+        {item.familia_mayoreo && (
+          <p className="text-[11px] font-body text-ink-400">
+            Mayoreo: {item.familia_mayoreo}
+          </p>
+        )}
+        <p className="text-[11px] font-body text-ink-400">
+          Cantidad: {item.cantidad}
+        </p>
+      </div>
+
+      {/* Precio */}
+      <div className="flex-shrink-0 text-right">
+        <p className="text-sm font-body font-black text-ink-800">
+          {SIMBOLO_MONEDA}{subtotal}
+        </p>
+        <p className="text-[10px] font-body text-ink-400">
+          {SIMBOLO_MONEDA}{item.precio.toFixed(2)} c/u
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ListaArticulos({ items, meta }) {
+  const [abierto, setAbierto] = useState(false);
+
+  return (
+    <div className="mb-3 rounded-xl overflow-hidden"
+         style={{ border: `2px solid ${meta.bg}` }}>
+
+      {/* Encabezado del acordeón */}
+      <button
+        onClick={() => setAbierto(v => !v)}
+        className="w-full flex items-center justify-between px-3 py-2.5
+                   transition-colors duration-150"
+        style={{ background: meta.bg }}
+      >
+        <span className="text-xs font-body font-black" style={{ color: meta.color }}>
+          🛒 Lista de Artículos
+          <span className="ml-2 px-2 py-0.5 rounded-full text-[10px]"
+                style={{ background: meta.color, color: 'white' }}>
+            {items.length}
+          </span>
+        </span>
+        <ChevronDown
+          size={16}
+          style={{
+            color: meta.color,
+            transform: abierto ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.25s ease',
+          }}
+        />
+      </button>
+
+      {/* Contenido expandible */}
+      {abierto && (
+        <div className="px-3 bg-white animate-fade-in">
+          {items.map((item, i) => (
+            <ItemArticulo key={i} item={item} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Tarjeta de un pedido ─────────────────────────────────────────────────────
@@ -99,16 +179,9 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificado, onNo
         )}
       </div>
 
-      {/* Productos */}
+      {/* ── Acordeón de artículos ── */}
       {pedido.detalles_json?.length > 0 && (
-        <div className="mb-3 space-y-1">
-          {pedido.detalles_json.map((item, i) => (
-            <div key={i} className="flex justify-between text-xs font-body text-ink-600">
-              <span>{item.nombre} <span className="text-ink-400">×{item.cantidad}</span></span>
-              <span className="font-black">{SIMBOLO_MONEDA}{(item.precio * item.cantidad).toFixed(2)}</span>
-            </div>
-          ))}
-        </div>
+        <ListaArticulos items={pedido.detalles_json} meta={meta} />
       )}
 
       {/* Total */}
