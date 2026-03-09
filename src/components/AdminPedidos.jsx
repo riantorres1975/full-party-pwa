@@ -135,14 +135,14 @@ function ListaArticulos({ items, meta }) {
 }
 
 // ── Tarjeta de un pedido ─────────────────────────────────────────────────────
-function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificado, onNotificar }) {
+function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onNotificar }) {
   const meta = ESTADO_META[pedido.estado] ?? ESTADO_META['Por Surtir'];
   const fecha    = new Date(pedido.created_at).toLocaleDateString('es-MX', {
     day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
   });
   const esActualizando = actualizando === pedido.id;
-  // Notificado = ya se envió WA para el estado ACTUAL de este pedido
-  const yaNotificado = notificado === pedido.estado;
+  // Notificado = el estado guardado en BD coincide con el estado actual
+  const yaNotificado = pedido.notificado_estado === pedido.estado;
 
   return (
     <div
@@ -226,8 +226,8 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificado, onNo
 
       {/* Botón notificar por WhatsApp */}
       <button
-        onClick={() => { notificarCliente(pedido); onNotificar(pedido.id, pedido.estado); }}
-        disabled={yaNotificado}
+        onClick={() => !yaNotificado && !notificando && onNotificar(pedido)}
+        disabled={yaNotificado || notificando}
         className="mt-3 w-full flex items-center justify-center gap-2
                    py-2.5 rounded-xl text-sm font-body font-black text-white
                    transition-all duration-200 active:scale-95 disabled:cursor-not-allowed"
@@ -237,8 +237,11 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificado, onNo
               boxShadow: '0 3px 12px #25D36633' }
         }
       >
-        <MessageCircle size={16} />
-        {yaNotificado ? '✓ Cliente notificado' : 'Notificar al cliente'}
+        {notificando
+          ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+          : <MessageCircle size={16} />
+        }
+        {yaNotificado ? '✓ Cliente notificado' : notificando ? 'Enviando...' : 'Notificar al cliente'}
       </button>
     </div>
   );
@@ -253,19 +256,7 @@ export default function AdminPedidos({ user, onSignOut }) {
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [busqueda,     setBusqueda]     = useState('');
   // { [pedidoId]: estadoEnQueSeNotificó } — se borra al cambiar estado
-  const [notificados,  setNotificados]  = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('admin_notificados') ?? '{}');
-    } catch { return {}; }
-  });
-
-  const setNotificadosPersistente = (updater) => {
-    setNotificados(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : updater;
-      localStorage.setItem('admin_notificados', JSON.stringify(next));
-      return next;
-    });
-  };
+  const [notificando,  setNotificando]  = useState(null); // id del pedido siendo notificado
 
   // ── Fetch pedidos ──────────────────────────────────────────────────────────
   const fetchPedidos = useCallback(async () => {
@@ -320,24 +311,36 @@ export default function AdminPedidos({ user, onSignOut }) {
     setActualizando(pedidoId);
     const { error: err } = await supabase
       .from('pedidos')
-      .update({ estado: nuevoEstado })
+      .update({ estado: nuevoEstado, notificado_estado: null })
       .eq('id', pedidoId);
 
     if (err) {
       alert('Error al actualizar: ' + err.message);
     } else {
-      // Actualización optimista
+      // Actualización optimista — Realtime lo propagará al resto de sesiones
       setPedidos(prev => prev.map(p =>
-        p.id === pedidoId ? { ...p, estado: nuevoEstado } : p
+        p.id === pedidoId ? { ...p, estado: nuevoEstado, notificado_estado: null } : p
       ));
-      // Al cambiar estado se reactiva el botón de notificar
-      setNotificadosPersistente(prev => {
-        const copia = { ...prev };
-        delete copia[pedidoId];
-        return copia;
-      });
     }
     setActualizando(null);
+  }
+
+  // ── Notificar al cliente (persiste en Supabase + Realtime) ─────────────────
+  async function notificar(pedido) {
+    setNotificando(pedido.id);
+    notificarCliente(pedido); // abre WhatsApp
+    const { error: err } = await supabase
+      .from('pedidos')
+      .update({ notificado_estado: pedido.estado })
+      .eq('id', pedido.id);
+
+    if (!err) {
+      // Actualización optimista
+      setPedidos(prev => prev.map(p =>
+        p.id === pedido.id ? { ...p, notificado_estado: pedido.estado } : p
+      ));
+    }
+    setNotificando(null);
   }
 
   // ── Filtrado local ─────────────────────────────────────────────────────────
@@ -469,10 +472,8 @@ export default function AdminPedidos({ user, onSignOut }) {
                 pedido={pedido}
                 onCambiarEstado={cambiarEstado}
                 actualizando={actualizando}
-                notificado={notificados[pedido.id] ?? null}
-                onNotificar={(id, estado) =>
-                  setNotificadosPersistente(prev => ({ ...prev, [id]: estado }))
-                }
+                notificando={notificando === pedido.id}
+                onNotificar={notificar}
               />
             ))}
           </div>
