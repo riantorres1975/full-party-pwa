@@ -1,14 +1,58 @@
 import { useState, useEffect, useCallback } from 'react';
+import { MessageCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { SIMBOLO_MONEDA } from '../data/productos';
 
 const ESTADOS = ['Por Surtir', 'Armando Pedido', 'Listo para Entrega'];
 
+// Estos se quedan igual porque seguramente los usas para el UI (botones, badges, etc.)
+// y ahí el navegador sí los renderiza sin problema.
 const ESTADO_META = {
   'Por Surtir':         { color: '#ef4444', bg: '#fee2e2', emoji: '🛍️' },
   'Armando Pedido':     { color: '#eab308', bg: '#fef9c3', emoji: '🎀' },
   'Listo para Entrega': { color: '#22c55e', bg: '#dcfce7', emoji: '🎉' },
 };
+
+// ── Notificación WhatsApp al cliente ────────────────────────────────────────
+export function notificarCliente(pedido) {
+  const { cliente_nombre: nombre, cliente_telefono: tel, folio, estado } = pedido;
+
+  // Diccionario de emojis blindado para la URL de WhatsApp
+  const EMOJI = {
+    bolsa: String.fromCodePoint(0x1F6CD),   // 🛍️
+    mono: String.fromCodePoint(0x1F380),    // 🎀
+    fiesta: String.fromCodePoint(0x1F389),  // 🎉
+    globo: String.fromCodePoint(0x1F388),   // 🎈
+    festejo: String.fromCodePoint(0x1F973)  // 🥳
+  };
+
+  let mensaje = '';
+  switch (estado) {
+    case 'Por Surtir':
+      mensaje = `¡Hola ${nombre}! ${EMOJI.fiesta} Recibimos tu pedido *${folio}* y ya está en nuestro sistema. En breve comenzamos a prepararlo. ¡Gracias por tu compra! ${EMOJI.bolsa}`;
+      break;
+    case 'Armando Pedido':
+      mensaje = `¡Hola ${nombre}! ${EMOJI.mono} Te confirmamos que ya estamos preparando tu pedido *${folio}*. En cuanto esté listo te avisamos. ¡Pronto la fiesta! ${EMOJI.globo}`;
+      break;
+    case 'Listo para Entrega':
+      mensaje = `¡Buenas noticias ${nombre}! ${EMOJI.fiesta} Tu pedido *${folio}* ya está listo. Puedes pasar a recogerlo o si hicste pedido a domicilio, en breve saldrá. ¡A celebrar! ${EMOJI.festejo}`;
+      break;
+    default:
+      mensaje = `Hola ${nombre}, hay una actualización en tu pedido *${folio}*. Estado actual: ${estado}.`;
+  }
+
+  // Limpiamos el número y le dejamos el 52 de México fijo como ya lo tenías
+  const telefonoLimpio = tel.replace(/[\s\-\(\)]/g, '');
+  
+  // Usamos URLSearchParams para asegurar el UTF-8 en Desktop
+  const params = new URLSearchParams({
+    phone: `52${telefonoLimpio}`,
+    text: mensaje
+  });
+
+  const url = `https://api.whatsapp.com/send?${params.toString()}`;
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
 
 // ── Tarjeta de un pedido ─────────────────────────────────────────────────────
 function TarjetaPedido({ pedido, onCambiarEstado, actualizando }) {
@@ -104,6 +148,21 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando }) {
           })}
         </div>
       </div>
+
+      {/* Botón notificar por WhatsApp */}
+      <button
+        onClick={() => notificarCliente(pedido)}
+        className="mt-3 w-full flex items-center justify-center gap-2
+                   py-2.5 rounded-xl text-sm font-body font-black text-white
+                   transition-all duration-200 active:scale-95"
+        style={{
+          background: 'linear-gradient(135deg, #25D366, #1db954)',
+          boxShadow: '0 3px 12px #25D36633',
+        }}
+      >
+        <MessageCircle size={16} />
+        Notificar al cliente
+      </button>
     </div>
   );
 }

@@ -7,37 +7,53 @@ import { NUMERO_WHATSAPP, NOMBRE_NEGOCIO, SIMBOLO_MONEDA } from '../data/product
  * @param {Object} entrega  - { tipo, nombre, telefono, direccion, folio? }
  */
 export function generarMensajeWhatsApp(items, total, entrega) {
+  // 1. Diccionario de emojis con Code Points para evitar errores en Desktop
+  const EMOJI = {
+    fiesta: String.fromCodePoint(0x1F389),
+    calendario: String.fromCodePoint(0x1F4C5),
+    folio: String.fromCodePoint(0x1F4CB),
+    lupa: String.fromCodePoint(0x1F50E),
+    cliente: String.fromCodePoint(0x1F464),
+    telefono: String.fromCodePoint(0x1F4DE),
+    envio: String.fromCodePoint(0x1F69A),
+    direccion: String.fromCodePoint(0x1F4CD),
+    tienda: String.fromCodePoint(0x1F3EA),
+    dinero: String.fromCodePoint(0x1F4B0),
+    sonrisa: String.fromCodePoint(0x1F60A)
+  };
+
   const fecha = new Date().toLocaleDateString('es-MX', {
     day: '2-digit', month: 'long', year: 'numeric',
   });
 
   const sep = '-'.repeat(28);
 
-  let mensaje = `\uD83C\uDF89 *Nuevo Pedido - ${NOMBRE_NEGOCIO}*\n`;
-  mensaje += `\uD83D\uDCC5 ${fecha}\n`;
+  let mensaje = `${EMOJI.fiesta} *Nuevo Pedido - ${NOMBRE_NEGOCIO}*\n`;
+  mensaje += `${EMOJI.calendario} ${fecha}\n`;
 
   // Folio — solo si Supabase lo generó correctamente
   if (entrega.folio) {
-    mensaje += `\uD83D\uDCCB *Folio:* ${entrega.folio}\n`;
-    mensaje += `\uD83D\uDD0E Rastrea tu pedido con este folio en nuestra tienda\n`;
+    mensaje += `${EMOJI.folio} *Folio:* ${entrega.folio}\n`;
+    mensaje += `${EMOJI.lupa} Rastrea tu pedido con este folio en nuestra tienda\n`;
   }
 
   mensaje += `${sep}\n\n`;
 
   // Datos del cliente
-  mensaje += `\uD83D\uDC64 *Cliente:* ${entrega.nombre}\n`;
-  mensaje += `\uD83D\uDCDE *Tel\u00E9fono:* ${entrega.telefono}\n`;
+  mensaje += `${EMOJI.cliente} *Cliente:* ${entrega.nombre}\n`;
+  // Cambié \u00E9 por 'é' normal, URLSearchParams lo codifica sin problema
+  mensaje += `${EMOJI.telefono} *Teléfono:* ${entrega.telefono}\n`;
 
   if (entrega.tipo === 'envio') {
-    mensaje += `\uD83D\uDE9A *Entrega:* Env\u00EDo a domicilio\n`;
-    mensaje += `\uD83D\uDCCD *Direcci\u00F3n:* ${entrega.direccion}\n`;
+    mensaje += `${EMOJI.envio} *Entrega:* Envío a domicilio\n`;
+    mensaje += `${EMOJI.direccion} *Dirección:* ${entrega.direccion}\n`;
   } else {
-    mensaje += `\uD83C\uDFEA *Entrega:* Recoger en tienda\n`;
+    mensaje += `${EMOJI.tienda} *Entrega:* Recoger en tienda\n`;
   }
 
   mensaje += `\n${sep}\n\n`;
 
-  // Productos
+  // Productos (Formato original conservado)
   items.forEach((item, index) => {
     mensaje += `${index + 1}. *${item.nombre}*\n`;
     mensaje += `   Cantidad: ${item.cantidad}\n`;
@@ -46,8 +62,14 @@ export function generarMensajeWhatsApp(items, total, entrega) {
   });
 
   mensaje += `${sep}\n`;
-  mensaje += `\uD83D\uDCB0 *TOTAL: ${SIMBOLO_MONEDA}${total.toFixed(2)}*\n\n`;
-  mensaje += `Por favor, confirma mi pedido. Gracias! \uD83D\uDE0A`;
+  mensaje += `${EMOJI.dinero} *TOTAL: ${SIMBOLO_MONEDA}${total.toFixed(2)}*\n\n`;
+  mensaje += `Por favor, confirma mi pedido. Gracias! ${EMOJI.sonrisa}`;
 
-  return `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(mensaje)}`;
+  // 2. URL robusta para que la computadora no rompa los caracteres especiales
+  const params = new URLSearchParams({
+    phone: NUMERO_WHATSAPP,
+    text: mensaje
+  });
+
+  return `https://api.whatsapp.com/send?${params.toString()}`;
 }
