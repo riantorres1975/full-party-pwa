@@ -35,7 +35,7 @@ export function notificarCliente(pedido) {
       mensaje = `¡Hola ${nombre}! ${EMOJI.mono} Te confirmamos que ya estamos preparando tu pedido *${folio}*. En cuanto esté listo te avisamos. ¡Pronto la fiesta! ${EMOJI.globo}`;
       break;
     case 'Listo para Entrega':
-      mensaje = `¡Buenas noticias ${nombre}! ${EMOJI.fiesta} Tu pedido *${folio}* ya está listo. Puedes pasar a recogerlo o si hicste pedido a domicilio, en breve saldrá. ¡A celebrar! ${EMOJI.festejo}`;
+      mensaje = `¡Buenas noticias ${nombre}! ${EMOJI.fiesta} Tu pedido *${folio}* ya está listo. Puedes pasar a recogerlo o en breve saldrá a domicilio. ¡A celebrar! ${EMOJI.festejo}`;
       break;
     default:
       mensaje = `Hola ${nombre}, hay una actualización en tu pedido *${folio}*. Estado actual: ${estado}.`;
@@ -55,12 +55,14 @@ export function notificarCliente(pedido) {
 }
 
 // ── Tarjeta de un pedido ─────────────────────────────────────────────────────
-function TarjetaPedido({ pedido, onCambiarEstado, actualizando }) {
+function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificado, onNotificar }) {
   const meta = ESTADO_META[pedido.estado] ?? ESTADO_META['Por Surtir'];
   const fecha    = new Date(pedido.created_at).toLocaleDateString('es-MX', {
     day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
   });
   const esActualizando = actualizando === pedido.id;
+  // Notificado = ya se envió WA para el estado ACTUAL de este pedido
+  const yaNotificado = notificado === pedido.estado;
 
   return (
     <div
@@ -151,17 +153,19 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando }) {
 
       {/* Botón notificar por WhatsApp */}
       <button
-        onClick={() => notificarCliente(pedido)}
+        onClick={() => { notificarCliente(pedido); onNotificar(pedido.id, pedido.estado); }}
+        disabled={yaNotificado}
         className="mt-3 w-full flex items-center justify-center gap-2
                    py-2.5 rounded-xl text-sm font-body font-black text-white
-                   transition-all duration-200 active:scale-95"
-        style={{
-          background: 'linear-gradient(135deg, #25D366, #1db954)',
-          boxShadow: '0 3px 12px #25D36633',
-        }}
+                   transition-all duration-200 active:scale-95 disabled:cursor-not-allowed"
+        style={yaNotificado
+          ? { background: '#d1fae5', color: '#6ee7b7', boxShadow: 'none' }
+          : { background: 'linear-gradient(135deg, #25D366, #1db954)',
+              boxShadow: '0 3px 12px #25D36633' }
+        }
       >
         <MessageCircle size={16} />
-        Notificar al cliente
+        {yaNotificado ? '✓ Cliente notificado' : 'Notificar al cliente'}
       </button>
     </div>
   );
@@ -172,9 +176,11 @@ export default function AdminPedidos({ user, onSignOut }) {
   const [pedidos,      setPedidos]      = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [error,        setError]        = useState('');
-  const [actualizando, setActualizando] = useState(null); // id del pedido en proceso
+  const [actualizando, setActualizando] = useState(null);
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [busqueda,     setBusqueda]     = useState('');
+  // { [pedidoId]: estadoEnQueSeNotificó } — se borra al cambiar estado
+  const [notificados,  setNotificados]  = useState({});
 
   // ── Fetch pedidos ──────────────────────────────────────────────────────────
   const fetchPedidos = useCallback(async () => {
@@ -235,10 +241,16 @@ export default function AdminPedidos({ user, onSignOut }) {
     if (err) {
       alert('Error al actualizar: ' + err.message);
     } else {
-      // Actualización optimista — no esperar al realtime
+      // Actualización optimista
       setPedidos(prev => prev.map(p =>
         p.id === pedidoId ? { ...p, estado: nuevoEstado } : p
       ));
+      // Al cambiar estado se reactiva el botón de notificar
+      setNotificados(prev => {
+        const copia = { ...prev };
+        delete copia[pedidoId];
+        return copia;
+      });
     }
     setActualizando(null);
   }
@@ -372,6 +384,10 @@ export default function AdminPedidos({ user, onSignOut }) {
                 pedido={pedido}
                 onCambiarEstado={cambiarEstado}
                 actualizando={actualizando}
+                notificado={notificados[pedido.id] ?? null}
+                onNotificar={(id, estado) =>
+                  setNotificados(prev => ({ ...prev, [id]: estado }))
+                }
               />
             ))}
           </div>
