@@ -29,10 +29,13 @@ export function usePedido() {
           total,
           estado:          'Por Surtir',
           detalles_json:   items.map(i => ({
-            id:       i.id,
-            nombre:   i.nombre,
-            precio:   i.precio,
-            cantidad: i.cantidad,
+            id:             i.id,
+            nombre:         i.nombre,
+            precio:         i.precio,
+            cantidad:       i.cantidad,
+            imagen_url:     i.imagen_url     ?? null,
+            tamano:         i.tamano         ?? null,
+            familia_mayoreo: i.familia_mayoreo ?? null,
           })),
         })
         .select('folio')
