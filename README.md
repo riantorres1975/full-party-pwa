@@ -53,7 +53,7 @@ catalogo-pwa/
     │   ├── useAuth.js             ← sesión de Supabase Auth (login/logout)
     │   ├── useCarrito.js          ← carrito con persistencia en localStorage
     │   ├── useInfiniteScroll.js   ← IntersectionObserver para carga progresiva
-    │   ├── usePedido.js           ← insert y búsqueda de pedidos en Supabase
+    │   ├── usePedido.js           ← insert y búsqueda de pedidos (guarda imagen, tamaño y familia_mayoreo)
     │   ├── useProductos.js        ← fetch de productos desde Supabase
     │   └── usePWA.js              ← prompt de instalación PWA
     │
@@ -72,7 +72,7 @@ catalogo-pwa/
         ├── RastreoPedido.jsx      ← stepper visual de estado del pedido
         ├── RedesSociales.jsx      ← botones Facebook y TikTok con hover animado
         ├── LoginAdmin.jsx         ← login con email/contraseña (Supabase Auth)
-        ├── AdminPedidos.jsx       ← dashboard de gestión de pedidos en tiempo real
+        ├── AdminPedidos.jsx       ← dashboard de gestión de pedidos en tiempo real (incluye ListaArticulos + ItemArticulo)
         └── InputDireccion.jsx     ← (reservado) autocompletado Nominatim/OSM
 ```
 
@@ -169,6 +169,7 @@ export const categorias = [
 | `marca` | TEXT | — | |
 | `tamano` | TEXT | — | |
 | `activo` | BOOLEAN | ✅ | `false` = se muestra como **Agotado** |
+| `familia_mayoreo` | TEXT | — | Opcional — para mostrar en la lista de artículos del admin |
 | `created_at` | TIMESTAMPTZ | auto | |
 
 ### Tabla `pedidos`
@@ -183,7 +184,7 @@ export const categorias = [
 | `direccion` | TEXT | Solo cuando es envío a domicilio |
 | `total` | NUMERIC | Total del pedido en MXN |
 | `estado` | TEXT | Ver estados abajo |
-| `detalles_json` | JSONB | Array con los productos del carrito |
+| `detalles_json` | JSONB | Array con los productos del carrito — campos: `id`, `nombre`, `precio`, `cantidad`, `imagen_url`, `tamano`, `familia_mayoreo` |
 | `created_at` | TIMESTAMPTZ | Auto |
 | `updated_at` | TIMESTAMPTZ | Auto via trigger |
 
@@ -236,6 +237,10 @@ export const categorias = [
   - `INSERT` → nuevo pedido aparece arriba sin recargar
   - `UPDATE` → solo esa tarjeta se actualiza
   - `DELETE` → la tarjeta desaparece
+- **Lista de artículos expandible** — acordeón "🛒 Lista de Artículos" en cada tarjeta que muestra:
+  - Miniatura del producto con fallback al ícono `<Package>` si la imagen falla o es nula
+  - Nombre, tamaño, familia de mayoreo, cantidad y precio unitario + subtotal
+  - El color del acordeón se adapta al estado actual del pedido
 - **Notificación al cliente por WhatsApp** — botón verde en cada tarjeta que genera un mensaje personalizado según el estado actual
   - Se desactiva ("✓ Cliente notificado") tras enviarlo
   - Se reactiva automáticamente al cambiar el estado del pedido
