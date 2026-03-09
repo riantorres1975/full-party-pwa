@@ -253,7 +253,19 @@ export default function AdminPedidos({ user, onSignOut }) {
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [busqueda,     setBusqueda]     = useState('');
   // { [pedidoId]: estadoEnQueSeNotificó } — se borra al cambiar estado
-  const [notificados,  setNotificados]  = useState({});
+  const [notificados,  setNotificados]  = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('admin_notificados') ?? '{}');
+    } catch { return {}; }
+  });
+
+  const setNotificadosPersistente = (updater) => {
+    setNotificados(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      localStorage.setItem('admin_notificados', JSON.stringify(next));
+      return next;
+    });
+  };
 
   // ── Fetch pedidos ──────────────────────────────────────────────────────────
   const fetchPedidos = useCallback(async () => {
@@ -319,7 +331,7 @@ export default function AdminPedidos({ user, onSignOut }) {
         p.id === pedidoId ? { ...p, estado: nuevoEstado } : p
       ));
       // Al cambiar estado se reactiva el botón de notificar
-      setNotificados(prev => {
+      setNotificadosPersistente(prev => {
         const copia = { ...prev };
         delete copia[pedidoId];
         return copia;
@@ -459,7 +471,7 @@ export default function AdminPedidos({ user, onSignOut }) {
                 actualizando={actualizando}
                 notificado={notificados[pedido.id] ?? null}
                 onNotificar={(id, estado) =>
-                  setNotificados(prev => ({ ...prev, [id]: estado }))
+                  setNotificadosPersistente(prev => ({ ...prev, [id]: estado }))
                 }
               />
             ))}
