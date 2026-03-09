@@ -12,22 +12,45 @@ const ESTADO_META = {
 };
 
 // ── Notificación WhatsApp al cliente ────────────────────────────────────────
-function notificarCliente(pedido) {
+function notificarCliente(pedido, articulosSurtidos = null) {
   const { cliente_nombre: nombre, cliente_telefono: tel, folio, estado } = pedido;
 
   let mensaje = '';
-  switch (estado) {
-    case 'Por Surtir':
-      mensaje = `¡Hola ${nombre}! 🎉 Recibimos tu pedido *${folio}* y ya está en nuestro sistema. En breve comenzamos a prepararlo. ¡Gracias por tu compra! 🛍️`;
-      break;
-    case 'Armando Pedido':
-      mensaje = `¡Hola ${nombre}! 🎀 Te confirmamos que ya estamos preparando tu pedido *${folio}*. En cuanto esté listo te avisamos. ¡Pronto la fiesta! 🎈`;
-      break;
-    case 'Listo para Entrega':
-      mensaje = `¡Buenas noticias ${nombre}! 🎉 Tu pedido *${folio}* ya está listo. Puedes pasar a recogerlo o en breve saldrá a domicilio. ¡A celebrar! 🥳`;
-      break;
-    default:
-      mensaje = `Hola ${nombre}, hay una actualización en tu pedido *${folio}*. Estado actual: ${estado}.`;
+
+  if (estado === 'Listo para Entrega' && articulosSurtidos) {
+    const encontrados = articulosSurtidos.filter(a => a.encontrado);
+    const faltantes   = articulosSurtidos.filter(a => !a.encontrado);
+    const nuevoTotal  = encontrados.reduce((s, a) => s + a.precio * a.cantidad, 0);
+
+    const listaEncontrados = encontrados
+      .map(a => `  ✅ ${a.cantidad}x ${a.nombre} - ${SIMBOLO_MONEDA}${(a.precio * a.cantidad).toFixed(2)}`)
+      .join('\n');
+
+    const listaFaltantes = faltantes.length > 0
+      ? `\n⚠️ *Lamentablemente no tuvimos en existencia:*\n` +
+        faltantes.map(a => `  ❌ ${a.nombre}`).join('\n') + '\n'
+      : '';
+
+    mensaje =
+      `¡Hola ${nombre}! Tu pedido *${folio}* ya está listo y empacado. 📦\n\n` +
+      `*Artículos incluidos:*\n${listaEncontrados}\n` +
+      listaFaltantes +
+      `\n💰 *Tu total a pagar es: ${SIMBOLO_MONEDA}${nuevoTotal.toFixed(2)}*\n\n` +
+      `¡Nos vemos pronto! 🎉`;
+  } else {
+    switch (estado) {
+      case 'Por Surtir':
+        mensaje = `¡Hola ${nombre}! 🎉 Recibimos tu pedido *${folio}* y ya está en nuestro sistema. En breve comenzamos a prepararlo. ¡Gracias por tu compra! 🛍️`;
+        break;
+      case 'Armando Pedido':
+        mensaje = `¡Hola ${nombre}! 🎀 Te confirmamos que ya estamos preparando tu pedido *${folio}*. En cuanto esté listo te avisamos. ¡Pronto la fiesta! 🎈`;
+        break;
+      case 'Listo para Entrega':
+        mensaje = `¡Buenas noticias ${nombre}! 🎉 Tu pedido *${folio}* ya está listo. Puedes pasar a recogerlo o en breve saldrá a domicilio. ¡A celebrar! 🥳`;
+        break;
+      default:
+        mensaje = `Hola ${nombre}, hay una actualización en tu pedido *${folio}*. Estado actual: ${estado}.`;
+    }
   }
 
   const telefonoLimpio = tel.replace(/[\s\-\(\)]/g, '');
@@ -35,99 +58,258 @@ function notificarCliente(pedido) {
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
-// ── Lista de artículos expandible (acordeón) ────────────────────────────────
-function ItemArticulo({ item }) {
+// ── Lista de artículos expandible + Picking dinámico ────────────────────────
+function ItemArticulo({ item, modoPicking, encontrado, onToggle }) {
   const [imgError, setImgError] = useState(false);
   const subtotal = (item.precio * item.cantidad).toFixed(2);
+  const tachado = !encontrado; // aplica en picking Y en vista de Listo para Entrega
 
   return (
-    <div className="flex gap-3 py-3 border-b border-ink-100 last:border-0">
+    <div
+      className="flex gap-3 py-3 border-b border-ink-100 last:border-0 transition-opacity duration-200"
+      style={{ opacity: tachado ? 0.45 : 1 }}
+    >
+      {/* Checkbox picking — solo visible en modo Armando Pedido */}
+      {modoPicking && (
+        <button
+          onClick={onToggle}
+          className="flex-shrink-0 self-center w-7 h-7 rounded-lg border-2 flex items-center
+                     justify-center transition-all duration-150 active:scale-90"
+          style={{
+            background:   encontrado ? '#22c55e' : 'white',
+            borderColor:  encontrado ? '#22c55e' : '#d1d5db',
+            boxShadow:    encontrado ? '0 2px 8px #22c55e44' : 'none',
+          }}
+          aria-label={encontrado ? 'Desmarcar' : 'Marcar como encontrado'}
+        >
+          {encontrado && (
+            <svg viewBox="0 0 12 10" fill="none" className="w-3.5 h-3.5">
+              <path d="M1 5l3.5 3.5L11 1" stroke="white" strokeWidth="2"
+                    strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
+        </button>
+      )}
+
       {/* Miniatura */}
-      <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-ink-50
+      <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-ink-50
                       border-2 border-ink-100 flex items-center justify-center">
         {item.imagen_url && !imgError ? (
-          <img
-            src={item.imagen_url}
-            alt={item.nombre}
-            loading="lazy"
-            onError={() => setImgError(true)}
-            className="w-full h-full object-cover object-center"
-          />
+          <img src={item.imagen_url} alt={item.nombre} loading="lazy"
+               onError={() => setImgError(true)}
+               className="w-full h-full object-cover object-center"
+               style={{ filter: tachado ? 'grayscale(1)' : 'none' }} />
         ) : (
-          <Package size={24} className="text-ink-300" />
+          <Package size={20} className="text-ink-300" />
         )}
       </div>
 
       {/* Detalles */}
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-body font-black text-ink-800 leading-snug line-clamp-2">
+        <p className={`text-xs font-body font-black leading-snug line-clamp-2
+                       ${tachado ? 'line-through text-ink-300' : 'text-ink-800'}`}>
           {item.nombre}
         </p>
         {item.tamano && (
-          <p className="text-[11px] font-body text-ink-400 mt-0.5">
-            Tamaño: {item.tamano}
-          </p>
+          <p className="text-[11px] font-body text-ink-400 mt-0.5">Tamaño: {item.tamano}</p>
         )}
         {item.familia_mayoreo && (
-          <p className="text-[11px] font-body text-ink-400">
-            Mayoreo: {item.familia_mayoreo}
-          </p>
+          <p className="text-[11px] font-body text-ink-400">Mayoreo: {item.familia_mayoreo}</p>
         )}
-        <p className="text-[11px] font-body text-ink-400">
-          Cantidad: {item.cantidad}
-        </p>
+        <p className="text-[11px] font-body text-ink-400">Cantidad: {item.cantidad}</p>
       </div>
 
       {/* Precio */}
-      <div className="flex-shrink-0 text-right">
-        <p className="text-sm font-body font-black text-ink-800">
+      <div className="flex-shrink-0 text-right self-center">
+        <p className={`text-sm font-body font-black
+                       ${tachado ? 'line-through text-ink-300' : 'text-ink-800'}`}>
           {SIMBOLO_MONEDA}{subtotal}
         </p>
-        <p className="text-[10px] font-body text-ink-400">
-          {SIMBOLO_MONEDA}{item.precio.toFixed(2)} c/u
-        </p>
+        <p className="text-[10px] font-body text-ink-400">{SIMBOLO_MONEDA}{item.precio.toFixed(2)} c/u</p>
       </div>
     </div>
   );
 }
 
-function ListaArticulos({ items, meta }) {
-  const [abierto, setAbierto] = useState(false);
+function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo }) {
+  const [abierto,          setAbierto]          = useState(estadoPedido === 'Armando Pedido');
+  const [articulosSurtidos, setArticulosSurtidos] = useState(() =>
+    items.map(i => ({ ...i, encontrado: i.encontrado ?? true }))
+  );
+  const [guardando, setGuardando] = useState(false);
+
+  const modoPicking = estadoPedido === 'Armando Pedido';
+
+  const nuevoTotal = articulosSurtidos
+    .filter(a => a.encontrado)
+    .reduce((s, a) => s + a.precio * a.cantidad, 0);
+
+  const totalOriginal  = items.reduce((s, a) => s + a.precio * a.cantidad, 0);
+  const hayFaltantes   = articulosSurtidos.some(a => !a.encontrado);
+  const todosEncontrados = articulosSurtidos.every(a => a.encontrado);
+
+  async function toggleArticulo(idx) {
+    const articulo    = articulosSurtidos[idx];
+    const nuevoEstado = !articulo.encontrado;
+
+    // Actualizar estado local inmediatamente
+    setArticulosSurtidos(prev =>
+      prev.map((a, i) => i === idx ? { ...a, encontrado: nuevoEstado } : a)
+    );
+
+    // Si se desmarca → marcar producto como agotado en Supabase
+    // Si se vuelve a marcar → restaurar como disponible
+    if (articulo.id) {
+      const { error } = await supabase
+        .from('productos')
+        .update({ activo: nuevoEstado })
+        .eq('id', articulo.id);
+
+      if (error) {
+        console.warn('[Picking] No se pudo actualizar activo del producto:', error.message);
+      }
+    }
+  }
+
+  async function pasarAListo() {
+    setGuardando(true);
+    const { error } = await supabase
+      .from('pedidos')
+      .update({
+        estado:        'Listo para Entrega',
+        total:          nuevoTotal,
+        detalles_json:  articulosSurtidos,
+        notificado_estado: 'Listo para Entrega',
+      })
+      .eq('id', pedido.id);
+
+    if (error) {
+      alert('Error al guardar: ' + error.message);
+      setGuardando(false);
+      return;
+    }
+
+    // Notificar al cliente con mensaje dinámico
+    notificarCliente(
+      { ...pedido, estado: 'Listo para Entrega', total: nuevoTotal },
+      articulosSurtidos
+    );
+
+    onPickingListo?.({
+      ...pedido,
+      estado:        'Listo para Entrega',
+      total:          nuevoTotal,
+      detalles_json:  articulosSurtidos,
+      notificado_estado: 'Listo para Entrega',
+    });
+    setGuardando(false);
+  }
 
   return (
     <div className="mb-3 rounded-xl overflow-hidden"
          style={{ border: `2px solid ${meta.bg}` }}>
 
-      {/* Encabezado del acordeón */}
+      {/* Encabezado acordeón */}
       <button
         onClick={() => setAbierto(v => !v)}
-        className="w-full flex items-center justify-between px-3 py-2.5
-                   transition-colors duration-150"
+        className="w-full flex items-center justify-between px-3 py-2.5 transition-colors duration-150"
         style={{ background: meta.bg }}
       >
-        <span className="text-xs font-body font-black" style={{ color: meta.color }}>
-          🛒 Lista de Artículos
-          <span className="ml-2 px-2 py-0.5 rounded-full text-[10px]"
+        <span className="text-xs font-body font-black flex items-center gap-2" style={{ color: meta.color }}>
+          {modoPicking ? '📋 Picking — Surtir Pedido' : '🛒 Lista de Artículos'}
+          <span className="px-2 py-0.5 rounded-full text-[10px]"
                 style={{ background: meta.color, color: 'white' }}>
-            {items.length}
+            {hayFaltantes
+              ? `${articulosSurtidos.filter(a => a.encontrado).length}/${items.length}`
+              : items.length}
           </span>
         </span>
-        <ChevronDown
-          size={16}
-          style={{
-            color: meta.color,
-            transform: abierto ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.25s ease',
-          }}
-        />
+        <ChevronDown size={16} style={{
+          color: meta.color,
+          transform: abierto ? 'rotate(180deg)' : 'rotate(0deg)',
+          transition: 'transform 0.25s ease',
+        }} />
       </button>
 
-      {/* Contenido expandible */}
+      {/* Contenido */}
       {abierto && (
-        <div className="px-3 bg-white animate-fade-in">
-          {items.map((item, i) => (
-            <ItemArticulo key={i} item={item} />
-          ))}
+        <div className="bg-white animate-fade-in">
+          <div className="px-3">
+            {articulosSurtidos.map((item, i) => (
+              <ItemArticulo
+                key={i}
+                item={item}
+                modoPicking={modoPicking}
+                encontrado={item.encontrado}
+                onToggle={() => toggleArticulo(i)}
+              />
+            ))}
+          </div>
+
+          {/* Panel resumen — en picking activo O si hay faltantes en Listo */}
+          {(modoPicking || (estadoPedido === 'Listo para Entrega' && hayFaltantes)) && (
+            <div className="mx-3 mb-3 mt-1 rounded-xl p-3 space-y-2"
+                 style={{ background: '#f8f4ff', border: '2px solid #e0c4f8' }}>
+
+              {/* Totales */}
+              <div className="flex justify-between items-center text-xs font-body">
+                <span className="text-ink-400 font-bold">Total original</span>
+                <span className={`font-black ${hayFaltantes ? 'line-through text-ink-300' : 'text-ink-700'}`}>
+                  {SIMBOLO_MONEDA}{totalOriginal.toFixed(2)}
+                </span>
+              </div>
+              {hayFaltantes && (
+                <div className="flex justify-between items-center text-xs font-body">
+                  <span className="text-ink-400 font-bold">Artículos faltantes</span>
+                  <span className="font-black text-red-400">
+                    − {SIMBOLO_MONEDA}{(totalOriginal - nuevoTotal).toFixed(2)}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between items-center pt-1 border-t border-purple-200">
+                <span className="text-sm font-body font-black text-ink-800">
+                  {hayFaltantes ? 'Nuevo total' : 'Total a cobrar'}
+                </span>
+                <span className="text-base font-body font-black" style={{ color: '#22c55e' }}>
+                  {SIMBOLO_MONEDA}{nuevoTotal.toFixed(2)}
+                </span>
+              </div>
+
+              {/* Advertencia faltantes */}
+              {hayFaltantes && (
+                <p className="text-[11px] font-body text-amber-600 bg-amber-50 rounded-lg px-2 py-1.5 leading-snug">
+                  ⚠️ {articulosSurtidos.filter(a => !a.encontrado).length} artículo(s) sin existencia
+                  — se descontarán del total y se notificará al cliente.
+                </p>
+              )}
+
+              {/* Botón pasar a listo — solo visible en modo picking */}
+              {modoPicking && (
+                <button
+                  onClick={pasarAListo}
+                  disabled={guardando || nuevoTotal === 0}
+                  className="w-full py-3 rounded-xl text-sm font-body font-black text-white
+                             flex items-center justify-center gap-2
+                             transition-all duration-200 active:scale-95 disabled:opacity-60"
+                  style={{
+                    background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                    boxShadow: '0 3px 12px #22c55e44',
+                  }}
+                >
+                  {guardando
+                    ? <div className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                    : '🎉'
+                  }
+                  {guardando
+                    ? 'Guardando...'
+                    : todosEncontrados
+                      ? 'Pedido Completo — Pasar a Listo'
+                      : 'Guardar Picking y Pasar a Listo'
+                  }
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -135,7 +317,7 @@ function ListaArticulos({ items, meta }) {
 }
 
 // ── Tarjeta de un pedido ─────────────────────────────────────────────────────
-function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onNotificar }) {
+function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onNotificar, onPickingListo }) {
   const meta = ESTADO_META[pedido.estado] ?? ESTADO_META['Por Surtir'];
   const fecha    = new Date(pedido.created_at).toLocaleDateString('es-MX', {
     day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
@@ -179,9 +361,15 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
         )}
       </div>
 
-      {/* ── Acordeón de artículos ── */}
+      {/* ── Acordeón de artículos / Picking ── */}
       {pedido.detalles_json?.length > 0 && (
-        <ListaArticulos items={pedido.detalles_json} meta={meta} />
+        <ListaArticulos
+          items={pedido.detalles_json}
+          meta={meta}
+          estadoPedido={pedido.estado}
+          pedido={pedido}
+          onPickingListo={onPickingListo}
+        />
       )}
 
       {/* Total */}
@@ -474,6 +662,11 @@ export default function AdminPedidos({ user, onSignOut }) {
                 actualizando={actualizando}
                 notificando={notificando === pedido.id}
                 onNotificar={notificar}
+                onPickingListo={(pedidoActualizado) =>
+                  setPedidos(prev => prev.map(p =>
+                    p.id === pedidoActualizado.id ? pedidoActualizado : p
+                  ))
+                }
               />
             ))}
           </div>
