@@ -1,6 +1,6 @@
 # 🎉 Catálogo Digital PWA — Full Party Uruapan
 
-Catálogo digital para tienda de artículos de fiesta, construido como Progressive Web App (PWA) con React + Vite + Tailwind CSS, conectado a Supabase como backend.
+Catálogo digital para tienda de artículos de fiesta, construido como Progressive Web App (PWA) con React + Vite + Tailwind CSS y conectado a Supabase como backend en la nube.
 
 ---
 
@@ -8,11 +8,11 @@ Catálogo digital para tienda de artículos de fiesta, construido como Progressi
 
 | Tecnología | Versión | Uso |
 |---|---|---|
-| React | 18.3 | UI y estado |
+| React | 18.3 | UI y manejo de estado |
 | Vite | 5.4 | Bundler y dev server |
-| Tailwind CSS | 3.4 | Estilos |
+| Tailwind CSS | 3.4 | Estilos utilitarios |
 | Supabase JS | 2.45 | Base de datos, Auth y Realtime |
-| lucide-react | latest | Íconos (Facebook, etc.) |
+| lucide-react | latest | Íconos SVG |
 | PWA nativa | — | Service Worker + manifest.json |
 
 ---
@@ -21,8 +21,8 @@ Catálogo digital para tienda de artículos de fiesta, construido como Progressi
 
 ```
 catalogo-pwa/
-├── .env                          ← credenciales (no subir a git)
-├── .env.example                  ← plantilla de variables
+├── .env                           ← credenciales (NO subir a git)
+├── .env.example                   ← plantilla de variables
 ├── .gitignore
 ├── package.json
 ├── vite.config.js
@@ -30,50 +30,50 @@ catalogo-pwa/
 ├── postcss.config.js
 │
 ├── public/
-│   ├── manifest.json             ← configuración PWA
-│   └── sw.js                     ← Service Worker (Network First)
+│   ├── manifest.json              ← configuración PWA (nombre, íconos, colores)
+│   └── sw.js                      ← Service Worker — estrategia Network First
 │
-├── supabase_setup.sql            ← tabla productos + RLS
-├── supabase_pedidos.sql          ← tabla pedidos + folios + RLS
-├── supabase_estados_update.sql   ← migración de estados
+├── supabase_setup.sql             ← tabla productos + índices + RLS
+├── supabase_pedidos.sql           ← tabla pedidos + función folio + RLS
+├── supabase_estados_update.sql    ← migración a los 3 estados actuales
 │
 └── src/
-    ├── main.jsx                  ← entry point + registro SW
-    ├── AppRouter.jsx             ← enrutador hash (#/admin)
-    ├── App.jsx                   ← catálogo público
-    ├── index.css                 ← estilos globales + fuentes
+    ├── main.jsx                   ← entry point + registro del Service Worker
+    ├── AppRouter.jsx              ← enrutador por hash (/ y /#/admin)
+    ├── App.jsx                    ← catálogo público principal
+    ├── index.css                  ← estilos globales, fuentes y animaciones
     │
     ├── lib/
-    │   └── supabase.js           ← cliente singleton de Supabase
+    │   └── supabase.js            ← cliente singleton de Supabase
     │
     ├── data/
-    │   └── productos.js          ← config del negocio + filtros
+    │   └── productos.js           ← ✏️ configuración del negocio + listas de filtros
     │
     ├── hooks/
-    │   ├── useAuth.js            ← sesión Supabase Auth
-    │   ├── useCarrito.js         ← carrito con localStorage
-    │   ├── useInfiniteScroll.js  ← IntersectionObserver
-    │   ├── usePedido.js          ← insert/buscar pedidos
-    │   ├── useProductos.js       ← fetch productos desde Supabase
-    │   └── usePWA.js             ← prompt de instalación PWA
+    │   ├── useAuth.js             ← sesión de Supabase Auth (login/logout)
+    │   ├── useCarrito.js          ← carrito con persistencia en localStorage
+    │   ├── useInfiniteScroll.js   ← IntersectionObserver para carga progresiva
+    │   ├── usePedido.js           ← insert y búsqueda de pedidos en Supabase
+    │   ├── useProductos.js        ← fetch de productos desde Supabase
+    │   └── usePWA.js              ← prompt de instalación PWA
     │
     ├── utils/
-    │   └── whatsapp.js           ← genera URL de WhatsApp con folio
+    │   └── whatsapp.js            ← genera URL de WhatsApp con folio incluido
     │
     └── components/
-        ├── Header.jsx            ← logo + botón carrito
-        ├── BuscadorFiltros.jsx   ← input búsqueda + pills activas
-        ├── ModalFiltros.jsx      ← bottom sheet filtros avanzados
-        ├── ProductGrid.jsx       ← grid con infinite scroll
-        ├── ProductCard.jsx       ← tarjeta de producto
-        ├── ProductosSkeleton.jsx ← skeleton de carga
-        ├── FloatingCartButton.jsx← barra flotante total + carrito
-        ├── CarritoDrawer.jsx     ← drawer de pedido + checkout
-        ├── RastreoPedido.jsx     ← stepper de estado de pedido
-        ├── RedesSociales.jsx     ← botones Facebook y TikTok
-        ├── LoginAdmin.jsx        ← login protegido para admin
-        ├── AdminPedidos.jsx      ← dashboard de gestión de pedidos
-        └── InputDireccion.jsx    ← (reservado) autocomplete Nominatim
+        ├── Header.jsx             ← logo + botón de carrito con badge
+        ├── BuscadorFiltros.jsx    ← buscador de texto + pills de filtros activos
+        ├── ModalFiltros.jsx       ← bottom sheet con filtros por categoría/marca/tamaño
+        ├── ProductGrid.jsx        ← grid con infinite scroll y centinela
+        ├── ProductCard.jsx        ← tarjeta de producto con estado agotado
+        ├── ProductosSkeleton.jsx  ← skeletons animados mientras carga Supabase
+        ├── FloatingCartButton.jsx ← barra flotante con total y acceso al carrito
+        ├── CarritoDrawer.jsx      ← drawer de pedido + formulario + checkout
+        ├── RastreoPedido.jsx      ← stepper visual de estado del pedido
+        ├── RedesSociales.jsx      ← botones Facebook y TikTok con hover animado
+        ├── LoginAdmin.jsx         ← login con email/contraseña (Supabase Auth)
+        ├── AdminPedidos.jsx       ← dashboard de gestión de pedidos en tiempo real
+        └── InputDireccion.jsx     ← (reservado) autocompletado Nominatim/OSM
 ```
 
 ---
@@ -87,142 +87,172 @@ npm install
 npm install lucide-react
 ```
 
-### 2. Configurar variables de entorno
+### 2. Variables de entorno
 
-Copia `.env.example` como `.env` y rellena con tus credenciales de Supabase:
+Copia `.env.example` como `.env` y rellena con tus credenciales:
 
 ```env
 VITE_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-Las credenciales se encuentran en **Supabase Dashboard → Settings → API**.
+Las credenciales están en **Supabase Dashboard → Settings → API**.
 
-### 3. Configurar la base de datos
+### 3. Crear las tablas en Supabase
 
-Ejecuta los siguientes scripts en **Supabase → SQL Editor**, en este orden:
+Ejecuta estos scripts en **Supabase → SQL Editor**, en orden:
 
 ```
-1. supabase_setup.sql          ← tabla productos, índices, RLS
-2. supabase_pedidos.sql        ← tabla pedidos, función folio, RLS
-3. supabase_estados_update.sql ← constraint de estados actuales
+1. supabase_setup.sql           → tabla productos, índices, políticas RLS
+2. supabase_pedidos.sql         → tabla pedidos, función folio automático, RLS
+3. supabase_estados_update.sql  → constraint con los 3 estados actuales
 ```
 
 ### 4. Habilitar Realtime
 
-En **Supabase → Database → Replication**, activa la tabla `pedidos`. O ejecuta:
+En **Supabase → Database → Replication** activa el toggle de la tabla `pedidos`.  
+O con SQL:
 
 ```sql
 ALTER PUBLICATION supabase_realtime ADD TABLE public.pedidos;
 ```
 
-### 5. Crear usuario administrador
+### 5. Crear el usuario administrador
 
-En **Supabase → Authentication → Users → Add user**, crea el usuario con email y contraseña para acceder al panel de admin.
+En **Supabase → Authentication → Users → Add user**, crea el usuario con email y contraseña que usarás para entrar al panel de admin.
 
-### 6. Levantar el servidor
+### 6. Arrancar el servidor
 
 ```bash
 npm run dev
+# http://localhost:5173
 ```
 
 ---
 
 ## 🔧 Personalización del negocio
 
-Edita `src/data/productos.js` — es el único archivo que necesitas tocar para configurar la tienda:
+El único archivo que necesitas editar para configurar la tienda es `src/data/productos.js`:
 
 ```js
-export const NUMERO_WHATSAPP = '521XXXXXXXXXX'; // con código de país, sin +
-export const NOMBRE_NEGOCIO  = 'Mi Tienda';
+export const NUMERO_WHATSAPP = '521XXXXXXXXXX'; // código de país + número, sin +
+export const NOMBRE_NEGOCIO  = 'Full Party Uruapan';
 export const MONEDA          = 'MXN';
 export const SIMBOLO_MONEDA  = '$';
 ```
 
-### Agregar categorías, marcas y tamaños
+### Categorías, marcas y tamaños disponibles en filtros
 
 ```js
 export const categorias = [
   { id: 'globos',       label: '🎈 Globos'         },
   { id: 'globos-metal', label: '✨ Globos Metálicos' },
   { id: 'pinatas',      label: '🪅 Piñatas'         },
-  // agrega más aquí...
+  // agrega o quita según tu inventario...
 ];
 ```
 
-### Estructura de un producto en Supabase
+---
 
-| Campo | Tipo | Requerido |
+## 🗄️ Estructura de la base de datos
+
+### Tabla `productos`
+
+| Campo | Tipo | Requerido | Notas |
+|---|---|---|---|
+| `id` | UUID | auto | PK generado por Supabase |
+| `nombre` | TEXT | ✅ | |
+| `precio` | NUMERIC(10,2) | ✅ | |
+| `descripcion` | TEXT | — | |
+| `imagen_url` | TEXT | — | URL externa o bucket de Supabase |
+| `categoria` | TEXT | — | Debe coincidir con `categorias` en productos.js |
+| `marca` | TEXT | — | |
+| `tamano` | TEXT | — | |
+| `activo` | BOOLEAN | ✅ | `false` = se muestra como **Agotado** |
+| `created_at` | TIMESTAMPTZ | auto | |
+
+### Tabla `pedidos`
+
+| Campo | Tipo | Notas |
 |---|---|---|
-| `id` | UUID (auto) | ✅ |
-| `nombre` | TEXT | ✅ |
-| `precio` | NUMERIC(10,2) | ✅ |
-| `descripcion` | TEXT | — |
-| `imagen_url` | TEXT | — |
-| `categoria` | TEXT | — |
-| `marca` | TEXT | — |
-| `tamano` | TEXT | — |
-| `activo` | BOOLEAN | ✅ (default: true) |
+| `id` | UUID | PK auto |
+| `folio` | TEXT UNIQUE | Generado automáticamente: `FP-XXXX` |
+| `cliente_nombre` | TEXT | Capitalizado en el frontend |
+| `cliente_telefono` | TEXT | 10 dígitos, sin espacios |
+| `tipo_entrega` | TEXT | `tienda` o `envio` |
+| `direccion` | TEXT | Solo cuando es envío a domicilio |
+| `total` | NUMERIC | Total del pedido en MXN |
+| `estado` | TEXT | Ver estados abajo |
+| `detalles_json` | JSONB | Array con los productos del carrito |
+| `created_at` | TIMESTAMPTZ | Auto |
+| `updated_at` | TIMESTAMPTZ | Auto via trigger |
 
-> Poner `activo = false` muestra el producto como **"Agotado"** en el catálogo sin eliminarlo.
+#### Estados del pedido
+
+| Estado | Emoji | Color | Significado |
+|---|---|---|---|
+| `Por Surtir` | 🛍️ | Rojo | Pedido recién recibido |
+| `Armando Pedido` | 🎀 | Amarillo | En preparación |
+| `Listo para Entrega` | 🎉 | Verde | Listo para recoger o enviar |
 
 ---
 
 ## 🚀 Funcionalidades
 
-### Catálogo público
+### Catálogo público (`/`)
 
-- **Productos dinámicos** desde Supabase con skeleton de carga y manejo de errores
-- **Infinite scroll** con `IntersectionObserver` — carga de 12 en 12 productos
-- **Lazy loading** nativo de imágenes (`loading="lazy"`)
+- Productos dinámicos desde Supabase con skeleton de carga y pantalla de error con reintento
+- **Infinite scroll** nativo con `IntersectionObserver` — carga 12 productos iniciales y agrega 12 más al llegar al final
+- **Lazy loading** de imágenes con atributo `loading="lazy"`
 - **Búsqueda en tiempo real** por nombre, descripción, marca y tamaño
-- **Filtros múltiples** por categoría, marca y tamaño (AND entre dimensiones, OR dentro)
-- **Estado agotado** — tarjeta en escala de grises con badge y botón deshabilitado
-- **Redes sociales** — botones de Facebook y TikTok con hover animado
+- **Filtros múltiples** por categoría, marca y tamaño — AND entre dimensiones, OR dentro de cada una
+- **Estado agotado** — imagen en escala de grises, badge "😔 Agotado" y botón deshabilitado cuando `activo = false`
+- **Botones de redes sociales** — Facebook y TikTok con transición suave al hover
 
 ### Carrito y checkout
 
-- **Persistencia en localStorage** — el carrito sobrevive recargas accidentales
-- **Formulario de entrega** — toggle entre "Recoger en tienda" y "Envío a domicilio"
-- **Validación en tiempo real** — teléfono de exactamente 10 dígitos
-- **Formato automático de nombre** — capitaliza primera letra de cada palabra respetando acentos
-- **Limpieza de teléfono** — elimina espacios del autocompletado antes de enviar
-- **Integración WhatsApp** — mensaje formateado con emojis, productos, total y folio
-- **Folio en el mensaje** — incluye el número de pedido (`FP-XXXX`) generado por Supabase
+- **Persistencia en localStorage** — el carrito sobrevive recargas accidentales con clave `carritoPWA`
+- **Formulario de entrega** — toggle entre "🏪 Recoger en tienda" y "🚚 Envío a domicilio"
+- **Validación en tiempo real** — nombre requerido, teléfono de exactamente 10 dígitos
+- **Formato automático de nombre** — capitaliza la primera letra de cada palabra respetando acentos (`León`, `Pérez`)
+- **Limpieza de teléfono** — elimina espacios del autocompletado del celular antes de enviar
+- **Mensaje de WhatsApp formateado** — incluye folio, cliente, productos, totales y tipo de entrega
+- **Botón deshabilitado** mientras el pedido se guarda en Supabase (spinner de carga)
 
-### Sistema de pedidos
+### Sistema de pedidos y rastreo
 
-- **Registro automático** en tabla `pedidos` al confirmar por WhatsApp
-- **Folio único** generado por función SQL (`FP-XXXX`)
-- **Rastreo de pedido** — el cliente busca por folio o teléfono y ve un stepper animado
+- Al confirmar, el pedido se registra en Supabase antes de abrir WhatsApp
+- **Folio único** generado por función SQL (`FP-XXXX`) incluido en el mensaje
+- Si Supabase falla, WhatsApp se abre igual (degradación elegante, sin folio)
+- **Rastreo público** — el cliente ingresa su folio o teléfono y ve un stepper animado con el estado actual
 
-#### Estados del pedido
+### Panel de administración (`/#/admin`)
 
-| Estado | Emoji | Color |
-|---|---|---|
-| Por Surtir | 🛍️ | Rojo |
-| Armando Pedido | 🎀 | Amarillo |
-| Listo para Entrega | 🎉 | Verde |
-
-### Panel de administración
-
-Acceso en: `https://tudominio.com/#/admin`
-
-- **Login protegido** con Supabase Auth (email + contraseña)
-- **Dashboard de pedidos** con tarjetas individuales por pedido
-- **Filtros rápidos** por estado + buscador por folio, nombre o teléfono
-- **Tarjetas resumen** con contador por estado, filtrables con un tap
-- **Cambio de estado** con botones de un toque y actualización optimista
-- **Realtime automático** — nuevos pedidos aparecen solos sin recargar
-  - `INSERT` → aparece arriba de la lista al instante
+- **Login protegido** con Supabase Auth — email y contraseña
+- **Tarjetas resumen** filtrables: Total / Por Surtir / Armando Pedido / Listo para Entrega
+- **Buscador** por folio, nombre de cliente o teléfono
+- **Cambio de estado** con botones de un toque y actualización optimista (sin esperar a Supabase)
+- **Realtime automático** vía `postgres_changes`:
+  - `INSERT` → nuevo pedido aparece arriba sin recargar
   - `UPDATE` → solo esa tarjeta se actualiza
   - `DELETE` → la tarjeta desaparece
+- **Notificación al cliente por WhatsApp** — botón verde en cada tarjeta que genera un mensaje personalizado según el estado actual
+  - Se desactiva ("✓ Cliente notificado") tras enviarlo
+  - Se reactiva automáticamente al cambiar el estado del pedido
+
+#### Mensajes de notificación por estado
+
+| Estado | Mensaje enviado |
+|---|---|
+| Por Surtir | Confirmación de recepción del pedido |
+| Armando Pedido | Aviso de que el pedido está en preparación |
+| Listo para Entrega | Notificación de que ya puede pasar o sale a domicilio |
 
 ### PWA
 
-- Instalable en Android e iOS desde el navegador
-- Service Worker con estrategia **Network First** y cache fallback
-- Funciona offline con los últimos datos cacheados
+- Instalable en Android e iOS desde el navegador (botón "Agregar a pantalla de inicio")
+- Service Worker con estrategia **Network First** — usa cache como fallback sin conexión
+- Funciona offline mostrando los últimos datos cacheados
 
 ---
 
@@ -231,58 +261,38 @@ Acceso en: `https://tudominio.com/#/admin`
 | URL | Vista | Protección |
 |---|---|---|
 | `/` | Catálogo público | — |
-| `/#/admin` | Panel de administración | Requiere sesión Supabase Auth |
+| `/#/admin` | Panel de administración | Requiere sesión activa de Supabase Auth |
 
-El enrutamiento es por **hash** (`window.location.hash`) sin react-router, para mayor simplicidad y compatibilidad con deploy estático.
-
----
-
-## 🗄️ Base de datos — Resumen de tablas
-
-### `productos`
-Gestionada desde el Dashboard de Supabase o con SQL. El catálogo la lee en tiempo de carga.
-
-### `pedidos`
-
-| Campo | Tipo | Descripción |
-|---|---|---|
-| `id` | UUID | PK auto |
-| `folio` | TEXT UNIQUE | Generado: `FP-XXXX` |
-| `cliente_nombre` | TEXT | Capitalizado automáticamente |
-| `cliente_telefono` | TEXT | 10 dígitos sin espacios |
-| `tipo_entrega` | TEXT | `tienda` o `envio` |
-| `direccion` | TEXT | Solo si es envío |
-| `total` | NUMERIC | Total del pedido |
-| `estado` | TEXT | `Por Surtir` / `Armando Pedido` / `Listo para Entrega` |
-| `detalles_json` | JSONB | Array de productos del carrito |
-| `created_at` | TIMESTAMPTZ | Auto |
-| `updated_at` | TIMESTAMPTZ | Auto via trigger |
+Enrutamiento por **hash** (`window.location.hash`) sin react-router — compatible con cualquier hosting estático sin configuración adicional.
 
 ---
 
-## 🌐 Deploy
+## 🌐 Deploy en producción
 
 ```bash
-npm run build   # genera la carpeta /dist
+npm run build   # genera la carpeta /dist lista para subir
 ```
 
-Sube `/dist` a **Netlify** o **Vercel** y agrega las variables de entorno en el panel del hosting.
+Sube la carpeta `/dist` a **Netlify** o **Vercel** y agrega las variables de entorno (`VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`) en la configuración del hosting.
+
+> En Netlify agrega un archivo `public/_redirects` con el contenido `/* /index.html 200` para que la navegación funcione correctamente al recargar.
 
 ---
 
 ## 📋 Scripts disponibles
 
 ```bash
-npm run dev      # servidor de desarrollo en http://localhost:5173
-npm run build    # build de producción en /dist
+npm run dev      # servidor de desarrollo → http://localhost:5173
+npm run build    # build de producción   → /dist
 npm run preview  # previsualizar el build localmente
 ```
 
 ---
 
-## 🔗 Links útiles
+## 🔗 Referencias
 
 - [Supabase Dashboard](https://supabase.com)
-- [Documentación Supabase JS](https://supabase.com/docs/reference/javascript)
+- [Supabase JS Docs](https://supabase.com/docs/reference/javascript)
 - [Tailwind CSS Docs](https://tailwindcss.com/docs)
 - [Vite Docs](https://vitejs.dev)
+- [lucide-react](https://lucide.dev)
