@@ -20,7 +20,6 @@ export const categorias = [
   { id: 'vela-número',     label: '🕯️ Vela Número'     },
   { id: 'orbs',            label: '🔮 Orbs'            },
   { id: 'Infladora-globos',label: '💨 Infladora de Globos'},
-  { id: 'piñata',          label: '🪅 Piñatas'         },
 ];
 
 export const marcas = [
