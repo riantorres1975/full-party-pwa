@@ -18,7 +18,7 @@ export const categorias = [
   { id: 'banderines',      label: '🎏 Banderines'         },
   { id: 'Cumpleaños',      label: '🎂 Cumpleaños'         },
   { id: 'vela-número',     label: '🕯️ Vela Número'        },
-  { id: 'orbs',            label: '🔮 Orbz'               },
+  { id: 'orbz',            label: '🔮 Orbz'               },
   { id: 'Infladora-globos',label: '💨 Infladora de Globos'},
   { id: 'kits',            label: '🎁 Kits de Decoración' },
   { id: 'batucada',        label: '🥁 Batucada'           },
