@@ -1,9 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import ProductCard from './ProductCard';
+import ProductoDetalleModal from './ProductoDetalleModal';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 
 export default function ProductGrid({ productos, getCantidad, onAgregar, onReducir }) {
   const { visibleCount, sentinelRef, hayMas, cargando, reset } = useInfiniteScroll(productos.length);
+  const [productoDetalle, setProductoDetalle] = useState(null);
 
   // Resetear a página 1 cada vez que cambie el array (filtros / búsqueda)
   useEffect(() => { reset(); }, [productos, reset]);
@@ -35,6 +37,7 @@ export default function ProductGrid({ productos, getCantidad, onAgregar, onReduc
             cantidad={getCantidad(producto.id)}
             onAgregar={onAgregar}
             onReducir={onReducir}
+            onAbrirDetalle={setProductoDetalle}
           />
         ))}
       </div>
@@ -79,6 +82,15 @@ export default function ProductGrid({ productos, getCantidad, onAgregar, onReduc
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
+
+      <ProductoDetalleModal
+        producto={productoDetalle}
+        onCerrar={() => setProductoDetalle(null)}
+        onAgregar={(producto) => {
+          onAgregar(producto);
+          setProductoDetalle(null);
+        }}
+      />
     </div>
   );
 }
