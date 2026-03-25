@@ -10,7 +10,14 @@ const ACCENT_COLORS = [
   { border: '#ffe135', shadow: '#ffe13533', badge: '#ffe135', badgeText: '#1a0733' },
 ];
 
-export default function ProductCard({ producto, cantidad, onAgregar, onReducir, index = 0 }) {
+export default function ProductCard({
+  producto,
+  cantidad,
+  onAgregar,
+  onReducir,
+  onAbrirDetalle,
+  index = 0,
+}) {
   const enCarrito  = cantidad > 0;
   const agotado    = producto.activo === false;
   const accent     = ACCENT_COLORS[index % ACCENT_COLORS.length];
@@ -30,61 +37,74 @@ export default function ProductCard({ producto, cantidad, onAgregar, onReducir, 
         opacity: agotado ? 0.7 : 1,
       }}
     >
-      {/* Imagen */}
-      <div className="relative h-40 overflow-hidden bg-ink-50">
-        <img
-          src={producto.imagen_url}
-          alt={producto.nombre}
-          loading="lazy"
-          className="w-full h-full object-cover object-center transition-transform duration-500 hover:scale-105"
-          style={{ filter: agotado ? 'grayscale(60%)' : 'none' }}
-          onError={(e) => {
-            e.target.src = `https://placehold.co/400x300/f3e8ff/a855f7?text=${encodeURIComponent(producto.nombre)}`;
-          }}
-        />
+      <button
+        type="button"
+        onClick={() => onAbrirDetalle?.(producto)}
+        className="w-full text-left"
+        aria-label={`Ver detalles de ${producto.nombre}`}
+      >
+        {/* Imagen */}
+        <div
+          className="relative h-40 overflow-hidden bg-white"
+          style={{ boxShadow: 'inset 0 0 0 1px rgba(224,196,248,0.35)' }}
+        >
+          <img
+            src={producto.imagen_url}
+            alt={producto.nombre}
+            loading="lazy"
+            className="w-full h-full object-contain p-1.5 transition-transform duration-500 hover:scale-[1.04]"
+            style={{ filter: agotado ? 'grayscale(60%)' : 'none' }}
+            onError={(e) => {
+              e.target.src = `https://placehold.co/400x300/f3e8ff/a855f7?text=${encodeURIComponent(producto.nombre)}`;
+            }}
+          />
 
-        {/* Franja de color arriba */}
-        {!agotado && (
-          <div className="absolute top-0 inset-x-0 h-1 rounded-t-3xl"
-               style={{ background: `linear-gradient(90deg, ${accent.border}, transparent)` }} />
-        )}
+          {/* Franja de color arriba */}
+          {!agotado && (
+            <div className="absolute top-0 inset-x-0 h-1 rounded-t-3xl"
+                 style={{ background: `linear-gradient(90deg, ${accent.border}, transparent)` }} />
+          )}
 
-        {/* Badge agotado */}
-        {agotado && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="bg-ink-900/70 text-white text-xs font-body font-black
-                             px-3 py-1.5 rounded-full backdrop-blur-sm tracking-wide">
-              😔 Agotado
-            </span>
-          </div>
-        )}
+          {/* Badge agotado */}
+          {agotado && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="bg-ink-900/70 text-white text-xs font-body font-black
+                               px-3 py-1.5 rounded-full backdrop-blur-sm tracking-wide">
+                😔 Agotado
+              </span>
+            </div>
+          )}
 
-        {/* Badge de cantidad en carrito */}
-        {enCarrito && !agotado && (
-          <div className="absolute top-2.5 right-2.5 text-xs font-body font-black
-                          px-2 py-1 rounded-full animate-scale-in border-2 border-white"
-               style={{ background: accent.badge, color: accent.badgeText }}>
-            ×{cantidad}
-          </div>
-        )}
-      </div>
-
-      {/* Info */}
-      <div className="p-3">
-        <div className="mb-2">
-          <h3 className="font-display text-sm leading-snug mb-1 text-ink-900">
-            {producto.nombre}
-          </h3>
-          <p className="text-xs font-body text-ink-400 leading-relaxed line-clamp-2">
-            {producto.descripcion}
-          </p>
+          {/* Badge de cantidad en carrito */}
+          {enCarrito && !agotado && (
+            <div className="absolute top-2.5 right-2.5 text-xs font-body font-black
+                            px-2 py-1 rounded-full animate-scale-in border-2 border-white"
+                 style={{ background: accent.badge, color: accent.badgeText }}>
+              ×{cantidad}
+            </div>
+          )}
         </div>
 
-        {/* Precio */}
-        <span className="block font-body font-black text-sm mb-2"
-              style={{ color: agotado ? '#b388e8' : accent.border }}>
-          {SIMBOLO_MONEDA}{producto.precio.toFixed(2)}
-        </span>
+        {/* Info */}
+        <div className="p-3 pb-2">
+          <div className="mb-2">
+            <h3 className="font-display text-sm leading-snug mb-1 text-ink-900">
+              {producto.nombre}
+            </h3>
+            <p className="text-xs font-body text-ink-400 leading-relaxed line-clamp-2">
+              {producto.descripcion}
+            </p>
+          </div>
+
+          {/* Precio */}
+          <span className="block font-body font-black text-sm"
+                style={{ color: agotado ? '#b388e8' : accent.border }}>
+            {SIMBOLO_MONEDA}{producto.precio.toFixed(2)}
+          </span>
+        </div>
+      </button>
+
+      <div className="px-3 pb-3">
 
         {/* Controles — ocultos si está agotado */}
         {agotado ? (
