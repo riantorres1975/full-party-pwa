@@ -1,8 +1,20 @@
 import { useState, useRef, useEffect } from 'react';
 import { ImagePlus, Link2, Loader2, CheckCircle2 } from 'lucide-react';
-import { categorias, SIMBOLO_MONEDA } from '../data/productos';
+import {
+  categorias,
+  marcas,
+  tamanios,
+  SIMBOLO_MONEDA,
+  registrarCategoria,
+  registrarMarca,
+  registrarTamano,
+} from '../data/productos';
 import { insertarProducto, subirImagenProducto } from '../lib/productosAdmin';
 import SelectCategoria from './SelectCategoria';
+
+const CATEGORIA_NUEVA_ID = '__agregar_nueva__';
+const MARCA_NUEVA_ID = '__agregar_marca__';
+const TAMANO_NUEVO_ID = '__agregar_tamano__';
 
 const inputBase =
   'w-full bg-white rounded-2xl px-4 py-2.5 text-sm font-body font-semibold ' +
@@ -19,8 +31,11 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
   const [descripcion, setDescripcion] = useState('');
   const [precio, setPrecio] = useState('');
   const [categoria, setCategoria] = useState(categorias[0]?.id ?? '');
-  const [marca, setMarca] = useState('');
+  const [categoriaNueva, setCategoriaNueva] = useState('');
+  const [marca, setMarca] = useState('Genérico');
+  const [marcaNueva, setMarcaNueva] = useState('');
   const [tamano, setTamano] = useState('');
+  const [tamanoNuevo, setTamanoNuevo] = useState('');
   const [disponible, setDisponible] = useState(true);
   const [imagenUrl, setImagenUrl] = useState('');
   const [archivo, setArchivo] = useState(null);
@@ -46,8 +61,11 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
     setDescripcion('');
     setPrecio('');
     setCategoria(categorias[0]?.id ?? '');
-    setMarca('');
+    setCategoriaNueva('');
+    setMarca('Genérico');
+    setMarcaNueva('');
     setTamano('');
+    setTamanoNuevo('');
     setDisponible(true);
     setImagenUrl('');
     setArchivo(null);
@@ -62,6 +80,14 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
 
     try {
       let urlFinal = imagenUrl.trim() || null;
+      const categoriaFinal =
+        categoria === CATEGORIA_NUEVA_ID ? categoriaNueva.trim() : categoria;
+      const marcaFinal = marca === MARCA_NUEVA_ID ? marcaNueva.trim() : marca;
+      const tamanoFinal = tamano === TAMANO_NUEVO_ID ? tamanoNuevo.trim() : tamano;
+
+      if (categoria === CATEGORIA_NUEVA_ID && !categoriaFinal) {
+        throw new Error('Escribe el nombre de la nueva categoría.');
+      }
 
       if (archivo) {
         urlFinal = await subirImagenProducto(archivo);
@@ -71,12 +97,22 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
         nombre,
         descripcion,
         precio,
-        categoria: categoria || null,
-        marca,
-        tamano,
+        categoria: categoriaFinal || null,
+        marca: marcaFinal || null,
+        tamano: tamanoFinal || null,
         imagen_url: urlFinal,
         activo: disponible,
       });
+
+      if (categoria === CATEGORIA_NUEVA_ID && categoriaFinal) {
+        registrarCategoria(categoriaFinal);
+      }
+      if (marca === MARCA_NUEVA_ID && marcaFinal) {
+        registrarMarca(marcaFinal);
+      }
+      if (tamano === TAMANO_NUEVO_ID && tamanoFinal) {
+        registrarTamano(tamanoFinal);
+      }
 
       setExito(true);
       resetFormulario();
@@ -166,8 +202,26 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
                   <SelectCategoria
                     id="fp-cat"
                     value={categoria}
-                    onChange={setCategoria}
+                    onChange={value => {
+                      setCategoria(value);
+                      if (value !== CATEGORIA_NUEVA_ID) setCategoriaNueva('');
+                    }}
+                    lista={[
+                      ...categorias,
+                      { id: CATEGORIA_NUEVA_ID, label: '+ Agregar nueva...' },
+                    ]}
                   />
+                  {categoria === CATEGORIA_NUEVA_ID && (
+                    <input
+                      type="text"
+                      value={categoriaNueva}
+                      onChange={e => setCategoriaNueva(e.target.value)}
+                      placeholder="Nombre de la nueva categoría"
+                      className={`${inputBase} mt-1.5`}
+                      maxLength={80}
+                      autoFocus
+                    />
+                  )}
                 </div>
               </div>
 
@@ -198,30 +252,60 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
                 <label htmlFor="fp-marca" className="block text-xs font-body font-black text-ink-600 mb-1 pl-1">
                   Marca <span className="font-normal text-ink-400">(opcional)</span>
                 </label>
-                <input
+                <SelectCategoria
                   id="fp-marca"
-                  type="text"
                   value={marca}
-                  onChange={e => setMarca(e.target.value)}
-                  placeholder="Ej. Sempertex"
-                  maxLength={120}
-                  className={inputBase}
+                  onChange={value => {
+                    setMarca(value);
+                    if (value !== MARCA_NUEVA_ID) setMarcaNueva('');
+                  }}
+                  lista={[
+                    { id: '', label: 'Sin marca' },
+                    ...marcas.map(m => ({ id: m, label: m })),
+                    { id: MARCA_NUEVA_ID, label: '+ Agregar nueva...' },
+                  ]}
                 />
+                {marca === MARCA_NUEVA_ID && (
+                  <input
+                    type="text"
+                    value={marcaNueva}
+                    onChange={e => setMarcaNueva(e.target.value)}
+                    placeholder="Nombre de la nueva marca"
+                    maxLength={120}
+                    className={`${inputBase} mt-1.5`}
+                    autoFocus
+                  />
+                )}
               </div>
 
               <div>
                 <label htmlFor="fp-tamano" className="block text-xs font-body font-black text-ink-600 mb-1 pl-1">
                   Tamaño <span className="font-normal text-ink-400">(opcional)</span>
                 </label>
-                <input
+                <SelectCategoria
                   id="fp-tamano"
-                  type="text"
                   value={tamano}
-                  onChange={e => setTamano(e.target.value)}
-                  placeholder="Ej. 12 pulgadas"
-                  maxLength={120}
-                  className={inputBase}
+                  onChange={value => {
+                    setTamano(value);
+                    if (value !== TAMANO_NUEVO_ID) setTamanoNuevo('');
+                  }}
+                  lista={[
+                    { id: '', label: 'Sin tamaño' },
+                    ...tamanios.map(t => ({ id: t, label: t })),
+                    { id: TAMANO_NUEVO_ID, label: '+ Agregar nueva...' },
+                  ]}
                 />
+                {tamano === TAMANO_NUEVO_ID && (
+                  <input
+                    type="text"
+                    value={tamanoNuevo}
+                    onChange={e => setTamanoNuevo(e.target.value)}
+                    placeholder="Nombre del nuevo tamaño"
+                    maxLength={120}
+                    className={`${inputBase} mt-1.5`}
+                    autoFocus
+                  />
+                )}
               </div>
 
               <div className="rounded-2xl p-2 border-2 border-dashed border-purple-200 min-w-0"

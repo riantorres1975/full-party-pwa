@@ -1,8 +1,20 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, ImagePlus, Link2, Loader2 } from 'lucide-react';
-import { categorias, SIMBOLO_MONEDA } from '../data/productos';
+import {
+  categorias,
+  marcas,
+  tamanios,
+  SIMBOLO_MONEDA,
+  registrarCategoria,
+  registrarMarca,
+  registrarTamano,
+} from '../data/productos';
 import { actualizarProducto, subirImagenProducto } from '../lib/productosAdmin';
 import SelectCategoria from './SelectCategoria';
+
+const CATEGORIA_NUEVA_ID = '__agregar_nueva__';
+const MARCA_NUEVA_ID = '__agregar_marca__';
+const TAMANO_NUEVO_ID = '__agregar_tamano__';
 
 const inputBase =
   'w-full bg-white rounded-2xl px-4 py-3 text-sm font-body font-semibold ' +
@@ -17,8 +29,11 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
   );
   const catInicial = producto.categoria || categorias[0]?.id || '';
   const [categoria, setCategoria] = useState(catInicial);
-  const [marca, setMarca] = useState(producto.marca ?? '');
+  const [categoriaNueva, setCategoriaNueva] = useState('');
+  const [marca, setMarca] = useState(producto.marca ?? 'Genérico');
+  const [marcaNueva, setMarcaNueva] = useState('');
   const [tamano, setTamano] = useState(producto.tamano ?? '');
+  const [tamanoNuevo, setTamanoNuevo] = useState('');
   const [disponible, setDisponible] = useState(producto.activo !== false);
   const [imagenUrl, setImagenUrl] = useState(producto.imagen_url ?? '');
   const [archivo, setArchivo] = useState(null);
@@ -45,6 +60,15 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
 
     try {
       let urlFinal = imagenUrl.trim() || null;
+      const categoriaFinal =
+        categoria === CATEGORIA_NUEVA_ID ? categoriaNueva.trim() : categoria;
+      const marcaFinal = marca === MARCA_NUEVA_ID ? marcaNueva.trim() : marca;
+      const tamanoFinal = tamano === TAMANO_NUEVO_ID ? tamanoNuevo.trim() : tamano;
+
+      if (categoria === CATEGORIA_NUEVA_ID && !categoriaFinal) {
+        throw new Error('Escribe el nombre de la nueva categoría.');
+      }
+
       if (archivo) {
         urlFinal = await subirImagenProducto(archivo);
       }
@@ -53,12 +77,22 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
         nombre,
         descripcion,
         precio,
-        categoria: categoria || null,
-        marca,
-        tamano,
+        categoria: categoriaFinal || null,
+        marca: marcaFinal || null,
+        tamano: tamanoFinal || null,
         imagen_url: urlFinal,
         activo: disponible,
       });
+
+      if (categoria === CATEGORIA_NUEVA_ID && categoriaFinal) {
+        registrarCategoria(categoriaFinal);
+      }
+      if (marca === MARCA_NUEVA_ID && marcaFinal) {
+        registrarMarca(marcaFinal);
+      }
+      if (tamano === TAMANO_NUEVO_ID && tamanoFinal) {
+        registrarTamano(tamanoFinal);
+      }
 
       onGuardado?.();
     } catch (err) {
@@ -149,7 +183,14 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
               <SelectCategoria
                 id="modal-fp-cat"
                 value={categoria}
-                onChange={setCategoria}
+                onChange={value => {
+                  setCategoria(value);
+                  if (value !== CATEGORIA_NUEVA_ID) setCategoriaNueva('');
+                }}
+                lista={[
+                  ...categorias,
+                  { id: CATEGORIA_NUEVA_ID, label: '+ Agregar nueva...' },
+                ]}
                 opcionExtra={
                   producto.categoria &&
                   !categorias.some(c => c.id === producto.categoria)
@@ -157,6 +198,17 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
                     : null
                 }
               />
+              {categoria === CATEGORIA_NUEVA_ID && (
+                <input
+                  type="text"
+                  value={categoriaNueva}
+                  onChange={e => setCategoriaNueva(e.target.value)}
+                  placeholder="Nombre de la nueva categoría"
+                  className={`${inputBase} mt-1.5`}
+                  maxLength={80}
+                  autoFocus
+                />
+              )}
             </div>
           </div>
 
@@ -165,25 +217,69 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
               <label className="block text-xs font-body font-black text-ink-600 mb-1.5 pl-1">
                 Marca <span className="font-normal text-ink-400">(opcional)</span>
               </label>
-              <input
-                type="text"
+              <SelectCategoria
+                id="modal-fp-marca"
                 value={marca}
-                onChange={e => setMarca(e.target.value)}
-                maxLength={120}
-                className={inputBase}
+                onChange={value => {
+                  setMarca(value);
+                  if (value !== MARCA_NUEVA_ID) setMarcaNueva('');
+                }}
+                lista={[
+                  { id: '', label: 'Sin marca' },
+                  ...marcas.map(m => ({ id: m, label: m })),
+                  { id: MARCA_NUEVA_ID, label: '+ Agregar nueva...' },
+                ]}
+                opcionExtra={
+                  producto.marca && !marcas.some(m => m === producto.marca)
+                    ? { id: producto.marca, label: `${producto.marca} (actual)` }
+                    : null
+                }
               />
+              {marca === MARCA_NUEVA_ID && (
+                <input
+                  type="text"
+                  value={marcaNueva}
+                  onChange={e => setMarcaNueva(e.target.value)}
+                  maxLength={120}
+                  placeholder="Nombre de la nueva marca"
+                  className={`${inputBase} mt-1.5`}
+                  autoFocus
+                />
+              )}
             </div>
             <div>
               <label className="block text-xs font-body font-black text-ink-600 mb-1.5 pl-1">
                 Tamaño <span className="font-normal text-ink-400">(opcional)</span>
               </label>
-              <input
-                type="text"
+              <SelectCategoria
+                id="modal-fp-tamano"
                 value={tamano}
-                onChange={e => setTamano(e.target.value)}
-                maxLength={120}
-                className={inputBase}
+                onChange={value => {
+                  setTamano(value);
+                  if (value !== TAMANO_NUEVO_ID) setTamanoNuevo('');
+                }}
+                lista={[
+                  { id: '', label: 'Sin tamaño' },
+                  ...tamanios.map(t => ({ id: t, label: t })),
+                  { id: TAMANO_NUEVO_ID, label: '+ Agregar nueva...' },
+                ]}
+                opcionExtra={
+                  producto.tamano && !tamanios.some(t => t === producto.tamano)
+                    ? { id: producto.tamano, label: `${producto.tamano} (actual)` }
+                    : null
+                }
               />
+              {tamano === TAMANO_NUEVO_ID && (
+                <input
+                  type="text"
+                  value={tamanoNuevo}
+                  onChange={e => setTamanoNuevo(e.target.value)}
+                  maxLength={120}
+                  placeholder="Nombre del nuevo tamaño"
+                  className={`${inputBase} mt-1.5`}
+                  autoFocus
+                />
+              )}
             </div>
           </div>
 

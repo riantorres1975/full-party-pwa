@@ -1,7 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Package, Pencil, Trash2, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { SIMBOLO_MONEDA } from '../data/productos';
+import {
+  SIMBOLO_MONEDA,
+  registrarCategoria,
+  registrarMarca,
+  registrarTamano,
+} from '../data/productos';
 import {
   actualizarDisponibilidadProducto,
   eliminarProducto,
@@ -84,7 +89,13 @@ export default function AdminCatalogo() {
       setErrorLista(error.message);
       setProductos([]);
     } else {
-      setProductos(data ?? []);
+      const lista = data ?? [];
+      lista.forEach(p => {
+        registrarCategoria(p.categoria);
+        registrarMarca(p.marca);
+        registrarTamano(p.tamano);
+      });
+      setProductos(lista);
     }
     setCargando(false);
   }, []);
