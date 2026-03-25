@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { registrarCategoria, registrarMarca, registrarTamano } from '../data/productos';
 
 /**
  * useProductos
@@ -40,7 +41,13 @@ export function useProductos() {
         );
         setProductos([]);
       } else {
-        setProductos(data ?? []);
+        const lista = data ?? [];
+        lista.forEach(p => {
+          registrarCategoria(p.categoria);
+          registrarMarca(p.marca);
+          registrarTamano(p.tamano);
+        });
+        setProductos(lista);
       }
 
       setLoading(false);

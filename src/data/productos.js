@@ -27,6 +27,43 @@ export const categorias = [
   { id: 'batucada',        label: '🥁 Batucada'           },
 ];
 
+export function registrarCategoria(categoriaTexto) {
+  const limpia = String(categoriaTexto || '').trim();
+  if (!limpia) return null;
+
+  const existente = categorias.find(c =>
+    String(c.id || '').trim().toLowerCase() === limpia.toLowerCase() ||
+    String(c.label || '').trim().toLowerCase() === limpia.toLowerCase()
+  );
+
+  if (existente) return existente.id;
+
+  categorias.push({ id: limpia, label: limpia });
+  return limpia;
+}
+
+export function registrarMarca(marcaTexto) {
+  const limpia = String(marcaTexto || '').trim();
+  if (!limpia) return null;
+
+  const existente = marcas.find(m => String(m || '').trim().toLowerCase() === limpia.toLowerCase());
+  if (existente) return existente;
+
+  marcas.push(limpia);
+  return limpia;
+}
+
+export function registrarTamano(tamanoTexto) {
+  const limpia = String(tamanoTexto || '').trim();
+  if (!limpia) return null;
+
+  const existente = tamanios.find(t => String(t || '').trim().toLowerCase() === limpia.toLowerCase());
+  if (existente) return existente;
+
+  tamanios.push(limpia);
+  return limpia;
+}
+
 export const marcas = [
   'Glomex',
   'Sempertex',
