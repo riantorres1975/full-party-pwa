@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply font-body;
+    background-color: #fff8fe;
+    background-image:
+      radial-gradient(circle at 15% 20%, #ff3dac22 0%, transparent 35%),
+      radial-gradient(circle at 85% 10%, #00d4ff22 0%, transparent 35%),
+      radial-gradient(circle at 50% 80%, #ffe13522 0%, transparent 40%),
+      radial-gradient(circle at 90% 70%, #a855f722 0%, transparent 30%);
+    background-attachment: fixed;
+    overscroll-behavior: none;
+    color: #1a0733;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: #e0c4f8;
+    border-radius: 9999px;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply font-body font-bold px-6 py-3.5 rounded-full
+           transition-all duration-200 active:scale-95
+           focus:outline-none focus:ring-2 focus:ring-offset-2;
+    background: linear-gradient(135deg, #ff3dac, #a855f7);
+    color: white;
+    box-shadow: 0 4px 15px #ff3dac55;
+  }
+  .btn-primary:hover {
+    box-shadow: 0 6px 20px #ff3dac77;
+    transform: translateY(-1px);
+  }
+
+  .btn-ghost {
+    @apply bg-transparent border-2 border-purple-300 text-ink-600 font-body font-bold px-6 py-3.5 rounded-full
+           transition-all duration-200 active:scale-95 hover:border-fiesta-magenta hover:text-fiesta-magenta
+           focus:outline-none;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+  }
+
+  .glass-panel {
+    background: rgba(255, 248, 254, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 2px solid #e0c4f8;
+  }
+}
+
+/* Decoración de confetti fijo en el fondo */
+body::before {
+  content: '🎉 🎈 ⭐ 🎊 🌟 🎀 🎁 🥳 🎶 🎉 🎈 ⭐ 🎊 🌟';
+  position: fixed;
+  top: -10px;
+  left: 0;
+  right: 0;
+  font-size: 18px;
+  letter-spacing: 28px;
+  opacity: 0.08;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.safe-top    { padding-top:    env(safe-area-inset-top,    0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
