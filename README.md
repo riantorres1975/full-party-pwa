@@ -34,8 +34,9 @@ catalogo-pwa/
 │   └── sw.js                      ← Service Worker — estrategia Network First
 │
 ├── supabase_setup.sql             ← tabla productos + índices + RLS
-├── supabase_pedidos.sql           ← tabla pedidos + función folio + RLS
 ├── supabase_estados_update.sql    ← migración a los 3 estados actuales
+├── supabase_notificado.sql        ← agrega/sincroniza `notificado_estado` en pedidos
+├── supabase_storage_productos.sql ← políticas de Storage para bucket `productos-imagenes`
 │
 └── src/
     ├── main.jsx                   ← entry point + registro del Service Worker
@@ -72,8 +73,11 @@ catalogo-pwa/
         ├── RastreoPedido.jsx      ← stepper visual de estado del pedido
         ├── RedesSociales.jsx      ← botones Facebook y TikTok con hover animado
         ├── LoginAdmin.jsx         ← login con email/contraseña (Supabase Auth)
-        ├── AdminPedidos.jsx       ← dashboard de gestión de pedidos en tiempo real (incluye ListaArticulos + ItemArticulo)
-        └── InputDireccion.jsx     ← (reservado) autocompletado Nominatim/OSM
+        ├── AdminPedidos.jsx       ← dashboard de pedidos + vista de administración por hash
+        ├── AdminCatalogo.jsx      ← módulo de catálogo (nuevo artículo + inventario)
+        ├── FormularioNuevoProducto.jsx ← alta de productos con layout compacto de 2 columnas
+        ├── ModalEditarProducto.jsx ← edición de productos en modal
+        └── SelectCategoria.jsx    ← selector reutilizable de categoría
 ```
 
 ---
@@ -103,9 +107,10 @@ Las credenciales están en **Supabase Dashboard → Settings → API**.
 Ejecuta estos scripts en **Supabase → SQL Editor**, en orden:
 
 ```
-1. supabase_setup.sql           → tabla productos, índices, políticas RLS
-2. supabase_pedidos.sql         → tabla pedidos, función folio automático, RLS
-3. supabase_estados_update.sql  → constraint con los 3 estados actuales
+1. supabase_setup.sql             → tabla productos, índices y políticas RLS
+2. supabase_estados_update.sql    → constraint con los 3 estados actuales en pedidos
+3. supabase_notificado.sql        → columna `notificado_estado` para sincronizar notificaciones
+4. supabase_storage_productos.sql → políticas de Storage para subir imágenes de producto
 ```
 
 ### 4. Habilitar Realtime
@@ -231,6 +236,7 @@ export const categorias = [
 ### Panel de administración (`/#/admin`)
 
 - **Login protegido** con Supabase Auth — email y contraseña
+- **Navegación interna por hash** entre `/#/admin` (Pedidos) y `/#/admin/catalogo` (Catálogo)
 - **Tarjetas resumen** filtrables: Total / Por Surtir / Armando Pedido / Listo para Entrega
 - **Buscador** por folio, nombre de cliente o teléfono
 - **Cambio de estado** con botones de un toque y actualización optimista
@@ -251,6 +257,15 @@ export const categorias = [
   - Se desactiva ("✓ Cliente notificado") tras enviarlo en todas las sesiones simultáneamente
   - Se reactiva al cambiar el estado del pedido
   - Al usar "Pasar a Listo" desde picking, el botón queda desactivado automáticamente ya que el mensaje se envía en el mismo acto
+
+### Gestión de catálogo (`/#/admin/catalogo`)
+
+- **Alta de productos** con formulario compacto en dos columnas (core data + details/media) para capturar más rápido sin scroll interno en pantallas estándar
+- **Carga de imagen dual**: por archivo (JPG/PNG/GIF/WEBP/AVIF) o por URL externa, con vista previa local inmediata
+- **Inventario administrable** con búsqueda por nombre, marca, tamaño o categoría
+- **Toggle de disponibilidad** por producto (actualiza `activo` en tiempo real)
+- **Edición completa** en modal (nombre, descripción, precio, categoría, marca, tamaño, imagen y disponibilidad)
+- **Eliminación de productos** con confirmación para evitar borrados accidentales
 
 #### Mensajes de notificación por estado
 
@@ -274,7 +289,8 @@ export const categorias = [
 | URL | Vista | Protección |
 |---|---|---|
 | `/` | Catálogo público | — |
-| `/#/admin` | Panel de administración | Requiere sesión activa de Supabase Auth |
+| `/#/admin` | Panel de administración (Pedidos) | Requiere sesión activa de Supabase Auth |
+| `/#/admin/catalogo` | Gestión de catálogo | Requiere sesión activa de Supabase Auth |
 
 Enrutamiento por **hash** (`window.location.hash`) sin react-router — compatible con cualquier hosting estático sin configuración adicional.
 
