@@ -317,6 +317,42 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo }) {
   );
 }
 
+function TarjetaPedidoCompacta({ pedido, seleccionado, onClick }) {
+  const meta = ESTADO_META[pedido.estado] ?? ESTADO_META['Por Surtir'];
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full text-left rounded-2xl p-3 border-2 transition-all duration-200"
+      style={{
+        background: seleccionado ? '#fff8fe' : 'white',
+        borderColor: seleccionado ? meta.color : meta.bg,
+        boxShadow: seleccionado ? `0 6px 18px ${meta.color}30` : '0 2px 10px rgba(26, 7, 51, 0.05)',
+      }}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-display text-sm text-ink-900 truncate">{pedido.folio}</p>
+        <span
+          className="text-[10px] font-body font-black px-2 py-1 rounded-full"
+          style={{ background: meta.bg, color: meta.color }}
+        >
+          {pedido.estado}
+        </span>
+      </div>
+
+      <p className="mt-1 text-sm font-body font-bold text-ink-800 truncate">{pedido.cliente_nombre}</p>
+
+      <div className="mt-2 flex items-center justify-between">
+        <span className="text-[11px] font-body text-ink-400">Total</span>
+        <span className="text-sm font-body font-black" style={{ color: meta.color }}>
+          {SIMBOLO_MONEDA}{Number(pedido.total).toFixed(2)}
+        </span>
+      </div>
+    </button>
+  );
+}
+
 // ── Tarjeta de un pedido ─────────────────────────────────────────────────────
 function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onNotificar, onPickingListo }) {
   const meta = ESTADO_META[pedido.estado] ?? ESTADO_META['Por Surtir'];
@@ -468,6 +504,7 @@ export default function AdminPedidos({ user, onSignOut }) {
   const [busqueda,     setBusqueda]     = useState('');
   // { [pedidoId]: estadoEnQueSeNotificó } — se borra al cambiar estado
   const [notificando,  setNotificando]  = useState(null); // id del pedido siendo notificado
+  const [pedidoSeleccionadoId, setPedidoSeleccionadoId] = useState(null);
 
   // ── Fetch pedidos ──────────────────────────────────────────────────────────
   const fetchPedidos = useCallback(async () => {
@@ -570,6 +607,18 @@ export default function AdminPedidos({ user, onSignOut }) {
     acc[e] = pedidos.filter(p => p.estado === e).length;
     return acc;
   }, { todos: pedidos.length });
+
+  const pedidoSeleccionado = pedidosFiltrados.find(p => p.id === pedidoSeleccionadoId) ?? null;
+
+  useEffect(() => {
+    if (pedidosFiltrados.length === 0) {
+      setPedidoSeleccionadoId(null);
+      return;
+    }
+    if (!pedidoSeleccionadoId || !pedidosFiltrados.some(p => p.id === pedidoSeleccionadoId)) {
+      setPedidoSeleccionadoId(pedidosFiltrados[0].id);
+    }
+  }, [pedidosFiltrados, pedidoSeleccionadoId]);
 
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: '#f8f4ff' }}>
@@ -709,32 +758,94 @@ export default function AdminPedidos({ user, onSignOut }) {
           </div>
         )}
 
-        {!loading && !error && pedidosFiltrados.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-4xl mb-3">📭</p>
-            <p className="font-display text-lg text-ink-400">Sin pedidos</p>
-          </div>
-        )}
-
-        {/* ── Grid de pedidos ── */}
+        {/* ── Grid móvil / vista dividida escritorio ── */}
         {!loading && !error && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pedidosFiltrados.map(pedido => (
-              <TarjetaPedido
-                key={pedido.id}
-                pedido={pedido}
-                onCambiarEstado={cambiarEstado}
-                actualizando={actualizando}
-                notificando={notificando === pedido.id}
-                onNotificar={notificar}
-                onPickingListo={(pedidoActualizado) =>
-                  setPedidos(prev => prev.map(p =>
-                    p.id === pedidoActualizado.id ? pedidoActualizado : p
-                  ))
-                }
-              />
-            ))}
-          </div>
+          <>
+            {pedidos.length === 0 ? (
+              <div className="min-h-[50vh] flex flex-col items-center justify-center text-center px-4">
+                <div className="w-16 h-16 rounded-full bg-purple-50 border-2 border-purple-100 flex items-center justify-center mb-3">
+                  <ClipboardList size={28} className="text-purple-300" />
+                </div>
+                <p className="font-display text-2xl text-ink-700">Todo al día</p>
+                <p className="text-sm font-body text-ink-400 mt-1">
+                  No hay pedidos activos en este momento
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4">
+                  {pedidosFiltrados.map(pedido => (
+                    <TarjetaPedido
+                      key={pedido.id}
+                      pedido={pedido}
+                      onCambiarEstado={cambiarEstado}
+                      actualizando={actualizando}
+                      notificando={notificando === pedido.id}
+                      onNotificar={notificar}
+                      onPickingListo={(pedidoActualizado) =>
+                        setPedidos(prev => prev.map(p =>
+                          p.id === pedidoActualizado.id ? pedidoActualizado : p
+                        ))
+                      }
+                    />
+                  ))}
+                </div>
+
+                <div className="hidden lg:grid lg:grid-cols-[35%_65%] gap-4 h-[calc(100dvh-18rem)] min-h-[560px]">
+                  <div className="bg-white rounded-2xl border-2 border-purple-100 overflow-hidden flex flex-col">
+                    <div className="px-4 py-3 border-b border-purple-100/80">
+                      <p className="font-display text-base text-ink-900">Pedidos</p>
+                      <p className="text-[11px] font-body text-ink-400 mt-0.5">
+                        {pedidosFiltrados.length} resultado{pedidosFiltrados.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                      {pedidosFiltrados.map(pedido => (
+                        <TarjetaPedidoCompacta
+                          key={pedido.id}
+                          pedido={pedido}
+                          seleccionado={pedido.id === pedidoSeleccionadoId}
+                          onClick={() => setPedidoSeleccionadoId(pedido.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border-2 border-purple-100 overflow-hidden flex flex-col">
+                    <div className="px-4 py-3 border-b border-purple-100/80">
+                      <p className="font-display text-base text-ink-900">Detalle del pedido</p>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-4">
+                      {pedidoSeleccionado ? (
+                        <TarjetaPedido
+                          key={pedidoSeleccionado.id}
+                          pedido={pedidoSeleccionado}
+                          onCambiarEstado={cambiarEstado}
+                          actualizando={actualizando}
+                          notificando={notificando === pedidoSeleccionado.id}
+                          onNotificar={notificar}
+                          onPickingListo={(pedidoActualizado) =>
+                            setPedidos(prev => prev.map(p =>
+                              p.id === pedidoActualizado.id ? pedidoActualizado : p
+                            ))
+                          }
+                        />
+                      ) : (
+                        <div className="h-full min-h-[360px] flex flex-col items-center justify-center text-center">
+                          <ClipboardList size={40} className="text-ink-300 mb-3" />
+                          <p className="font-display text-xl text-ink-500">
+                            Selecciona un pedido para ver los detalles
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </>
         )}
           </>
         )}
