@@ -23,7 +23,7 @@ export default function BuscadorFiltros({
   ];
 
   return (
-    <div className="px-4 pt-4 pb-2 space-y-2.5 max-w-7xl mx-auto">
+    <div className="px-4 lg:px-10 pt-4 pb-2 space-y-2.5 max-w-[1500px] mx-auto">
 
       {/* ── Fila: input + botón filtros ─────────────────────────────────── */}
       <div className="flex gap-2">
@@ -62,7 +62,7 @@ export default function BuscadorFiltros({
         {/* Botón filtros */}
         <button
           onClick={onAbrirFiltros}
-          className="relative flex-shrink-0 w-12 h-12 flex items-center justify-center
+          className="relative flex-shrink-0 w-12 h-12 flex items-center justify-center lg:hidden
                      rounded-2xl bg-white transition-all duration-200 active:scale-90"
           style={totalFiltrosActivos > 0
             ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
@@ -97,7 +97,7 @@ export default function BuscadorFiltros({
 
       {/* ── Pills de filtros activos ─────────────────────────────────────── */}
       {pillsActivas.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 lg:hidden">
           {pillsActivas.map(({ dim, val, label }) => (
             <button
               key={`${dim}-${val}`}
