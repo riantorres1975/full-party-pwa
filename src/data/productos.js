@@ -11,7 +11,6 @@ export const SIMBOLO_MONEDA  = '$';
 // Agrega/quita valores según tu inventario real.
 // ─────────────────────────────────────────────────────────────────────────────
 export const categorias = [
-  { id: 'globo-latex',          label: '🎈 Globos'             },
   { id: 'desechables',     label: '🍽️ Desechables'        },
   { id: 'decoracion',      label: '✨ Decoración'         },
   { id: 'globo-latex',     label: '🎈 Globos Latex'       },
