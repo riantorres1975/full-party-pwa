@@ -10,6 +10,7 @@ import CarritoDrawer      from './components/CarritoDrawer';
 import FloatingCartButton from './components/FloatingCartButton';
 import RastreoPedido      from './components/RastreoPedido';
 import RedesSociales      from './components/RedesSociales';
+import SidebarFiltrosDesktop from './components/SidebarFiltrosDesktop';
 
 export default function App() {
   // ── Datos desde Supabase ───────────────────────────────────────────────────
@@ -77,73 +78,90 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-cream lg:h-screen lg:overflow-hidden">
       <Header
         cantidadTotal={cantidadTotal}
         onAbrirCarrito={() => setCarritoAbierto(true)}
       />
 
-      <BuscadorFiltros
-        busqueda={busqueda}
-        setBusqueda={setBusqueda}
-        filtros={filtros}
-        toggleFiltro={toggleFiltro}
-        totalFiltrosActivos={totalFiltrosActivos}
-        onAbrirFiltros={() => setFiltrosAbiertos(true)}
-      />
-
-      {/* Botón rastrear pedido */}
-      <div className="px-4 pb-2 max-w-7xl mx-auto w-full">
-        <button
-          onClick={() => setRastreoAbierto(true)}
-          className="flex items-center gap-2 text-xs font-body font-black
-                     px-4 py-2 rounded-full transition-all duration-200 active:scale-95"
-          style={{ background: '#f3e8ff', color: '#6b35b8', border: '2px solid #e0c4f8' }}
-        >
-          📦 Rastrear mi pedido
-        </button>
+      <div className="lg:sticky lg:top-[72px] lg:z-30 lg:backdrop-blur-sm lg:bg-cream/90">
+        <BuscadorFiltros
+          busqueda={busqueda}
+          setBusqueda={setBusqueda}
+          filtros={filtros}
+          toggleFiltro={toggleFiltro}
+          totalFiltrosActivos={totalFiltrosActivos}
+          onAbrirFiltros={() => setFiltrosAbiertos(true)}
+        />
       </div>
 
-      <main className="pb-44">
-        {/* ── Estado de carga ── */}
-        {loading && <ProductosSkeleton cantidad={8} />}
+      <main className="pb-44 lg:pb-0 lg:h-[calc(100vh-148px)] lg:overflow-hidden">
+        <div className="max-w-[1500px] mx-auto w-full px-4 lg:px-10 h-full">
+          <div className="lg:grid lg:grid-cols-[290px_minmax(0,1fr)] lg:gap-12 lg:items-start lg:h-full">
+            <SidebarFiltrosDesktop
+              filtros={filtros}
+              toggleFiltro={toggleFiltro}
+              limpiarFiltros={limpiarFiltros}
+              totalFiltrosActivos={totalFiltrosActivos}
+            />
 
-        {/* ── Estado de error ── */}
-        {!loading && error && (
-          <div className="flex flex-col items-center justify-center py-20 px-8 text-center gap-4">
-            <div className="text-5xl animate-float">😵</div>
-            <div className="bg-white rounded-3xl p-6 max-w-sm w-full"
-                 style={{ border: '2px solid #fecdd3', boxShadow: '0 4px 20px #ff3dac15' }}>
-              <p className="font-display text-lg text-ink-800 mb-1">
-                Ups, algo salió mal
-              </p>
-              <p className="text-xs font-body text-ink-400 mb-4 leading-relaxed">
-                {error}
-              </p>
-              <button
-                onClick={refetch}
-                className="w-full py-3 rounded-2xl font-body font-black text-sm text-white
-                           transition-all duration-200 active:scale-95"
-                style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
-                         boxShadow: '0 4px 14px #ff3dac44' }}
-              >
-                🔄 Reintentar
-              </button>
-            </div>
+            <section className="lg:h-full lg:flex lg:flex-col min-h-0">
+              {/* Botón rastrear pedido */}
+              <div className="px-4 lg:px-0 pb-2 w-full">
+                <button
+                  onClick={() => setRastreoAbierto(true)}
+                  className="flex items-center gap-2 text-xs font-body font-black
+                             px-4 py-2 rounded-full transition-all duration-200 active:scale-95"
+                  style={{ background: '#f3e8ff', color: '#6b35b8', border: '2px solid #e0c4f8' }}
+                >
+                  📦 Rastrear mi pedido
+                </button>
+              </div>
+
+              <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-4">
+                {/* ── Estado de carga ── */}
+                {loading && <ProductosSkeleton cantidad={8} />}
+
+                {/* ── Estado de error ── */}
+                {!loading && error && (
+                  <div className="flex flex-col items-center justify-center py-20 px-8 text-center gap-4">
+                    <div className="text-5xl animate-float">😵</div>
+                    <div className="bg-white rounded-3xl p-6 max-w-sm w-full"
+                         style={{ border: '2px solid #fecdd3', boxShadow: '0 4px 20px #ff3dac15' }}>
+                      <p className="font-display text-lg text-ink-800 mb-1">
+                        Ups, algo salió mal
+                      </p>
+                      <p className="text-xs font-body text-ink-400 mb-4 leading-relaxed">
+                        {error}
+                      </p>
+                      <button
+                        onClick={refetch}
+                        className="w-full py-3 rounded-2xl font-body font-black text-sm text-white
+                                   transition-all duration-200 active:scale-95"
+                        style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
+                                 boxShadow: '0 4px 14px #ff3dac44' }}
+                      >
+                        🔄 Reintentar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Datos listos ── */}
+                {!loading && !error && (
+                  <ProductGrid
+                    productos={productosFiltrados}
+                    getCantidad={getCantidad}
+                    onAgregar={agregarItem}
+                    onReducir={reducirItem}
+                  />
+                )}
+              </div>
+
+              <RedesSociales />
+            </section>
           </div>
-        )}
-
-        {/* ── Datos listos ── */}
-        {!loading && !error && (
-          <ProductGrid
-            productos={productosFiltrados}
-            getCantidad={getCantidad}
-            onAgregar={agregarItem}
-            onReducir={reducirItem}
-          />
-        )}
-
-        <RedesSociales />
+        </div>
       </main>
 
       <FloatingCartButton

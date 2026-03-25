@@ -86,7 +86,7 @@ export default function ProductCard({
         </div>
 
         {/* Info */}
-        <div className="p-3 pb-2">
+        <div className="p-3 pb-2 lg:p-2.5 lg:pb-1.5">
           <div className="mb-2">
             <h3 className="font-display text-sm leading-snug mb-1 text-ink-900">
               {producto.nombre}
@@ -104,7 +104,7 @@ export default function ProductCard({
         </div>
       </button>
 
-      <div className="px-3 pb-3">
+      <div className="px-3 pb-3 lg:px-2.5 lg:pb-2.5">
 
         {/* Controles — ocultos si está agotado */}
         {agotado ? (
@@ -147,7 +147,7 @@ export default function ProductCard({
           <button
             onClick={() => onAgregar(producto)}
             className="w-full text-white text-xs font-body font-black
-                       py-2 px-3 rounded-full transition-all duration-200
+                       py-2 px-3 lg:py-1.5 rounded-full transition-all duration-200
                        active:scale-95 border-2 border-white"
             style={{
               background: `linear-gradient(135deg, ${accent.border}, #a855f7)`,

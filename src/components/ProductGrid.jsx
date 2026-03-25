@@ -26,9 +26,9 @@ export default function ProductGrid({ productos, getCantidad, onAgregar, onReduc
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full">
       {/* Grid de productos visibles */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 p-4 animate-fade-in">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-7 p-4 lg:p-0 animate-fade-in">
         {visibles.map((producto, index) => (
           <ProductCard
             key={producto.id}
