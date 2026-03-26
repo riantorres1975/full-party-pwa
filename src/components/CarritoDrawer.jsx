@@ -184,13 +184,21 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                           </svg>
                         </button>
                         <span className="font-body font-black text-sm text-ink-900 w-5 text-center">{item.cantidad}</span>
-                        <button onClick={() => onAgregar(item)}
-                          className="w-7 h-7 flex items-center justify-center rounded-full text-white transition-all active:scale-90"
-                          style={{ background: `linear-gradient(135deg, ${c}, #a855f7)` }}>
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
-                          </svg>
-                        </button>
+                        
+                        {(() => {
+                          const maxStockAlcanzado = item.stock_ilimitado === false && item.cantidad >= (item.stock_actual || 0);
+                          return (
+                            <button onClick={() => !maxStockAlcanzado && onAgregar(item)}
+                              disabled={maxStockAlcanzado}
+                              className={`w-7 h-7 flex items-center justify-center rounded-full text-white transition-all 
+                                          ${maxStockAlcanzado ? 'opacity-50 cursor-not-allowed' : 'active:scale-90'}`}
+                              style={{ background: `linear-gradient(135deg, ${c}, #a855f7)` }}>
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+                              </svg>
+                            </button>
+                          );
+                        })()}
                       </div>
                     </li>
                   );

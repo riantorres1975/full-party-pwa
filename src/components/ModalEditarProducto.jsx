@@ -365,22 +365,21 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
             </div>
           )}
 
-          <div className="bg-[#faf8ff] rounded-2xl p-4 border-2 border-ink-100">
-            <label className="flex items-center gap-3 cursor-pointer select-none mb-3">
+          {/* SECCIÓN INVENTARIO */}
+          <div className="col-span-1 sm:col-span-2 bg-slate-50/50 border border-slate-200 rounded-xl p-4 sm:p-5 mt-1">
+            <label className="flex items-center gap-3 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={stockIlimitado}
                 onChange={e => setStockIlimitado(e.target.checked)}
                 className="w-5 h-5 rounded-md border-2 border-ink-300 text-emerald-600 focus:ring-2 focus:ring-fiesta-magenta focus:ring-offset-1 shrink-0"
               />
-              <div>
-                <p className="text-sm font-body font-black text-ink-800">Stock Ilimitado</p>
-              </div>
+              <span className="text-sm font-body font-black text-ink-800 leading-none mt-0.5">Stock Ilimitado</span>
             </label>
             
             {!stockIlimitado && (
-              <div className="flex gap-4 animate-fade-in mt-1">
-                <div className="flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 animate-fade-in">
+                <div className="w-full">
                   <label className="block text-xs font-body font-black text-ink-600 mb-1 pl-1">Cantidad en Stock</label>
                   <input
                     type="number"
@@ -391,7 +390,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
                     placeholder="0"
                   />
                 </div>
-                <div className="flex-1">
+                <div className="w-full">
                   <label className="block text-xs font-body font-black text-ink-600 mb-1 pl-1">Avisar cuando queden menos de...</label>
                   <input
                     type="number"

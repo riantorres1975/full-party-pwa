@@ -200,6 +200,44 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo }) {
 
   async function pasarAListo() {
     setGuardando(true);
+
+    // 1. Descontar el inventario automáticamente
+    try {
+      const encontrados = articulosSurtidos.filter(a => a.encontrado && a.id);
+      
+      await Promise.all(encontrados.map(async (art) => {
+        const { data: prodData, error: errFetch } = await supabase
+          .from('productos')
+          .select('stock_actual, stock_ilimitado')
+          .eq('id', art.id)
+          .single();
+          
+        if (errFetch || !prodData || prodData.stock_ilimitado !== false) {
+          return;
+        }
+        
+        const stockActual = Number(prodData.stock_actual) || 0;
+        let nuevoStock = stockActual - Number(art.cantidad);
+        let activoFinal = true;
+
+        if (nuevoStock <= 0) {
+          nuevoStock = 0;
+          activoFinal = false;
+        }
+        
+        await supabase
+          .from('productos')
+          .update({
+            stock_actual: nuevoStock,
+            activo: activoFinal
+          })
+          .eq('id', art.id);
+      }));
+    } catch (err) {
+      console.warn('[Picking] Falla parcial al actualizar inventario', err);
+    }
+
+    // 2. Actualizar el pedido
     const { error } = await supabase
       .from('pedidos')
       .update({

@@ -53,6 +53,16 @@ export function useCarrito() {
   const agregarItem = useCallback((producto) => {
     setItems((prev) => {
       const existe = prev.find((i) => i.id === producto.id);
+      const cantidadEnCarrito = existe ? existe.cantidad : 0;
+      
+      // Validación estricta de stock máximo
+      if (producto.stock_ilimitado === false) {
+        if (cantidadEnCarrito >= (producto.stock_actual || 0)) {
+          alert(`¡Ups! Solo nos quedan ${producto.stock_actual || 0} unidades de este artículo en tienda.`);
+          return prev;
+        }
+      }
+
       if (existe) {
         return prev.map((i) =>
           i.id === producto.id ? { ...i, cantidad: i.cantidad + 1 } : i
