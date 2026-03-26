@@ -264,23 +264,23 @@ export default function AdminCatalogo() {
                             <span className="text-ink-300">Sin tamaño</span>
                           )}
                         </p>
-                        <p className="text-sm font-body font-black mt-1" style={{ color: '#6b35b8' }}>
-                          {SIMBOLO_MONEDA}
-                          {Number(p.precio).toFixed(2)}
-                        </p>
-                        <div className="flex items-center mt-2">
+                        <div className="mt-1.5 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
+                          <p className="text-sm font-body font-black" style={{ color: '#6b35b8' }}>
+                            {SIMBOLO_MONEDA}
+                            {Number(p.precio).toFixed(2)}
+                          </p>
                           {p.stock_ilimitado !== false ? (
-                            <span className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-body font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100">
+                            <span className="inline-flex items-center w-fit gap-1 text-[11px] font-body font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
                               <span className="text-[14px] leading-none mb-[1px]">∞</span> Ilimitado
                             </span>
                           ) : (
                             Number(p.stock_actual) <= Number(p.stock_minimo) ? (
-                              <span className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-body font-black text-red-600 bg-red-50 px-2 py-1 rounded-lg border border-red-200 shadow-[0_0_8px_rgba(220,38,38,0.15)]">
-                                <AlertTriangle size={14} strokeWidth={2.5} className="text-red-500" />
+                              <span className="inline-flex items-center w-fit gap-1 text-[11px] font-body font-black text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-200 shadow-sm">
+                                <AlertTriangle size={12} strokeWidth={2.5} className="text-red-500" />
                                 {p.stock_actual} - Stock Bajo
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-body font-bold text-ink-600 bg-ink-50 px-2 py-1 rounded-lg border border-ink-200">
+                              <span className="inline-flex items-center w-fit gap-1 text-[11px] font-body font-bold text-ink-600 bg-ink-50 px-1.5 py-0.5 rounded border border-ink-200">
                                 {p.stock_actual} en stock
                               </span>
                             )

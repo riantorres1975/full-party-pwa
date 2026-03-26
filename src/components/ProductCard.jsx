@@ -21,6 +21,7 @@ export default function ProductCard({
   const enCarrito  = cantidad > 0;
   const agotado    = producto.activo === false;
   const accent     = ACCENT_COLORS[index % ACCENT_COLORS.length];
+  const maxStockAlcanzado = producto.stock_ilimitado === false && cantidad >= (producto.stock_actual || 0);
 
   return (
     <article
@@ -132,9 +133,11 @@ export default function ProductCard({
             </span>
 
             <button
-              onClick={() => onAgregar(producto)}
-              className="w-8 h-8 flex items-center justify-center rounded-full text-white
-                         transition-all duration-150 active:scale-90 border-2 border-white"
+              onClick={() => !maxStockAlcanzado && onAgregar(producto)}
+              disabled={maxStockAlcanzado}
+              className={`w-8 h-8 flex items-center justify-center rounded-full text-white
+                         transition-all duration-150 border-2 border-white
+                         ${maxStockAlcanzado ? 'opacity-50 cursor-not-allowed' : 'active:scale-90'}`}
               style={{ background: `linear-gradient(135deg, ${accent.border}, #a855f7)` }}
               aria-label="Agregar uno más"
             >
@@ -145,17 +148,18 @@ export default function ProductCard({
           </div>
         ) : (
           <button
-            onClick={() => onAgregar(producto)}
-            className="w-full text-white text-xs font-body font-black
-                       py-2 px-3 lg:py-1.5 rounded-full transition-all duration-200
-                       active:scale-95 border-2 border-white"
+            onClick={() => !maxStockAlcanzado && onAgregar(producto)}
+            disabled={maxStockAlcanzado}
+            className={`w-full text-white text-xs font-body font-black
+                       py-2 px-3 lg:py-1.5 rounded-full transition-all duration-200 border-2 border-white
+                       ${maxStockAlcanzado ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'}`}
             style={{
               background: `linear-gradient(135deg, ${accent.border}, #a855f7)`,
-              boxShadow: `0 3px 10px ${accent.shadow}`,
+              boxShadow: maxStockAlcanzado ? 'none' : `0 3px 10px ${accent.shadow}`,
             }}
             aria-label={`Agregar ${producto.nombre} al carrito`}
           >
-            + Agregar
+            {maxStockAlcanzado ? 'Límite máximo' : '+ Agregar'}
           </button>
         )}
       </div>
