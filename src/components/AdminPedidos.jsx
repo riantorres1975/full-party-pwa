@@ -12,50 +12,76 @@ const ESTADO_META = {
   'Listo para Entrega': { color: '#22c55e', bg: '#dcfce7', emoji: '🎉' },
 };
 
+
 // ── Notificación WhatsApp al cliente ────────────────────────────────────────
-function notificarCliente(pedido, articulosSurtidos = null) {
+export function notificarCliente(pedido, articulosSurtidos = null) {
   const { cliente_nombre: nombre, cliente_telefono: tel, folio, estado } = pedido;
+
+  // Diccionario de emojis blindado (Code Points) para WhatsApp Web en PC
+  const EMOJI = {
+    caja: String.fromCodePoint(0x1F4E6),    // 📦
+    check: String.fromCodePoint(0x2705),    // ✅
+    cruz: String.fromCodePoint(0x274C),     // ❌
+    alerta: String.fromCodePoint(0x26A0),   // ⚠️
+    dinero: String.fromCodePoint(0x1F4B0),  // 💰
+    fiesta: String.fromCodePoint(0x1F389),  // 🎉
+    bolsa: String.fromCodePoint(0x1F6CD),   // 🛍️
+    mono: String.fromCodePoint(0x1F380),    // 🎀
+    globo: String.fromCodePoint(0x1F388),   // 🎈
+    festejo: String.fromCodePoint(0x1F973)  // 🥳
+  };
 
   let mensaje = '';
 
+  // 1. Lógica cuando el pedido está listo y tenemos la lista de surtido
   if (estado === 'Listo para Entrega' && articulosSurtidos) {
     const encontrados = articulosSurtidos.filter(a => a.encontrado);
     const faltantes   = articulosSurtidos.filter(a => !a.encontrado);
     const nuevoTotal  = encontrados.reduce((s, a) => s + a.precio * a.cantidad, 0);
 
     const listaEncontrados = encontrados
-      .map(a => `  ✅ ${a.cantidad}x ${a.nombre} - ${SIMBOLO_MONEDA}${(a.precio * a.cantidad).toFixed(2)}`)
+      .map(a => `  ${EMOJI.check} ${a.cantidad}x ${a.nombre} - ${SIMBOLO_MONEDA}${(a.precio * a.cantidad).toFixed(2)}`)
       .join('\n');
 
     const listaFaltantes = faltantes.length > 0
-      ? `\n⚠️ *Lamentablemente no tuvimos en existencia:*\n` +
-        faltantes.map(a => `  ❌ ${a.nombre}`).join('\n') + '\n'
+      ? `\n${EMOJI.alerta} *Lamentablemente no tuvimos en existencia:*\n` +
+        faltantes.map(a => `  ${EMOJI.cruz} ${a.nombre}`).join('\n') + '\n'
       : '';
 
     mensaje =
-      `¡Hola ${nombre}! Tu pedido *${folio}* ya está listo y empacado. 📦\n\n` +
+      `¡Hola ${nombre}! Tu pedido *${folio}* ya está listo y empacado. ${EMOJI.caja}\n\n` +
       `*Artículos incluidos:*\n${listaEncontrados}\n` +
       listaFaltantes +
-      `\n💰 *Tu total a pagar es: ${SIMBOLO_MONEDA}${nuevoTotal.toFixed(2)}*\n\n` +
-      `¡Nos vemos pronto! 🎉`;
+      `\n${EMOJI.dinero} *Tu total a pagar es: ${SIMBOLO_MONEDA}${nuevoTotal.toFixed(2)}*\n\n` +
+      `¡Nos vemos pronto! ${EMOJI.fiesta}`;
+      
   } else {
+    // 2. Lógica para los demás estados
     switch (estado) {
       case 'Por Surtir':
-        mensaje = `¡Hola ${nombre}! 🎉 Recibimos tu pedido *${folio}* y ya está en nuestro sistema. En breve comenzamos a prepararlo. ¡Gracias por tu compra! 🛍️`;
+        mensaje = `¡Hola ${nombre}! ${EMOJI.fiesta} Recibimos tu pedido *${folio}* y ya está en nuestro sistema. En breve comenzamos a prepararlo. ¡Gracias por tu compra! ${EMOJI.bolsa}`;
         break;
       case 'Armando Pedido':
-        mensaje = `¡Hola ${nombre}! 🎀 Te confirmamos que ya estamos preparando tu pedido *${folio}*. En cuanto esté listo te avisamos. ¡Pronto la fiesta! 🎈`;
+        mensaje = `¡Hola ${nombre}! ${EMOJI.mono} Te confirmamos que ya estamos preparando tu pedido *${folio}*. En cuanto esté listo te avisamos. ¡Pronto la fiesta! ${EMOJI.globo}`;
         break;
       case 'Listo para Entrega':
-        mensaje = `¡Buenas noticias ${nombre}! 🎉 Tu pedido *${folio}* ya está listo. Puedes pasar a recogerlo o en breve saldrá a domicilio. ¡A celebrar! 🥳`;
+        // Este caso se dispara si está "Listo" pero NO se pasó el array de articulosSurtidos
+        mensaje = `¡Buenas noticias ${nombre}! ${EMOJI.fiesta} Tu pedido *${folio}* ya está listo. Puedes pasar a recogerlo o en breve saldrá a domicilio. ¡A celebrar! ${EMOJI.festejo}`;
         break;
       default:
         mensaje = `Hola ${nombre}, hay una actualización en tu pedido *${folio}*. Estado actual: ${estado}.`;
     }
   }
 
+  // 3. Generación de URL Segura y apertura
   const telefonoLimpio = tel.replace(/[\s\-\(\)]/g, '');
-  const url = `https://wa.me/52${telefonoLimpio}?text=${encodeURIComponent(mensaje)}`;
+  
+  const params = new URLSearchParams({
+    phone: `52${telefonoLimpio}`,
+    text: mensaje
+  });
+
+  const url = `https://api.whatsapp.com/send?${params.toString()}`;
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
