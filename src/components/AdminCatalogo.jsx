@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Package, Pencil, Trash2, Search } from 'lucide-react';
+import { Package, Pencil, Trash2, Search, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import {
   SIMBOLO_MONEDA,
@@ -268,6 +268,24 @@ export default function AdminCatalogo() {
                           {SIMBOLO_MONEDA}
                           {Number(p.precio).toFixed(2)}
                         </p>
+                        <div className="flex items-center mt-2">
+                          {p.stock_ilimitado !== false ? (
+                            <span className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-body font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100">
+                              <span className="text-[14px] leading-none mb-[1px]">∞</span> Ilimitado
+                            </span>
+                          ) : (
+                            Number(p.stock_actual) <= Number(p.stock_minimo) ? (
+                              <span className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-body font-black text-red-600 bg-red-50 px-2 py-1 rounded-lg border border-red-200 shadow-[0_0_8px_rgba(220,38,38,0.15)]">
+                                <AlertTriangle size={14} strokeWidth={2.5} className="text-red-500" />
+                                {p.stock_actual} - Stock Bajo
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-body font-bold text-ink-600 bg-ink-50 px-2 py-1 rounded-lg border border-ink-200">
+                                {p.stock_actual} en stock
+                              </span>
+                            )
+                          )}
+                        </div>
                       </div>
                     </div>
 

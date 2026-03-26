@@ -174,6 +174,9 @@ export const categorias = [
 | `marca` | TEXT | — | |
 | `tamano` | TEXT | — | |
 | `activo` | BOOLEAN | ✅ | `false` = se muestra como **Agotado** |
+| `stock_ilimitado` | BOOLEAN | ✅ | Por defecto `true`, ignora validación de stock |
+| `stock_actual` | NUMERIC | — | La cantidad actual disponible en tienda |
+| `stock_minimo` | NUMERIC | — | Activa la alerta visual de *Stock Bajo* |
 | `familia_mayoreo` | TEXT | — | Opcional — para mostrar en la lista de artículos del admin |
 | `created_at` | TIMESTAMPTZ | auto | |
 
@@ -262,9 +265,11 @@ export const categorias = [
 
 - **Alta de productos** con formulario compacto en dos columnas (core data + details/media) para capturar más rápido sin scroll interno en pantallas estándar
 - **Carga de imagen dual**: por archivo (JPG/PNG/GIF/WEBP/AVIF) o por URL externa, con vista previa local inmediata
-- **Inventario administrable** con búsqueda por nombre, marca, tamaño o categoría
+- **Gestión de Inventario**: control por unidades o stock ilimitado interactivo directamente desde el formulario
+- **Inventario administrable y visual** con búsqueda por nombre, marca, tamaño o categoría
+- **Indicadores de nivel de stock**: distintivo visual con símbolo (∞) esmeralda para stock ilimitado y etiquetas con alerta roja vibrante cuando se alcanza el stock bajo
 - **Toggle de disponibilidad** por producto (actualiza `activo` en tiempo real)
-- **Edición completa** en modal (nombre, descripción, precio, categoría, marca, tamaño, imagen y disponibilidad)
+- **Edición completa** en modal (nombre, descripción, precio, categoría, marca, tamaño, stock, imagen y disponibilidad)
 - **Eliminación de productos** con confirmación para evitar borrados accidentales
 
 #### Mensajes de notificación por estado

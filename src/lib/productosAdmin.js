@@ -74,6 +74,9 @@ export async function insertarProducto({
   marca,
   tamano,
   imagen_url,
+  stock_ilimitado = true,
+  stock_actual = 0,
+  stock_minimo = 5,
   activo = true,
 }) {
   const precioNum = typeof precio === 'string' ? parseFloat(precio.replace(',', '.')) : Number(precio);
@@ -91,6 +94,9 @@ export async function insertarProducto({
     marca: marcaStr || null,
     tamano: tamanoStr || null,
     imagen_url: imagen_url?.trim() || null,
+    stock_ilimitado: stock_ilimitado !== false,
+    stock_actual: Number(stock_actual),
+    stock_minimo: Number(stock_minimo),
     activo,
   };
 
@@ -114,6 +120,9 @@ export async function actualizarProducto(id, {
   marca,
   tamano,
   imagen_url,
+  stock_ilimitado,
+  stock_actual,
+  stock_minimo,
   activo,
 }) {
   if (!id) throw new Error('Falta el id del producto.');
@@ -132,8 +141,15 @@ export async function actualizarProducto(id, {
     marca: marcaStr || null,
     tamano: tamanoStr || null,
     imagen_url: imagen_url?.trim() || null,
+    stock_ilimitado: stock_ilimitado !== false,
+    stock_actual: stock_actual != null ? Number(stock_actual) : null,
+    stock_minimo: stock_minimo != null ? Number(stock_minimo) : null,
     activo: activo !== false,
   };
+
+  // Remove keys with null if we don't want to omit them? Let's just pass them. In this case, passing null for numbers clears them. Better to ensure numbers.
+  if (row.stock_actual === null) delete row.stock_actual;
+  if (row.stock_minimo === null) delete row.stock_minimo;
 
   const { data, error } = await supabase.from('productos').update(row).eq('id', id).select().single();
 
