@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ImagePlus, Link2, Loader2, CheckCircle2 } from 'lucide-react';
+import { ImagePlus, Link2, Loader2, CheckCircle2, UploadCloud, X } from 'lucide-react';
 import {
   categorias,
   marcas,
@@ -16,15 +16,15 @@ const CATEGORIA_NUEVA_ID = '__agregar_nueva__';
 const MARCA_NUEVA_ID = '__agregar_marca__';
 const TAMANO_NUEVO_ID = '__agregar_tamano__';
 
-const inputBase =
-  'w-full bg-white rounded-2xl px-4 py-2.5 text-sm font-body font-semibold ' +
-  'text-ink-900 placeholder:text-ink-300 outline-none border-2 border-ink-200 ' +
-  'focus:border-fiesta-magenta transition-colors';
-
-const inputCompact =
-  'w-full bg-white rounded-xl px-3 py-2 text-xs font-body font-semibold ' +
-  'text-ink-900 placeholder:text-ink-300 outline-none border-2 border-ink-200 ' +
-  'focus:border-fiesta-magenta transition-colors';
+// Helper component for modern Toggle Switch
+function CustomToggle({ checked, onChange, id }) {
+  return (
+    <label htmlFor={id} className="relative inline-flex items-center cursor-pointer shrink-0">
+      <input id={id} type="checkbox" className="sr-only peer" checked={checked} onChange={onChange} />
+      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-300/50 rounded-full peer peer-checked:after:translate-x-[100%] rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-pink-400 shadow-inner"></div>
+    </label>
+  );
+}
 
 export default function FormularioNuevoProducto({ onProductoCreado }) {
   const [nombre, setNombre] = useState('');
@@ -49,6 +49,9 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
   const [error, setError] = useState('');
   const [exito, setExito] = useState(false);
   const [previewLocal, setPreviewLocal] = useState(null);
+  
+  // Drag & Drop state
+  const [dragHover, setDragHover] = useState(false);
 
   useEffect(() => {
     if (!archivo) {
@@ -134,320 +137,347 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
     }
   }
 
+  // Drag handlers
+  const onDragOver = (e) => {
+    e.preventDefault();
+    setDragHover(true);
+  };
+  const onDragLeave = (e) => {
+    e.preventDefault();
+    setDragHover(false);
+  };
+  const onDrop = (e) => {
+    e.preventDefault();
+    setDragHover(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f && f.type.startsWith('image/')) {
+      setArchivo(f);
+      setImagenUrl('');
+    }
+  };
+
   const previewSrc = previewLocal || imagenUrl.trim() || null;
 
   return (
-    <div
-      className="bg-white rounded-2xl border-2 border-purple-100 flex flex-col"
-      style={{ boxShadow: '0 4px 24px rgba(107, 53, 184, 0.08)' }}
-    >
-      {/* HEADER */}
-      <div className="shrink-0 flex items-center gap-3 px-4 py-2.5 border-b border-purple-100/80 bg-slate-50/50">
-        <span className="text-xl leading-none">📦</span>
-        <div>
-          <h2 className="font-display text-[15px] text-ink-900 leading-tight">Nuevo artículo</h2>
-        </div>
-      </div>
-
-      {/* FORM BODY - Sin overflow-hidden para no cortar selects */}
-      <form onSubmit={handleSubmit} className="p-4 sm:p-5 flex flex-col gap-4">
+    <div className="min-h-full font-sans text-gray-800 p-4 md:p-8 pt-4">
+      {/* Contenedor Limpio (Tarjeta Blanca sin overflow-hidden) */}
+      <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full max-w-6xl mx-auto flex flex-col">
         
-        {/* GRID DE 4 COLUMNAS */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-5 items-start">
-          
-          {/* COLUMNA 1: Imagen y Estado */}
-          <div className="flex flex-col gap-3">
-            <div className="rounded-xl p-2.5 border-2 border-dashed border-purple-200 bg-purple-50/30">
-              <p className="text-[11px] font-body font-black text-ink-700 mb-1.5 flex items-center gap-1.5">
-                <ImagePlus size={14} className="text-fiesta-magenta" />
-                Imagen
-              </p>
+        {/* HEADER */}
+        <div className="mb-8 border-b border-gray-100 pb-5">
+          <h2 className="text-2xl font-black text-gray-900 tracking-tight">Nuevo Artículo</h2>
+          <p className="text-sm font-medium text-gray-500 mt-1">Configura el diseño, costo y organización del inventario.</p>
+        </div>
 
-              <div className="w-full aspect-square relative rounded-xl border border-dashed border-purple-300 bg-white overflow-hidden mb-2">
+        {/* BODY */}
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+          {/* Grid Asimétrico */}
+          <div className="md:grid md:grid-cols-12 md:gap-8 items-start pb-12">
+            
+            {/* --- COLUMNA IZQUIERDA (md:col-span-4) --- */}
+            <div className="md:col-span-4 flex flex-col gap-5 mb-8 md:mb-0">
+              
+              {/* Bloque: Imagen */}
+              <div 
+                onDragOver={onDragOver}
+                onDragLeave={onDragLeave}
+                onDrop={onDrop}
+                onClick={() => { if (!archivo && !imagenUrl) fileRef.current?.click(); }}
+                className={`aspect-square md:aspect-auto md:min-h-[320px] bg-gray-50 rounded-3xl border-2 border-dashed flex flex-col items-center justify-center text-gray-400 hover:border-purple-400 hover:bg-purple-50 transition-all cursor-pointer relative overflow-hidden group p-4 text-center
+                  ${dragHover ? 'border-purple-400 bg-purple-50 scale-[1.02]' : 'border-gray-200'}`}
+              >
                 {previewSrc ? (
-                  <img src={previewSrc} alt="Vista previa" className="w-full h-full object-cover" />
+                  <>
+                    <img src={previewSrc} alt="Vista previa" className="w-full h-full object-cover absolute inset-0 rounded-3xl" />
+                    <button 
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setArchivo(null); setImagenUrl(''); }}
+                      className="absolute top-4 right-4 p-2 bg-black/60 text-white rounded-full hover:bg-red-500 transition-colors backdrop-blur-md shadow-lg"
+                      title="Eliminar imagen"
+                    >
+                      <X size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
+                      className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-white/90 text-gray-900 text-xs font-bold rounded-full shadow-lg backdrop-blur hover:bg-white transition-colors"
+                    >
+                      Cambiar foto
+                    </button>
+                  </>
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 px-3 text-center">
-                    <ImagePlus size={24} className="text-fiesta-magenta opacity-80" />
-                    <p className="text-[10px] font-body font-bold text-ink-500 leading-snug">
-                      Subir foto
-                    </p>
-                  </div>
+                  <>
+                    <div className="p-4 bg-white rounded-full shadow-sm mb-4 group-hover:scale-110 group-hover:shadow-md transition-all">
+                      <UploadCloud size={28} className={dragHover ? 'text-purple-500' : 'text-purple-400'} />
+                    </div>
+                    <p className="text-sm font-bold text-gray-600 mb-1">Subir imagen</p>
+                    <p className="text-xs font-medium text-gray-400">Arrastra o haz clic aquí</p>
+                  </>
                 )}
               </div>
 
-              <div className="space-y-1.5">
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp,image/avif"
+                onChange={e => {
+                  const f = e.target.files?.[0];
+                  setArchivo(f || null);
+                  if (f) setImagenUrl('');
+                }}
+                className="hidden"
+              />
+              
+              <div className="bg-gray-50 rounded-2xl p-4 border border-transparent">
+                <label htmlFor="fp-url" className="flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  <Link2 size={12} /> URL externa (Opcional)
+                </label>
                 <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/gif,image/webp,image/avif"
+                  id="fp-url"
+                  type="url"
+                  value={imagenUrl}
                   onChange={e => {
-                    const f = e.target.files?.[0];
-                    setArchivo(f || null);
-                    if (f) setImagenUrl('');
+                    setImagenUrl(e.target.value);
+                    if (e.target.value) setArchivo(null);
                   }}
-                  className="hidden"
+                  placeholder="https://..."
+                  disabled={!!archivo}
+                  className="w-full bg-white border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:bg-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all shadow-sm disabled:opacity-50"
                 />
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  className="w-full py-1.5 rounded-lg border border-purple-200 bg-purple-100/80 text-[10px] font-body font-black text-purple-800 hover:bg-purple-200 transition-colors"
-                >
-                  {archivo ? 'Cambiar' : 'Explorar…'}
-                </button>
+              </div>
+
+              {/* Bloque: Tarjetita Disponible */}
+              <div className="bg-gray-50 rounded-2xl p-5 border border-transparent flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-gray-800">Disponible</h3>
+                  <p className="text-xs font-medium text-gray-500 mt-0.5">Venta activa</p>
+                </div>
+                <CustomToggle id="toggle-visibilidad" checked={disponible} onChange={e => setDisponible(e.target.checked)} />
+              </div>
+            </div>
+
+            {/* --- COLUMNA DERECHA (md:col-span-8) --- */}
+            <div className="md:col-span-8 flex flex-col h-full">
+              
+              {/* Grid Interno (Datos) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
                 
-                <div className="pt-0.5">
-                  <label htmlFor="fp-url" className="flex items-center gap-1 text-[10px] font-body font-bold text-ink-500 mb-1 pl-0.5">
-                    <Link2 size={10} /> O enlazada (URL)
+                {/* Fila 1 */}
+                <div className="col-span-full">
+                  <label htmlFor="fp-nombre" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    Nombre del producto *
                   </label>
                   <input
-                    id="fp-url"
-                    type="url"
-                    value={imagenUrl}
-                    onChange={e => {
-                      setImagenUrl(e.target.value);
-                      if (e.target.value) setArchivo(null);
-                    }}
-                    placeholder="https://…"
-                    disabled={!!archivo}
-                    className={`w-full bg-white rounded-lg px-2 py-1.5 text-[11px] font-body font-semibold text-ink-900 placeholder:text-ink-300 outline-none border border-ink-200 focus:border-fiesta-magenta transition-colors ${archivo ? 'opacity-50' : ''}`}
+                    id="fp-nombre"
+                    type="text"
+                    value={nombre}
+                    onChange={e => setNombre(e.target.value)}
+                    placeholder="Ej. Set de globos metálicos dorados"
+                    required
+                    maxLength={200}
+                    className="w-full bg-gray-50 border border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:bg-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all shadow-sm"
                   />
                 </div>
-              </div>
-            </div>
 
-            <div className="rounded-xl px-3 py-2 border border-ink-100 bg-slate-50/70">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={disponible}
-                  onChange={e => setDisponible(e.target.checked)}
-                  className="w-4 h-4 rounded-md border-2 border-ink-300 text-emerald-600 focus:ring-2 focus:ring-fiesta-magenta shrink-0"
-                />
-                <span className="text-[11px] font-body font-black text-ink-800 leading-none mt-0.5">Disponible en tienda</span>
-              </label>
-            </div>
-          </div>
+                {/* Fila 2 */}
+                <div className="col-span-full">
+                  <label htmlFor="fp-desc" className="flex items-center justify-between text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    <span>Descripción</span>
+                    <span className="font-medium normal-case text-gray-400">Opcional</span>
+                  </label>
+                  <textarea
+                    id="fp-desc"
+                    value={descripcion}
+                    onChange={e => setDescripcion(e.target.value)}
+                    placeholder="Añade detalles útiles para tus clientes..."
+                    rows={2}
+                    className="w-full bg-gray-50 border border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:bg-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all resize-none shadow-sm"
+                  />
+                </div>
 
-          {/* COLUMNA 2: Datos Principales */}
-          <div className="flex flex-col gap-3">
-            <div>
-              <label htmlFor="fp-nombre" className="block text-[11px] font-body font-black text-ink-600 mb-1 pl-1">
-                Nombre del producto
-              </label>
-              <input
-                id="fp-nombre"
-                type="text"
-                value={nombre}
-                onChange={e => setNombre(e.target.value)}
-                placeholder="Ej. Globo metálico..."
-                required
-                maxLength={200}
-                className="w-full bg-white rounded-lg px-2.5 py-1.5 text-[11px] font-body font-semibold text-ink-900 placeholder:text-ink-300 outline-none border border-ink-200 focus:border-fiesta-magenta transition-colors"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="fp-desc" className="block text-[11px] font-body font-black text-ink-600 mb-1 pl-1">
-                Descripción
-              </label>
-              <textarea
-                id="fp-desc"
-                value={descripcion}
-                onChange={e => setDescripcion(e.target.value)}
-                placeholder="Detalles del producto…"
-                rows={2}
-                className="w-full bg-white rounded-lg px-2.5 py-1.5 text-[11px] font-body font-semibold text-ink-900 placeholder:text-ink-300 outline-none border border-ink-200 focus:border-fiesta-magenta transition-colors resize-none min-h-[46px]"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="fp-precio" className="block text-[11px] font-body font-black text-ink-600 mb-1 pl-1">
-                Precio ({SIMBOLO_MONEDA})
-              </label>
-              <input
-                id="fp-precio"
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="0.01"
-                value={precio}
-                onChange={e => setPrecio(e.target.value)}
-                placeholder="0.00"
-                required
-                className="w-full bg-white rounded-lg px-2.5 py-1.5 text-[11px] font-body font-semibold text-ink-900 placeholder:text-ink-300 outline-none border border-ink-200 focus:border-fiesta-magenta transition-colors"
-              />
-            </div>
-          </div>
-
-          {/* COLUMNA 3: Categorización */}
-          <div className="flex flex-col gap-3 relative z-20">
-            <div>
-              <label htmlFor="fp-cat" className="block text-[11px] font-body font-black text-ink-600 mb-1 pl-1">
-                Categoría
-              </label>
-              <SelectCategoria
-                id="fp-cat"
-                value={categoria}
-                onChange={value => {
-                  setCategoria(value);
-                  if (value !== CATEGORIA_NUEVA_ID) setCategoriaNueva('');
-                }}
-                lista={[
-                  ...categorias,
-                  { id: CATEGORIA_NUEVA_ID, label: '+ Agregar nueva...' },
-                ]}
-              />
-              {categoria === CATEGORIA_NUEVA_ID && (
-                <input
-                  type="text"
-                  value={categoriaNueva}
-                  onChange={e => setCategoriaNueva(e.target.value)}
-                  placeholder="Nombre categoría"
-                  className="w-full bg-white rounded-lg px-2.5 py-1.5 text-[11px] font-body font-semibold text-ink-900 placeholder:text-ink-300 outline-none border border-ink-200 focus:border-fiesta-magenta transition-colors mt-1.5"
-                  maxLength={80}
-                  autoFocus
-                />
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="fp-marca" className="block text-[11px] font-body font-black text-ink-600 mb-1 pl-1">
-                Marca <span className="font-normal text-ink-400">(opc)</span>
-              </label>
-              <SelectCategoria
-                id="fp-marca"
-                value={marca}
-                onChange={value => {
-                  setMarca(value);
-                  if (value !== MARCA_NUEVA_ID) setMarcaNueva('');
-                }}
-                lista={[
-                  { id: '', label: 'Sin marca' },
-                  ...marcas.map(m => ({ id: m, label: m })),
-                  { id: MARCA_NUEVA_ID, label: '+ Agregar nueva...' },
-                ]}
-              />
-              {marca === MARCA_NUEVA_ID && (
-                <input
-                  type="text"
-                  value={marcaNueva}
-                  onChange={e => setMarcaNueva(e.target.value)}
-                  placeholder="Nombre marca"
-                  className="w-full bg-white rounded-lg px-2.5 py-1.5 text-[11px] font-body font-semibold text-ink-900 placeholder:text-ink-300 outline-none border border-ink-200 focus:border-fiesta-magenta transition-colors mt-1.5"
-                  autoFocus
-                />
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="fp-tamano" className="block text-[11px] font-body font-black text-ink-600 mb-1 pl-1">
-                Tamaño <span className="font-normal text-ink-400">(opc)</span>
-              </label>
-              <SelectCategoria
-                id="fp-tamano"
-                value={tamano}
-                onChange={value => {
-                  setTamano(value);
-                  if (value !== TAMANO_NUEVO_ID) setTamanoNuevo('');
-                }}
-                lista={[
-                  { id: '', label: 'Sin tamaño' },
-                  ...tamanios.map(t => ({ id: t, label: t })),
-                  { id: TAMANO_NUEVO_ID, label: '+ Agregar nueva...' },
-                ]}
-              />
-              {tamano === TAMANO_NUEVO_ID && (
-                <input
-                  type="text"
-                  value={tamanoNuevo}
-                  onChange={e => setTamanoNuevo(e.target.value)}
-                  placeholder="Nombre tamaño"
-                  className="w-full bg-white rounded-lg px-2.5 py-1.5 text-[11px] font-body font-semibold text-ink-900 placeholder:text-ink-300 outline-none border border-ink-200 focus:border-fiesta-magenta transition-colors mt-1.5"
-                  autoFocus
-                />
-              )}
-            </div>
-          </div>
-
-          {/* COLUMNA 4: Inventario */}
-          <div className="flex flex-col gap-3">
-            <div className="bg-slate-50/70 border border-slate-200 rounded-xl p-3">
-              <label className="flex items-center gap-2 cursor-pointer select-none mb-3">
-                <input
-                  type="checkbox"
-                  checked={stockIlimitado}
-                  onChange={e => setStockIlimitado(e.target.checked)}
-                  className="w-4 h-4 rounded-md border-2 border-ink-300 text-emerald-600 focus:ring-2 focus:ring-fiesta-magenta shrink-0"
-                />
-                <span className="text-[11px] font-body font-black text-ink-800 leading-none mt-0.5">Stock Ilimitado</span>
-              </label>
-              
-              {!stockIlimitado && (
-                <div className="flex flex-col gap-3 animate-fade-in">
-                  <div>
-                    <label className="block text-[11px] font-body font-black text-ink-600 mb-1 pl-1">Cantidad Actual</label>
+                {/* Fila 3 compartida (Precio y Cat) */}
+                <div>
+                  <label htmlFor="fp-precio" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    Precio de Venta *
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">{SIMBOLO_MONEDA}</span>
                     <input
+                      id="fp-precio"
                       type="number"
+                      inputMode="decimal"
                       min="0"
-                      value={stockActual}
-                      onChange={e => setStockActual(e.target.value)}
-                      className="w-full bg-white rounded-lg px-2.5 py-1.5 text-[11px] font-body font-semibold text-ink-900 placeholder:text-ink-300 outline-none border border-ink-200 focus:border-fiesta-magenta transition-colors"
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-body font-black text-ink-600 mb-1 pl-1">Avisar cuando quede...</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={stockMinimo}
-                      onChange={e => setStockMinimo(e.target.value)}
-                      className="w-full bg-white rounded-lg px-2.5 py-1.5 text-[11px] font-body font-semibold text-ink-900 placeholder:text-ink-300 outline-none border border-ink-200 focus:border-fiesta-magenta transition-colors"
-                      placeholder="5"
+                      step="0.01"
+                      value={precio}
+                      onChange={e => setPrecio(e.target.value)}
+                      placeholder="0.00"
+                      required
+                      className="w-full bg-gray-50 border border-transparent rounded-xl pl-9 pr-4 py-3 text-sm font-medium text-gray-800 focus:bg-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all shadow-sm"
                     />
                   </div>
                 </div>
-              )}
+
+                <div>
+                  <label htmlFor="fp-cat" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    Categoría *
+                  </label>
+                  <SelectCategoria
+                    id="fp-cat"
+                    value={categoria}
+                    onChange={value => {
+                      setCategoria(value);
+                      if (value !== CATEGORIA_NUEVA_ID) setCategoriaNueva('');
+                    }}
+                    lista={[
+                      ...categorias,
+                      { id: CATEGORIA_NUEVA_ID, label: '+ Agregar nueva...' },
+                    ]}
+                  />
+                  {categoria === CATEGORIA_NUEVA_ID && (
+                    <input
+                      type="text"
+                      value={categoriaNueva}
+                      onChange={e => setCategoriaNueva(e.target.value)}
+                      placeholder="Ej. Novedades"
+                      className="w-full mt-2 bg-gray-50 border border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:bg-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all shadow-sm"
+                      maxLength={80}
+                      autoFocus
+                    />
+                  )}
+                </div>
+
+                {/* Fila 4 compartida (Marca y Tamaño) */}
+                <div>
+                  <label htmlFor="fp-marca" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    Marca
+                  </label>
+                  <SelectCategoria
+                    id="fp-marca"
+                    value={marca}
+                    onChange={value => {
+                      setMarca(value);
+                      if (value !== MARCA_NUEVA_ID) setMarcaNueva('');
+                    }}
+                    lista={[
+                      { id: '', label: 'Sin marca' },
+                      ...marcas.map(m => ({ id: m, label: m })),
+                      { id: MARCA_NUEVA_ID, label: '+ Agregar nueva...' },
+                    ]}
+                  />
+                  {marca === MARCA_NUEVA_ID && (
+                    <input
+                      type="text"
+                      value={marcaNueva}
+                      onChange={e => setMarcaNueva(e.target.value)}
+                      placeholder="Nueva marca"
+                      className="w-full mt-2 bg-gray-50 border border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:bg-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all shadow-sm"
+                      autoFocus
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="fp-tamano" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    Tamaño
+                  </label>
+                  <SelectCategoria
+                    id="fp-tamano"
+                    value={tamano}
+                    onChange={value => {
+                      setTamano(value);
+                      if (value !== TAMANO_NUEVO_ID) setTamanoNuevo('');
+                    }}
+                    lista={[
+                      { id: '', label: 'Sin tamaño' },
+                      ...tamanios.map(t => ({ id: t, label: t })),
+                      { id: TAMANO_NUEVO_ID, label: '+ Agregar nueva...' },
+                    ]}
+                  />
+                  {tamano === TAMANO_NUEVO_ID && (
+                     <input
+                      type="text"
+                      value={tamanoNuevo}
+                      onChange={e => setTamanoNuevo(e.target.value)}
+                      placeholder="Nuevo tamaño"
+                      className="w-full mt-2 bg-gray-50 border border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:bg-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all shadow-sm"
+                      autoFocus
+                    />
+                  )}
+                </div>
+
+                {/* Fila 5: Inventario */}
+                <div className="col-span-full bg-gray-50 rounded-2xl p-5 border border-transparent mt-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-800">Control de Inventario</h4>
+                      <p className="text-xs font-medium text-gray-500 mt-0.5">Si se activa, el producto no se agotará.</p>
+                    </div>
+                    <div className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-gray-100">
+                      <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">Ilimitado</span>
+                      <CustomToggle id="toggle-stock" checked={stockIlimitado} onChange={e => setStockIlimitado(e.target.checked)} />
+                    </div>
+                  </div>
+
+                  {!stockIlimitado && (
+                    <div className="grid grid-cols-2 gap-4 mt-6 pt-5 border-t border-gray-200 animate-fade-in">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Stock Actual</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={stockActual}
+                          onChange={e => setStockActual(e.target.value)}
+                          className="w-full bg-white border border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all shadow-[0_2px_10px_rgb(0,0,0,0.02)]"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Avisar cuando haya</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={stockMinimo}
+                          onChange={e => setStockMinimo(e.target.value)}
+                          className="w-full bg-white border border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all shadow-[0_2px_10px_rgb(0,0,0,0.02)]"
+                          placeholder="5"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+              </div>
+
+              {/* ACTION FOOTER */}
+              <div className="mt-auto pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-end gap-6 text-right">
+                <div className="w-full text-center sm:text-right">
+                  {error && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-50 px-4 py-2 rounded-xl border border-red-100">
+                      ⚠️ {error}
+                    </span>
+                  )}
+                  {exito && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100 shadow-sm">
+                      <CheckCircle2 size={16} /> Producto creado
+                    </span>
+                  )}
+                </div>
+                
+                {/* Botón Guardar - Diseño Pill Right-Aligned */}
+                <button
+                  type="submit"
+                  disabled={enviando}
+                  className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-500 text-white font-bold rounded-full px-8 py-3 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+                >
+                  {enviando && <Loader2 size={18} className="animate-spin" />}
+                  {enviando ? 'Guardando...' : 'Guardar Producto'}
+                </button>
+              </div>
+              
             </div>
           </div>
-
-        </div>
-
-        {/* 3. BOTÓN Y MENSAJES FINALES: Fuera del grid principal */}
-        <div className="col-span-full pt-3 mt-1 flex flex-col md:flex-row md:items-center justify-between gap-3 border-t border-purple-100">
-          {/* Mensajes */}
-          <div className="flex-1 min-w-0">
-            {error && (
-              <div className="inline-flex rounded-lg px-3 py-1.5 text-[11px] font-body font-bold text-red-600 bg-red-50 border border-red-200 animate-fade-in">
-                ⚠️ {error}
-              </div>
-            )}
-            {exito && (
-              <div className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-body font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 animate-fade-in">
-                <CheckCircle2 size={14} /> Producto guardado.
-              </div>
-            )}
-          </div>
-
-          {/* Botón Guardar */}
-          <button
-            type="submit"
-            disabled={enviando}
-            className="w-full md:w-auto md:min-w-[200px] py-2 px-6 rounded-xl font-body font-black text-[12px] text-white
-                       transition-all duration-200 active:scale-95 disabled:opacity-60
-                       flex items-center justify-center gap-1.5"
-            style={{
-              background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
-              boxShadow: enviando ? 'none' : '0 4px 14px #ff3dac44',
-            }}
-          >
-            {enviando ? <Loader2 size={14} className="animate-spin" /> : null}
-            {enviando ? 'Guardando…' : 'Guardar Producto'}
-          </button>
-        </div>
-        
-      </form>
+        </form>
+      </div>
     </div>
   );
 }
