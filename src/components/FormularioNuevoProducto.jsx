@@ -41,6 +41,10 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
   const [archivo, setArchivo] = useState(null);
   const fileRef = useRef(null);
 
+  const [stockIlimitado, setStockIlimitado] = useState(true);
+  const [stockActual, setStockActual] = useState('');
+  const [stockMinimo, setStockMinimo] = useState('5');
+
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
   const [exito, setExito] = useState(false);
@@ -69,6 +73,9 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
     setDisponible(true);
     setImagenUrl('');
     setArchivo(null);
+    setStockIlimitado(true);
+    setStockActual('');
+    setStockMinimo('5');
     if (fileRef.current) fileRef.current.value = '';
   }
 
@@ -101,6 +108,9 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
         marca: marcaFinal || null,
         tamano: tamanoFinal || null,
         imagen_url: urlFinal,
+        stock_ilimitado: stockIlimitado,
+        stock_actual: stockActual ? Number(stockActual) : 0,
+        stock_minimo: stockMinimo ? Number(stockMinimo) : 5,
         activo: disponible,
       });
 
@@ -371,6 +381,49 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="shrink-0 px-4 sm:px-6 pt-4 pb-2 border-t border-purple-100">
+          <div className="bg-[#faf8ff] rounded-2xl p-4 border-2 border-ink-100">
+            <label className="flex items-center gap-3 cursor-pointer select-none mb-3">
+              <input
+                type="checkbox"
+                checked={stockIlimitado}
+                onChange={e => setStockIlimitado(e.target.checked)}
+                className="w-5 h-5 rounded-md border-2 border-ink-300 text-emerald-600 focus:ring-2 focus:ring-fiesta-magenta focus:ring-offset-1 shrink-0"
+              />
+              <div>
+                <p className="text-sm font-body font-black text-ink-800">Stock Ilimitado</p>
+              </div>
+            </label>
+            
+            {!stockIlimitado && (
+              <div className="flex gap-4 animate-fade-in mt-1">
+                <div className="flex-1">
+                  <label className="block text-xs font-body font-black text-ink-600 mb-1 pl-1">Cantidad en Stock</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={stockActual}
+                    onChange={e => setStockActual(e.target.value)}
+                    className={inputBase}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-body font-black text-ink-600 mb-1 pl-1">Avisar cuando queden menos de...</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={stockMinimo}
+                    onChange={e => setStockMinimo(e.target.value)}
+                    className={inputBase}
+                    placeholder="5"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
