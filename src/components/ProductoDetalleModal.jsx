@@ -87,10 +87,7 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar }) 
             <X size={18} />
           </button>
 
-          <div
-            className="h-56 sm:h-64 md:h-72 overflow-hidden"
-            style={{ background: 'radial-gradient(circle at 50% 20%, #ffffff 0%, #f5edff 62%, #efe3ff 100%)' }}
-          >
+          <div className="h-56 sm:h-64 md:h-72 overflow-hidden bg-white flex items-center justify-center p-4">
             <img
               src={producto.imagen_url}
               alt={producto.nombre}

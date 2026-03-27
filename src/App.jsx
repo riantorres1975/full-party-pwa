@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from 'react';
-import { ArrowUp } from 'lucide-react';
 import { useProductos }      from './hooks/useProductos';
 import { useCarrito }        from './hooks/useCarrito';
 import Header             from './components/Header';
@@ -32,20 +31,6 @@ export default function App() {
   const { items, total, cantidadTotal,
           agregarItem, reducirItem, eliminarItem, limpiarCarrito, getCantidad,
   } = useCarrito();
-
-  const [mostrarBoton, setMostrarBoton] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setMostrarBoton(window.scrollY > 300);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   // ── Lógica de filtros ──────────────────────────────────────────────────────
   const toggleFiltro = (dimension, valor) => {
@@ -112,7 +97,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="pb-44 lg:pb-0 lg:h-[calc(100vh-148px)] lg:overflow-hidden">
+      <main className={`lg:pb-0 lg:h-[calc(100vh-148px)] lg:overflow-hidden transition-all duration-300 ${items.length > 0 ? 'pb-32' : 'pb-8'}`}>
         <div className="max-w-[1500px] mx-auto w-full px-4 lg:px-10 h-full">
           <div className="lg:grid lg:grid-cols-[290px_minmax(0,1fr)] lg:gap-12 lg:items-start lg:h-full">
             <SidebarFiltrosDesktop
@@ -206,16 +191,6 @@ export default function App() {
         limpiarFiltros={limpiarFiltros}
         totalResultados={productosFiltrados.length}
       />
-
-      {/* FAB Volver Arriba */}
-      <button
-        onClick={scrollToTop}
-        className={`fixed bottom-6 right-6 z-50 bg-purple-600 text-white p-3 rounded-full shadow-lg hover:bg-purple-700 transition-all duration-300 flex items-center justify-center 
-          ${mostrarBoton ? 'opacity-100 pointer-events-auto scale-100' : 'opacity-0 pointer-events-none scale-90'}`}
-        aria-label="Volver arriba"
-      >
-        <ArrowUp size={20} className="stroke-[3px]" />
-      </button>
     </div>
   );
 }
