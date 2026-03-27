@@ -73,6 +73,7 @@ export default function AdminCatalogo() {
   const [cargando, setCargando] = useState(true);
   const [errorLista, setErrorLista] = useState('');
   const [busqueda, setBusqueda] = useState('');
+  const [verStockBajo, setVerStockBajo] = useState(false);
   const [editando, setEditando] = useState(null);
   const [toggleId, setToggleId] = useState(null);
   const [eliminandoId, setEliminandoId] = useState(null);
@@ -104,17 +105,28 @@ export default function AdminCatalogo() {
     fetchProductos();
   }, [fetchProductos]);
 
+  const productosEnAlerta = useMemo(() => {
+    return productos.filter(p => p.stock_ilimitado === false && p.stock_actual <= (p.stock_minimo || 5));
+  }, [productos]);
+
   const filtrados = useMemo(() => {
+    let lista = productos;
+    
+    if (verStockBajo) {
+      lista = productosEnAlerta;
+    }
+
     const q = busqueda.trim().toLowerCase();
-    if (!q) return productos;
-    return productos.filter(p => {
+    if (!q) return lista;
+    
+    return lista.filter(p => {
       const n = (p.nombre || '').toLowerCase();
       const m = (p.marca || '').toLowerCase();
       const t = (p.tamano || '').toLowerCase();
       const c = (p.categoria || '').toLowerCase();
       return n.includes(q) || m.includes(q) || t.includes(q) || c.includes(q);
     });
-  }, [productos, busqueda]);
+  }, [productos, busqueda, verStockBajo, productosEnAlerta]);
 
   async function handleToggleDisponibilidad(p) {
     const siguiente = !p.activo;
@@ -182,6 +194,20 @@ export default function AdminCatalogo() {
 
         {pestana === 'inventario' && (
           <div className="animate-fade-in flex flex-col gap-4 min-h-0">
+            {productosEnAlerta.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setVerStockBajo(!verStockBajo)}
+                className={`self-start flex items-center gap-2 px-4 py-2.5 rounded-xl font-body font-bold text-sm transition-all shadow-sm
+                  ${verStockBajo 
+                    ? 'bg-red-500 text-white border-2 border-transparent' 
+                    : 'bg-red-50 text-red-600 border-2 border-red-200 hover:bg-red-100'}`}
+              >
+                <AlertTriangle size={18} />
+                {productosEnAlerta.length} {productosEnAlerta.length === 1 ? 'Artículo con' : 'Artículos con'} Stock Bajo
+              </button>
+            )}
+
             <div className="relative shrink-0">
               <Search
                 size={18}
