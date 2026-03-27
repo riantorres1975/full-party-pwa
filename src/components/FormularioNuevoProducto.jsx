@@ -247,10 +247,10 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
               </div>
 
               {/* Bloque: Tarjetita Disponible */}
-              <div className="bg-gray-50 rounded-2xl p-5 border border-transparent flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-gray-800">Disponible</h3>
-                  <p className="text-xs font-medium text-gray-500 mt-0.5">Venta activa</p>
+              <div className="bg-gray-50 rounded-2xl p-5 border border-transparent flex items-center justify-between w-full gap-4">
+                <div className="flex-1">
+                  <h3 className="text-sm font-bold text-gray-800 leading-tight">Disponible</h3>
+                  <p className="text-xs font-medium text-gray-500">Venta activa</p>
                 </div>
                 <CustomToggle id="toggle-visibilidad" checked={disponible} onChange={e => setDisponible(e.target.checked)} />
               </div>
@@ -407,12 +407,12 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
 
                 {/* Fila 5: Inventario */}
                 <div className="col-span-full bg-gray-50 rounded-2xl p-5 border border-transparent mt-2">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-800">Control de Inventario</h4>
-                      <p className="text-xs font-medium text-gray-500 mt-0.5">Si se activa, el producto no se agotará.</p>
+                  <div className="flex items-center justify-between w-full gap-4">
+                    <div className="flex-1">
+                      <h4 className="text-sm font-bold text-gray-800 leading-tight">Control de Inventario</h4>
+                      <p className="text-xs font-medium text-gray-500">Si se activa, el producto no se agotará.</p>
                     </div>
-                    <div className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-gray-100">
+                    <div className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-gray-100 shrink-0">
                       <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">Ilimitado</span>
                       <CustomToggle id="toggle-stock" checked={stockIlimitado} onChange={e => setStockIlimitado(e.target.checked)} />
                     </div>
@@ -420,8 +420,8 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
 
                   {!stockIlimitado && (
                     <div className="grid grid-cols-2 gap-4 mt-6 pt-5 border-t border-gray-200 animate-fade-in">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Stock Actual</label>
+                      <div className="flex flex-col justify-end h-full gap-2">
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Stock Actual</label>
                         <input
                           type="number"
                           min="0"
@@ -431,8 +431,8 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
                           placeholder="0"
                         />
                       </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Avisar cuando haya</label>
+                      <div className="flex flex-col justify-end h-full gap-2">
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Avisar cuando haya</label>
                         <input
                           type="number"
                           min="0"

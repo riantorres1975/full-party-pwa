@@ -218,19 +218,20 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo }) {
         
         const stockActual = Number(prodData.stock_actual) || 0;
         let nuevoStock = stockActual - Number(art.cantidad);
-        let activoFinal = true;
+        
+        const updatePayload = {
+          stock_actual: nuevoStock > 0 ? nuevoStock : 0
+        };
 
+        // REGLA DE AUTO-APAGADO: Solo modificar "activo" si el stock se agotó
+        // Si aún hay stock, omitimos enviar "activo" para no sobreescribir su estado manual anterior
         if (nuevoStock <= 0) {
-          nuevoStock = 0;
-          activoFinal = false;
+          updatePayload.activo = false;
         }
         
         await supabase
           .from('productos')
-          .update({
-            stock_actual: nuevoStock,
-            activo: activoFinal
-          })
+          .update(updatePayload)
           .eq('id', art.id);
       }));
     } catch (err) {
