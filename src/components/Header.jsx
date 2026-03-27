@@ -5,9 +5,8 @@ export default function Header({ cantidadTotal, onAbrirCarrito }) {
   const { installPrompt, instalarApp } = usePWA();
 
   return (
-    <header className="glass-panel sticky top-0 z-40 safe-top">
+    <div className="safe-top">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-
         {/* Logo / Nombre */}
         <div className="flex items-center gap-2">
           <span className="text-2xl animate-float">🎉</span>
@@ -63,6 +62,6 @@ export default function Header({ cantidadTotal, onAbrirCarrito }) {
           </div>
         </div>
       </div>
-    </header>
+    </div>
   );
 }
