@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { generarMensajeWhatsApp } from '../utils/whatsapp';
+import { obtenerPrecioAplicable } from '../utils/precios';
 import { SIMBOLO_MONEDA } from '../data/productos';
 import { usePedido } from '../hooks/usePedido';
 
@@ -37,6 +38,11 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
   const formularioListo = nombre.trim().length > 0 && telefonoValido &&
     (tipoEntrega === 'tienda' || direccion.trim().length > 0);
 
+  const totalCalculado = items.reduce((acc, item) => {
+    const precioAplicable = obtenerPrecioAplicable(item, item.cantidad);
+    return acc + (precioAplicable * item.cantidad);
+  }, 0);
+
   const validar = () => {
     const e = {};
     if (!nombre.trim())    e.nombre   = 'Ingresa tu nombre';
@@ -50,16 +56,22 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
   const handleConfirmar = async () => {
     if (!validar()) return;
 
+    const itemsConPrecioAplicado = items.map(item => ({
+      ...item,
+      precio_base: Number(item.precio) || 0,
+      precio: obtenerPrecioAplicable(item, item.cantidad),
+    }));
+
     // 1. Guardar pedido en Supabase y obtener el folio generado
     const { folio, error } = await guardarPedido({
-      nombre: nombre.trim(), telefono: telefonoLimpio, tipoEntrega, direccion, total, items,
+      nombre: nombre.trim(), telefono: telefonoLimpio, tipoEntrega, direccion, total: totalCalculado, items: itemsConPrecioAplicado,
     });
 
     // 2. Si falla Supabase, igual abrimos WhatsApp (degradación elegante)
     if (error) console.warn('[Pedido] No se pudo guardar en Supabase:', error);
 
     // 3. Generar URL de WhatsApp con el folio incluido
-    const url = generarMensajeWhatsApp(items, total, {
+    const url = generarMensajeWhatsApp(itemsConPrecioAplicado, totalCalculado, {
       tipo: tipoEntrega, nombre: nombre.trim(), telefono: telefonoLimpio, direccion, folio,
     });
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -155,6 +167,10 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                 {items.map((item, index) => {
                   const colors = ['#ff3dac','#a855f7','#00d4ff','#ff7b2e','#39e87b','#ffe135'];
                   const c = colors[index % colors.length];
+                  const precioBase = Number(item.precio) || 0;
+                  const precioAplicable = obtenerPrecioAplicable(item, item.cantidad);
+                  const hayDescuento = precioAplicable < precioBase;
+                  const subtotal = precioAplicable * item.cantidad;
                   return (
                     <li key={item.id}
                         className="flex gap-3 items-center bg-white rounded-2xl p-3"
@@ -167,11 +183,22 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-body text-sm font-bold text-ink-800 leading-tight truncate">{item.nombre}</p>
-                        <p className="font-body text-xs text-ink-400 font-semibold mt-0.5">
-                          {SIMBOLO_MONEDA}{item.precio.toFixed(2)} c/u
-                        </p>
+                        {hayDescuento ? (
+                          <div className="mt-0.5 flex items-baseline gap-2">
+                            <span className="line-through text-gray-400 text-xs font-semibold">
+                              {SIMBOLO_MONEDA}{precioBase.toFixed(2)} c/u
+                            </span>
+                            <span className="text-sm font-black text-emerald-600">
+                              {SIMBOLO_MONEDA}{precioAplicable.toFixed(2)} c/u
+                            </span>
+                          </div>
+                        ) : (
+                          <p className="font-body text-xs text-ink-400 font-semibold mt-0.5">
+                            {SIMBOLO_MONEDA}{precioBase.toFixed(2)} c/u
+                          </p>
+                        )}
                         <p className="font-body text-sm font-black mt-0.5" style={{ color: c }}>
-                          {SIMBOLO_MONEDA}{(item.precio * item.cantidad).toFixed(2)}
+                          {SIMBOLO_MONEDA}{subtotal.toFixed(2)}
                         </p>
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -307,7 +334,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
               <span className="font-body text-xl font-black"
                     style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
                              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                {SIMBOLO_MONEDA}{total.toFixed(2)}
+                {SIMBOLO_MONEDA}{totalCalculado.toFixed(2)}
               </span>
             </div>
 

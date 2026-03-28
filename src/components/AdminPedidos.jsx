@@ -88,8 +88,14 @@ export function notificarCliente(pedido, articulosSurtidos = null) {
 // ── Lista de artículos expandible + Picking dinámico ────────────────────────
 function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
   const [imgError, setImgError] = useState(false);
-  const subtotal = (item.precio * item.cantidad).toFixed(2);
-  const tachado = !encontrado;
+  const precioAplicado = Number(item.precio) || 0;
+  const precioBase = Number(item.precio_base ?? item.precio_original ?? item.precio) || 0;
+  const hayDescuento = precioAplicado < precioBase;
+  const subtotal = (precioAplicado * item.cantidad).toFixed(2);
+  const ahorroTotal = ((precioBase - precioAplicado) * item.cantidad).toFixed(2);
+  const tachado = !modoPicking && !encontrado;
+  const pendientePicking = modoPicking && !encontrado;
+  const surtidoPicking = modoPicking && encontrado;
 
   const claseFila = esDesktop
     ? 'flex items-center gap-2 lg:gap-3 py-1.5 lg:py-2 border-b border-purple-50 last:border-0 transition-opacity duration-150'
@@ -108,7 +114,14 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
     : 'flex-shrink-0 text-right self-center';
 
   return (
-    <div className={claseFila} style={{ opacity: tachado ? 0.45 : 1 }}>
+    <div
+      className={`${claseFila} ${
+        modoPicking
+          ? `rounded-xl px-2 ${pendientePicking ? 'bg-amber-50 border border-amber-200' : 'bg-emerald-50 border border-emerald-200'}`
+          : ''
+      }`}
+      style={{ opacity: tachado ? 0.45 : 1 }}
+    >
       {modoPicking && (
         <button
           onClick={onToggle}
@@ -141,6 +154,20 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
         <p className={`text-xs font-body font-bold leading-snug line-clamp-1 ${tachado ? 'line-through text-ink-300' : 'text-ink-800'}`}>
           {item.nombre}
         </p>
+        {modoPicking && (
+          <span
+            className={`inline-flex mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-body font-black ${
+              pendientePicking ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+            }`}
+          >
+            {pendientePicking ? 'Pendiente por surtir' : 'Surtido'}
+          </span>
+        )}
+        {hayDescuento && (
+          <p className="text-[10px] font-body font-bold text-emerald-600 mt-0.5">
+            Descuento mayoreo aplicado (-{SIMBOLO_MONEDA}{ahorroTotal})
+          </p>
+        )}
         {esDesktop && (
           <p className="text-[10px] font-body text-ink-400">Cant: {item.cantidad}</p>
         )}
@@ -157,20 +184,34 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
         <p className={tachado ? 'line-through text-ink-300' : 'text-ink-800'}>
           {SIMBOLO_MONEDA}{subtotal}
         </p>
-        {!esDesktop && <p className="text-[10px] font-body text-ink-400">{SIMBOLO_MONEDA}{item.precio.toFixed(2)} c/u</p>}
+        {hayDescuento ? (
+          <div className="text-right leading-tight">
+            <p className="text-[10px] font-body text-ink-300 line-through">
+              {SIMBOLO_MONEDA}{precioBase.toFixed(2)} c/u
+            </p>
+            <p className="text-[10px] font-body font-bold text-emerald-600">
+              {SIMBOLO_MONEDA}{precioAplicado.toFixed(2)} c/u
+            </p>
+          </div>
+        ) : (
+          !esDesktop && <p className="text-[10px] font-body text-ink-400">{SIMBOLO_MONEDA}{precioAplicado.toFixed(2)} c/u</p>
+        )}
       </div>
     </div>
   );
 }
 
 function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, esDesktop }) {
+  const modoPicking = estadoPedido === 'Armando Pedido';
+
   const [abierto,          setAbierto]          = useState(estadoPedido === 'Armando Pedido');
   const [articulosSurtidos, setArticulosSurtidos] = useState(() =>
-    items.map(i => ({ ...i, encontrado: i.encontrado ?? true }))
+    items.map(i => ({
+      ...i,
+      encontrado: typeof i.encontrado === 'boolean' ? i.encontrado : !modoPicking ? true : false,
+    }))
   );
   const [guardando, setGuardando] = useState(false);
-
-  const modoPicking = estadoPedido === 'Armando Pedido';
 
   const nuevoTotal = articulosSurtidos
     .filter(a => a.encontrado)
@@ -305,6 +346,11 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, esD
       {/* Contenido */}
       {abierto && (
         <div className={`bg-white animate-fade-in ${esDesktop ? 'px-2 lg:px-3' : 'px-3'}`}>
+          {modoPicking && (
+            <p className="text-[11px] font-body font-bold text-amber-600 px-1 py-2">
+              Marca solo lo surtido. Lo que quede sin marcar se tomará como faltante.
+            </p>
+          )}
           <div>
             {articulosSurtidos.map((item, i) => (
               <ItemArticulo

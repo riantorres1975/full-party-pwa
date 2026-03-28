@@ -53,12 +53,15 @@ export function generarMensajeWhatsApp(items, total, entrega) {
 
   mensaje += `\n${sep}\n\n`;
 
-  // Productos (Formato original conservado)
+  // Productos (precio aplicado ya viene guardado en item.precio)
   items.forEach((item, index) => {
+    const precioAplicado = Number(item.precio) || 0;
+    const subtotal = precioAplicado * (Number(item.cantidad) || 0);
+
     mensaje += `${index + 1}. *${item.nombre}*\n`;
     mensaje += `   Cantidad: ${item.cantidad}\n`;
-    mensaje += `   Precio unitario: ${SIMBOLO_MONEDA}${item.precio.toFixed(2)}\n`;
-    mensaje += `   Subtotal: ${SIMBOLO_MONEDA}${(item.precio * item.cantidad).toFixed(2)}\n\n`;
+    mensaje += `   Precio aplicado: ${SIMBOLO_MONEDA}${precioAplicado.toFixed(2)}\n`;
+    mensaje += `   Subtotal: ${SIMBOLO_MONEDA}${subtotal.toFixed(2)}\n\n`;
   });
 
   mensaje += `${sep}\n`;

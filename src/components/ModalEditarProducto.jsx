@@ -11,6 +11,7 @@ import {
 } from '../data/productos';
 import { actualizarProducto, subirImagenProducto } from '../lib/productosAdmin';
 import SelectCategoria from './SelectCategoria';
+import GestorPrecios from './GestorPrecios';
 
 const CATEGORIA_NUEVA_ID = '__agregar_nueva__';
 const MARCA_NUEVA_ID = '__agregar_marca__';
@@ -20,6 +21,34 @@ const inputBase =
   'w-full bg-white rounded-2xl px-4 py-3 text-sm font-body font-semibold ' +
   'text-ink-900 placeholder:text-ink-300 outline-none border-2 border-ink-200 ' +
   'focus:border-fiesta-magenta transition-colors';
+
+function parsearPreciosMayoreo(producto) {
+  const valor = producto?.precios_mayoreo ?? producto?.familia_mayoreo;
+  let lista = [];
+
+  if (Array.isArray(valor)) {
+    lista = valor;
+  } else if (typeof valor === 'string' && valor.trim()) {
+    try {
+      const parsed = JSON.parse(valor);
+      if (Array.isArray(parsed)) lista = parsed;
+    } catch {
+      lista = [];
+    }
+  }
+
+  const normalizados = lista
+    .map((item, index) => ({
+      id: item?.id ?? `${Date.now()}-${index}`,
+      etiqueta: String(item?.etiqueta ?? '').trim(),
+      cantidad_minima: Math.max(1, Number(item?.cantidad_minima) || 1),
+      precio: Math.max(0, Number(item?.precio) || 0),
+    }))
+    .filter(item => item.id != null);
+
+  if (normalizados.length > 0) return normalizados;
+  return [{ id: Date.now(), etiqueta: '1 Pieza', cantidad_minima: 1, precio: 0 }];
+}
 
 export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
   const [nombre, setNombre] = useState(producto.nombre ?? '');
@@ -38,6 +67,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
   const [stockIlimitado, setStockIlimitado] = useState(producto.stock_ilimitado !== false);
   const [stockActual, setStockActual] = useState(producto.stock_actual != null ? String(producto.stock_actual) : '');
   const [stockMinimo, setStockMinimo] = useState(producto.stock_minimo != null ? String(producto.stock_minimo) : '5');
+  const [preciosMayoreo, setPreciosMayoreo] = useState(() => parsearPreciosMayoreo(producto));
   const [imagenUrl, setImagenUrl] = useState(producto.imagen_url ?? '');
   const [archivo, setArchivo] = useState(null);
   const fileRef = useRef(null);
@@ -76,6 +106,19 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
         urlFinal = await subirImagenProducto(archivo);
       }
 
+      const preciosParaGuardar = (preciosMayoreo || [])
+        .map(({ id, ...rest }) => ({
+          etiqueta: String(rest.etiqueta ?? '').trim(),
+          cantidad_minima: Math.max(1, Number(rest.cantidad_minima) || 1),
+          precio: Math.max(0, Number(rest.precio) || 0),
+        }))
+        .filter(item => item.etiqueta || item.cantidad_minima || item.precio);
+
+      const preciosMayoreoFinal =
+        preciosParaGuardar.length > 0
+          ? preciosParaGuardar
+          : [{ etiqueta: '1 Pieza', cantidad_minima: 1, precio: 0 }];
+
       await actualizarProducto(producto.id, {
         nombre,
         descripcion,
@@ -87,6 +130,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
         stock_ilimitado: stockIlimitado,
         stock_actual: stockActual ? Number(stockActual) : 0,
         stock_minimo: stockMinimo ? Number(stockMinimo) : 5,
+        precios_mayoreo: preciosMayoreoFinal,
         activo: disponible,
       });
 
@@ -404,6 +448,8 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
               </div>
             )}
           </div>
+
+          <GestorPrecios precios={preciosMayoreo} setPrecios={setPreciosMayoreo} />
 
           <div className="flex gap-3 pt-1">
             <button

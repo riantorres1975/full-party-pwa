@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { obtenerPrecioAplicable } from '../utils/precios';
 
 const STORAGE_KEY = 'carritoPWA';
 
@@ -97,7 +98,10 @@ export function useCarrito() {
   const limpiarCarrito = vaciarCarrito;
 
   // ── Derivados ──────────────────────────────────────────────────────────────
-  const total        = items.reduce((acc, i) => acc + i.precio * i.cantidad, 0);
+  const total = items.reduce((acc, i) => {
+    const precioAplicable = obtenerPrecioAplicable(i, i.cantidad);
+    return acc + (precioAplicable * i.cantidad);
+  }, 0);
   const cantidadTotal = items.reduce((acc, i) => acc + i.cantidad, 0);
 
   const getCantidad = useCallback(
