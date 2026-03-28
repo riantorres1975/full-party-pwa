@@ -21,6 +21,7 @@ export default function App() {
   const [carritoAbierto,  setCarritoAbierto]  = useState(false);
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
   const [rastreoAbierto,  setRastreoAbierto]  = useState(false);
+  const [mostrarIntro, setMostrarIntro] = useState(false);
 
   const [filtros, setFiltros] = useState({
     categorias: [],
@@ -31,6 +32,19 @@ export default function App() {
   const { items, total, cantidadTotal,
           agregarItem, reducirItem, eliminarItem, limpiarCarrito, getCantidad,
   } = useCarrito();
+
+  useEffect(() => {
+    const yaVioIntro = sessionStorage.getItem('fp_intro_v1') === '1';
+    if (yaVioIntro) return;
+
+    setMostrarIntro(true);
+    const t = setTimeout(() => {
+      setMostrarIntro(false);
+      sessionStorage.setItem('fp_intro_v1', '1');
+    }, 1850);
+
+    return () => clearTimeout(t);
+  }, []);
 
   // ── Lógica de filtros ──────────────────────────────────────────────────────
   const toggleFiltro = (dimension, valor) => {
@@ -79,6 +93,17 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-cream lg:h-screen lg:overflow-hidden">
+      {mostrarIntro && (
+        <div className="fp-intro-overlay">
+          <div className="fp-intro-glow" />
+          <div className="fp-intro-card">
+            <img src="/icons/icon-512.png" alt="Full Party" className="fp-intro-logo" />
+            <h2 className="fp-intro-title">Full PartyApp</h2>
+            <p className="fp-intro-subtitle">Catalogo digital para tu fiesta</p>
+          </div>
+        </div>
+      )}
+
       <header className="sticky top-0 z-50 w-full bg-[#fbf7f3]/90 backdrop-blur-md shadow-sm border-b border-gray-100 pb-2">
         <Header
           cantidadTotal={cantidadTotal}
