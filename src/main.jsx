@@ -6,7 +6,33 @@ import './index.css';
 // Registrar Service Worker (PWA)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then((registration) => {
+        const avisarUpdate = () => {
+          window.dispatchEvent(new Event('fp-sw-update'));
+        };
+
+        if (registration.waiting) {
+          avisarUpdate();
+        }
+
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (!newWorker) return;
+
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              avisarUpdate();
+            }
+          });
+        });
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.location.reload();
+        });
+      })
+      .catch(() => {});
   });
 }
 

@@ -1,5 +1,5 @@
 // Service Worker — Catálogo Digital PWA
-const CACHE_NAME = 'catalogo-v1';
+const CACHE_NAME = 'catalogo-v2';
 
 // Recursos a cachear en la instalación
 const STATIC_ASSETS = [
@@ -16,6 +16,13 @@ self.addEventListener('install', (event) => {
     })
   );
   self.skipWaiting();
+});
+
+// Permite activar manualmente una nueva version desde la app
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // ── Activación: limpiar caches viejos ──────────────────────────────────────
