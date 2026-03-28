@@ -93,9 +93,10 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
   const hayDescuento = precioAplicado < precioBase;
   const subtotal = (precioAplicado * item.cantidad).toFixed(2);
   const ahorroTotal = ((precioBase - precioAplicado) * item.cantidad).toFixed(2);
-  const tachado = !modoPicking && !encontrado;
-  const pendientePicking = modoPicking && !encontrado;
-  const surtidoPicking = modoPicking && encontrado;
+  const marcado = encontrado === true;
+  const tachado = !modoPicking && encontrado === false;
+  const pendientePicking = modoPicking && !marcado;
+  const surtidoPicking = modoPicking && marcado;
 
   const claseFila = esDesktop
     ? 'flex items-center gap-2 lg:gap-3 py-1.5 lg:py-2 border-b border-purple-50 last:border-0 transition-opacity duration-150'
@@ -133,7 +134,7 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
           }}
           aria-label={encontrado ? 'Desmarcar' : 'Marcar como encontrado'}
         >
-          {encontrado && (
+          {marcado && (
             <svg viewBox="0 0 12 10" fill="none" className="w-2.5 h-2.5 lg:w-3 lg:h-3">
               <path d="M1 5l3.5 3.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -208,18 +209,25 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, esD
   const [articulosSurtidos, setArticulosSurtidos] = useState(() =>
     items.map(i => ({
       ...i,
-      encontrado: typeof i.encontrado === 'boolean' ? i.encontrado : !modoPicking ? true : false,
+      encontrado: typeof i.encontrado === 'boolean' ? i.encontrado : (modoPicking ? false : undefined),
     }))
   );
   const [guardando, setGuardando] = useState(false);
 
+  useEffect(() => {
+    if (!modoPicking) return;
+    setArticulosSurtidos(prev =>
+      prev.map(a => (typeof a.encontrado === 'boolean' ? a : { ...a, encontrado: false }))
+    );
+  }, [modoPicking, pedido?.id]);
+
   const nuevoTotal = articulosSurtidos
-    .filter(a => a.encontrado)
+    .filter(a => a.encontrado === true)
     .reduce((s, a) => s + a.precio * a.cantidad, 0);
 
   const totalOriginal  = items.reduce((s, a) => s + a.precio * a.cantidad, 0);
-  const hayFaltantes   = articulosSurtidos.some(a => !a.encontrado);
-  const todosEncontrados = articulosSurtidos.every(a => a.encontrado);
+  const hayFaltantes   = articulosSurtidos.some(a => a.encontrado === false);
+  const todosEncontrados = articulosSurtidos.every(a => a.encontrado === true);
 
   async function toggleArticulo(idx) {
     const articulo    = articulosSurtidos[idx];
