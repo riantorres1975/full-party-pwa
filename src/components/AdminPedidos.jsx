@@ -205,21 +205,22 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
 function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, esDesktop }) {
   const modoPicking = estadoPedido === 'Armando Pedido';
 
-  const [abierto,          setAbierto]          = useState(estadoPedido === 'Armando Pedido');
-  const [articulosSurtidos, setArticulosSurtidos] = useState(() =>
-    items.map(i => ({
+  const normalizarArticulos = (lista) =>
+    (lista || []).map(i => ({
       ...i,
-      encontrado: typeof i.encontrado === 'boolean' ? i.encontrado : (modoPicking ? false : undefined),
-    }))
-  );
+      encontrado:
+        typeof i.encontrado === 'boolean'
+          ? i.encontrado
+          : (modoPicking ? false : undefined),
+    }));
+
+  const [abierto,          setAbierto]          = useState(estadoPedido === 'Armando Pedido');
+  const [articulosSurtidos, setArticulosSurtidos] = useState(() => normalizarArticulos(items));
   const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
-    if (!modoPicking) return;
-    setArticulosSurtidos(prev =>
-      prev.map(a => (typeof a.encontrado === 'boolean' ? a : { ...a, encontrado: false }))
-    );
-  }, [modoPicking, pedido?.id]);
+    setArticulosSurtidos(normalizarArticulos(items));
+  }, [items, modoPicking, pedido?.id, pedido?.updated_at, pedido?.estado]);
 
   const nuevoTotal = articulosSurtidos
     .filter(a => a.encontrado === true)
