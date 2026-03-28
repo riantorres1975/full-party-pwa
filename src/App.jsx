@@ -22,6 +22,7 @@ export default function App() {
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
   const [rastreoAbierto,  setRastreoAbierto]  = useState(false);
   const [mostrarIntro, setMostrarIntro] = useState(false);
+  const [hayActualizacion, setHayActualizacion] = useState(false);
 
   const [filtros, setFiltros] = useState({
     categorias: [],
@@ -45,6 +46,26 @@ export default function App() {
 
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    const onUpdate = () => setHayActualizacion(true);
+    window.addEventListener('fp-sw-update', onUpdate);
+    return () => window.removeEventListener('fp-sw-update', onUpdate);
+  }, []);
+
+  function aplicarActualizacion() {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then((registration) => {
+        if (registration?.waiting) {
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        } else {
+          window.location.reload();
+        }
+      });
+      return;
+    }
+    window.location.reload();
+  }
 
   // ── Lógica de filtros ──────────────────────────────────────────────────────
   const toggleFiltro = (dimension, valor) => {
@@ -196,6 +217,40 @@ export default function App() {
         total={total}
         onAbrir={() => setCarritoAbierto(true)}
       />
+
+      {hayActualizacion && (
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-20 sm:bottom-6 z-[70] w-[92vw] max-w-md">
+          <div
+            className="rounded-2xl border-2 p-3 sm:p-3.5 shadow-xl backdrop-blur-sm"
+            style={{
+              background: 'rgba(255,255,255,0.96)',
+              borderColor: '#e9d5ff',
+            }}
+          >
+            <p className="font-body font-black text-sm text-ink-900">Nueva version disponible</p>
+            <p className="text-xs font-body text-ink-500 mt-0.5">
+              Actualiza para ver los ultimos cambios de Full PartyApp.
+            </p>
+            <div className="mt-2.5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setHayActualizacion(false)}
+                className="px-3 py-1.5 rounded-full text-xs font-body font-black border-2 border-purple-100 text-ink-500"
+              >
+                Luego
+              </button>
+              <button
+                type="button"
+                onClick={aplicarActualizacion}
+                className="px-3.5 py-1.5 rounded-full text-xs font-body font-black text-white"
+                style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}
+              >
+                Actualizar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <CarritoDrawer
         items={items}
