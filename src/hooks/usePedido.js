@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { obtenerPrecioAplicable } from '../utils/precios';
 
 /**
  * usePedido
@@ -19,6 +20,22 @@ export function usePedido() {
   async function guardarPedido({ nombre, telefono, tipoEntrega, direccion, total, items }) {
     setGuardando(true);
     try {
+      const detalles = items.map(i => {
+        const precioBase = Number(i.precio_base ?? i.precio) || 0;
+        const precioAplicado = Number(i.precio) || obtenerPrecioAplicable({ ...i, precio: precioBase }, i.cantidad);
+        return {
+          id: i.id,
+          nombre: i.nombre,
+          precio: precioAplicado,
+          precio_base: precioBase,
+          cantidad: i.cantidad,
+          imagen_url: i.imagen_url ?? null,
+          tamano: i.tamano ?? null,
+          precios_mayoreo: i.precios_mayoreo ?? null,
+          familia_mayoreo: i.familia_mayoreo ?? null,
+        };
+      });
+
       const { data, error } = await supabase
         .from('pedidos')
         .insert({
@@ -28,15 +45,7 @@ export function usePedido() {
           direccion:        direccion || null,
           total,
           estado:          'Por Surtir',
-          detalles_json:   items.map(i => ({
-            id:             i.id,
-            nombre:         i.nombre,
-            precio:         i.precio,
-            cantidad:       i.cantidad,
-            imagen_url:     i.imagen_url     ?? null,
-            tamano:         i.tamano         ?? null,
-            familia_mayoreo: i.familia_mayoreo ?? null,
-          })),
+          detalles_json:   detalles,
         })
         .select('folio')
         .single();

@@ -1,4 +1,5 @@
 import { SIMBOLO_MONEDA } from '../data/productos';
+import { obtenerPrecioAplicable } from '../utils/precios';
 
 // Cada tarjeta recibe un color de acento rotativo
 const ACCENT_COLORS = [
@@ -22,6 +23,9 @@ export default function ProductCard({
   const agotado    = producto.activo === false;
   const accent     = ACCENT_COLORS[index % ACCENT_COLORS.length];
   const maxStockAlcanzado = producto.stock_ilimitado === false && cantidad >= (producto.stock_actual || 0);
+  const precioBase = Number(producto.precio) || 0;
+  const precioAplicable = obtenerPrecioAplicable(producto, cantidad || 1);
+  const hayDescuento = precioAplicable < precioBase;
 
   return (
     <article
@@ -98,10 +102,21 @@ export default function ProductCard({
           </div>
 
           {/* Precio */}
-          <span className="block font-body font-black text-sm"
-                style={{ color: agotado ? '#b388e8' : accent.border }}>
-            {SIMBOLO_MONEDA}{producto.precio.toFixed(2)}
-          </span>
+          {hayDescuento && enCarrito ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-ink-300 line-through font-body font-bold">
+                {SIMBOLO_MONEDA}{precioBase.toFixed(2)}
+              </span>
+              <span className="block font-body font-black text-sm" style={{ color: '#16a34a' }}>
+                {SIMBOLO_MONEDA}{precioAplicable.toFixed(2)}
+              </span>
+            </div>
+          ) : (
+            <span className="block font-body font-black text-sm"
+                  style={{ color: agotado ? '#b388e8' : accent.border }}>
+              {SIMBOLO_MONEDA}{precioBase.toFixed(2)}
+            </span>
+          )}
         </div>
       </button>
 

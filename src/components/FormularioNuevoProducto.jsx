@@ -11,6 +11,7 @@ import {
 } from '../data/productos';
 import { insertarProducto, subirImagenProducto } from '../lib/productosAdmin';
 import SelectCategoria from './SelectCategoria';
+import GestorPrecios from './GestorPrecios';
 
 const CATEGORIA_NUEVA_ID = '__agregar_nueva__';
 const MARCA_NUEVA_ID = '__agregar_marca__';
@@ -44,6 +45,9 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
   const [stockIlimitado, setStockIlimitado] = useState(true);
   const [stockActual, setStockActual] = useState('');
   const [stockMinimo, setStockMinimo] = useState('5');
+  const [preciosMayoreo, setPreciosMayoreo] = useState([
+    { id: Date.now(), etiqueta: '1 Pieza', cantidad_minima: 1, precio: 0 },
+  ]);
 
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
@@ -79,6 +83,7 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
     setStockIlimitado(true);
     setStockActual('');
     setStockMinimo('5');
+    setPreciosMayoreo([{ id: Date.now(), etiqueta: '1 Pieza', cantidad_minima: 1, precio: 0 }]);
     if (fileRef.current) fileRef.current.value = '';
   }
 
@@ -103,6 +108,17 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
         urlFinal = await subirImagenProducto(archivo);
       }
 
+      const familiaMayoreo = JSON.stringify(
+        preciosMayoreo
+          .filter(item => item && item.id != null)
+          .map(item => ({
+            id: item.id,
+            etiqueta: String(item.etiqueta ?? '').trim(),
+            cantidad_minima: Math.max(1, Number(item.cantidad_minima) || 1),
+            precio: Math.max(0, Number(item.precio) || 0),
+          }))
+      );
+
       await insertarProducto({
         nombre,
         descripcion,
@@ -114,6 +130,7 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
         stock_ilimitado: stockIlimitado,
         stock_actual: stockActual ? Number(stockActual) : 0,
         stock_minimo: stockMinimo ? Number(stockMinimo) : 5,
+        familia_mayoreo: familiaMayoreo,
         activo: disponible,
       });
 
@@ -445,6 +462,8 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
                     </div>
                   )}
                 </div>
+
+                <GestorPrecios precios={preciosMayoreo} setPrecios={setPreciosMayoreo} />
                 
               </div>
 

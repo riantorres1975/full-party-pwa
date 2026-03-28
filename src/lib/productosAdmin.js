@@ -22,6 +22,19 @@ function randomId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
+function errorColumnaFamiliaMayoreoInexistente(error) {
+  const msg = String(error?.message || '').toLowerCase();
+  const code = String(error?.code || '').toUpperCase();
+  const sinColumnaFamilia = msg.includes('familia_mayoreo') && (msg.includes('column') || msg.includes('schema cache'));
+  return code === 'PGRST204' || sinColumnaFamilia;
+}
+
+function errorColumnaPreciosMayoreoInexistente(error) {
+  const msg = String(error?.message || '').toLowerCase();
+  const code = String(error?.code || '').toUpperCase();
+  return code === 'PGRST204' || (msg.includes('precios_mayoreo') && (msg.includes('column') || msg.includes('schema cache')));
+}
+
 /**
  * Sube un archivo al bucket de imágenes y devuelve la URL pública.
  * Requiere bucket `productos-imagenes` y políticas de Storage para usuarios autenticados.
@@ -77,6 +90,8 @@ export async function insertarProducto({
   stock_ilimitado = true,
   stock_actual = 0,
   stock_minimo = 5,
+  precios_mayoreo,
+  familia_mayoreo,
   activo = true,
 }) {
   const precioNum = typeof precio === 'string' ? parseFloat(precio.replace(',', '.')) : Number(precio);
@@ -100,7 +115,22 @@ export async function insertarProducto({
     activo,
   };
 
-  const { data, error } = await supabase.from('productos').insert(row).select().single();
+  if (Array.isArray(precios_mayoreo)) {
+    row.precios_mayoreo = precios_mayoreo;
+  } else if (typeof familia_mayoreo === 'string' && familia_mayoreo.trim()) {
+    row.familia_mayoreo = familia_mayoreo;
+  }
+
+  let { data, error } = await supabase.from('productos').insert(row).select().single();
+
+  if (error && row.familia_mayoreo && errorColumnaFamiliaMayoreoInexistente(error)) {
+    const { familia_mayoreo: _omitFamiliaMayoreo, precios_mayoreo: _omitPreciosMayoreo, ...rowSinMayoreo } = row;
+    ({ data, error } = await supabase.from('productos').insert(rowSinMayoreo).select().single());
+  }
+
+  if (error && row.precios_mayoreo && errorColumnaPreciosMayoreoInexistente(error)) {
+    throw new Error('La columna precios_mayoreo no está disponible en la API de Supabase (schema cache). Recarga el proyecto/API y vuelve a intentar.');
+  }
 
   if (error) {
     throw new Error(error.message || 'No se pudo guardar el producto.');
@@ -123,6 +153,8 @@ export async function actualizarProducto(id, {
   stock_ilimitado,
   stock_actual,
   stock_minimo,
+  precios_mayoreo,
+  familia_mayoreo,
   activo,
 }) {
   if (!id) throw new Error('Falta el id del producto.');
@@ -147,11 +179,26 @@ export async function actualizarProducto(id, {
     activo: activo !== false,
   };
 
+  if (Array.isArray(precios_mayoreo)) {
+    row.precios_mayoreo = precios_mayoreo;
+  } else if (typeof familia_mayoreo === 'string' && familia_mayoreo.trim()) {
+    row.familia_mayoreo = familia_mayoreo;
+  }
+
   // Remove keys with null if we don't want to omit them? Let's just pass them. In this case, passing null for numbers clears them. Better to ensure numbers.
   if (row.stock_actual === null) delete row.stock_actual;
   if (row.stock_minimo === null) delete row.stock_minimo;
 
-  const { data, error } = await supabase.from('productos').update(row).eq('id', id).select().single();
+  let { data, error } = await supabase.from('productos').update(row).eq('id', id).select().single();
+
+  if (error && row.familia_mayoreo && errorColumnaFamiliaMayoreoInexistente(error)) {
+    const { familia_mayoreo: _omitFamiliaMayoreo, precios_mayoreo: _omitPreciosMayoreo, ...rowSinMayoreo } = row;
+    ({ data, error } = await supabase.from('productos').update(rowSinMayoreo).eq('id', id).select().single());
+  }
+
+  if (error && row.precios_mayoreo && errorColumnaPreciosMayoreoInexistente(error)) {
+    throw new Error('La columna precios_mayoreo no está disponible en la API de Supabase (schema cache). Recarga el proyecto/API y vuelve a intentar.');
+  }
 
   if (error) {
     throw new Error(error.message || 'No se pudo actualizar el producto.');

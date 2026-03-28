@@ -52,14 +52,15 @@ catalogo-pwa/
     │
     ├── hooks/
     │   ├── useAuth.js             ← sesión de Supabase Auth (login/logout)
-    │   ├── useCarrito.js          ← carrito con persistencia en localStorage
+    │   ├── useCarrito.js          ← carrito con persistencia en localStorage + total dinámico mayoreo
     │   ├── useInfiniteScroll.js   ← IntersectionObserver para carga progresiva
-    │   ├── usePedido.js           ← insert y búsqueda de pedidos (guarda imagen, tamaño y familia_mayoreo)
+    │   ├── usePedido.js           ← insert y búsqueda de pedidos (guarda precio aplicado por línea)
     │   ├── useProductos.js        ← fetch de productos desde Supabase
     │   └── usePWA.js              ← prompt de instalación PWA
     │
     ├── utils/
-    │   └── whatsapp.js            ← genera URL de WhatsApp con folio incluido
+    │   ├── precios.js             ← calcula precio aplicable por mayoreo
+    │   └── whatsapp.js            ← genera URL de WhatsApp con precio aplicado por artículo
     │
     └── components/
         ├── Header.jsx             ← logo + botón de carrito con badge
@@ -77,6 +78,7 @@ catalogo-pwa/
         ├── AdminCatalogo.jsx      ← módulo de catálogo (nuevo artículo + inventario)
         ├── FormularioNuevoProducto.jsx ← alta de productos con layout compacto de 2 columnas
         ├── ModalEditarProducto.jsx ← edición de productos en modal
+        ├── GestorPrecios.jsx      ← editor de precios escalonados por mayoreo
         └── SelectCategoria.jsx    ← selector reutilizable de categoría
 ```
 
@@ -177,7 +179,8 @@ export const categorias = [
 | `stock_ilimitado` | BOOLEAN | ✅ | Por defecto `true`, ignora validación de stock |
 | `stock_actual` | NUMERIC | — | La cantidad actual disponible en tienda |
 | `stock_minimo` | NUMERIC | — | Activa la alerta visual de *Stock Bajo* |
-| `familia_mayoreo` | TEXT | — | Opcional — para mostrar en la lista de artículos del admin |
+| `precios_mayoreo` | JSONB | — | Escalas por volumen: `[{ etiqueta, cantidad_minima, precio }]` |
+| `familia_mayoreo` | TEXT | — | Campo legado opcional (compatibilidad histórica) |
 | `created_at` | TIMESTAMPTZ | auto | |
 
 ### Tabla `pedidos`
@@ -192,7 +195,7 @@ export const categorias = [
 | `direccion` | TEXT | Solo cuando es envío a domicilio |
 | `total` | NUMERIC | Total del pedido en MXN |
 | `estado` | TEXT | Ver estados abajo |
-| `detalles_json` | JSONB | Array con los productos del carrito — campos: `id`, `nombre`, `precio`, `cantidad`, `imagen_url`, `tamano`, `familia_mayoreo`, `encontrado` |
+| `detalles_json` | JSONB | Array con snapshot de carrito — campos: `id`, `nombre`, `precio` (aplicado), `precio_base`, `cantidad`, `imagen_url`, `tamano`, `precios_mayoreo`, `familia_mayoreo`, `encontrado` |
 | `notificado_estado` | TEXT | Estado en que se notificó al cliente por última vez — compartido entre sesiones vía Realtime |
 | `created_at` | TIMESTAMPTZ | Auto |
 | `updated_at` | TIMESTAMPTZ | Auto via trigger |
@@ -226,7 +229,9 @@ export const categorias = [
 - **Validación en tiempo real** — nombre requerido, teléfono de exactamente 10 dígitos
 - **Formato automático de nombre** — capitaliza la primera letra de cada palabra respetando acentos (`León`, `Pérez`)
 - **Limpieza de teléfono** — elimina espacios del autocompletado del celular antes de enviar
-- **Mensaje de WhatsApp formateado** — incluye folio, cliente, productos, totales y tipo de entrega
+- **Precios escalonados por mayoreo** — cálculo automático por cantidad en carrito con `obtenerPrecioAplicable(...)`
+- **UI de descuento por volumen** en carrito — precio base tachado + precio aplicado resaltado por artículo
+- **Mensaje de WhatsApp formateado** — incluye precio aplicado y subtotal correcto por línea
 - **Botón deshabilitado** mientras el pedido se guarda en Supabase (spinner de carga)
 
 ### Sistema de pedidos y rastreo
@@ -249,13 +254,15 @@ export const categorias = [
   - `DELETE` → la tarjeta desaparece
 - **Lista de artículos expandible** — acordeón en cada tarjeta con miniatura, nombre, tamaño, familia de mayoreo, cantidad y precio. El color del acordeón se adapta al estado del pedido
 - **Picking dinámico** — cuando el pedido está en "Armando Pedido" el acordeón cambia a modo surtido:
-  - Checkboxes táctiles grandes por artículo, todos marcados por defecto
-  - Al desmarcar un artículo: se tacha visualmente, imagen en escala de grises, y se actualiza `activo = false` en la tabla `productos` para marcarlo como agotado en el catálogo público en tiempo real
+  - Checkboxes táctiles grandes por artículo, iniciando en pendiente por surtir
+  - Estados visuales claros por fila: pendiente (ámbar) vs surtido (verde), sin tachado durante picking
+  - Al dejar sin marcar un artículo: se toma como faltante y se actualiza `activo = false` para reflejar agotado en catálogo público en tiempo real
   - Al volver a marcar: restaura `activo = true`
   - Panel de totales dinámico con total original, descuento por faltantes y nuevo total
   - Badge del encabezado muestra `entregados/total` cuando hay faltantes
   - Botón **"Pasar a Listo"** que en un solo `UPDATE` a Supabase: cambia el estado, guarda el total ajustado, persiste `encontrado: true/false` por artículo en `detalles_json`, y abre WhatsApp con mensaje detallado automáticamente
 - **Vista "Listo para Entrega"**: los artículos no entregados se muestran con imagen en escala de grises, nombre y precio tachados, y el panel de descuento visible para referencia
+- **Trazabilidad de descuentos**: si hubo mayoreo, el admin ve precio base tachado, precio aplicado y ahorro por línea
 - **Notificación al cliente por WhatsApp** — sincronizada entre sesiones via `notificado_estado` en Supabase:
   - Se desactiva ("✓ Cliente notificado") tras enviarlo en todas las sesiones simultáneamente
   - Se reactiva al cambiar el estado del pedido
@@ -265,6 +272,7 @@ export const categorias = [
 
 - **Alta de productos** con formulario compacto en dos columnas (core data + details/media) para capturar más rápido sin scroll interno en pantallas estándar
 - **Carga de imagen dual**: por archivo (JPG/PNG/GIF/WEBP/AVIF) o por URL externa, con vista previa local inmediata
+- **Precios por mayoreo** en formulario y edición: filas dinámicas por etiqueta/cantidad mínima/precio por pieza
 - **Gestión de Inventario**: control por unidades o stock ilimitado interactivo directamente desde el formulario
 - **Inventario administrable y visual** con búsqueda por nombre, marca, tamaño o categoría
 - **Indicadores de nivel de stock**: distintivo visual con símbolo (∞) esmeralda para stock ilimitado y etiquetas con alerta roja vibrante cuando se alcanza el stock bajo
@@ -286,6 +294,7 @@ export const categorias = [
 - Instalable en Android e iOS desde el navegador (botón "Agregar a pantalla de inicio")
 - Service Worker con estrategia **Network First** — usa cache como fallback sin conexión
 - Funciona offline mostrando los últimos datos cacheados
+- Banner de **"Nueva versión disponible"** para actualizar sin desinstalar la app
 
 ---
 
