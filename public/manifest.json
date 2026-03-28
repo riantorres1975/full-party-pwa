@@ -1,6 +1,6 @@
 {
-  "name": "Catálogo Digital",
-  "short_name": "Catálogo",
+  "name": "Full PartyApp",
+  "short_name": "Full PartyApp",
   "description": "Ordena tus productos favoritos desde tu celular",
   "start_url": "/",
   "display": "standalone",
