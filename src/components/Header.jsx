@@ -2,7 +2,20 @@ import { NOMBRE_NEGOCIO } from '../data/productos';
 import { usePWA } from '../hooks/usePWA';
 
 export default function Header({ cantidadTotal, onAbrirCarrito }) {
-  const { installPrompt, instalarApp } = usePWA();
+  const { installPrompt, mostrarGuiaIOS, instalarApp } = usePWA();
+
+  const mostrarBotonInstalar = !!installPrompt || mostrarGuiaIOS;
+
+  function manejarInstalar() {
+    if (installPrompt) {
+      instalarApp();
+      return;
+    }
+
+    if (mostrarGuiaIOS) {
+      window.alert('Para instalar en iPhone: abre Compartir y selecciona "Agregar a pantalla de inicio".');
+    }
+  }
 
   return (
     <div className="safe-top">
@@ -23,10 +36,10 @@ export default function Header({ cantidadTotal, onAbrirCarrito }) {
 
         {/* Acciones */}
         <div className="flex items-center gap-2">
-          {installPrompt && (
+          {mostrarBotonInstalar && (
             <button
-              onClick={instalarApp}
-              className="hidden sm:flex items-center gap-1.5 text-xs font-body font-bold
+              onClick={manejarInstalar}
+              className="flex items-center gap-1.5 text-xs font-body font-bold
                          text-fiesta-purple bg-ink-100 px-3 py-1.5 rounded-full
                          border-2 border-ink-200 transition-all duration-200 hover:bg-ink-200 active:scale-95"
               aria-label="Instalar app"

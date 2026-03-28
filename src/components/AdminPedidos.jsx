@@ -86,79 +86,84 @@ export function notificarCliente(pedido, articulosSurtidos = null) {
 }
 
 // ── Lista de artículos expandible + Picking dinámico ────────────────────────
-function ItemArticulo({ item, modoPicking, encontrado, onToggle }) {
+function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
   const [imgError, setImgError] = useState(false);
   const subtotal = (item.precio * item.cantidad).toFixed(2);
-  const tachado = !encontrado; // aplica en picking Y en vista de Listo para Entrega
+  const tachado = !encontrado;
+
+  const claseFila = esDesktop
+    ? 'flex items-center gap-2 lg:gap-3 py-1.5 lg:py-2 border-b border-purple-50 last:border-0 transition-opacity duration-150'
+    : 'flex gap-3 py-3 border-b border-ink-100 last:border-0 transition-opacity duration-200';
+
+  const claseMiniatura = esDesktop
+    ? 'w-9 h-9 lg:w-10 lg:h-10 rounded-lg overflow-hidden flex-shrink-0 bg-purple-50 border border-purple-100 flex items-center justify-center'
+    : 'w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-ink-50 border-2 border-ink-100 flex items-center justify-center';
+
+  const claseCheckbox = esDesktop
+    ? 'flex-shrink-0 w-5 h-5 lg:w-6 lg:h-6 rounded-md border-2 flex items-center justify-center transition-all duration-150 active:scale-90'
+    : 'flex-shrink-0 self-center w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all duration-150 active:scale-90';
+
+  const clasePrecio = esDesktop
+    ? 'text-xs font-body font-bold shrink-0'
+    : 'flex-shrink-0 text-right self-center';
 
   return (
-    <div
-      className="flex gap-3 py-3 border-b border-ink-100 last:border-0 transition-opacity duration-200"
-      style={{ opacity: tachado ? 0.45 : 1 }}
-    >
-      {/* Checkbox picking — solo visible en modo Armando Pedido */}
+    <div className={claseFila} style={{ opacity: tachado ? 0.45 : 1 }}>
       {modoPicking && (
         <button
           onClick={onToggle}
-          className="flex-shrink-0 self-center w-7 h-7 rounded-lg border-2 flex items-center
-                     justify-center transition-all duration-150 active:scale-90"
+          className={claseCheckbox}
           style={{
-            background:   encontrado ? '#22c55e' : 'white',
-            borderColor:  encontrado ? '#22c55e' : '#d1d5db',
-            boxShadow:    encontrado ? '0 2px 8px #22c55e44' : 'none',
+            background: encontrado ? '#22c55e' : 'white',
+            borderColor: encontrado ? '#22c55e' : '#d1d5db',
+            boxShadow: encontrado ? '0 2px 8px #22c55e44' : 'none',
           }}
           aria-label={encontrado ? 'Desmarcar' : 'Marcar como encontrado'}
         >
           {encontrado && (
-            <svg viewBox="0 0 12 10" fill="none" className="w-3.5 h-3.5">
-              <path d="M1 5l3.5 3.5L11 1" stroke="white" strokeWidth="2"
-                    strokeLinecap="round" strokeLinejoin="round"/>
+            <svg viewBox="0 0 12 10" fill="none" className="w-2.5 h-2.5 lg:w-3 lg:h-3">
+              <path d="M1 5l3.5 3.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           )}
         </button>
       )}
 
-      {/* Miniatura */}
-      <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-ink-50
-                      border-2 border-ink-100 flex items-center justify-center">
+      <div className={claseMiniatura}>
         {item.imagen_url && !imgError ? (
-          <img src={item.imagen_url} alt={item.nombre} loading="lazy"
-               onError={() => setImgError(true)}
-               className="w-full h-full object-cover object-center"
-               style={{ filter: tachado ? 'grayscale(1)' : 'none' }} />
+          <img src={item.imagen_url} alt={item.nombre} loading="lazy" onError={() => setImgError(true)}
+               className="w-full h-full object-cover" style={{ filter: tachado ? 'grayscale(1)' : 'none' }} />
         ) : (
-          <Package size={20} className="text-ink-300" />
+          <Package size={esDesktop ? 14 : 20} className="text-purple-300" />
         )}
       </div>
 
-      {/* Detalles */}
       <div className="flex-1 min-w-0">
-        <p className={`text-xs font-body font-black leading-snug line-clamp-2
-                       ${tachado ? 'line-through text-ink-300' : 'text-ink-800'}`}>
+        <p className={`text-xs font-body font-bold leading-snug line-clamp-1 ${tachado ? 'line-through text-ink-300' : 'text-ink-800'}`}>
           {item.nombre}
         </p>
-        {item.tamano && (
+        {esDesktop && (
+          <p className="text-[10px] font-body text-ink-400">Cant: {item.cantidad}</p>
+        )}
+        {!esDesktop && item.tamano && (
           <p className="text-[11px] font-body text-ink-400 mt-0.5">Tamaño: {item.tamano}</p>
         )}
-        {item.familia_mayoreo && (
+        {!esDesktop && item.familia_mayoreo && (
           <p className="text-[11px] font-body text-ink-400">Mayoreo: {item.familia_mayoreo}</p>
         )}
-        <p className="text-[11px] font-body text-ink-400">Cantidad: {item.cantidad}</p>
+        {!esDesktop && <p className="text-[11px] font-body text-ink-400">Cantidad: {item.cantidad}</p>}
       </div>
 
-      {/* Precio */}
-      <div className="flex-shrink-0 text-right self-center">
-        <p className={`text-sm font-body font-black
-                       ${tachado ? 'line-through text-ink-300' : 'text-ink-800'}`}>
+      <div className={clasePrecio}>
+        <p className={tachado ? 'line-through text-ink-300' : 'text-ink-800'}>
           {SIMBOLO_MONEDA}{subtotal}
         </p>
-        <p className="text-[10px] font-body text-ink-400">{SIMBOLO_MONEDA}{item.precio.toFixed(2)} c/u</p>
+        {!esDesktop && <p className="text-[10px] font-body text-ink-400">{SIMBOLO_MONEDA}{item.precio.toFixed(2)} c/u</p>}
       </div>
     </div>
   );
 }
 
-function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo }) {
+function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, esDesktop }) {
   const [abierto,          setAbierto]          = useState(estadoPedido === 'Armando Pedido');
   const [articulosSurtidos, setArticulosSurtidos] = useState(() =>
     items.map(i => ({ ...i, encontrado: i.encontrado ?? true }))
@@ -299,8 +304,8 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo }) {
 
       {/* Contenido */}
       {abierto && (
-        <div className="bg-white animate-fade-in">
-          <div className="px-3">
+        <div className={`bg-white animate-fade-in ${esDesktop ? 'px-2 lg:px-3' : 'px-3'}`}>
+          <div>
             {articulosSurtidos.map((item, i) => (
               <ItemArticulo
                 key={i}
@@ -308,13 +313,14 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo }) {
                 modoPicking={modoPicking}
                 encontrado={item.encontrado}
                 onToggle={() => toggleArticulo(i)}
+                esDesktop={esDesktop}
               />
             ))}
           </div>
 
           {/* Panel resumen — en picking activo O si hay faltantes en Listo */}
           {(modoPicking || (estadoPedido === 'Listo para Entrega' && hayFaltantes)) && (
-            <div className="mx-3 mb-3 mt-1 rounded-xl p-3 space-y-2"
+            <div className={`rounded-xl p-3 space-y-2 ${esDesktop ? 'mx-2 mt-2 mb-2' : 'mx-3 mb-3 mt-1'}`}
                  style={{ background: '#f8f4ff', border: '2px solid #e0c4f8' }}>
 
               {/* Totales */}
@@ -419,14 +425,33 @@ function TarjetaPedidoCompacta({ pedido, seleccionado, onClick }) {
 }
 
 // ── Tarjeta de un pedido ─────────────────────────────────────────────────────
-function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onNotificar, onPickingListo }) {
+function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onNotificar, onPickingListo, esDesktop }) {
   const meta = ESTADO_META[pedido.estado] ?? ESTADO_META['Por Surtir'];
   const fecha    = new Date(pedido.created_at).toLocaleDateString('es-MX', {
     day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
   });
   const esActualizando = actualizando === pedido.id;
-  // Notificado = el estado guardado en BD coincide con el estado actual
   const yaNotificado = pedido.notificado_estado === pedido.estado;
+
+  const claseHeader = esDesktop
+    ? 'flex items-center justify-between gap-3 pb-3 mb-3 border-b border-purple-100'
+    : 'flex items-start justify-between gap-2 mb-3';
+
+  const claseInfoCliente = esDesktop
+    ? 'pb-2 mb-2 border-b border-purple-50'
+    : 'space-y-1 mb-3 pb-3 border-b border-ink-100';
+
+  const claseTotal = esDesktop
+    ? 'flex items-center justify-end gap-3 pb-3 border-b border-purple-50'
+    : 'flex items-center justify-between mb-3';
+
+  const claseBotones = esDesktop
+    ? 'flex flex-wrap items-center justify-end gap-2'
+    : 'grid grid-cols-3 gap-1.5';
+
+  const claseBotonEstado = esDesktop
+    ? 'py-1.5 px-3 min-w-[142px] rounded-lg text-xs font-body font-bold whitespace-nowrap transition-all duration-200 active:scale-95 disabled:cursor-default'
+    : 'py-1.5 px-2 rounded-xl text-[11px] font-body font-black transition-all duration-200 active:scale-95 disabled:cursor-default';
 
   return (
     <div
@@ -438,10 +463,10 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
       }}
     >
       {/* Header */}
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div>
-          <span className="font-display text-base text-ink-900">{pedido.folio}</span>
-          <p className="text-[11px] font-body text-ink-400 mt-0.5">{fecha}</p>
+      <div className={claseHeader}>
+        <div className="flex items-center gap-3">
+          <span className={`font-display text-ink-900 ${esDesktop ? 'text-sm' : 'text-base'}`}>{pedido.folio}</span>
+          {!esDesktop && <p className="text-[11px] font-body text-ink-400 mt-0.5">{fecha}</p>}
         </div>
         <span
           className="text-[11px] font-body font-black px-2.5 py-1 rounded-full flex-shrink-0"
@@ -452,7 +477,7 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
       </div>
 
       {/* Info cliente */}
-      <div className="space-y-1 mb-3 pb-3 border-b border-ink-100">
+      <div className={claseInfoCliente}>
         <p className="text-sm font-body font-bold text-ink-800">{pedido.cliente_nombre}</p>
         <p className="text-xs font-body text-ink-400">📞 {pedido.cliente_telefono}</p>
         <p className="text-xs font-body text-ink-400">
@@ -471,26 +496,27 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
           estadoPedido={pedido.estado}
           pedido={pedido}
           onPickingListo={onPickingListo}
+          esDesktop={esDesktop}
         />
       )}
 
       {/* Total */}
-      <div className="flex items-center justify-between mb-3">
+      <div className={claseTotal}>
         <span className="text-xs font-body text-ink-400 font-bold">Total</span>
-        <span className="font-body font-black text-base" style={{ color: meta.color }}>
+        <span className={`font-body font-black ${esDesktop ? 'text-lg' : 'text-base'}`} style={{ color: meta.color }}>
           {SIMBOLO_MONEDA}{Number(pedido.total).toFixed(2)}
         </span>
       </div>
 
       {/* Selector de estado */}
-      <div className="relative">
+      <div className="relative mb-3">
         {esActualizando && (
           <div className="absolute inset-0 flex items-center justify-center z-10 rounded-xl"
                style={{ background: 'rgba(255,255,255,0.8)' }}>
             <div className="w-4 h-4 rounded-full border-2 border-ink-200 border-t-ink-600 animate-spin" />
           </div>
         )}
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className={claseBotones}>
           {ESTADOS.map(estado => {
             const m       = ESTADO_META[estado];
             const activo  = pedido.estado === estado;
@@ -499,9 +525,7 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
                 key={estado}
                 onClick={() => !activo && onCambiarEstado(pedido.id, estado)}
                 disabled={activo || esActualizando}
-                className="py-1.5 px-2 rounded-xl text-[11px] font-body font-black
-                           transition-all duration-200 active:scale-95
-                           disabled:cursor-default"
+                className={claseBotonEstado}
                 style={activo
                   ? { background: m.color, color: 'white', boxShadow: `0 2px 8px ${m.color}55` }
                   : { background: m.bg, color: m.color }
@@ -518,13 +542,11 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
       <button
         onClick={() => !yaNotificado && !notificando && onNotificar(pedido)}
         disabled={yaNotificado || notificando}
-        className="mt-3 w-full flex items-center justify-center gap-2
-                   py-2.5 rounded-xl text-sm font-body font-black text-white
-                   transition-all duration-200 active:scale-95 disabled:cursor-not-allowed"
+        className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-body font-black text-white
+                   transition-all duration-200 active:scale-95 disabled:cursor-not-allowed ${esDesktop ? 'w-[220px] ml-auto' : 'w-full'}`}
         style={yaNotificado
           ? { background: '#d1fae5', color: '#6ee7b7', boxShadow: 'none' }
-          : { background: 'linear-gradient(135deg, #25D366, #1db954)',
-              boxShadow: '0 3px 12px #25D36633' }
+          : { background: 'linear-gradient(135deg, #25D366, #1db954)', boxShadow: '0 3px 12px #25D36633' }
         }
       >
         {notificando
@@ -852,6 +874,7 @@ export default function AdminPedidos({ user, onSignOut }) {
                           p.id === pedidoActualizado.id ? pedidoActualizado : p
                         ))
                       }
+                      esDesktop={false}
                     />
                   ))}
                 </div>
@@ -896,6 +919,7 @@ export default function AdminPedidos({ user, onSignOut }) {
                               p.id === pedidoActualizado.id ? pedidoActualizado : p
                             ))
                           }
+                          esDesktop={true}
                         />
                       ) : (
                         <div className="h-full min-h-[360px] flex flex-col items-center justify-center text-center">

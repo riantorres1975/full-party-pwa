@@ -7,12 +7,16 @@ import { useState, useEffect } from 'react';
 export function usePWA() {
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [esIOS, setEsIOS] = useState(false);
 
   useEffect(() => {
-    // Detectar si ya está instalada
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (standalone) {
       setIsInstalled(true);
     }
+
+    const ua = window.navigator.userAgent || '';
+    setEsIOS(/iPad|iPhone|iPod/.test(ua));
 
     const handler = (e) => {
       e.preventDefault();
@@ -21,12 +25,17 @@ export function usePWA() {
 
     window.addEventListener('beforeinstallprompt', handler);
 
-    window.addEventListener('appinstalled', () => {
+    const onInstalled = () => {
       setIsInstalled(true);
       setInstallPrompt(null);
-    });
+    };
 
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    window.addEventListener('appinstalled', onInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('appinstalled', onInstalled);
+    };
   }, []);
 
   const instalarApp = async () => {
@@ -37,5 +46,7 @@ export function usePWA() {
     }
   };
 
-  return { installPrompt, isInstalled, instalarApp };
+  const mostrarGuiaIOS = esIOS && !isInstalled && !installPrompt;
+
+  return { installPrompt, isInstalled, mostrarGuiaIOS, instalarApp };
 }
