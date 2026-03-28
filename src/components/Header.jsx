@@ -22,7 +22,11 @@ export default function Header({ cantidadTotal, onAbrirCarrito }) {
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
         {/* Logo / Nombre */}
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-2xl animate-float">🎉</span>
+          <img
+            src="/icons/icon-192.png"
+            alt="Logo Full Party"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border border-purple-100 shadow-sm"
+          />
           <div className="min-w-0">
             <h1 className="font-display text-xl sm:text-2xl leading-tight whitespace-nowrap"
                 style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7, #00d4ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
