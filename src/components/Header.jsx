@@ -19,12 +19,12 @@ export default function Header({ cantidadTotal, onAbrirCarrito }) {
 
   return (
     <div className="safe-top">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
         {/* Logo / Nombre */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <span className="text-2xl animate-float">🎉</span>
-          <div>
-            <h1 className="font-display text-2xl leading-tight"
+          <div className="min-w-0">
+            <h1 className="font-display text-xl sm:text-2xl leading-tight whitespace-nowrap"
                 style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7, #00d4ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               {NOMBRE_NEGOCIO}
             </h1>
@@ -35,12 +35,12 @@ export default function Header({ cantidadTotal, onAbrirCarrito }) {
         </div>
 
         {/* Acciones */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {mostrarBotonInstalar && (
             <button
               onClick={manejarInstalar}
               className="flex items-center gap-1.5 text-xs font-body font-bold
-                         text-fiesta-purple bg-ink-100 px-3 py-1.5 rounded-full
+                         text-fiesta-purple bg-ink-100 px-2 sm:px-3 py-1.5 rounded-full
                          border-2 border-ink-200 transition-all duration-200 hover:bg-ink-200 active:scale-95"
               aria-label="Instalar app"
             >
@@ -48,7 +48,7 @@ export default function Header({ cantidadTotal, onAbrirCarrito }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
                   d="M12 18.5l-6-6m6 6l6-6m-6 6V3" />
               </svg>
-              Instalar
+              <span className="hidden sm:inline">Instalar</span>
             </button>
           )}
 
