@@ -84,7 +84,7 @@ export default function App() {
     setFiltros({ categorias: [], marcas: [], tamanios: [] });
 
   const productosFiltrados = useMemo(() => {
-    return productos.filter(p => {
+    const filtrados = productos.filter(p => {
       const texto = busqueda.toLowerCase();
       const coincideTexto = !busqueda ||
         p.nombre.toLowerCase().includes(texto) ||
@@ -100,6 +100,13 @@ export default function App() {
         filtros.tamanios.length === 0 || (p.tamano && filtros.tamanios.includes(p.tamano));
 
       return coincideTexto && coincideCategoria && coincideMarca && coincideTamano;
+    });
+
+    return [...filtrados].sort((a, b) => {
+      const aNuevo = a.es_nuevo === true ? 1 : 0;
+      const bNuevo = b.es_nuevo === true ? 1 : 0;
+      if (aNuevo !== bNuevo) return bNuevo - aNuevo;
+      return String(a.nombre || '').localeCompare(String(b.nombre || ''));
     });
   }, [productos, busqueda, filtros]);
 
