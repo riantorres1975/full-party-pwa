@@ -192,17 +192,17 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 animate-fade-in"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
       style={{ background: 'rgba(26, 7, 51, 0.55)' }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-editar-titulo"
     >
       <div
-        className="bg-white rounded-2xl sm:rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto border-2 border-purple-100 shadow-2xl"
+        className="bg-white rounded-t-2xl sm:rounded-3xl w-full max-w-lg h-[100dvh] sm:h-auto sm:max-h-[92vh] overflow-y-auto border-2 border-purple-100 shadow-2xl"
         style={{ boxShadow: '0 24px 60px rgba(26, 7, 51, 0.25)' }}
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-ink-100 bg-white rounded-t-2xl sm:rounded-t-3xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-ink-100 bg-white rounded-t-2xl sm:rounded-t-3xl pt-[max(env(safe-area-inset-top),0.75rem)]">
           <h2 id="modal-editar-titulo" className="font-display text-base text-ink-900 pl-1">
             Editar artículo
           </h2>
@@ -216,7 +216,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 pb-[max(env(safe-area-inset-bottom),1.25rem)]">
           <div>
             <label className="block text-xs font-body font-black text-ink-600 mb-1.5 pl-1">
               Nombre del producto
