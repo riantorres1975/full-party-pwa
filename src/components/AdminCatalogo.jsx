@@ -73,7 +73,7 @@ export default function AdminCatalogo() {
   const [cargando, setCargando] = useState(true);
   const [errorLista, setErrorLista] = useState('');
   const [busqueda, setBusqueda] = useState('');
-  const [verStockBajo, setVerStockBajo] = useState(false);
+  const [filtroActivo, setFiltroActivo] = useState('todos');
   const [editando, setEditando] = useState(null);
   const [toggleId, setToggleId] = useState(null);
   const [eliminandoId, setEliminandoId] = useState(null);
@@ -111,8 +111,8 @@ export default function AdminCatalogo() {
 
   const filtrados = useMemo(() => {
     let lista = productos;
-    
-    if (verStockBajo) {
+
+    if (filtroActivo === 'stock-bajo') {
       lista = productosEnAlerta;
     }
 
@@ -126,7 +126,7 @@ export default function AdminCatalogo() {
       const c = (p.categoria || '').toLowerCase();
       return n.includes(q) || m.includes(q) || t.includes(q) || c.includes(q);
     });
-  }, [productos, busqueda, verStockBajo, productosEnAlerta]);
+  }, [productos, busqueda, filtroActivo, productosEnAlerta]);
 
   async function handleToggleDisponibilidad(p) {
     const siguiente = !p.activo;
@@ -194,20 +194,6 @@ export default function AdminCatalogo() {
 
         {pestana === 'inventario' && (
           <div className="animate-fade-in flex flex-col gap-4 min-h-0">
-            {productosEnAlerta.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setVerStockBajo(!verStockBajo)}
-                className={`self-start flex items-center gap-2 px-4 py-2.5 rounded-xl font-body font-bold text-sm transition-all shadow-sm
-                  ${verStockBajo 
-                    ? 'bg-red-500 text-white border-2 border-transparent' 
-                    : 'bg-red-50 text-red-600 border-2 border-red-200 hover:bg-red-100'}`}
-              >
-                <AlertTriangle size={18} />
-                {productosEnAlerta.length} {productosEnAlerta.length === 1 ? 'Artículo con' : 'Artículos con'} Stock Bajo
-              </button>
-            )}
-
             <div className="relative shrink-0">
               <Search
                 size={18}
@@ -221,7 +207,32 @@ export default function AdminCatalogo() {
                 className="w-full bg-white rounded-2xl pl-12 pr-4 py-3 text-sm font-body font-semibold
                            text-ink-900 placeholder:text-ink-300 outline-none border-2 border-ink-200
                            focus:border-fiesta-magenta transition-colors"
-              />
+                />
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto pb-4">
+              <button
+                type="button"
+                onClick={() => setFiltroActivo('todos')}
+                className="flex-shrink-0 px-4 py-2 rounded-full text-xs font-body font-black border-2 transition-colors"
+                style={filtroActivo === 'todos'
+                  ? { background: '#6b35b8', color: 'white', borderColor: '#6b35b8' }
+                  : { background: '#f3f4f6', color: '#6b7280', borderColor: '#e5e7eb' }}
+              >
+                Todos
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFiltroActivo('stock-bajo')}
+                className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-body font-black border-2 transition-colors"
+                style={filtroActivo === 'stock-bajo'
+                  ? { background: '#fef2f2', color: '#b91c1c', borderColor: '#fca5a5' }
+                  : { background: 'white', color: '#dc2626', borderColor: '#fecaca' }}
+              >
+                <span className="w-2 h-2 rounded-full bg-red-500" />
+                Stock Bajo ({productosEnAlerta.length})
+              </button>
             </div>
 
             {cargando && (
@@ -257,7 +268,7 @@ export default function AdminCatalogo() {
               <div
                 className="space-y-3 overflow-y-auto overscroll-y-contain min-h-0 pr-1 -mr-0.5
                            [scrollbar-width:thin] [scrollbar-color:rgba(107,53,184,0.35)_transparent]
-                           max-h-[calc(100dvh-15.5rem)] sm:max-h-[calc(100dvh-13rem)]"
+                           max-h-[calc(100dvh-15.5rem)] sm:max-h-[calc(100dvh-13rem)] pb-24"
               >
                 {filtrados.map(p => (
                   <div
@@ -315,8 +326,8 @@ export default function AdminCatalogo() {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 sm:justify-end sm:flex-shrink-0 border-t sm:border-t-0 border-ink-100 pt-3 sm:pt-0">
-                      <div className="flex items-center gap-2">
+                    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-4 sm:justify-end sm:flex-shrink-0 w-full sm:w-auto border-t sm:border-t-0 border-ink-100 pt-3 sm:pt-0">
+                      <div className="col-span-2 sm:col-span-1 flex items-center gap-2">
                         <span className="text-[11px] font-body font-bold text-ink-400 whitespace-nowrap">
                           Disponible
                         </span>
@@ -326,11 +337,11 @@ export default function AdminCatalogo() {
                           onToggle={() => handleToggleDisponibilidad(p)}
                         />
                       </div>
-                      <div className="flex items-center gap-2 flex-1 sm:flex-initial justify-end">
+                      <div className="col-span-2 sm:col-span-1 flex items-center gap-2 justify-end sm:justify-end">
                         <button
                           type="button"
                           onClick={() => setEditando(p)}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-body font-black
+                          className="inline-flex items-center justify-center gap-1.5 px-3 py-2 min-w-[102px] rounded-xl text-xs font-body font-black
                                      text-white transition-all active:scale-95"
                           style={{
                             background: 'linear-gradient(135deg, #8b5cf6, #6b35b8)',
@@ -344,7 +355,7 @@ export default function AdminCatalogo() {
                           type="button"
                           onClick={() => handleEliminar(p)}
                           disabled={eliminandoId === p.id}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-body font-black
+                          className="inline-flex items-center justify-center gap-1.5 px-3 py-2 min-w-[102px] rounded-xl text-xs font-body font-black
                                      text-rose-700 transition-all active:scale-95 disabled:opacity-50"
                           style={{
                             background: '#fff1f2',
