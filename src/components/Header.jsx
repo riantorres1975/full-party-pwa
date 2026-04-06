@@ -22,11 +22,24 @@ export default function Header({ cantidadTotal, onAbrirCarrito }) {
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
         {/* Logo / Nombre */}
         <div className="flex items-center gap-2 min-w-0">
-          <img
-            src="/icons/icon-192.png"
-            alt="Logo Full Party"
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border border-purple-100 shadow-sm"
-          />
+          <span className="fp-header-balloon-wrap" aria-hidden>
+            <svg viewBox="0 0 64 64" className="fp-header-balloon" role="img" aria-label="Globo">
+              <defs>
+                <linearGradient id="fpBalloonFill" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#ff5a5a" />
+                  <stop offset="100%" stopColor="#e11d48" />
+                </linearGradient>
+                <linearGradient id="fpBalloonKnot" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#f43f5e" />
+                  <stop offset="100%" stopColor="#be123c" />
+                </linearGradient>
+              </defs>
+              <ellipse cx="31" cy="24" rx="18" ry="20" fill="url(#fpBalloonFill)" />
+              <ellipse cx="24" cy="18" rx="5" ry="7" fill="rgba(255,255,255,0.3)" />
+              <path d="M28 43l3 5 5-4-4-2z" fill="url(#fpBalloonKnot)" />
+              <path d="M31 48c5 4 1 8 6 11" stroke="#be123c" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            </svg>
+          </span>
           <div className="min-w-0">
             <h1 className="font-display text-xl sm:text-2xl leading-tight whitespace-nowrap"
                 style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7, #00d4ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
