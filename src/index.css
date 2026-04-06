@@ -88,6 +88,49 @@ body::before {
 .safe-top    { padding-top:    env(safe-area-inset-top,    0px); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
 
+/* Globo animado en header */
+.fp-header-balloon-wrap {
+  width: 2.1rem;
+  height: 2.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  animation: fpBalloonSway 2.6s ease-in-out infinite;
+  transform-origin: 50% 90%;
+}
+
+.fp-header-balloon {
+  width: 1.65rem;
+  height: 1.65rem;
+  animation: fpBalloonFloat 2.3s ease-in-out infinite;
+}
+
+@media (min-width: 640px) {
+  .fp-header-balloon-wrap {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+  .fp-header-balloon {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+@keyframes fpBalloonFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes fpBalloonSway {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-4deg); }
+  75% { transform: rotate(4deg); }
+}
+
 /* Intro animada al iniciar la app */
 .fp-intro-overlay {
   position: fixed;
