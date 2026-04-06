@@ -9,6 +9,31 @@ function generarIdPrecio() {
 
 export default function GestorPrecios({ precios, setPrecios }) {
   const listaPrecios = Array.isArray(precios) ? precios : [];
+  const primeraFila = listaPrecios[0] ?? null;
+  const primeraCompleta = !!primeraFila &&
+    String(primeraFila.etiqueta ?? '').trim().length > 0 &&
+    Number(primeraFila.cantidad_minima) > 0 &&
+    Number(primeraFila.precio) > 0;
+
+  const normalizarEntero = (valor) => {
+    if (valor === '') return '';
+    const limpio = String(valor ?? '').replace(/\D+/g, '');
+    if (!limpio) return '';
+    return Number(limpio.replace(/^0+(?=\d)/, ''));
+  };
+
+  const normalizarDecimal = (valor) => {
+    if (valor === '') return '';
+    const base = String(valor ?? '').replace(',', '.').replace(/[^\d.]/g, '');
+    if (!base) return '';
+
+    const [enteroRaw = '0', ...decParts] = base.split('.');
+    const entero = enteroRaw.replace(/^0+(?=\d)/, '') || '0';
+    const decimal = decParts.join('');
+    const compuesto = decimal ? `${entero}.${decimal}` : entero;
+    const num = Number(compuesto);
+    return Number.isFinite(num) && num >= 0 ? num : '';
+  };
 
   const handleChangePrecio = (id, campo, valor) => {
     setPrecios(prev =>
@@ -16,11 +41,11 @@ export default function GestorPrecios({ precios, setPrecios }) {
         if (item.id !== id) return item;
 
         if (campo === 'cantidad_minima') {
-          return { ...item, cantidad_minima: valor === '' ? 0 : Math.max(0, Number(valor)) };
+          return { ...item, cantidad_minima: normalizarEntero(valor) };
         }
 
         if (campo === 'precio') {
-          return { ...item, precio: valor === '' ? 0 : Math.max(0, Number(valor)) };
+          return { ...item, precio: normalizarDecimal(valor) };
         }
 
         return { ...item, [campo]: valor };
@@ -29,13 +54,14 @@ export default function GestorPrecios({ precios, setPrecios }) {
   };
 
   const agregarPrecioMayoreo = () => {
+    if (!primeraCompleta) return;
     setPrecios(prev => [
       ...prev,
       {
         id: generarIdPrecio(),
         etiqueta: '',
-        cantidad_minima: 1,
-        precio: 0,
+        cantidad_minima: '',
+        precio: '',
       },
     ]);
   };
@@ -74,7 +100,7 @@ export default function GestorPrecios({ precios, setPrecios }) {
                 onChange={e => handleChangePrecio(item.id, 'etiqueta', e.target.value)}
                 placeholder="Ej. Caja x12"
                 maxLength={80}
-                className="w-full bg-gray-50 border border-transparent rounded-lg px-3 py-2.5 text-sm font-medium text-gray-800 focus:bg-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all"
+                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all"
               />
             </div>
 
@@ -88,7 +114,9 @@ export default function GestorPrecios({ precios, setPrecios }) {
                 step="1"
                 value={item.cantidad_minima}
                 onChange={e => handleChangePrecio(item.id, 'cantidad_minima', e.target.value)}
-                className="w-full bg-gray-50 border border-transparent rounded-lg px-3 py-2.5 text-sm font-medium text-gray-800 focus:bg-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all"
+                onFocus={e => e.target.select()}
+                placeholder="Ej. 12"
+                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all"
               />
             </div>
 
@@ -103,7 +131,9 @@ export default function GestorPrecios({ precios, setPrecios }) {
                 inputMode="decimal"
                 value={item.precio}
                 onChange={e => handleChangePrecio(item.id, 'precio', e.target.value)}
-                className="w-full bg-gray-50 border border-transparent rounded-lg px-3 py-2.5 text-sm font-medium text-gray-800 focus:bg-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all"
+                onFocus={e => e.target.select()}
+                placeholder="Ej. 79.90"
+                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all"
               />
             </div>
 
@@ -123,10 +153,12 @@ export default function GestorPrecios({ precios, setPrecios }) {
       <button
         type="button"
         onClick={agregarPrecioMayoreo}
-        className="mt-4 inline-flex items-center gap-2 rounded-xl border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 px-4 py-2.5 text-sm font-bold transition-colors"
+        disabled={!primeraCompleta}
+        className="mt-4 inline-flex items-center gap-2 rounded-xl border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 px-4 py-2.5 text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-purple-50"
+        title={!primeraCompleta ? 'Completa primero la primera escala (etiqueta, cantidad y precio).' : 'Agregar otra escala de mayoreo'}
       >
         <Plus size={16} />
-        + Agregar precio de mayoreo
+        Agregar precio de mayoreo
       </button>
     </section>
   );

@@ -47,10 +47,11 @@ function parsearPreciosMayoreo(producto) {
     .filter(item => item.id != null);
 
   if (normalizados.length > 0) return normalizados;
-  return [{ id: Date.now(), etiqueta: '1 Pieza', cantidad_minima: 1, precio: 0 }];
+  return [{ id: Date.now(), etiqueta: '', cantidad_minima: '', precio: '' }];
 }
 
 export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
+  const preciosIniciales = parsearPreciosMayoreo(producto);
   const [nombre, setNombre] = useState(producto.nombre ?? '');
   const [descripcion, setDescripcion] = useState(producto.descripcion ?? '');
   const [precio, setPrecio] = useState(
@@ -64,10 +65,14 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
   const [tamano, setTamano] = useState(producto.tamano ?? '');
   const [tamanoNuevo, setTamanoNuevo] = useState('');
   const [disponible, setDisponible] = useState(producto.activo !== false);
+  const [esNuevo, setEsNuevo] = useState(producto.es_nuevo === true);
   const [stockIlimitado, setStockIlimitado] = useState(producto.stock_ilimitado !== false);
   const [stockActual, setStockActual] = useState(producto.stock_actual != null ? String(producto.stock_actual) : '');
   const [stockMinimo, setStockMinimo] = useState(producto.stock_minimo != null ? String(producto.stock_minimo) : '5');
-  const [preciosMayoreo, setPreciosMayoreo] = useState(() => parsearPreciosMayoreo(producto));
+  const [preciosMayoreo, setPreciosMayoreo] = useState(preciosIniciales);
+  const [mayoreoActivo, setMayoreoActivo] = useState(
+    preciosIniciales.some(p => Number(p?.cantidad_minima) > 1)
+  );
   const [imagenUrl, setImagenUrl] = useState(producto.imagen_url ?? '');
   const [archivo, setArchivo] = useState(null);
   const fileRef = useRef(null);
@@ -106,18 +111,48 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
         urlFinal = await subirImagenProducto(archivo);
       }
 
-      const preciosParaGuardar = (preciosMayoreo || [])
-        .map(({ id, ...rest }) => ({
-          etiqueta: String(rest.etiqueta ?? '').trim(),
-          cantidad_minima: Math.max(1, Number(rest.cantidad_minima) || 1),
-          precio: Math.max(0, Number(rest.precio) || 0),
-        }))
-        .filter(item => item.etiqueta || item.cantidad_minima || item.precio);
+      const precioBaseNum = Math.max(0, Number(precio) || 0);
+      const filasMayoreo = (preciosMayoreo || []).map((item, idx) => {
+        const etiqueta = String(item?.etiqueta ?? '').trim();
+        const cantidadMinima = Number(item?.cantidad_minima);
+        const precioEscala = Number(item?.precio);
+        return {
+          idx,
+          etiqueta,
+          cantidadMinima,
+          precioEscala,
+          vacia: !etiqueta && item?.cantidad_minima === '' && item?.precio === '',
+        };
+      });
 
-      const preciosMayoreoFinal =
-        preciosParaGuardar.length > 0
-          ? preciosParaGuardar
-          : [{ etiqueta: '1 Pieza', cantidad_minima: 1, precio: 0 }];
+      if (mayoreoActivo) {
+        if (filasMayoreo.length === 0 || filasMayoreo.every(f => f.vacia)) {
+          throw new Error('Activa mayoreo solo si capturas al menos una escala con etiqueta, cantidad y precio.');
+        }
+
+        const filaInvalida = filasMayoreo.find(f => {
+          if (f.vacia) return true;
+          return !f.etiqueta || !Number.isFinite(f.cantidadMinima) || f.cantidadMinima <= 0 || !Number.isFinite(f.precioEscala) || f.precioEscala <= 0;
+        });
+
+        if (filaInvalida) {
+          throw new Error(`Revisa la escala ${filaInvalida.idx + 1}: etiqueta obligatoria y valores mayores a 0.`);
+        }
+      }
+
+      const preciosParaGuardar = filasMayoreo
+        .filter(f => !f.vacia)
+        .map(f => ({
+          etiqueta: f.etiqueta,
+          cantidad_minima: f.cantidadMinima,
+          precio: f.precioEscala,
+        }));
+
+      const preciosMayoreoFinal = mayoreoActivo
+        ? (preciosParaGuardar.length > 0
+            ? preciosParaGuardar
+            : [{ etiqueta: '1 Pieza', cantidad_minima: 1, precio: precioBaseNum }])
+        : [{ etiqueta: '1 Pieza', cantidad_minima: 1, precio: precioBaseNum }];
 
       await actualizarProducto(producto.id, {
         nombre,
@@ -130,6 +165,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
         stock_ilimitado: stockIlimitado,
         stock_actual: stockActual ? Number(stockActual) : 0,
         stock_minimo: stockMinimo ? Number(stockMinimo) : 5,
+        es_nuevo: esNuevo,
         precios_mayoreo: preciosMayoreoFinal,
         activo: disponible,
       });
@@ -351,6 +387,22 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
             </label>
           </div>
 
+          <div className="rounded-2xl px-4 py-3 border-2 border-ink-100" style={{ background: '#faf8ff' }}>
+            <label className="flex items-start gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={esNuevo}
+                onChange={e => setEsNuevo(e.target.checked)}
+                className="mt-0.5 w-5 h-5 rounded-md border-2 border-ink-300 text-emerald-600
+                           focus:ring-2 focus:ring-fiesta-magenta focus:ring-offset-1 shrink-0"
+              />
+              <div>
+                <p className="text-sm font-body font-black text-ink-800">Marcar como Nuevo</p>
+                <p className="text-[11px] font-body text-ink-400 mt-0.5">Aparece al inicio del catálogo con badge "Nuevo".</p>
+              </div>
+            </label>
+          </div>
+
           <div
             className="rounded-2xl p-4 border-2 border-dashed border-purple-200"
             style={{ background: 'linear-gradient(180deg, #fefcff 0%, #f8f4ff 100%)' }}
@@ -449,7 +501,40 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
             )}
           </div>
 
-          <GestorPrecios precios={preciosMayoreo} setPrecios={setPreciosMayoreo} />
+          <div className="bg-slate-50/50 border border-slate-200 rounded-xl p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-body font-black text-ink-800">Precios por mayoreo</p>
+                <p className="text-xs font-body text-ink-500">Activa para usar escalas por cantidad.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={mayoreoActivo}
+                  onChange={e => {
+                    const activo = e.target.checked;
+                    setMayoreoActivo(activo);
+                    if (activo) {
+                      setPreciosMayoreo(prev => {
+                        if (!Array.isArray(prev) || prev.length === 0) {
+                          return [{ id: Date.now(), etiqueta: '', cantidad_minima: '', precio: '' }];
+                        }
+                        return prev;
+                      });
+                    }
+                  }}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-300/50 rounded-full peer peer-checked:after:translate-x-[100%] after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-pink-400" />
+              </label>
+            </div>
+
+            {mayoreoActivo && (
+              <div className="mt-4 animate-fade-in">
+                <GestorPrecios precios={preciosMayoreo} setPrecios={setPreciosMayoreo} />
+              </div>
+            )}
+          </div>
 
           <div className="flex gap-3 pt-1">
             <button

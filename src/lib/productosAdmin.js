@@ -35,6 +35,12 @@ function errorColumnaPreciosMayoreoInexistente(error) {
   return code === 'PGRST204' || (msg.includes('precios_mayoreo') && (msg.includes('column') || msg.includes('schema cache')));
 }
 
+function errorColumnaEsNuevoInexistente(error) {
+  const msg = String(error?.message || '').toLowerCase();
+  const code = String(error?.code || '').toUpperCase();
+  return code === 'PGRST204' || (msg.includes('es_nuevo') && (msg.includes('column') || msg.includes('schema cache')));
+}
+
 /**
  * Sube un archivo al bucket de imágenes y devuelve la URL pública.
  * Requiere bucket `productos-imagenes` y políticas de Storage para usuarios autenticados.
@@ -90,6 +96,7 @@ export async function insertarProducto({
   stock_ilimitado = true,
   stock_actual = 0,
   stock_minimo = 5,
+  es_nuevo = false,
   precios_mayoreo,
   familia_mayoreo,
   activo = true,
@@ -112,6 +119,7 @@ export async function insertarProducto({
     stock_ilimitado: stock_ilimitado !== false,
     stock_actual: Number(stock_actual),
     stock_minimo: Number(stock_minimo),
+    es_nuevo: es_nuevo === true,
     activo,
   };
 
@@ -130,6 +138,11 @@ export async function insertarProducto({
 
   if (error && row.precios_mayoreo && errorColumnaPreciosMayoreoInexistente(error)) {
     throw new Error('La columna precios_mayoreo no está disponible en la API de Supabase (schema cache). Recarga el proyecto/API y vuelve a intentar.');
+  }
+
+  if (error && errorColumnaEsNuevoInexistente(error)) {
+    const { es_nuevo: _omitEsNuevo, ...rowSinEsNuevo } = row;
+    ({ data, error } = await supabase.from('productos').insert(rowSinEsNuevo).select().single());
   }
 
   if (error) {
@@ -153,6 +166,7 @@ export async function actualizarProducto(id, {
   stock_ilimitado,
   stock_actual,
   stock_minimo,
+  es_nuevo,
   precios_mayoreo,
   familia_mayoreo,
   activo,
@@ -176,6 +190,7 @@ export async function actualizarProducto(id, {
     stock_ilimitado: stock_ilimitado !== false,
     stock_actual: stock_actual != null ? Number(stock_actual) : null,
     stock_minimo: stock_minimo != null ? Number(stock_minimo) : null,
+    es_nuevo: es_nuevo === true,
     activo: activo !== false,
   };
 
@@ -198,6 +213,11 @@ export async function actualizarProducto(id, {
 
   if (error && row.precios_mayoreo && errorColumnaPreciosMayoreoInexistente(error)) {
     throw new Error('La columna precios_mayoreo no está disponible en la API de Supabase (schema cache). Recarga el proyecto/API y vuelve a intentar.');
+  }
+
+  if (error && errorColumnaEsNuevoInexistente(error)) {
+    const { es_nuevo: _omitEsNuevo, ...rowSinEsNuevo } = row;
+    ({ data, error } = await supabase.from('productos').update(rowSinEsNuevo).eq('id', id).select().single());
   }
 
   if (error) {

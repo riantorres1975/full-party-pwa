@@ -88,6 +88,15 @@ export default function ProductCard({
               ×{cantidad}
             </div>
           )}
+
+          {/* Badge nuevo */}
+          {producto.es_nuevo === true && !agotado && (
+            <div className="absolute top-2.5 left-2.5 text-[10px] font-body font-black uppercase tracking-wide
+                            px-2 py-1 rounded-full border-2 border-white text-white"
+                 style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}>
+              Nuevo
+            </div>
+          )}
         </div>
 
         {/* Info */}
