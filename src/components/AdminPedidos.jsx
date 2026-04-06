@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { MessageCircle, ChevronDown, Package, LayoutGrid, ClipboardList } from 'lucide-react';
+import { MessageCircle, ChevronDown, Package, LayoutGrid, ClipboardList, Search, RefreshCw, LogOut } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { SIMBOLO_MONEDA } from '../data/productos';
 import AdminCatalogo from './AdminCatalogo';
@@ -763,124 +763,125 @@ export default function AdminPedidos({ user, onSignOut }) {
   }, [pedidosFiltrados, pedidoSeleccionadoId]);
 
   return (
-    <div className="min-h-screen overflow-x-hidden" style={{ background: '#f8f4ff' }}>
+    <div className="min-h-screen overflow-x-hidden" style={{ background: 'linear-gradient(180deg, #f7f3ff 0%, #fff8fe 55%, #fefcff 100%)' }}>
 
-      {/* ── Header admin (móvil: dos filas; sm+: una fila) ── */}
-      <header
-        className="sticky top-0 z-30 px-3 sm:px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-        style={{
-          background: 'linear-gradient(135deg, #1a0733, #3d1a6e)',
-          boxShadow: '0 2px 20px #1a073340',
-        }}
-      >
-        <div className="flex items-center justify-between gap-2 min-w-0 w-full sm:w-auto sm:flex-1">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            <span className="text-2xl shrink-0" aria-hidden>🎪</span>
-            <div className="min-w-0">
-              <h1 className="font-display text-base sm:text-lg text-white leading-tight">Panel Admin</h1>
-              <p
-                className="text-[10px] sm:text-[11px] font-body text-purple-300 truncate mt-0.5"
-                title={user?.email ?? ''}
+      {/* ── Header admin mejorado ── */}
+      <header className="sticky top-0 z-30 border-b border-purple-100/80 backdrop-blur-md" style={{ background: 'rgba(26, 7, 51, 0.92)' }}>
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-3.5 flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-2 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center shrink-0">
+                <span className="text-lg" aria-hidden>🎪</span>
+              </div>
+              <div className="min-w-0">
+                <h1 className="font-display text-base sm:text-lg text-white leading-tight">Panel Admin Full Party</h1>
+                <p className="text-[10px] sm:text-[11px] font-body text-purple-200 truncate mt-0.5" title={user?.email ?? ''}>
+                  {user?.email}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={fetchPedidos}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-body font-black text-purple-100 hover:text-white bg-white/10 hover:bg-white/15 border border-white/15 transition-colors disabled:opacity-40"
+                title="Actualizar pedidos"
+                disabled={vistaAdmin !== 'pedidos'}
               >
-                {user?.email}
-              </p>
+                <RefreshCw size={13} />
+                <span className="hidden sm:inline">Actualizar</span>
+              </button>
+              <button
+                type="button"
+                onClick={onSignOut}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-body font-black text-purple-100 hover:text-white bg-white/10 hover:bg-white/15 border border-white/15 transition-colors"
+                title="Cerrar sesión"
+              >
+                <LogOut size={13} />
+                <span className="hidden sm:inline">Salir</span>
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={fetchPedidos}
-              className="p-2 rounded-full text-purple-300 hover:text-white transition-colors"
-              title="Actualizar"
-              disabled={vistaAdmin !== 'pedidos'}
-              style={{ opacity: vistaAdmin !== 'pedidos' ? 0.35 : 1 }}
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0
-                     0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={onSignOut}
-              className="px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-body font-black
-                         text-purple-300 hover:text-white transition-colors border border-purple-700
-                         hover:border-purple-400 whitespace-nowrap"
-            >
-              Salir
-            </button>
-          </div>
-        </div>
 
-        <nav className="flex items-stretch gap-1.5 w-full sm:w-auto sm:justify-end sm:shrink-0">
-          <button
-            type="button"
-            onClick={() => setVistaAdmin('pedidos')}
-            className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-2 sm:px-2.5 py-2 sm:py-1.5
-                        rounded-xl text-[11px] font-body font-black transition-colors
-                        ${vistaAdmin === 'pedidos' ? 'bg-white/15 text-white' : 'text-purple-300 hover:text-white'}`}
-          >
-            <ClipboardList size={14} className="shrink-0" />
-            <span className="truncate">Pedidos</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setVistaAdmin('catalogo')}
-            className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-2 sm:px-2.5 py-2 sm:py-1.5
-                        rounded-xl text-[11px] font-body font-black transition-colors
-                        ${vistaAdmin === 'catalogo' ? 'bg-white/15 text-white' : 'text-purple-300 hover:text-white'}`}
-          >
-            <LayoutGrid size={14} className="shrink-0" />
-            <span className="truncate">Catálogo</span>
-          </button>
-        </nav>
+          <nav className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:max-w-xs">
+            <button
+              type="button"
+              onClick={() => setVistaAdmin('pedidos')}
+              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-body font-black transition-all ${vistaAdmin === 'pedidos' ? 'text-ink-900 bg-white shadow-sm' : 'text-purple-200 bg-white/10 hover:bg-white/20'}`}
+            >
+              <ClipboardList size={14} className="shrink-0" />
+              <span className="truncate">Pedidos</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setVistaAdmin('catalogo')}
+              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-body font-black transition-all ${vistaAdmin === 'catalogo' ? 'text-ink-900 bg-white shadow-sm' : 'text-purple-200 bg-white/10 hover:bg-white/20'}`}
+            >
+              <LayoutGrid size={14} className="shrink-0" />
+              <span className="truncate">Catálogo</span>
+            </button>
+          </nav>
+        </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-4">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-4">
 
         {vistaAdmin === 'catalogo' && <AdminCatalogo />}
 
         {vistaAdmin === 'pedidos' && (
           <>
-        {/* ── Tarjetas resumen ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[{ key: 'todos', label: 'Total', emoji: '📋', color: '#6b35b8', bg: '#f3e8ff' },
-            ...ESTADOS.map(e => ({ key: e, label: e, ...ESTADO_META[e] }))
-          ].map(({ key, label, emoji, color, bg }) => (
-            <button
-              key={key}
-              onClick={() => setFiltroEstado(key)}
-              className="rounded-2xl p-3 text-left transition-all duration-200 active:scale-95"
-              style={{
-                background: filtroEstado === key ? color : 'white',
-                border: `2px solid ${filtroEstado === key ? color : bg ?? '#f3e8ff'}`,
-                boxShadow: filtroEstado === key ? `0 4px 14px ${color}44` : 'none',
-              }}
-            >
-              <p className="text-xl mb-1">{emoji}</p>
-              <p className="font-body font-black text-xl"
-                 style={{ color: filtroEstado === key ? 'white' : color }}>
-                {contadores[key] ?? 0}
-              </p>
-              <p className="text-[11px] font-body font-bold"
-                 style={{ color: filtroEstado === key ? 'rgba(255,255,255,0.8)' : '#9ca3af' }}>
-                {label}
-              </p>
-            </button>
-          ))}
-        </div>
+        <section className="bg-white rounded-3xl border-2 border-purple-100 p-3 sm:p-4 space-y-3" style={{ boxShadow: '0 6px 24px rgba(107,53,184,0.08)' }}>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            {[{ key: 'todos', label: 'Total', emoji: '📋', color: '#6b35b8', bg: '#f3e8ff' },
+              ...ESTADOS.map(e => ({ key: e, label: e, ...ESTADO_META[e] }))
+            ].map(({ key, label, emoji, color, bg }) => (
+              <button
+                key={key}
+                onClick={() => setFiltroEstado(key)}
+                className="rounded-2xl p-2.5 sm:p-3 text-left transition-all duration-200 active:scale-95"
+                style={{
+                  background: filtroEstado === key ? color : 'white',
+                  border: `2px solid ${filtroEstado === key ? color : bg ?? '#f3e8ff'}`,
+                  boxShadow: filtroEstado === key ? `0 4px 14px ${color}44` : 'none',
+                }}
+              >
+                <p className="text-lg sm:text-xl mb-1">{emoji}</p>
+                <p className="font-body font-black text-lg sm:text-xl" style={{ color: filtroEstado === key ? 'white' : color }}>
+                  {contadores[key] ?? 0}
+                </p>
+                <p className="text-[10px] sm:text-[11px] font-body font-bold" style={{ color: filtroEstado === key ? 'rgba(255,255,255,0.82)' : '#9ca3af' }}>
+                  {label}
+                </p>
+              </button>
+            ))}
+          </div>
 
-        {/* ── Buscador ── */}
-        <input
-          type="text"
-          value={busqueda}
-          onChange={e => setBusqueda(e.target.value)}
-          placeholder="Buscar por folio, nombre o teléfono..."
-          className="w-full bg-white rounded-2xl px-4 py-3 text-sm font-body font-semibold
-                     text-ink-900 placeholder:text-ink-300 outline-none border-2
-                     border-ink-200 focus:border-fiesta-magenta transition-colors"
-        />
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-300" />
+            <input
+              type="text"
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+              placeholder="Buscar por folio, nombre o teléfono..."
+              className="w-full bg-ink-50 rounded-2xl pl-9 pr-9 py-3 text-sm font-body font-semibold
+                         text-ink-900 placeholder:text-ink-300 outline-none border-2
+                         border-ink-200 focus:border-fiesta-magenta transition-colors"
+            />
+            {busqueda && (
+              <button
+                type="button"
+                onClick={() => setBusqueda('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-300 hover:text-ink-500"
+                aria-label="Limpiar búsqueda"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </section>
 
         {/* ── Estados ── */}
         {loading && (
