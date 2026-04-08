@@ -33,10 +33,7 @@ catalogo-pwa/
 │   ├── manifest.json              ← configuración PWA (nombre, íconos, colores)
 │   └── sw.js                      ← Service Worker — estrategia Network First
 │
-├── supabase_setup.sql             ← tabla productos + índices + RLS
-├── supabase_estados_update.sql    ← migración a los 3 estados actuales
-├── supabase_notificado.sql        ← agrega/sincroniza `notificado_estado` en pedidos
-├── supabase_storage_productos.sql ← políticas de Storage para bucket `productos-imagenes`
+├── supabase_setup.sql             ← Script único de BD (Tablas, RLS, Políticas de Admin)
 │
 └── src/
     ├── main.jsx                   ← entry point + registro del Service Worker
@@ -100,20 +97,21 @@ Copia `.env.example` como `.env` y rellena con tus credenciales:
 ```env
 VITE_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_WHATSAPP_NUMBER="5214521040377"
+VITE_NOMBRE_NEGOCIO="Tu Negocio"
 ```
 
 Las credenciales están en **Supabase Dashboard → Settings → API**.
 
 ### 3. Crear las tablas en Supabase
 
-Ejecuta estos scripts en **Supabase → SQL Editor**, en orden:
+Ejecuta el script unificado en **Supabase → SQL Editor**:
 
+```text
+1. supabase_setup.sql  → Tablas, índices, y candados de seguridad (Políticas RLS rigurosas).
 ```
-1. supabase_setup.sql             → tabla productos, índices y políticas RLS
-2. supabase_estados_update.sql    → constraint con los 3 estados actuales en pedidos
-3. supabase_notificado.sql        → columna `notificado_estado` para sincronizar notificaciones
-4. supabase_storage_productos.sql → políticas de Storage para subir imágenes de producto
-```
+
+> **IMPORTANTE:** Lee el final del archivo `supabase_setup.sql` para el paso manual de asignar tu propio UUID a la tabla segura `public.admins`, lo cual te habilitará para leer pedidos completos y editar el catálogo.
 
 ### 4. Habilitar Realtime
 
@@ -139,11 +137,9 @@ npm run dev
 
 ## 🔧 Personalización del negocio
 
-El único archivo que necesitas editar para configurar la tienda es `src/data/productos.js`:
+El único archivo complementario que necesitas editar para configurar la clasificación en tu tienda es `src/data/productos.js` (El nombre de tu negocio y teléfono operan ahora en tus variables de entorno seguras `.env`):
 
 ```js
-export const NUMERO_WHATSAPP = '521XXXXXXXXXX'; // código de país + número, sin +
-export const NOMBRE_NEGOCIO  = 'Full Party Uruapan';
 export const MONEDA          = 'MXN';
 export const SIMBOLO_MONEDA  = '$';
 ```
