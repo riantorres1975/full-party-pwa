@@ -8,7 +8,7 @@ const LABELS = {
 };
 
 /**
- * BuscadorFiltros — Barra de búsqueda + botón de filtros + pills de filtros activos.
+ * BuscadorFiltros — Barra de búsqueda + botón de filtros (solo móvil) + pills de filtros activos.
  */
 export default function BuscadorFiltros({
   busqueda, setBusqueda,
@@ -23,7 +23,7 @@ export default function BuscadorFiltros({
   ];
 
   return (
-    <div className="px-4 lg:px-10 pt-4 pb-2 space-y-2.5 max-w-[1500px] mx-auto">
+    <div className="px-4 lg:px-10 pt-3 pb-2 space-y-2 max-w-[1500px] mx-auto">
 
       {/* ── Fila: input + botón filtros ─────────────────────────────────── */}
       <div className="flex gap-2">
@@ -40,12 +40,17 @@ export default function BuscadorFiltros({
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             placeholder="Buscar productos..."
-            className="w-full bg-white rounded-2xl pl-10 pr-9 py-3
-                       text-sm font-body font-semibold text-ink-900
+            className="w-full rounded-xl pl-10 pr-9 py-2.5 lg:py-2
+                       text-sm font-body font-semibold
                        placeholder:text-ink-300 outline-none transition-all duration-200"
-            style={{ border: '2px solid #e0c4f8', boxShadow: '0 2px 12px #a855f720' }}
-            onFocus={e => e.target.style.borderColor = '#ff3dac'}
-            onBlur={e  => e.target.style.borderColor = '#e0c4f8'}
+            style={{
+              border: '1px solid var(--border-soft)',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+              backgroundColor: 'var(--surface-input)',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={e => e.target.style.borderColor = '#a855f7'}
+            onBlur={e  => e.target.style.borderColor = 'var(--border-soft)'}
           />
           {busqueda && (
             <button
@@ -59,23 +64,22 @@ export default function BuscadorFiltros({
           )}
         </div>
 
-        {/* Botón filtros */}
+        {/* Botón filtros — solo en móvil */}
         <button
           onClick={onAbrirFiltros}
-          className="relative flex-shrink-0 w-12 h-12 flex items-center justify-center lg:hidden
-                     rounded-2xl bg-white transition-all duration-200 active:scale-90"
+          className="relative flex-shrink-0 w-11 h-11 flex items-center justify-center lg:hidden
+                     rounded-xl transition-all duration-200 active:scale-90"
           style={totalFiltrosActivos > 0
             ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
-                border: '2px solid transparent', boxShadow: '0 4px 14px #ff3dac44' }
-            : { border: '2px solid #e0c4f8', boxShadow: '0 2px 12px #a855f720' }
+                border: '1px solid transparent', boxShadow: '0 2px 10px #ff3dac44' }
+            : { border: '1px solid var(--border-soft)', background: 'var(--surface-card)' }
           }
           aria-label="Abrir filtros"
         >
-          {/* Ícono sliders inline (sin dependencia externa) */}
           <svg
-            className="w-5 h-5"
+            className="w-4.5 h-4.5"
             fill="none" viewBox="0 0 24 24" stroke="currentColor"
-            style={{ color: totalFiltrosActivos > 0 ? 'white' : '#8a56d4' }}
+            style={{ color: totalFiltrosActivos > 0 ? 'white' : 'var(--text-secondary)' }}
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M3 5h18M3 12h18M3 19h18" />
@@ -86,8 +90,8 @@ export default function BuscadorFiltros({
 
           {/* Badge de cantidad de filtros */}
           {totalFiltrosActivos > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center
-                             text-[10px] font-body font-black bg-fiesta-yellow text-ink-900
+            <span className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center
+                             text-[9px] font-body font-black bg-fiesta-yellow text-ink-900
                              rounded-full border-2 border-white">
               {totalFiltrosActivos}
             </span>
@@ -95,15 +99,15 @@ export default function BuscadorFiltros({
         </button>
       </div>
 
-      {/* ── Pills de filtros activos ─────────────────────────────────────── */}
+      {/* ── Pills de filtros activos (solo móvil) ─────────────────────── */}
       {pillsActivas.length > 0 && (
         <div className="flex flex-wrap gap-1.5 lg:hidden">
           {pillsActivas.map(({ dim, val, label }) => (
             <button
               key={`${dim}-${val}`}
               onClick={() => toggleFiltro(dim, val)}
-              className="flex items-center gap-1 text-xs font-body font-black
-                         text-white px-3 py-1 rounded-full
+              className="flex items-center gap-1 text-[11px] font-body font-black
+                         text-white px-2.5 py-1 rounded-lg
                          transition-all duration-150 active:scale-95"
               style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
                        boxShadow: '0 2px 8px #ff3dac33' }}

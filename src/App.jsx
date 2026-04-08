@@ -12,7 +12,7 @@ import RastreoPedido      from './components/RastreoPedido';
 import RedesSociales      from './components/RedesSociales';
 import SidebarFiltrosDesktop from './components/SidebarFiltrosDesktop';
 
-export default function App() {
+export default function App({ temaOscuro, onToggleTema }) {
   // ── Datos desde Supabase ───────────────────────────────────────────────────
   const { productos, loading, error, refetch } = useProductos();
 
@@ -120,7 +120,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-cream lg:h-screen lg:overflow-hidden">
+    <div className={`min-h-screen lg:h-screen lg:overflow-hidden transition-colors duration-300 ${temaOscuro ? 'bg-[#0f1124]' : 'bg-cream'}`}>
       {mostrarIntro && (
         <div className="fp-intro-overlay">
           <div className="fp-intro-glow" />
@@ -132,106 +132,112 @@ export default function App() {
         </div>
       )}
 
-      <header className="sticky top-0 z-50 w-full bg-[#fbf7f3]/90 backdrop-blur-md shadow-sm border-b border-gray-100 pb-2">
-        <Header
-          cantidadTotal={cantidadTotal}
-          onAbrirCarrito={() => setCarritoAbierto(true)}
-        />
-
-        <div className="pt-1">
-          <BuscadorFiltros
-            busqueda={busqueda}
-            setBusqueda={setBusqueda}
-            filtros={filtros}
-            toggleFiltro={toggleFiltro}
-            totalFiltrosActivos={totalFiltrosActivos}
-            onAbrirFiltros={() => setFiltrosAbiertos(true)}
+      <div className={temaOscuro ? 'theme-dark-catalog' : ''}>
+        <header
+          className={`sticky top-0 z-50 w-full backdrop-blur-md shadow-sm border-b pb-2 transition-colors duration-300 ${
+            temaOscuro
+              ? 'bg-[#0f1328]/86 border-[#2b2f52]'
+              : 'bg-[#fbf7f3]/90 border-gray-100'
+          }`}
+        >
+          <Header
+            cantidadTotal={cantidadTotal}
+            onAbrirCarrito={() => setCarritoAbierto(true)}
+            temaOscuro={temaOscuro}
+            onToggleTema={onToggleTema}
           />
-        </div>
-      </header>
 
-      <main className={`lg:pb-0 lg:h-[calc(100vh-148px)] lg:overflow-hidden transition-all duration-300 ${items.length > 0 ? 'pb-32' : 'pb-8'}`}>
-        <div className="max-w-[1500px] mx-auto w-full px-4 lg:px-10 h-full">
-          <div className="lg:grid lg:grid-cols-[290px_minmax(0,1fr)] lg:gap-12 lg:items-start lg:h-full">
-            <SidebarFiltrosDesktop
+          <div className="pt-1">
+            <BuscadorFiltros
+              busqueda={busqueda}
+              setBusqueda={setBusqueda}
               filtros={filtros}
               toggleFiltro={toggleFiltro}
-              limpiarFiltros={limpiarFiltros}
               totalFiltrosActivos={totalFiltrosActivos}
+              onAbrirFiltros={() => setFiltrosAbiertos(true)}
             />
-
-            <section className="lg:h-full lg:flex lg:flex-col min-h-0">
-              {/* Botón rastrear pedido */}
-              <div className="px-4 lg:px-0 pb-2 w-full">
-                <button
-                  onClick={() => setRastreoAbierto(true)}
-                  className="flex items-center gap-2 text-xs font-body font-black
-                             px-4 py-2 rounded-full transition-all duration-200 active:scale-95"
-                  style={{ background: '#f3e8ff', color: '#6b35b8', border: '2px solid #e0c4f8' }}
-                >
-                  📦 Rastrear mi pedido
-                </button>
-              </div>
-
-              <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-4">
-                {/* ── Estado de carga ── */}
-                {loading && <ProductosSkeleton cantidad={8} />}
-
-                {/* ── Estado de error ── */}
-                {!loading && error && (
-                  <div className="flex flex-col items-center justify-center py-20 px-8 text-center gap-4">
-                    <div className="text-5xl animate-float">😵</div>
-                    <div className="bg-white rounded-3xl p-6 max-w-sm w-full"
-                         style={{ border: '2px solid #fecdd3', boxShadow: '0 4px 20px #ff3dac15' }}>
-                      <p className="font-display text-lg text-ink-800 mb-1">
-                        Ups, algo salió mal
-                      </p>
-                      <p className="text-xs font-body text-ink-400 mb-4 leading-relaxed">
-                        {error}
-                      </p>
-                      <button
-                        onClick={refetch}
-                        className="w-full py-3 rounded-2xl font-body font-black text-sm text-white
-                                   transition-all duration-200 active:scale-95"
-                        style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
-                                 boxShadow: '0 4px 14px #ff3dac44' }}
-                      >
-                        🔄 Reintentar
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Datos listos ── */}
-                {!loading && !error && (
-                  <ProductGrid
-                    productos={productosFiltrados}
-                    getCantidad={getCantidad}
-                    onAgregar={agregarItem}
-                    onReducir={reducirItem}
-                  />
-                )}
-              </div>
-
-              <RedesSociales />
-            </section>
           </div>
-        </div>
-      </main>
+        </header>
 
-      <FloatingCartButton
-        cantidadTotal={cantidadTotal}
-        total={total}
-        onAbrir={() => setCarritoAbierto(true)}
-      />
+        <main className={`lg:pb-0 lg:h-[calc(100vh-130px)] lg:overflow-hidden transition-all duration-300 ${items.length > 0 ? 'pb-32' : 'pb-8'}`}>
+          <div className="max-w-[1500px] mx-auto w-full px-4 lg:px-10 h-full">
+            <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-8 xl:gap-10 lg:items-start lg:h-full">
+              <SidebarFiltrosDesktop
+                filtros={filtros}
+                toggleFiltro={toggleFiltro}
+                limpiarFiltros={limpiarFiltros}
+                totalFiltrosActivos={totalFiltrosActivos}
+              />
+
+              <section className="lg:h-full lg:flex lg:flex-col min-h-0">
+                {/* Barra superior del catálogo — rastreo */}
+                <div className="px-3 lg:px-0 pb-2 w-full flex items-center gap-3">
+                  <button
+                    onClick={() => setRastreoAbierto(true)}
+                    className="flex items-center gap-2 text-xs font-body font-bold px-3.5 py-2 rounded-xl transition-all duration-200 active:scale-95"
+                    style={{
+                      background: 'var(--surface-card)',
+                      color: 'var(--text-secondary)',
+                      border: '1px solid var(--border-soft)',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                    }}
+                  >
+                    📦 Rastrear mi pedido
+                  </button>
+                </div>
+
+                <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-4">
+                  {loading && <ProductosSkeleton cantidad={8} />}
+
+                  {!loading && error && (
+                    <div className="flex flex-col items-center justify-center py-20 px-8 text-center gap-4">
+                      <div className="text-5xl animate-float">😵</div>
+                      <div className="bg-white rounded-3xl p-6 max-w-sm w-full"
+                           style={{ border: '2px solid var(--border-default)', boxShadow: '0 4px 20px #ff3dac15' }}>
+                        <p className="font-display text-lg text-ink-800 mb-1">Ups, algo salió mal</p>
+                        <p className="text-xs font-body text-ink-400 mb-4 leading-relaxed">{error}</p>
+                        <button
+                          onClick={refetch}
+                          className="w-full py-3 rounded-2xl font-body font-black text-sm text-white
+                                     transition-all duration-200 active:scale-95"
+                          style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)', boxShadow: '0 4px 14px #ff3dac44' }}
+                        >
+                          🔄 Reintentar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {!loading && !error && (
+                    <ProductGrid
+                      productos={productosFiltrados}
+                      getCantidad={getCantidad}
+                      onAgregar={agregarItem}
+                      onReducir={reducirItem}
+                    />
+                  )}
+                </div>
+
+                <RedesSociales />
+              </section>
+            </div>
+          </div>
+        </main>
+
+        <FloatingCartButton
+          cantidadTotal={cantidadTotal}
+          total={total}
+          onAbrir={() => setCarritoAbierto(true)}
+        />
+      </div>
 
       {hayActualizacion && (
         <div className="fixed left-1/2 -translate-x-1/2 bottom-20 sm:bottom-6 z-[70] w-[92vw] max-w-md">
           <div
             className="rounded-2xl border-2 p-3 sm:p-3.5 shadow-xl backdrop-blur-sm"
             style={{
-              background: 'rgba(255,255,255,0.96)',
-              borderColor: '#e9d5ff',
+              background: 'var(--surface-primary)',
+              borderColor: 'var(--border-default)',
             }}
           >
             <p className="font-body font-black text-sm text-ink-900">Nueva version disponible</p>

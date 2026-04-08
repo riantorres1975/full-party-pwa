@@ -5,10 +5,17 @@ import { SIMBOLO_MONEDA } from '../data/productos';
 import { usePedido } from '../hooks/usePedido';
 
 const INPUT_CLASS = `
-  w-full bg-white rounded-xl px-3 py-2.5 text-sm font-body font-semibold text-ink-900
+  w-full rounded-xl px-3 py-2.5 text-sm font-body font-semibold
   placeholder:text-ink-300 outline-none transition-all duration-200
-  border-2 border-ink-200 focus:border-fiesta-magenta
+  border-2 focus:border-fiesta-magenta
 `;
+
+// Input style uses CSS custom properties for dark mode
+const inputDynStyle = {
+  backgroundColor: 'var(--surface-input)',
+  color: 'var(--text-primary)',
+  borderColor: 'var(--border-default)',
+};
 
 export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgregar, onReducir, onEliminar, onLimpiar }) {
 
@@ -106,12 +113,8 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
           transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
           ${isOpen ? 'translate-y-0' : 'translate-y-full sm:translate-y-[calc(100%+2rem)]'}
         `}
-        style={{ background: '#fff8fe', border: '2px solid #e0c4f8', borderTop: 'none' }}
+        style={{ background: 'var(--surface-primary)', border: '1px solid var(--border-soft)' }}
       >
-        {/* Franja arcoíris */}
-        <div className="h-1.5 w-full flex-shrink-0"
-             style={{ background: 'linear-gradient(90deg, #ff3dac, #a855f7, #00d4ff, #39e87b, #ffe135)',
-                      borderRadius: '1.5rem 1.5rem 0 0' }} />
 
         {/* Handle */}
         <div className="flex justify-center pt-2 pb-1">
@@ -237,8 +240,8 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
           {/* ── Sección de entrega (solo visible si hay items) ── */}
           {items.length > 0 && (
             <div className="px-5 pb-3">
-              <div className="rounded-2xl p-4 space-y-3"
-                   style={{ background: 'linear-gradient(135deg, #f3e8ff, #ffd6f0)', border: '2px solid #e0c4f8' }}>
+              <div className="rounded-2xl p-4 space-y-3 entrega-section"
+                   style={{ background: 'var(--surface-section-gradient)', border: '2px solid var(--border-default)' }}>
 
                 {/* Título */}
                 <p className="font-display text-base text-ink-900">¿Cómo lo recibimos? 🎀</p>
@@ -257,7 +260,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                       style={tipoEntrega === val
                         ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)', color: 'white',
                             border: '2px solid transparent', boxShadow: '0 4px 14px #ff3dac44' }
-                        : { background: 'white', color: '#6b35b8', border: '2px solid #e0c4f8' }
+                        : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '2px solid var(--border-default)' }
                       }
                     >
                       <span className="text-xl">{emoji}</span>
@@ -276,7 +279,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                       onChange={(e) => setNombre(capitalizarNombre(e.target.value))}
                       placeholder="👤 Tu nombre completo"
                       className={INPUT_CLASS}
-                      style={errores.nombre ? { borderColor: '#ff3dac' } : {}}
+                      style={errores.nombre ? { ...inputDynStyle, borderColor: '#ff3dac' } : inputDynStyle}
                     />
                     {errores.nombre && (
                       <p className="text-[11px] text-fiesta-magenta font-body font-bold mt-1 pl-1">{errores.nombre}</p>
@@ -292,7 +295,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                       placeholder="📞 Tu número de teléfono"
                       maxLength={10}
                       className={INPUT_CLASS}
-                      style={errores.telefono ? { borderColor: '#ff3dac' } : telefonoValido ? { borderColor: '#25D366' } : {}}
+                      style={errores.telefono ? { ...inputDynStyle, borderColor: '#ff3dac' } : telefonoValido ? { ...inputDynStyle, borderColor: '#25D366' } : inputDynStyle}
                     />
                     <p className={`text-[11px] font-body font-bold mt-1 pl-1 transition-colors
                                   ${errores.telefono ? 'text-fiesta-magenta' : telefonoValido ? 'text-green-500' : 'text-ink-300'}`}>
@@ -313,7 +316,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                         placeholder="📍 Calle, número, colonia, referencias..."
                         rows={2}
                         className={INPUT_CLASS + ' resize-none'}
-                        style={errores.direccion ? { borderColor: '#ff3dac' } : {}}
+                        style={errores.direccion ? { ...inputDynStyle, borderColor: '#ff3dac' } : inputDynStyle}
                       />
                       {errores.direccion && (
                         <p className="text-[11px] text-fiesta-magenta font-body font-bold mt-1 pl-1">{errores.direccion}</p>

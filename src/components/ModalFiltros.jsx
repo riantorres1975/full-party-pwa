@@ -1,19 +1,58 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { categorias, marcas, tamanios } from '../data/productos';
 
 /**
- * Sección colapsable dentro del modal
+ * Mini buscador dentro de una sección de filtros
  */
-function Seccion({ titulo, emoji, children, defaultOpen = true }) {
-  const [abierto, setAbierto] = useState(defaultOpen);
+function BuscadorSeccion({ value, onChange, placeholder }) {
   return (
-    <div className="border-b-2 border-ink-100 last:border-0">
+    <div className="relative mb-2">
+      <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-300"
+           fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
+              d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+      </svg>
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full pl-8 pr-3 py-1.5 text-xs font-body rounded-lg outline-none transition-all
+                   border focus:border-purple-400"
+        style={{
+          background: 'var(--surface-input)',
+          color: 'var(--text-primary)',
+          borderColor: 'var(--border-soft)',
+        }}
+      />
+    </div>
+  );
+}
+
+/**
+ * Sección colapsable con búsqueda y scroll interno
+ */
+function Seccion({ titulo, emoji, children, defaultOpen = true, count, searchable = false, searchPlaceholder }) {
+  const [abierto, setAbierto] = useState(defaultOpen);
+  const [busqueda, setBusqueda] = useState('');
+
+  return (
+    <div className="border-b border-ink-100 last:border-0"
+         style={{ borderColor: 'var(--border-soft)' }}>
       <button
         onClick={() => setAbierto(v => !v)}
-        className="w-full flex items-center justify-between px-5 py-3.5
-                   font-display text-base text-ink-900 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-3
+                   font-display text-sm text-ink-900 transition-colors"
       >
-        <span>{emoji} {titulo}</span>
+        <span className="flex items-center gap-1.5">
+          {emoji} {titulo}
+          {count > 0 && (
+            <span className="text-[10px] font-body font-black bg-purple-500 text-white
+                             min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
+              {count}
+            </span>
+          )}
+        </span>
         <svg
           className="w-4 h-4 text-ink-400 transition-transform duration-300"
           style={{ transform: abierto ? 'rotate(180deg)' : 'rotate(0deg)' }}
@@ -25,10 +64,19 @@ function Seccion({ titulo, emoji, children, defaultOpen = true }) {
 
       <div
         className="overflow-hidden transition-all duration-300"
-        style={{ maxHeight: abierto ? '400px' : '0px', opacity: abierto ? 1 : 0 }}
+        style={{ maxHeight: abierto ? '320px' : '0px', opacity: abierto ? 1 : 0 }}
       >
-        <div className="px-5 pb-4">
-          {children}
+        <div className="px-5 pb-3">
+          {searchable && (
+            <BuscadorSeccion
+              value={busqueda}
+              onChange={setBusqueda}
+              placeholder={searchPlaceholder}
+            />
+          )}
+          <div className="overflow-y-auto max-h-[220px] pr-1 custom-scrollbar">
+            {typeof children === 'function' ? children(busqueda) : children}
+          </div>
         </div>
       </div>
     </div>
@@ -36,29 +84,70 @@ function Seccion({ titulo, emoji, children, defaultOpen = true }) {
 }
 
 /**
- * Pill seleccionable dentro del modal
+ * Pill seleccionable — estilo compacto tipo chip (para marcas/tamaños)
  */
 function PillOpcion({ label, activo, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex-shrink-0 text-xs font-body font-black px-3.5 py-1.5 rounded-full
-                 transition-all duration-150 active:scale-95 border-2"
+      className={`flex-shrink-0 text-[11px] font-body font-bold px-3 py-1.5 rounded-lg
+                 transition-all duration-150 active:scale-95
+                 ${activo
+                   ? 'text-white shadow-sm'
+                   : 'hover:bg-ink-100'
+                 }`}
       style={activo
         ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
-            color: 'white', border: '2px solid transparent',
-            boxShadow: '0 3px 10px #ff3dac44' }
-        : { background: 'white', color: '#6b35b8', border: '2px solid #e0c4f8' }
+            boxShadow: '0 2px 8px #ff3dac33' }
+        : { background: 'var(--surface-card)',
+            color: 'var(--text-secondary)',
+            border: '1px solid var(--border-soft)' }
       }
     >
-      {activo && <span className="mr-1">✓</span>}
+      {activo && <span className="mr-0.5">✓</span>}
       {label}
     </button>
   );
 }
 
 /**
- * ModalFiltros — Bottom sheet con 3 secciones colapsables.
+ * Fila seleccionable tipo lista — para categorías
+ */
+function FilaOpcion({ label, activo, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left
+                 transition-all duration-150 active:scale-[0.98]
+                 ${activo ? '' : 'hover:bg-ink-50'}`}
+      style={activo ? { background: 'var(--surface-muted)' } : {}}
+    >
+      <span className={`flex-1 text-xs font-body truncate
+                       ${activo ? 'font-black' : 'font-semibold'}`}
+            style={{ color: activo ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+        {label}
+      </span>
+      {/* Checkbox indicator */}
+      <span
+        className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all
+                   ${activo ? 'text-white' : ''}`}
+        style={activo
+          ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }
+          : { border: '1.5px solid var(--border-default)', background: 'var(--surface-card)' }
+        }
+      >
+        {activo && (
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+          </svg>
+        )}
+      </span>
+    </button>
+  );
+}
+
+/**
+ * ModalFiltros — Bottom sheet con secciones buscables y scroll interno.
  */
 export default function ModalFiltros({
   isOpen, onCerrar,
@@ -79,7 +168,7 @@ export default function ModalFiltros({
       {isOpen && (
         <div
           className="fixed inset-0 z-50 animate-fade-in"
-          style={{ background: 'rgba(26,7,51,0.5)', backdropFilter: 'blur(4px)' }}
+          style={{ background: 'rgba(10,5,20,0.6)', backdropFilter: 'blur(6px)' }}
           onClick={onCerrar}
         />
       )}
@@ -96,32 +185,28 @@ export default function ModalFiltros({
           transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
           ${isOpen ? 'translate-y-0' : 'translate-y-full sm:translate-y-[calc(100%+2rem)]'}
         `}
-        style={{ background: '#fff8fe', border: '2px solid #e0c4f8', borderTop: 'none',
+        style={{ background: 'var(--surface-primary)', border: '1px solid var(--border-soft)',
                  maxHeight: '88vh' }}
       >
-        {/* Franja arcoíris */}
-        <div className="h-1.5 w-full flex-shrink-0"
-             style={{ background: 'linear-gradient(90deg, #ff3dac, #a855f7, #00d4ff, #39e87b, #ffe135)',
-                      borderRadius: '1.5rem 1.5rem 0 0' }} />
-
         {/* Handle */}
-        <div className="flex justify-center pt-2 pb-1 flex-shrink-0">
-          <div className="w-10 h-1 bg-ink-200 rounded-full" />
+        <div className="flex justify-center pt-2.5 pb-1 flex-shrink-0 sm:hidden">
+          <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border-default)' }} />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b-2 border-ink-100 flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-3 border-b flex-shrink-0"
+             style={{ borderColor: 'var(--border-soft)' }}>
           <div>
-            <h2 className="font-display text-xl text-ink-900">🎛️ Filtros</h2>
+            <h2 className="font-display text-lg text-ink-900">Filtros</h2>
             {totalActivos > 0 && (
-              <p className="text-xs text-ink-400 font-body font-semibold">
+              <p className="text-[11px] text-ink-400 font-body font-semibold">
                 {totalActivos} filtro{totalActivos > 1 ? 's' : ''} activo{totalActivos > 1 ? 's' : ''}
               </p>
             )}
           </div>
           <button
             onClick={onCerrar}
-            className="p-2 rounded-full bg-ink-100 hover:bg-ink-200 text-ink-500 transition-colors"
+            className="p-2 rounded-xl hover:bg-ink-100 text-ink-400 transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
@@ -132,37 +217,60 @@ export default function ModalFiltros({
         {/* Secciones — scrollable */}
         <div className="flex-1 overflow-y-auto">
 
-          {/* Categorías */}
-          <Seccion titulo="Categoría" emoji="🗂️" defaultOpen={true}>
-            <div className="flex flex-wrap gap-2">
-              {categorias.map(cat => (
-                <PillOpcion
-                  key={cat.id}
-                  label={cat.label}
-                  activo={filtros.categorias.includes(cat.id)}
-                  onClick={() => toggleFiltro('categorias', cat.id)}
-                />
-              ))}
-            </div>
+          {/* Categorías — lista buscable */}
+          <Seccion titulo="Categoría" emoji="📁" defaultOpen={true}
+                   count={filtros.categorias.length}
+                   searchable={true} searchPlaceholder="Buscar categoría...">
+            {(busqueda) => {
+              const filtradas = categorias.filter(cat =>
+                cat.label.toLowerCase().includes(busqueda.toLowerCase())
+              );
+              return (
+                <div className="flex flex-col gap-0.5">
+                  {filtradas.length > 0 ? filtradas.map(cat => (
+                    <FilaOpcion
+                      key={cat.id}
+                      label={cat.label}
+                      activo={filtros.categorias.includes(cat.id)}
+                      onClick={() => toggleFiltro('categorias', cat.id)}
+                    />
+                  )) : (
+                    <p className="text-xs text-ink-300 font-body py-2 px-3">Sin coincidencias</p>
+                  )}
+                </div>
+              );
+            }}
           </Seccion>
 
-          {/* Marcas */}
-          <Seccion titulo="Marca" emoji="🏷️" defaultOpen={true}>
-            <div className="flex flex-wrap gap-2">
-              {marcas.map(marca => (
-                <PillOpcion
-                  key={marca}
-                  label={marca}
-                  activo={filtros.marcas.includes(marca)}
-                  onClick={() => toggleFiltro('marcas', marca)}
-                />
-              ))}
-            </div>
+          {/* Marcas — buscable */}
+          <Seccion titulo="Marca" emoji="🏷️" defaultOpen={true}
+                   count={filtros.marcas.length}
+                   searchable={true} searchPlaceholder="Buscar marca...">
+            {(busqueda) => {
+              const filtradas = marcas.filter(m =>
+                m.toLowerCase().includes(busqueda.toLowerCase())
+              );
+              return (
+                <div className="flex flex-wrap gap-1.5">
+                  {filtradas.length > 0 ? filtradas.map(marca => (
+                    <PillOpcion
+                      key={marca}
+                      label={marca}
+                      activo={filtros.marcas.includes(marca)}
+                      onClick={() => toggleFiltro('marcas', marca)}
+                    />
+                  )) : (
+                    <p className="text-xs text-ink-300 font-body py-2">Sin coincidencias</p>
+                  )}
+                </div>
+              );
+            }}
           </Seccion>
 
           {/* Tamaños */}
-          <Seccion titulo="Tamaño" emoji="📐" defaultOpen={false}>
-            <div className="flex flex-wrap gap-2">
+          <Seccion titulo="Tamaño" emoji="📐" defaultOpen={false}
+                   count={filtros.tamanios.length}>
+            <div className="flex flex-wrap gap-1.5">
               {tamanios.map(tam => (
                 <PillOpcion
                   key={tam}
@@ -177,15 +285,17 @@ export default function ModalFiltros({
         </div>
 
         {/* Footer fijo — botones de acción */}
-        <div className="px-5 pt-3 pb-4 border-t-2 border-ink-100 flex gap-2 flex-shrink-0">
+        <div className="px-5 pt-3 pb-4 border-t flex gap-2 flex-shrink-0"
+             style={{ borderColor: 'var(--border-soft)' }}>
           {/* Limpiar */}
           <button
             onClick={limpiarFiltros}
             disabled={totalActivos === 0}
-            className="flex-shrink-0 px-4 py-3.5 rounded-2xl font-body font-black text-sm
-                       border-2 transition-all duration-200 active:scale-95
+            className="flex-shrink-0 px-4 py-3 rounded-xl font-body font-black text-sm
+                       transition-all duration-200 active:scale-95
                        disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ borderColor: '#e0c4f8', color: '#8a56d4', background: 'white' }}
+            style={{ color: 'var(--text-muted)', background: 'var(--surface-card)',
+                     border: '1px solid var(--border-soft)' }}
           >
             Limpiar
           </button>
@@ -193,7 +303,7 @@ export default function ModalFiltros({
           {/* Mostrar resultados */}
           <button
             onClick={onCerrar}
-            className="flex-1 py-3.5 rounded-2xl font-body font-black text-base text-white
+            className="flex-1 py-3 rounded-xl font-body font-black text-sm text-white
                        transition-all duration-200 active:scale-[0.98]"
             style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
                      boxShadow: '0 4px 16px #ff3dac44' }}
