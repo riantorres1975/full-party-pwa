@@ -6,7 +6,7 @@ function getInitialTheme() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved === 'dark') return true;
   if (saved === 'light') return false;
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+  return false; // Tema claro por defecto para nuevos visitantes
 }
 
 export function useTheme() {
