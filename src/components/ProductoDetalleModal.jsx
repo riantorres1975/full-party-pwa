@@ -109,7 +109,7 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar }) 
             <div
               className="w-full md:w-1/2 aspect-square sm:aspect-[4/3] md:aspect-auto md:min-h-[360px]
                          overflow-hidden flex items-center justify-center flex-shrink-0 p-6 sm:p-8"
-              style={{ background: 'var(--surface-card)' }}
+              style={{ backgroundColor: '#ffffff' }}
             >
               <img
                 src={producto.imagen_url}
