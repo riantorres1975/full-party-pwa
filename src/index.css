@@ -58,6 +58,12 @@
   }
 }
 
+/* Shimmer animation for image placeholders */
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 @layer components {
   .btn-primary {
     @apply font-body font-bold px-6 py-3.5 rounded-full

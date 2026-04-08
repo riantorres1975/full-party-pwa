@@ -3,6 +3,16 @@ import ReactDOM from 'react-dom/client';
 import AppRouter from './AppRouter';
 import './index.css';
 
+// Dynamic preconnect for Supabase (images load faster)
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+if (supabaseUrl) {
+  const link = document.createElement('link');
+  link.rel = 'preconnect';
+  link.href = supabaseUrl;
+  link.crossOrigin = 'anonymous';
+  document.head.appendChild(link);
+}
+
 // Registrar Service Worker (PWA)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

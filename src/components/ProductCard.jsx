@@ -1,7 +1,9 @@
+import { memo } from 'react';
 import { SIMBOLO_MONEDA } from '../data/productos';
 import { obtenerPrecioAplicable } from '../utils/precios';
+import OptimizedImage from './OptimizedImage';
 
-export default function ProductCard({
+function ProductCardInner({
   producto,
   cantidad,
   onAgregar,
@@ -15,6 +17,9 @@ export default function ProductCard({
   const precioBase = Number(producto.precio) || 0;
   const precioAplicable = obtenerPrecioAplicable(producto, cantidad || 1);
   const hayDescuento = precioAplicable < precioBase;
+
+  // First 4 images are above-the-fold on most screens
+  const isPriority = index < 4;
 
   return (
     <article
@@ -34,20 +39,14 @@ export default function ProductCard({
         className="w-full text-left"
         aria-label={`Ver detalles de ${producto.nombre}`}
       >
-        {/* Imagen */}
-        <div
-          className="relative aspect-square overflow-hidden"
-          style={{ background: 'var(--surface-card)' }}
-        >
-          <img
+        {/* Imagen optimizada */}
+        <div className="relative">
+          <OptimizedImage
             src={producto.imagen_url}
             alt={producto.nombre}
-            loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-500 hover:scale-[1.05]"
+            priority={isPriority}
+            fallbackText={producto.nombre}
             style={{ filter: agotado ? 'grayscale(60%)' : 'none' }}
-            onError={(e) => {
-              e.target.src = `https://placehold.co/400x400/f3e8ff/a855f7?text=${encodeURIComponent(producto.nombre)}`;
-            }}
           />
 
           {/* Badge agotado */}
@@ -171,3 +170,6 @@ export default function ProductCard({
     </article>
   );
 }
+
+const ProductCard = memo(ProductCardInner);
+export default ProductCard;
