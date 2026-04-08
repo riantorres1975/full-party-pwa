@@ -23,17 +23,19 @@ function OptimizedImageInner({
   const [error, setError] = useState(false);
   const imgRef = useRef(null);
 
-  // Si la imagen ya está en cache del navegador, puede llegar loaded=true instantáneamente
-  useEffect(() => {
-    if (imgRef.current?.complete && imgRef.current?.naturalWidth > 0) {
-      setLoaded(true);
-    }
-  }, [src]);
-
-  // Reset al cambiar de src
+  // Reset al cambiar de src, luego verificar si ya está en cache del navegador
   useEffect(() => {
     setLoaded(false);
     setError(false);
+
+    // Micro-task delay para que el navegador actualice el elemento <img>
+    // antes de verificar .complete (cached images)
+    const raf = requestAnimationFrame(() => {
+      if (imgRef.current?.complete && imgRef.current?.naturalWidth > 0) {
+        setLoaded(true);
+      }
+    });
+    return () => cancelAnimationFrame(raf);
   }, [src]);
 
   const fallbackSrc = `https://placehold.co/400x400/f3e8ff/a855f7?text=${encodeURIComponent(fallbackText || alt || '?')}`;
