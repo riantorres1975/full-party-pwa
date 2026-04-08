@@ -163,11 +163,18 @@ export default function RastreoPedido({ onCerrar }) {
   const [query,    setQuery]   = useState('');
   const [pedidos,  setPedidos] = useState(null); // null = no buscado aún
   const [errorMsg, setErrorMsg] = useState('');
+  const [ultimaBusqueda, setUltimaBusqueda] = useState(0);
   const { buscarPedido, buscando } = usePedido();
 
   const handleBuscar = async () => {
     const q = query.trim();
     if (!q) return;
+
+    // Cooldown de 3000ms
+    const ahora = Date.now();
+    if (ahora - ultimaBusqueda < 3000) return;
+    setUltimaBusqueda(ahora);
+
     setErrorMsg('');
     const { pedidos: resultado, error } = await buscarPedido(q);
     if (error) { setErrorMsg('Error al buscar. Intenta de nuevo.'); return; }
@@ -212,7 +219,7 @@ export default function RastreoPedido({ onCerrar }) {
           />
           <button
             onClick={handleBuscar}
-            disabled={!query.trim() || buscando}
+            disabled={!query.trim() || buscando || (Date.now() - ultimaBusqueda < 3000)}
             className="px-4 py-3 rounded-2xl text-white font-body font-black text-sm
                        transition-all duration-200 active:scale-95 disabled:opacity-50
                        flex items-center gap-2 flex-shrink-0"
@@ -222,7 +229,7 @@ export default function RastreoPedido({ onCerrar }) {
             {buscando
               ? <div className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
               : '🔍'}
-            Buscar
+            {Date.now() - ultimaBusqueda < 3000 ? 'Espera un momento...' : 'Buscar'}
           </button>
         </div>
         {errorMsg && (

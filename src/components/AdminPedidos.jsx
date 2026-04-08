@@ -77,8 +77,12 @@ export function notificarCliente(pedido, articulosSurtidos = null) {
   // 3. Generación de URL Segura y apertura
   const telefonoLimpio = tel.replace(/[\s\-\(\)]/g, '');
   
+  const phoneParam = (telefonoLimpio.startsWith('52') && telefonoLimpio.length >= 12) 
+    ? telefonoLimpio 
+    : `52${telefonoLimpio}`;
+
   const params = new URLSearchParams({
-    phone: `52${telefonoLimpio}`,
+    phone: phoneParam,
     text: mensaje
   });
 

@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIGURACIÓN DEL NEGOCIO
 // ─────────────────────────────────────────────────────────────────────────────
-export const NUMERO_WHATSAPP = '5214521040377';
-export const NOMBRE_NEGOCIO  = 'Full Party Uruapan';
+export const NUMERO_WHATSAPP = import.meta.env.VITE_WHATSAPP_NUMBER;
+export const NOMBRE_NEGOCIO  = import.meta.env.VITE_NOMBRE_NEGOCIO;
 export const MONEDA          = 'MXN';
 export const SIMBOLO_MONEDA  = '$';
 
@@ -75,8 +75,8 @@ export const marcas = [
 ];
 
 export const tamanios = [
-  '5 ',
-  '10 ',
+  '5',
+  '10',
   '12',
   '18',
   '24',
