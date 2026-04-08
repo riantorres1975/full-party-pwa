@@ -213,23 +213,23 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
   const previewSrc = previewLocal || imagenUrl.trim() || null;
 
   return (
-    <div className="min-h-full font-sans text-gray-800 p-4 md:p-8 pt-4">
-      {/* Contenedor Limpio (Tarjeta Blanca sin overflow-hidden) */}
-      <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full max-w-6xl mx-auto flex flex-col">
+    <div className="min-h-full font-sans p-4 md:p-6 lg:p-8">
+      {/* Contenedor Limpio */}
+      <div className="bg-white rounded-2xl p-6 md:p-8 border border-ink-100 shadow-[0_1px_3px_rgba(0,0,0,0.05)] w-full max-w-5xl mx-auto flex flex-col">
         
         {/* HEADER */}
-        <div className="mb-8 border-b border-gray-100 pb-5">
-          <h2 className="text-2xl font-black text-gray-900 tracking-tight">Nuevo Artículo</h2>
-          <p className="text-sm font-medium text-gray-500 mt-1">Configura el diseño, costo y organización del inventario.</p>
+        <div className="mb-6 border-b border-ink-100 pb-5">
+          <h2 className="text-xl sm:text-2xl font-black text-ink-900 tracking-tight">Nuevo Artículo</h2>
+          <p className="text-xs sm:text-sm font-medium text-ink-500 mt-1">Gemas de metadata y configuración total del producto.</p>
         </div>
 
         {/* BODY */}
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
           {/* Grid Asimétrico */}
-          <div className="md:grid md:grid-cols-12 md:gap-8 items-start pb-12">
+          <div className="md:grid md:grid-cols-[1fr_2fr] gap-x-8 items-start pb-8">
             
-            {/* --- COLUMNA IZQUIERDA (md:col-span-4) --- */}
-            <div className="md:col-span-4 flex flex-col gap-5 mb-8 md:mb-0">
+            {/* --- COLUMNA IZQUIERDA (Imagen y Toggles) --- */}
+            <div className="flex flex-col gap-4 mb-8 md:mb-0">
               
               {/* Bloque: Imagen */}
               <div 
@@ -237,35 +237,35 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
                 onDragLeave={onDragLeave}
                 onDrop={onDrop}
                 onClick={() => { if (!archivo && !imagenUrl) fileRef.current?.click(); }}
-                className={`aspect-square md:aspect-auto md:min-h-[320px] bg-gray-50 rounded-3xl border-2 border-dashed flex flex-col items-center justify-center text-gray-400 hover:border-purple-400 hover:bg-purple-50 transition-all cursor-pointer relative overflow-hidden group p-4 text-center
-                  ${dragHover ? 'border-purple-400 bg-purple-50 scale-[1.02]' : 'border-gray-200'}`}
+                className={`aspect-square md:aspect-[4/3] bg-ink-50 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center text-ink-400 hover:border-ink-300 hover:bg-ink-100 transition-all cursor-pointer relative overflow-hidden group p-4 text-center
+                  ${dragHover ? 'border-ink-900 bg-ink-100' : 'border-ink-200'}`}
               >
                 {previewSrc ? (
                   <>
-                    <img src={previewSrc} alt="Vista previa" className="w-full h-full object-cover absolute inset-0 rounded-3xl" />
+                    <img src={previewSrc} alt="Vista previa" className="w-full h-full object-cover absolute inset-0 rounded-2xl" />
                     <button 
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setArchivo(null); setImagenUrl(''); }}
-                      className="absolute top-4 right-4 p-2 bg-black/60 text-white rounded-full hover:bg-red-500 transition-colors backdrop-blur-md shadow-lg"
+                      className="absolute top-2 right-2 p-1.5 bg-ink-900/80 text-white rounded-full hover:bg-rose-500 transition-colors backdrop-blur-md shadow-sm"
                       title="Eliminar imagen"
                     >
-                      <X size={16} />
+                      <X size={14} />
                     </button>
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
-                      className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-white/90 text-gray-900 text-xs font-bold rounded-full shadow-lg backdrop-blur hover:bg-white transition-colors"
+                      className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-white/95 text-ink-900 text-[10px] font-bold rounded-lg shadow-sm backdrop-blur transition-colors"
                     >
-                      Cambiar foto
+                      Modificar
                     </button>
                   </>
                 ) : (
                   <>
-                    <div className="p-4 bg-white rounded-full shadow-sm mb-4 group-hover:scale-110 group-hover:shadow-md transition-all">
-                      <UploadCloud size={28} className={dragHover ? 'text-purple-500' : 'text-purple-400'} />
+                    <div className="p-3 bg-white rounded-full shadow-sm mb-3 group-hover:scale-105 transition-all text-ink-500">
+                      <UploadCloud size={24} />
                     </div>
-                    <p className="text-sm font-bold text-gray-600 mb-1">Subir imagen</p>
-                    <p className="text-xs font-medium text-gray-400">Arrastra o haz clic aquí</p>
+                    <p className="text-xs font-bold text-ink-700 mb-0.5">Subir imagen</p>
+                    <p className="text-[10px] font-medium text-ink-400">Clic o arrastrar</p>
                   </>
                 )}
               </div>
@@ -282,9 +282,9 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
                 className="hidden"
               />
               
-              <div className="bg-gray-50 rounded-2xl p-4 border border-transparent">
-                <label htmlFor="fp-url" className="flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                  <Link2 size={12} /> URL externa (Opcional)
+              <div className="bg-ink-50 rounded-xl p-3 border border-transparent">
+                <label htmlFor="fp-url" className="flex items-center gap-1 text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1.5">
+                  <Link2 size={12} /> URL externa
                 </label>
                 <input
                   id="fp-url"
@@ -296,37 +296,37 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
                   }}
                   placeholder="https://..."
                   disabled={!!archivo}
-                  className="w-full bg-white border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:bg-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all shadow-sm disabled:opacity-50"
+                  className="w-full bg-white border border-ink-100 rounded-lg px-3 py-2 text-xs font-medium text-ink-800 focus:border-ink-400 focus:outline-none focus:ring-1 focus:ring-ink-200 transition-all shadow-sm disabled:opacity-50"
                 />
               </div>
 
-              {/* Bloque: Tarjetita Disponible */}
-              <div className="bg-gray-50 rounded-2xl p-5 border border-transparent flex items-center justify-between w-full gap-4">
+              {/* Toggles */}
+              <div className="bg-ink-50 rounded-xl p-3 border border-transparent flex items-center justify-between w-full gap-3">
                 <div className="flex-1">
-                  <h3 className="text-sm font-bold text-gray-800 leading-tight">Disponible</h3>
-                  <p className="text-xs font-medium text-gray-500">Venta activa</p>
+                  <h3 className="text-xs font-bold text-ink-900 leading-tight">Disponible</h3>
+                  <p className="text-[10px] font-medium text-ink-500">Venta activa</p>
                 </div>
                 <CustomToggle id="toggle-visibilidad" checked={disponible} onChange={e => setDisponible(e.target.checked)} />
               </div>
 
-              <div className="bg-gray-50 rounded-2xl p-5 border border-transparent flex items-center justify-between w-full gap-4">
+              <div className="bg-ink-50 rounded-xl p-3 border border-transparent flex items-center justify-between w-full gap-3">
                 <div className="flex-1">
-                  <h3 className="text-sm font-bold text-gray-800 leading-tight">Etiqueta Nuevo</h3>
-                  <p className="text-xs font-medium text-gray-500">Se muestra primero en tienda</p>
+                  <h3 className="text-xs font-bold text-ink-900 leading-tight">Etiqueta Novedad</h3>
+                  <p className="text-[10px] font-medium text-ink-500">Primero en tienda</p>
                 </div>
                 <CustomToggle id="toggle-nuevo" checked={esNuevo} onChange={e => setEsNuevo(e.target.checked)} />
               </div>
             </div>
 
-            {/* --- COLUMNA DERECHA (md:col-span-8) --- */}
-            <div className="md:col-span-8 flex flex-col h-full">
+            {/* --- COLUMNA DERECHA (Data) --- */}
+            <div className="flex flex-col h-full min-w-0">
               
               {/* Grid Interno (Datos) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
                 
                 {/* Fila 1 */}
-                <div className="col-span-full">
-                  <label htmlFor="fp-nombre" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                <div className="col-span-full md:col-span-4">
+                  <label htmlFor="fp-nombre" className="block text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">
                     Nombre del producto *
                   </label>
                   <input
@@ -334,36 +334,19 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
                     type="text"
                     value={nombre}
                     onChange={e => setNombre(e.target.value)}
-                    placeholder="Ej. Set de globos metálicos dorados"
+                    placeholder="Ej. Set de globos..."
                     required
                     maxLength={200}
-                    className="w-full bg-gray-50 border border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:bg-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all shadow-sm"
+                    className="w-full bg-ink-50 border border-transparent rounded-lg px-3 py-2 text-sm font-medium text-ink-900 focus:bg-white focus:border-ink-400 focus:outline-none focus:ring-1 focus:ring-ink-200 transition-all shadow-sm"
                   />
                 </div>
 
-                {/* Fila 2 */}
-                <div className="col-span-full">
-                  <label htmlFor="fp-desc" className="flex items-center justify-between text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                    <span>Descripción</span>
-                    <span className="font-medium normal-case text-gray-400">Opcional</span>
-                  </label>
-                  <textarea
-                    id="fp-desc"
-                    value={descripcion}
-                    onChange={e => setDescripcion(e.target.value)}
-                    placeholder="Añade detalles útiles para tus clientes..."
-                    rows={2}
-                    className="w-full bg-gray-50 border border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:bg-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all resize-none shadow-sm"
-                  />
-                </div>
-
-                {/* Fila 3 compartida (Precio y Cat) */}
-                <div>
-                  <label htmlFor="fp-precio" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                    Precio de Venta *
+                <div className="col-span-full md:col-span-2">
+                  <label htmlFor="fp-precio" className="block text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">
+                    Precio Menudeo *
                   </label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">{SIMBOLO_MONEDA}</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 font-bold text-sm">{SIMBOLO_MONEDA}</span>
                     <input
                       id="fp-precio"
                       type="number"
@@ -374,13 +357,30 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
                       onChange={e => setPrecio(e.target.value)}
                       placeholder="0.00"
                       required
-                      className="w-full bg-gray-50 border border-transparent rounded-xl pl-9 pr-4 py-3 text-sm font-medium text-gray-800 focus:bg-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all shadow-sm"
+                      className="w-full bg-ink-50 border border-transparent rounded-lg pl-8 pr-3 py-2 text-sm font-medium text-ink-900 focus:bg-white focus:border-ink-400 focus:outline-none focus:ring-1 focus:ring-ink-200 transition-all shadow-sm"
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label htmlFor="fp-cat" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                {/* Fila 2 */}
+                <div className="col-span-full">
+                  <label htmlFor="fp-desc" className="flex items-center justify-between text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">
+                    <span>Descripción</span>
+                    <span className="normal-case opacity-70">Opcional</span>
+                  </label>
+                  <textarea
+                    id="fp-desc"
+                    value={descripcion}
+                    onChange={e => setDescripcion(e.target.value)}
+                    placeholder="Detalles sobre las medidas, usos..."
+                    rows={2}
+                    className="w-full bg-ink-50 border border-transparent rounded-lg px-3 py-2 text-sm font-medium text-ink-900 focus:bg-white focus:border-ink-400 focus:outline-none focus:ring-1 focus:ring-ink-200 transition-all resize-none shadow-sm"
+                  />
+                </div>
+
+                {/* Fila 3 compartida */}
+                <div className="col-span-full md:col-span-2">
+                  <label htmlFor="fp-cat" className="block text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">
                     Categoría *
                   </label>
                   <SelectCategoria
@@ -401,16 +401,15 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
                       value={categoriaNueva}
                       onChange={e => setCategoriaNueva(e.target.value)}
                       placeholder="Ej. Novedades"
-                      className="w-full mt-2 bg-gray-50 border border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:bg-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all shadow-sm"
+                      className="w-full mt-2 bg-ink-50 border border-transparent rounded-lg px-3 py-2 text-sm font-medium text-ink-900 focus:border-ink-400 focus:ring-1 focus:ring-ink-200"
                       maxLength={80}
                       autoFocus
                     />
                   )}
                 </div>
 
-                {/* Fila 4 compartida (Marca y Tamaño) */}
-                <div>
-                  <label htmlFor="fp-marca" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                <div className="col-span-full md:col-span-2">
+                  <label htmlFor="fp-marca" className="block text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">
                     Marca
                   </label>
                   <SelectCategoria
@@ -432,14 +431,14 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
                       value={marcaNueva}
                       onChange={e => setMarcaNueva(e.target.value)}
                       placeholder="Nueva marca"
-                      className="w-full mt-2 bg-gray-50 border border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:bg-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all shadow-sm"
+                      className="w-full mt-2 bg-ink-50 border border-transparent rounded-lg px-3 py-2 text-sm font-medium focus:border-ink-400 focus:ring-1 focus:ring-ink-200"
                       autoFocus
                     />
                   )}
                 </div>
 
-                <div>
-                  <label htmlFor="fp-tamano" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                <div className="col-span-full md:col-span-2">
+                  <label htmlFor="fp-tamano" className="block text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">
                     Tamaño
                   </label>
                   <SelectCategoria
@@ -461,14 +460,14 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
                       value={tamanoNuevo}
                       onChange={e => setTamanoNuevo(e.target.value)}
                       placeholder="Nuevo tamaño"
-                      className="w-full mt-2 bg-gray-50 border border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:bg-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all shadow-sm"
+                      className="w-full mt-2 bg-ink-50 border border-transparent rounded-lg px-3 py-2 text-sm font-medium focus:border-ink-400 focus:ring-1 focus:ring-ink-200"
                       autoFocus
                     />
                   )}
                 </div>
 
                 {/* Fila 5: Inventario */}
-                <div className="col-span-full bg-gray-50 rounded-2xl p-5 border border-transparent mt-2">
+                <div className="col-span-full bg-ink-50 rounded-xl p-4 border border-ink-100 mt-2">
                   <div className="flex items-center justify-between w-full gap-4">
                     <div className="flex-1">
                       <h4 className="text-sm font-bold text-gray-800 leading-tight">Control de Inventario</h4>
