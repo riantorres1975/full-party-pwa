@@ -97,7 +97,7 @@ Copia `.env.example` como `.env` y rellena con tus credenciales:
 ```env
 VITE_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-VITE_WHATSAPP_NUMBER="5214521040377"
+VITE_WHATSAPP_NUMBER="521XXXXXXXXXX"
 VITE_NOMBRE_NEGOCIO="Tu Negocio"
 ```
 
