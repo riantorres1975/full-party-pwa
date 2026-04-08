@@ -17,10 +17,10 @@ export default function FloatingCartButton({ cantidadTotal, total, onAbrir }) {
         aria-label="Ver carrito"
       >
         <div className="flex items-center gap-3">
-          <span className="w-7 h-7 flex items-center justify-center
-                           rounded-full font-body text-xs font-black border-2 border-white/50
-                           bg-fiesta-yellow text-ink-900">
-            {cantidadTotal}
+          <span className="min-w-[28px] h-7 px-1.5 flex items-center justify-center
+                           rounded-full font-body text-[12px] leading-none font-black tabular-nums border-2 border-white/55
+                           bg-[#ffe55c] text-[#4b1d7a]">
+            {cantidadTotal > 99 ? '99+' : cantidadTotal}
           </span>
           <span className="font-body font-black text-sm">🛒 Ver mi pedido</span>
         </div>

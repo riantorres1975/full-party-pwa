@@ -68,7 +68,7 @@ function Stepper({ estadoActual }) {
                   ? { background: paso.color, borderColor: paso.color,
                       boxShadow: activo ? `0 0 0 4px ${paso.color}33` : 'none',
                       transform:  activo ? 'scale(1.15)' : 'scale(1)' }
-                  : { background: '#f8f4ff', borderColor: '#e0c4f8' }
+                  : { background: 'var(--surface-muted)', borderColor: 'var(--border-default)' }
                 }
               >
                 {completado ? paso.emoji : <span className="text-ink-300 text-xs font-black">{i + 1}</span>}
@@ -177,7 +177,7 @@ export default function RastreoPedido({ onCerrar }) {
   const handleKeyDown = (e) => { if (e.key === 'Enter') handleBuscar(); };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#fff8fe' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--surface-primary)' }}>
 
       {/* Header */}
       <div className="flex-shrink-0 px-5 pt-6 pb-4">

@@ -3,6 +3,7 @@ import { MessageCircle, ChevronDown, Package, LayoutGrid, ClipboardList, Search,
 import { supabase } from '../lib/supabase';
 import { SIMBOLO_MONEDA } from '../data/productos';
 import AdminCatalogo from './AdminCatalogo';
+import ThemeToggle from './ThemeToggle';
 
 const ESTADOS = ['Por Surtir', 'Armando Pedido', 'Listo para Entrega'];
 
@@ -636,7 +637,7 @@ function useAdminVistaInicial() {
   return [vista, setVistaYHash];
 }
 
-export default function AdminPedidos({ user, onSignOut }) {
+export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema }) {
   const [vistaAdmin, setVistaAdmin] = useAdminVistaInicial();
   const [pedidos,      setPedidos]      = useState([]);
   const [loading,      setLoading]      = useState(true);
@@ -792,6 +793,11 @@ export default function AdminPedidos({ user, onSignOut }) {
                 <RefreshCw size={13} />
                 <span className="hidden sm:inline">Actualizar</span>
               </button>
+              <ThemeToggle
+                isDarkMode={temaOscuro}
+                onToggle={onToggleTema}
+                variant="admin"
+              />
               <button
                 type="button"
                 onClick={onSignOut}
