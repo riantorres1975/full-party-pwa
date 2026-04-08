@@ -3,6 +3,7 @@ import App         from './App';
 import LoginAdmin  from './components/LoginAdmin';
 import AdminPedidos from './components/AdminPedidos';
 import { useAuth } from './hooks/useAuth';
+import { useTheme } from './hooks/useTheme';
 
 /**
  * AppRouter — enrutamiento por hash sin react-router.
@@ -22,6 +23,7 @@ function useHashRoute() {
 export default function AppRouter() {
   const hash = useHashRoute();
   const { session, user, cargandoSesion, loading, error, signIn, signOut } = useAuth();
+  const { isDarkMode, toggleTheme } = useTheme();
   const esRutaAdmin = hash === '#/admin' || hash.startsWith('#/admin');
 
   // Spinner mientras Supabase verifica la sesión
@@ -47,6 +49,8 @@ export default function AppRouter() {
     return (
       <AdminPedidos
         user={user}
+        temaOscuro={isDarkMode}
+        onToggleTema={toggleTheme}
         onSignOut={async () => {
           await signOut();
           window.location.hash = '';
@@ -56,5 +60,5 @@ export default function AppRouter() {
   }
 
   // Ruta pública → catálogo normal
-  return <App />;
+  return <App temaOscuro={isDarkMode} onToggleTema={toggleTheme} />;
 }

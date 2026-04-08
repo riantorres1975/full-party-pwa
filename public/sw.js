@@ -1,5 +1,5 @@
 // Service Worker — Catálogo Digital PWA
-const CACHE_NAME = 'catalogo-v2';
+const CACHE_NAME = 'catalogo-v3';
 
 // Recursos a cachear en la instalación
 const STATIC_ASSETS = [

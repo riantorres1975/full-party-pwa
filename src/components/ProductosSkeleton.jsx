@@ -4,27 +4,24 @@
  */
 function TarjetaSkeleton() {
   return (
-    <div className="bg-white rounded-3xl overflow-hidden"
-         style={{ border: '2px solid #f3e8ff', boxShadow: '0 2px 8px #a855f715' }}>
+    <div className="bg-white rounded-2xl overflow-hidden"
+         style={{ border: '1px solid var(--border-soft)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
       {/* Imagen */}
-      <div className="h-40 bg-ink-100 relative overflow-hidden">
+      <div className="aspect-square bg-ink-100 relative overflow-hidden">
         <div className="absolute inset-0 skeleton-shimmer" />
       </div>
       {/* Contenido */}
-      <div className="p-3 space-y-2">
+      <div className="p-2.5 sm:p-3 space-y-2">
         <div className="h-4 bg-ink-100 rounded-full w-4/5 relative overflow-hidden">
           <div className="absolute inset-0 skeleton-shimmer" />
         </div>
         <div className="h-3 bg-ink-100 rounded-full w-full relative overflow-hidden">
           <div className="absolute inset-0 skeleton-shimmer" />
         </div>
-        <div className="h-3 bg-ink-100 rounded-full w-2/3 relative overflow-hidden">
-          <div className="absolute inset-0 skeleton-shimmer" />
-        </div>
         <div className="h-4 bg-ink-100 rounded-full w-1/3 mt-1 relative overflow-hidden">
           <div className="absolute inset-0 skeleton-shimmer" />
         </div>
-        <div className="h-8 bg-ink-100 rounded-full w-full mt-2 relative overflow-hidden">
+        <div className="h-8 bg-ink-100 rounded-xl w-full mt-2 relative overflow-hidden">
           <div className="absolute inset-0 skeleton-shimmer" />
         </div>
       </div>
@@ -54,7 +51,7 @@ function TarjetaSkeleton() {
 
 export default function ProductosSkeleton({ cantidad = 8 }) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 p-4 max-w-7xl mx-auto">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-3 p-3 sm:p-4 max-w-7xl mx-auto">
       {Array.from({ length: cantidad }).map((_, i) => (
         <TarjetaSkeleton key={i} />
       ))}

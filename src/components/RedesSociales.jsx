@@ -51,9 +51,9 @@ function BtnRed({ red }) {
                  font-bold text-sm select-none no-underline outline-none
                  focus-visible:ring-2 focus-visible:ring-ink-300"
       style={{
-        background:  hovered ? red.hoverBg    : '#f3f0f8',
-        color:       hovered ? red.hoverColor : '#9ca3af',
-        border:      `1.5px solid ${hovered ? red.hoverBg : '#ede9f4'}`,
+        background:  hovered ? red.hoverBg    : 'var(--surface-elevated)',
+        color:       hovered ? red.hoverColor : 'var(--text-inactive)',
+        border:      `1.5px solid ${hovered ? red.hoverBg : 'var(--border-default)'}`,
         boxShadow:   hovered ? red.hoverShadow : 'none',
         transform:   hovered ? 'scale(1.07)'   : 'scale(1)',
         transition:  'all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1)',
