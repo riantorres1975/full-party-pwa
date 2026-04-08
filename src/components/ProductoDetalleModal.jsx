@@ -115,9 +115,6 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar }) 
                 src={producto.imagen_url}
                 alt={producto.nombre}
                 className="w-full h-full object-contain transition-transform duration-500 sm:hover:scale-[1.05]"
-                style={{
-                  filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.08))'
-                }}
                 onError={(e) => {
                   e.target.src = `https://placehold.co/900x900/f3e8ff/a855f7?text=${encodeURIComponent(producto.nombre)}`;
                 }}
