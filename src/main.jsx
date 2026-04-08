@@ -46,6 +46,12 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// Auto-reload si ocurre un error cargando modulos (e.g. nueva version en Vercel)
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  window.location.reload(true);
+});
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AppRouter />
