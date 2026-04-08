@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { MessageCircle, ChevronDown, Package, LayoutGrid, ClipboardList, Search, RefreshCw, LogOut } from 'lucide-react';
+import { MessageCircle, ChevronDown, Package, LayoutGrid, ClipboardList, Search, RefreshCw, LogOut, ShoppingBag, Clock, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { SIMBOLO_MONEDA } from '../data/productos';
 import AdminCatalogo from './AdminCatalogo';
@@ -8,9 +8,9 @@ import ThemeToggle from './ThemeToggle';
 const ESTADOS = ['Por Surtir', 'Armando Pedido', 'Listo para Entrega'];
 
 const ESTADO_META = {
-  'Por Surtir':         { color: '#ef4444', bg: '#fee2e2', emoji: '🛍️' },
-  'Armando Pedido':     { color: '#eab308', bg: '#fef9c3', emoji: '🎀' },
-  'Listo para Entrega': { color: '#22c55e', bg: '#dcfce7', emoji: '🎉' },
+  'Por Surtir':         { color: '#ef4444', bg: '#fee2e2', icon: ShoppingBag },
+  'Armando Pedido':     { color: '#eab308', bg: '#fef9c3', icon: Clock },
+  'Listo para Entrega': { color: '#22c55e', bg: '#dcfce7', icon: CheckCircle2 },
 };
 
 
@@ -515,10 +515,9 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
 
   return (
     <div
-      className="bg-white rounded-2xl p-4 transition-all duration-300"
+      className="bg-white rounded-2xl p-5 transition-all duration-300 border border-ink-100"
       style={{
-        border: `2px solid ${meta.bg}`,
-        boxShadow: `0 2px 12px ${meta.color}15`,
+        boxShadow: `0 1px 3px rgba(0,0,0,0.05)`,
         opacity: esActualizando ? 0.6 : 1,
       }}
     >
@@ -529,10 +528,10 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
           {!esDesktop && <p className="text-[11px] font-body text-ink-400 mt-0.5">{fecha}</p>}
         </div>
         <span
-          className="text-[11px] font-body font-black px-2.5 py-1 rounded-full flex-shrink-0"
+          className="text-xs font-body font-bold px-2.5 py-1 rounded-full flex-shrink-0 flex items-center gap-1.5"
           style={{ background: meta.bg, color: meta.color }}
         >
-          {meta.emoji} {pedido.estado}
+          <meta.icon size={14} strokeWidth={2.5} /> {pedido.estado}
         </span>
       </div>
 
@@ -591,7 +590,7 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
                   : { background: m.bg, color: m.color }
                 }
               >
-                {m.emoji} {estado}
+                <m.icon size={14} className="inline mr-1" /> {estado}
               </button>
             );
           })}
@@ -768,99 +767,116 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
   }, [pedidosFiltrados, pedidoSeleccionadoId]);
 
   return (
-    <div className="min-h-screen overflow-x-hidden" style={{ background: 'linear-gradient(180deg, #f7f3ff 0%, #fff8fe 55%, #fefcff 100%)' }}>
+    <div className="min-h-screen bg-ink-50 lg:flex lg:h-screen lg:overflow-hidden">
 
-      {/* ── Header admin mejorado ── */}
-      <header className="sticky top-0 z-30 border-b border-purple-100/80 backdrop-blur-md" style={{ background: 'rgba(26, 7, 51, 0.92)' }}>
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-3.5 flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-2 min-w-0">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center shrink-0">
-                <span className="text-lg" aria-hidden>🎪</span>
+      {/* ── Sidebar Nativo (Desktop) / Header (Mobile) ── */}
+      <header className="sticky top-0 z-30 border-b border-ink-200 bg-white/95 backdrop-blur-md lg:static lg:h-full lg:w-64 lg:flex-shrink-0 lg:flex lg:flex-col lg:border-b-0 lg:border-r lg:bg-white">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 flex flex-col gap-3 lg:gap-6 lg:p-6 lg:flex-1">
+          <div className="flex items-center justify-between gap-2 min-w-0 lg:flex-col lg:items-start lg:gap-6">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-ink-50 border border-ink-200 flex items-center justify-center shrink-0">
+                <LayoutGrid size={20} className="text-ink-700" />
               </div>
               <div className="min-w-0">
-                <h1 className="font-display text-base sm:text-lg text-white leading-tight">Panel Admin Full Party</h1>
-                <p className="text-[10px] sm:text-[11px] font-body text-purple-200 truncate mt-0.5" title={user?.email ?? ''}>
+                <h1 className="font-display text-base sm:text-lg text-ink-900 leading-tight">Panel Admin</h1>
+                <p className="text-[11px] sm:text-xs font-body text-ink-500 truncate mt-0.5" title={user?.email ?? ''}>
                   {user?.email}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 lg:w-full lg:flex-col lg:items-stretch lg:gap-3">
               <button
                 type="button"
                 onClick={fetchPedidos}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-body font-black text-purple-100 hover:text-white bg-white/10 hover:bg-white/15 border border-white/15 transition-colors disabled:opacity-40"
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-body font-bold text-ink-700 hover:text-ink-900 bg-ink-50 hover:bg-ink-100 border border-ink-200 transition-colors disabled:opacity-50"
                 title="Actualizar pedidos"
                 disabled={vistaAdmin !== 'pedidos'}
               >
-                <RefreshCw size={13} />
-                <span className="hidden sm:inline">Actualizar</span>
+                <RefreshCw size={14} />
+                <span className="hidden sm:inline lg:inline">Recargar Data</span>
               </button>
-              <ThemeToggle
-                isDarkMode={temaOscuro}
-                onToggle={onToggleTema}
-                variant="admin"
-              />
+              <div className="lg:mt-1 lg:flex lg:justify-center">
+                <ThemeToggle
+                  isDarkMode={temaOscuro}
+                  onToggle={onToggleTema}
+                  variant="admin"
+                />
+              </div>
               <button
                 type="button"
                 onClick={onSignOut}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-body font-black text-purple-100 hover:text-white bg-white/10 hover:bg-white/15 border border-white/15 transition-colors"
+                className="lg:hidden inline-flex items-center justify-center p-2 rounded-lg text-ink-500 bg-ink-50 hover:bg-ink-100 border border-ink-200 transition-colors"
                 title="Cerrar sesión"
               >
-                <LogOut size={13} />
-                <span className="hidden sm:inline">Salir</span>
+                <LogOut size={16} />
               </button>
             </div>
           </div>
 
-          <nav className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:max-w-xs">
+          <nav className="flex gap-1 w-full sm:w-auto mt-2 lg:flex-col lg:w-full lg:mt-6 lg:gap-2">
             <button
               type="button"
               onClick={() => setVistaAdmin('pedidos')}
-              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-body font-black transition-all ${vistaAdmin === 'pedidos' ? 'text-ink-900 bg-white shadow-sm' : 'text-purple-200 bg-white/10 hover:bg-white/20'}`}
+              className={`flex items-center gap-2 px-1 py-3 lg:px-4 lg:py-3 text-sm font-body font-bold transition-all lg:rounded-xl lg:border-none border-b-[3px] 
+                         ${vistaAdmin === 'pedidos' ? 'text-ink-900 border-ink-900 lg:bg-ink-900 lg:text-white lg:shadow-md' : 'text-ink-500 border-transparent hover:text-ink-800 lg:hover:bg-ink-50'}`}
             >
-              <ClipboardList size={14} className="shrink-0" />
-              <span className="truncate">Pedidos</span>
+              <ClipboardList size={18} />
+              Pedidos
             </button>
             <button
               type="button"
               onClick={() => setVistaAdmin('catalogo')}
-              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-body font-black transition-all ${vistaAdmin === 'catalogo' ? 'text-ink-900 bg-white shadow-sm' : 'text-purple-200 bg-white/10 hover:bg-white/20'}`}
+              className={`flex flex-1 sm:flex-none items-center justify-center sm:justify-start gap-2 px-1 py-3 lg:px-4 lg:py-3 text-sm font-body font-bold transition-all lg:rounded-xl lg:border-none border-b-[3px]
+                         ${vistaAdmin === 'catalogo' ? 'text-ink-900 border-ink-900 lg:bg-ink-900 lg:text-white lg:shadow-md' : 'text-ink-500 border-transparent hover:text-ink-800 lg:hover:bg-ink-50'}`}
+              style={{ marginLeft: window.innerWidth < 1024 ? '1rem' : '0' }}
             >
-              <LayoutGrid size={14} className="shrink-0" />
-              <span className="truncate">Catálogo</span>
+              <LayoutGrid size={18} />
+              Catálogo
             </button>
           </nav>
+          
+          <div className="hidden lg:flex mt-auto pt-6 w-full">
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="flex w-full items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-body font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-transparent transition-colors"
+              title="Cerrar sesión"
+            >
+              <LogOut size={16} />
+              Cerrar sesión
+            </button>
+          </div>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-4">
+      {/* ── Main Content ── */}
+      <main className="flex-1 min-w-0 lg:h-screen lg:overflow-y-auto">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-4 lg:p-8 lg:max-w-7xl">
 
         {vistaAdmin === 'catalogo' && <AdminCatalogo />}
 
         {vistaAdmin === 'pedidos' && (
           <>
-        <section className="bg-white rounded-3xl border-2 border-purple-100 p-3 sm:p-4 space-y-3" style={{ boxShadow: '0 6px 24px rgba(107,53,184,0.08)' }}>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            {[{ key: 'todos', label: 'Total', emoji: '📋', color: '#6b35b8', bg: '#f3e8ff' },
+        <section className="bg-white rounded-2xl border border-ink-100 p-4 sm:p-5 space-y-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[{ key: 'todos', label: 'Total', icon: ClipboardList, color: '#6b35b8', bg: '#f3e8ff' },
               ...ESTADOS.map(e => ({ key: e, label: e, ...ESTADO_META[e] }))
-            ].map(({ key, label, emoji, color, bg }) => (
+            ].map(({ key, label, icon: IconComponent, color, bg }) => (
               <button
                 key={key}
                 onClick={() => setFiltroEstado(key)}
-                className="rounded-2xl p-2.5 sm:p-3 text-left transition-all duration-200 active:scale-95"
+                className={`flex flex-col rounded-2xl p-4 text-left transition-all duration-200 active:scale-[0.98] border
+                            ${filtroEstado === key ? 'border-transparent ring-2 ring-offset-2 ring-ink-900 bg-ink-900 text-white' : 'border-ink-200 bg-white hover:border-ink-300 text-ink-900'}`}
                 style={{
-                  background: filtroEstado === key ? color : 'white',
-                  border: `2px solid ${filtroEstado === key ? color : bg ?? '#f3e8ff'}`,
-                  boxShadow: filtroEstado === key ? `0 4px 14px ${color}44` : 'none',
+                  boxShadow: filtroEstado === key ? '0 4px 12px rgba(0,0,0,0.1)' : 'none',
                 }}
               >
-                <p className="text-lg sm:text-xl mb-1">{emoji}</p>
-                <p className="font-body font-black text-lg sm:text-xl" style={{ color: filtroEstado === key ? 'white' : color }}>
+                <IconComponent size={20} className={filtroEstado === key ? 'text-white' : 'text-ink-500'} />
+                <p className="font-body font-black text-xl sm:text-2xl mt-2 mb-1">
                   {contadores[key] ?? 0}
                 </p>
-                <p className="text-[10px] sm:text-[11px] font-body font-bold" style={{ color: filtroEstado === key ? 'rgba(255,255,255,0.82)' : '#9ca3af' }}>
+                <p className={`text-[11px] sm:text-xs font-body font-bold ${filtroEstado === key ? 'text-ink-200' : 'text-ink-500'}`}>
                   {label}
                 </p>
               </button>
@@ -946,10 +962,10 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
                 </div>
 
                 <div className="hidden lg:grid lg:grid-cols-[35%_65%] gap-4 h-[calc(100dvh-18rem)] min-h-[560px]">
-                  <div className="bg-white rounded-2xl border-2 border-purple-100 overflow-hidden flex flex-col">
-                    <div className="px-4 py-3 border-b border-purple-100/80">
+                  <div className="bg-white rounded-2xl border border-ink-200 overflow-hidden flex flex-col" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                    <div className="px-5 py-4 border-b border-ink-100">
                       <p className="font-display text-base text-ink-900">Pedidos</p>
-                      <p className="text-[11px] font-body text-ink-400 mt-0.5">
+                      <p className="text-xs font-body font-bold text-ink-400 mt-0.5">
                         {pedidosFiltrados.length} resultado{pedidosFiltrados.length !== 1 ? 's' : ''}
                       </p>
                     </div>
@@ -966,8 +982,8 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-2xl border-2 border-purple-100 overflow-hidden flex flex-col">
-                    <div className="px-4 py-3 border-b border-purple-100/80">
+                  <div className="bg-white rounded-2xl border border-ink-200 overflow-hidden flex flex-col" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                    <div className="px-5 py-4 border-b border-ink-100">
                       <p className="font-display text-base text-ink-900">Detalle del pedido</p>
                     </div>
 
@@ -1005,6 +1021,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
           </>
         )}
       </div>
+      </main>
     </div>
   );
 }

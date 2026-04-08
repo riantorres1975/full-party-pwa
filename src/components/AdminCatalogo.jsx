@@ -33,19 +33,6 @@ function MiniaturaProducto({ url, nombre }) {
   );
 }
 
-const TAB_STYLE = {
-  activo: {
-    background: 'linear-gradient(135deg, #6b35b8, #a855f7)',
-    color: 'white',
-    boxShadow: '0 4px 14px rgba(107, 53, 184, 0.45)',
-  },
-  inactivo: {
-    background: 'white',
-    color: '#6b35b8',
-    border: '2px solid #e0c4f8',
-  },
-};
-
 function ToggleDisponible({ activo, disabled, onToggle }) {
   return (
     <button
@@ -159,26 +146,19 @@ export default function AdminCatalogo() {
 
   return (
     <div className="space-y-4 sm:space-y-5 min-w-0">
-      {/* Pestañas — estilo pills */}
-      <div
-        className="flex p-1 rounded-2xl gap-1 w-full min-w-0 sm:w-auto sm:inline-flex"
-        style={{ background: 'rgba(255,255,255,0.9)', border: '2px solid #e0c4f8' }}
-      >
+      {/* Pestañas — estilo limpio subrayado SaaS */}
+      <div className="flex border-b border-ink-200 mb-2 gap-6 px-1">
         <button
           type="button"
           onClick={() => setPestana('nuevo')}
-          className="flex-1 sm:flex-none min-w-0 px-3 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-body font-black
-                     transition-all duration-200 active:scale-[0.98]"
-          style={pestana === 'nuevo' ? TAB_STYLE.activo : TAB_STYLE.inactivo}
+          className={`pb-3 text-sm font-body font-bold border-b-[3px] transition-colors ${pestana === 'nuevo' ? 'border-ink-900 text-ink-900' : 'border-transparent text-ink-500 hover:text-ink-700 hover:border-ink-300'}`}
         >
           Nuevo Artículo
         </button>
         <button
           type="button"
           onClick={() => setPestana('inventario')}
-          className="flex-1 sm:flex-none min-w-0 px-3 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-body font-black
-                     transition-all duration-200 active:scale-[0.98]"
-          style={pestana === 'inventario' ? TAB_STYLE.activo : TAB_STYLE.inactivo}
+          className={`pb-3 text-sm font-body font-bold border-b-[3px] transition-colors ${pestana === 'inventario' ? 'border-ink-900 text-ink-900' : 'border-transparent text-ink-500 hover:text-ink-700 hover:border-ink-300'}`}
         >
           Inventario
         </button>
@@ -266,29 +246,27 @@ export default function AdminCatalogo() {
 
             {!cargando && !errorLista && filtrados.length > 0 && (
               <div
-                className="space-y-3 overflow-y-auto overscroll-y-contain min-h-0 pr-1 -mr-0.5
-                           [scrollbar-width:thin] [scrollbar-color:rgba(107,53,184,0.35)_transparent]
-                           max-h-[calc(100dvh-15.5rem)] sm:max-h-[calc(100dvh-13rem)] pb-24"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto overscroll-y-contain min-h-0 pr-1 -mr-0.5
+                           [scrollbar-width:thin] max-h-[calc(100dvh-15.5rem)] sm:max-h-[calc(100dvh-13rem)] pb-24"
               >
                 {filtrados.map(p => (
                   <div
                     key={p.id}
-                    className="bg-white rounded-2xl border-2 border-purple-100 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4
-                               transition-shadow hover:shadow-md"
-                    style={{ boxShadow: '0 2px 12px rgba(107, 53, 184, 0.06)' }}
+                    className="bg-white rounded-2xl border border-ink-100 p-4 flex flex-col gap-4
+                               transition-shadow hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)]"
                   >
-                    <div className="flex gap-3 flex-1 min-w-0 items-center">
+                    <div className="flex gap-3 min-w-0 items-start">
                       <div
-                        className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 bg-ink-50 border-2 border-ink-100
+                        className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-ink-50 border border-ink-100
                                    flex items-center justify-center"
                       >
                         <MiniaturaProducto url={p.imagen_url} nombre={p.nombre} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-body font-black text-ink-900 text-sm leading-snug line-clamp-2">
+                        <p className="font-body font-black text-ink-900 text-sm leading-snug line-clamp-2" title={p.nombre}>
                           {p.nombre}
                         </p>
-                        <p className="text-[11px] font-body text-ink-500 mt-0.5">
+                        <p className="text-[11px] font-body text-ink-500 mt-1 line-clamp-1">
                           {p.marca ? (
                             <span>Marca: {p.marca}</span>
                           ) : (
@@ -301,23 +279,23 @@ export default function AdminCatalogo() {
                             <span className="text-ink-300">Sin tamaño</span>
                           )}
                         </p>
-                        <div className="mt-1.5 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
-                          <p className="text-sm font-body font-black" style={{ color: '#6b35b8' }}>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-body font-black text-ink-900">
                             {SIMBOLO_MONEDA}
                             {Number(p.precio).toFixed(2)}
                           </p>
                           {p.stock_ilimitado !== false ? (
-                            <span className="inline-flex items-center w-fit gap-1 text-[11px] font-body font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
-                              <span className="text-[14px] leading-none mb-[1px]">∞</span> Ilimitado
+                            <span className="inline-flex items-center w-fit gap-0.5 text-[10px] font-body font-bold text-ink-500 bg-ink-50 px-1.5 py-0.5 rounded border border-ink-100">
+                              <span className="text-[12px] leading-none mb-[1px]">∞</span> Ilimitado
                             </span>
                           ) : (
                             Number(p.stock_actual) <= Number(p.stock_minimo) ? (
-                              <span className="inline-flex items-center w-fit gap-1 text-[11px] font-body font-black text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-200 shadow-sm">
-                                <AlertTriangle size={12} strokeWidth={2.5} className="text-red-500" />
-                                {p.stock_actual} - Stock Bajo
+                              <span className="inline-flex items-center w-fit gap-1 text-[10px] font-body font-bold text-red-700 bg-red-50 px-1.5 py-0.5 rounded border border-red-200">
+                                <AlertTriangle size={10} strokeWidth={2.5} />
+                                {p.stock_actual} Bajo
                               </span>
                             ) : (
-                              <span className="inline-flex items-center w-fit gap-1 text-[11px] font-body font-bold text-ink-600 bg-ink-50 px-1.5 py-0.5 rounded border border-ink-200">
+                              <span className="inline-flex items-center w-fit gap-1 text-[10px] font-body font-bold text-ink-600 bg-ink-50 px-1.5 py-0.5 rounded border border-ink-200">
                                 {p.stock_actual} en stock
                               </span>
                             )
@@ -326,10 +304,10 @@ export default function AdminCatalogo() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-4 sm:justify-end sm:flex-shrink-0 w-full sm:w-auto border-t sm:border-t-0 border-ink-100 pt-3 sm:pt-0">
-                      <div className="col-span-2 sm:col-span-1 flex items-center gap-2">
-                        <span className="text-[11px] font-body font-bold text-ink-400 whitespace-nowrap">
-                          Disponible
+                    <div className="flex flex-col gap-3 mt-auto pt-4 border-t border-ink-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-body font-bold text-ink-600">
+                          {p.activo !== false ? 'Activo' : 'Oculto'}
                         </span>
                         <ToggleDisponible
                           activo={p.activo !== false}
@@ -337,16 +315,12 @@ export default function AdminCatalogo() {
                           onToggle={() => handleToggleDisponibilidad(p)}
                         />
                       </div>
-                      <div className="col-span-2 sm:col-span-1 flex items-center gap-2 justify-end sm:justify-end">
+                      <div className="grid grid-cols-2 gap-2 mt-1">
                         <button
                           type="button"
                           onClick={() => setEditando(p)}
-                          className="inline-flex items-center justify-center gap-1.5 px-3 py-2 min-w-[102px] rounded-xl text-xs font-body font-black
-                                     text-white transition-all active:scale-95"
-                          style={{
-                            background: 'linear-gradient(135deg, #8b5cf6, #6b35b8)',
-                            boxShadow: '0 2px 10px rgba(107, 53, 184, 0.35)',
-                          }}
+                          className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-body font-bold
+                                     text-ink-700 bg-white border border-ink-200 transition-colors hover:bg-ink-50 hover:text-ink-900 active:scale-95"
                         >
                           <Pencil size={14} />
                           Editar
@@ -355,15 +329,11 @@ export default function AdminCatalogo() {
                           type="button"
                           onClick={() => handleEliminar(p)}
                           disabled={eliminandoId === p.id}
-                          className="inline-flex items-center justify-center gap-1.5 px-3 py-2 min-w-[102px] rounded-xl text-xs font-body font-black
-                                     text-rose-700 transition-all active:scale-95 disabled:opacity-50"
-                          style={{
-                            background: '#fff1f2',
-                            border: '2px solid #fecdd3',
-                          }}
+                          className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-body font-bold
+                                     text-rose-600 bg-white transition-colors hover:bg-rose-50 hover:text-rose-700 active:scale-95 disabled:opacity-50"
                         >
                           <Trash2 size={14} />
-                          {eliminandoId === p.id ? '…' : 'Eliminar'}
+                          {eliminandoId === p.id ? '…' : 'Borrar'}
                         </button>
                       </div>
                     </div>
