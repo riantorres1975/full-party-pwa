@@ -101,13 +101,13 @@ export default function BuscadorFiltros({
 
       {/* ── Pills de filtros activos (solo móvil) ─────────────────────── */}
       {pillsActivas.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 lg:hidden">
+        <div className="flex overflow-x-auto hide-scrollbar gap-1.5 pb-1 w-full lg:hidden">
           {pillsActivas.map(({ dim, val, label }) => (
             <button
               key={`${dim}-${val}`}
               onClick={() => toggleFiltro(dim, val)}
               className="flex items-center gap-1 text-[11px] font-body font-black
-                         text-white px-2.5 py-1 rounded-lg
+                         text-white px-2.5 py-1 rounded-lg flex-shrink-0
                          transition-all duration-150 active:scale-95"
               style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
                        boxShadow: '0 2px 8px #ff3dac33' }}
