@@ -214,6 +214,10 @@ export const categorias = [
 
 ### Catálogo público (`/`)
 
+- **Diseño Premium y Responsivo** — interfaz estética, minimalista, con sombras, gradientes y animaciones sutiles
+- **Modo Claro y Oscuro (Dark Mode)** — alternable desde el header para todas las vistas
+- **Filtros optimizados para gran escala** — listas de categorías con buscador interno (*inline*) para catálogos extensos (+50)
+- **Modal de Detalle Inteligente** — *bottom-sheet* en móvil y *side-by-side* optimizado en desktop
 - Productos dinámicos desde Supabase con skeleton de carga y pantalla de error con reintento
 - **Infinite scroll** nativo con `IntersectionObserver` — carga 12 productos iniciales y agrega 12 más al llegar al final
 - **Lazy loading** de imágenes con atributo `loading="lazy"`

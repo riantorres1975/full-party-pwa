@@ -53,97 +53,124 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar }) 
         className={`absolute inset-0 w-full h-full transition-opacity duration-200 ${
           cerrando ? 'opacity-0' : 'opacity-100'
         }`}
-        style={{ background: 'rgba(26, 7, 51, 0.62)', backdropFilter: 'blur(5px)' }}
+        style={{ background: 'rgba(10, 5, 20, 0.7)', backdropFilter: 'blur(8px)' }}
         onClick={iniciarCierre}
         aria-label="Cerrar modal"
       />
 
-      <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-5">
+      {/* Contenedor: bottom-sheet en móvil, centrado side-by-side en desktop */}
+      <div className="absolute inset-0 flex items-end sm:items-center justify-center sm:p-5">
         <section
           role="dialog"
           aria-modal="true"
           aria-label={`Detalle de ${producto.nombre}`}
-          className={`relative w-full max-w-[760px] max-h-[92vh] bg-white rounded-3xl overflow-hidden
-                     border-2 border-purple-100 shadow-2xl transition-all duration-200 ease-out
+          className={`relative w-full sm:max-w-[480px] md:max-w-[720px] lg:max-w-[800px]
+                     max-h-[94vh] sm:max-h-[88vh]
+                     rounded-t-3xl sm:rounded-2xl overflow-hidden
+                     shadow-2xl transition-all duration-200 ease-out
                      ${
                        cerrando
                         ? 'opacity-0 translate-y-4 scale-[0.985]'
                         : 'opacity-100 translate-y-0 scale-100'
                      }`}
-          style={{ boxShadow: '0 30px 80px rgba(26, 7, 51, 0.38)' }}
+          style={{
+            boxShadow: '0 -8px 60px rgba(10, 5, 20, 0.5)',
+            background: 'var(--surface-primary)',
+            border: '1px solid var(--border-soft)',
+          }}
         >
-          <div
-            className="h-1.5 w-full"
-            style={{ background: 'linear-gradient(90deg, #ff3dac, #a855f7, #00d4ff)' }}
-          />
+          {/* Handle bar (solo en mobile) */}
+          <div className="flex justify-center pt-2.5 pb-1 sm:hidden">
+            <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border-default)' }} />
+          </div>
 
+          {/* Close button */}
           <button
             type="button"
             onClick={iniciarCierre}
-            className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/95 border-2 border-purple-100
-                       text-ink-500 hover:text-ink-900 transition-colors flex items-center justify-center"
+            className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full
+                       text-ink-400 hover:text-ink-900 transition-all duration-200
+                       flex items-center justify-center hover:bg-ink-100"
+            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-soft)' }}
             aria-label="Cerrar"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
 
-          <div className="h-56 sm:h-64 md:h-72 overflow-hidden bg-white flex items-center justify-center p-4">
-            <img
-              src={producto.imagen_url}
-              alt={producto.nombre}
-              className="w-full h-full object-contain p-2 sm:p-3 transition-transform duration-500 sm:hover:scale-[1.03]"
-              onError={(e) => {
-                e.target.src = `https://placehold.co/900x700/f3e8ff/a855f7?text=${encodeURIComponent(producto.nombre)}`;
-              }}
-            />
-          </div>
-
-          <div className="px-5 pt-4 pb-5 space-y-3 overflow-y-auto" style={{ maxHeight: 'calc(92vh - 18rem)' }}>
-            <p className="text-[11px] font-body font-black uppercase tracking-[0.08em] text-purple-500">
-              Detalle del producto
-            </p>
-
-            <div className="flex items-start justify-between gap-3">
-              <h3 className="font-display text-xl leading-tight text-ink-900">{producto.nombre}</h3>
-              <span className="font-body font-black text-xl text-fiesta-magenta whitespace-nowrap">
-                {SIMBOLO_MONEDA}{Number(producto.precio || 0).toFixed(2)}
-              </span>
+          {/* Layout: stacked en mobile, side-by-side en md+ */}
+          <div className="md:flex md:items-stretch max-h-[94vh] sm:max-h-[88vh]">
+            {/* Imagen */}
+            <div
+              className="w-full md:w-1/2 aspect-square sm:aspect-[4/3] md:aspect-auto md:min-h-[360px]
+                         overflow-hidden flex items-center justify-center flex-shrink-0"
+              style={{ background: 'var(--surface-card)' }}
+            >
+              <img
+                src={producto.imagen_url}
+                alt={producto.nombre}
+                className="w-full h-full object-cover transition-transform duration-500 sm:hover:scale-[1.03]"
+                onError={(e) => {
+                  e.target.src = `https://placehold.co/900x900/f3e8ff/a855f7?text=${encodeURIComponent(producto.nombre)}`;
+                }}
+              />
             </div>
 
-            {producto.descripcion && (
-              <p className="text-sm font-body text-ink-500 leading-relaxed">{producto.descripcion}</p>
-            )}
+            {/* Contenido */}
+            <div className="md:w-1/2 md:flex md:flex-col">
+              <div className="px-5 pt-4 pb-5 space-y-3 overflow-y-auto flex-1
+                              md:pt-5 md:px-6 md:pb-6 md:space-y-4">
+                {/* Nombre y precio */}
+                <div className="flex items-start justify-between gap-3 md:flex-col md:gap-1">
+                  <h3 className="font-display text-lg sm:text-xl md:text-2xl leading-tight text-ink-900">
+                    {producto.nombre}
+                  </h3>
+                  <span className="font-body font-black text-lg sm:text-xl md:text-2xl text-fiesta-magenta whitespace-nowrap shrink-0">
+                    {SIMBOLO_MONEDA}{Number(producto.precio || 0).toFixed(2)}
+                  </span>
+                </div>
 
-            {(marca || tamano) && (
-              <div className="flex flex-wrap gap-2">
-                {marca && (
-                  <span className="text-xs font-body font-black px-3 py-1.5 rounded-full bg-purple-50 text-purple-700 border-2 border-purple-100">
-                    Marca: {marca}
-                  </span>
+                {/* Descripción */}
+                {producto.descripcion && (
+                  <p className="text-sm font-body text-ink-500 leading-relaxed">{producto.descripcion}</p>
                 )}
-                {tamano && (
-                  <span className="text-xs font-body font-black px-3 py-1.5 rounded-full bg-cyan-50 text-cyan-700 border-2 border-cyan-100">
-                    Tamaño: {tamano}
-                  </span>
+
+                {/* Badges de marca y tamaño */}
+                {(marca || tamano) && (
+                  <div className="flex flex-wrap gap-2">
+                    {marca && (
+                      <span className="text-xs font-body font-black px-3 py-1.5 rounded-xl bg-purple-50 text-purple-700 border border-purple-100">
+                        {marca}
+                      </span>
+                    )}
+                    {tamano && (
+                      <span className="text-xs font-body font-black px-3 py-1.5 rounded-xl bg-cyan-50 text-cyan-700 border border-cyan-100">
+                        {tamano}
+                      </span>
+                    )}
+                  </div>
                 )}
+
+                {/* Espaciador flexible en desktop */}
+                <div className="hidden md:block flex-1" />
+
+                {/* Botón agregar */}
+                <button
+                  type="button"
+                  onClick={() => onAgregar?.(producto)}
+                  disabled={agotado}
+                  className="w-full mt-1 py-3.5 rounded-2xl font-body font-black text-base text-white
+                             transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{
+                    background: agotado
+                      ? 'linear-gradient(135deg, #c4b5fd, #a78bfa)'
+                      : 'linear-gradient(135deg, #ff3dac, #a855f7)',
+                    boxShadow: agotado ? 'none' : '0 6px 24px #ff3dac4a',
+                  }}
+                >
+                  {agotado ? 'No disponible' : '+ Agregar al carrito'}
+                </button>
               </div>
-            )}
-
-            <button
-              type="button"
-              onClick={() => onAgregar?.(producto)}
-              disabled={agotado}
-              className="w-full mt-1 py-3.5 rounded-2xl font-body font-black text-base text-white
-                         transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{
-                background: agotado
-                  ? 'linear-gradient(135deg, #c4b5fd, #a78bfa)'
-                  : 'linear-gradient(135deg, #ff3dac, #a855f7)',
-                boxShadow: agotado ? 'none' : '0 6px 24px #ff3dac4a',
-              }}
-            >
-              {agotado ? 'No disponible' : '+ Agregar al carrito'}
-            </button>
+            </div>
           </div>
         </section>
       </div>

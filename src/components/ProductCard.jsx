@@ -1,16 +1,6 @@
 import { SIMBOLO_MONEDA } from '../data/productos';
 import { obtenerPrecioAplicable } from '../utils/precios';
 
-// Cada tarjeta recibe un color de acento rotativo
-const ACCENT_COLORS = [
-  { border: '#ff3dac', shadow: '#ff3dac33', badge: '#ff3dac', badgeText: 'white'  },
-  { border: '#a855f7', shadow: '#a855f733', badge: '#a855f7', badgeText: 'white'  },
-  { border: '#00d4ff', shadow: '#00d4ff33', badge: '#00d4ff', badgeText: '#1a0733' },
-  { border: '#ff7b2e', shadow: '#ff7b2e33', badge: '#ff7b2e', badgeText: 'white'  },
-  { border: '#39e87b', shadow: '#39e87b33', badge: '#39e87b', badgeText: '#1a0733' },
-  { border: '#ffe135', shadow: '#ffe13533', badge: '#ffe135', badgeText: '#1a0733' },
-];
-
 export default function ProductCard({
   producto,
   cantidad,
@@ -21,7 +11,6 @@ export default function ProductCard({
 }) {
   const enCarrito  = cantidad > 0;
   const agotado    = producto.activo === false;
-  const accent     = ACCENT_COLORS[index % ACCENT_COLORS.length];
   const maxStockAlcanzado = producto.stock_ilimitado === false && cantidad >= (producto.stock_actual || 0);
   const precioBase = Number(producto.precio) || 0;
   const precioAplicable = obtenerPrecioAplicable(producto, cantidad || 1);
@@ -29,17 +18,14 @@ export default function ProductCard({
 
   return (
     <article
-      className="bg-white rounded-3xl overflow-hidden transition-all duration-300"
+      className="product-card rounded-2xl overflow-hidden transition-all duration-300"
       style={{
-        border: agotado
-          ? '2px solid #e0c4f8'
-          : `2px solid ${enCarrito ? accent.border : '#f3e8ff'}`,
-        boxShadow: agotado
-          ? 'none'
-          : enCarrito
-            ? `0 6px 20px ${accent.shadow}`
-            : '0 2px 8px #a855f715',
-        opacity: agotado ? 0.7 : 1,
+        background: 'var(--surface-card)',
+        border: '1px solid var(--border-soft)',
+        boxShadow: enCarrito && !agotado
+          ? '0 4px 20px rgba(168, 85, 247, 0.18)'
+          : '0 1px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(168,85,247,0.04)',
+        opacity: agotado ? 0.65 : 1,
       }}
     >
       <button
@@ -50,30 +36,24 @@ export default function ProductCard({
       >
         {/* Imagen */}
         <div
-          className="relative h-40 overflow-hidden bg-white"
-          style={{ boxShadow: 'inset 0 0 0 1px rgba(224,196,248,0.35)' }}
+          className="relative aspect-square overflow-hidden"
+          style={{ background: 'var(--surface-card)' }}
         >
           <img
             src={producto.imagen_url}
             alt={producto.nombre}
             loading="lazy"
-            className="w-full h-full object-contain p-1.5 transition-transform duration-500 hover:scale-[1.04]"
+            className="w-full h-full object-cover transition-transform duration-500 hover:scale-[1.05]"
             style={{ filter: agotado ? 'grayscale(60%)' : 'none' }}
             onError={(e) => {
-              e.target.src = `https://placehold.co/400x300/f3e8ff/a855f7?text=${encodeURIComponent(producto.nombre)}`;
+              e.target.src = `https://placehold.co/400x400/f3e8ff/a855f7?text=${encodeURIComponent(producto.nombre)}`;
             }}
           />
 
-          {/* Franja de color arriba */}
-          {!agotado && (
-            <div className="absolute top-0 inset-x-0 h-1 rounded-t-3xl"
-                 style={{ background: `linear-gradient(90deg, ${accent.border}, transparent)` }} />
-          )}
-
           {/* Badge agotado */}
           {agotado && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="bg-ink-900/70 text-white text-xs font-body font-black
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+              <span className="bg-ink-900/80 text-white text-[11px] font-body font-black
                                px-3 py-1.5 rounded-full backdrop-blur-sm tracking-wide">
                 😔 Agotado
               </span>
@@ -82,17 +62,18 @@ export default function ProductCard({
 
           {/* Badge de cantidad en carrito */}
           {enCarrito && !agotado && (
-            <div className="absolute top-2.5 right-2.5 text-xs font-body font-black
-                            px-2 py-1 rounded-full animate-scale-in border-2 border-white"
-                 style={{ background: accent.badge, color: accent.badgeText }}>
-              ×{cantidad}
+            <div className="absolute top-2 right-2 text-[11px] font-body font-black min-w-[24px] h-6
+                            flex items-center justify-center px-1.5 rounded-full animate-scale-in
+                            bg-white text-ink-900 shadow-md"
+                 style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+              {cantidad}
             </div>
           )}
 
           {/* Badge nuevo */}
           {producto.es_nuevo === true && !agotado && (
-            <div className="absolute top-2.5 left-2.5 text-[10px] font-body font-black uppercase tracking-wide
-                            px-2 py-1 rounded-full border-2 border-white text-white"
+            <div className="absolute top-2 left-2 text-[9px] font-body font-black uppercase tracking-wider
+                            px-2 py-0.5 rounded-full text-white"
                  style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}>
               Nuevo
             </div>
@@ -100,51 +81,51 @@ export default function ProductCard({
         </div>
 
         {/* Info */}
-        <div className="p-3 pb-2 lg:p-2.5 lg:pb-1.5">
-          <div className="mb-2">
-            <h3 className="font-display text-sm leading-snug mb-1 text-ink-900">
-              {producto.nombre}
-            </h3>
-            <p className="text-xs font-body text-ink-400 leading-relaxed line-clamp-2">
+        <div className="px-2.5 pt-2.5 pb-1.5 sm:px-3 sm:pt-3 sm:pb-2">
+          <h3 className="font-display text-[13px] sm:text-sm leading-snug text-ink-900 line-clamp-2">
+            {producto.nombre}
+          </h3>
+          {producto.descripcion && (
+            <p className="text-[11px] font-body text-ink-400 leading-snug mt-0.5 line-clamp-1 sm:line-clamp-2">
               {producto.descripcion}
             </p>
-          </div>
+          )}
 
           {/* Precio */}
-          {hayDescuento && enCarrito ? (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-ink-300 line-through font-body font-bold">
+          <div className="mt-1.5">
+            {hayDescuento && enCarrito ? (
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[11px] text-ink-300 line-through font-body font-bold">
+                  {SIMBOLO_MONEDA}{precioBase.toFixed(2)}
+                </span>
+                <span className="font-body font-black text-sm" style={{ color: '#16a34a' }}>
+                  {SIMBOLO_MONEDA}{precioAplicable.toFixed(2)}
+                </span>
+              </div>
+            ) : (
+              <span className="font-body font-black text-sm text-ink-900">
                 {SIMBOLO_MONEDA}{precioBase.toFixed(2)}
               </span>
-              <span className="block font-body font-black text-sm" style={{ color: '#16a34a' }}>
-                {SIMBOLO_MONEDA}{precioAplicable.toFixed(2)}
-              </span>
-            </div>
-          ) : (
-            <span className="block font-body font-black text-sm"
-                  style={{ color: agotado ? '#b388e8' : accent.border }}>
-              {SIMBOLO_MONEDA}{precioBase.toFixed(2)}
-            </span>
-          )}
+            )}
+          </div>
         </div>
       </button>
 
-      <div className="px-3 pb-3 lg:px-2.5 lg:pb-2.5">
-
-        {/* Controles — ocultos si está agotado */}
+      <div className="px-2.5 pb-2.5 sm:px-3 sm:pb-3">
+        {/* Controles */}
         {agotado ? (
-          <div className="w-full py-2 px-3 rounded-full text-center
-                          text-xs font-body font-black text-ink-400
-                          bg-ink-100 border-2 border-ink-200">
+          <div className="w-full py-1.5 px-3 rounded-xl text-center
+                          text-[11px] font-body font-black text-ink-400
+                          bg-ink-100">
             No disponible
           </div>
         ) : enCarrito ? (
           <div className="flex items-center justify-between w-full">
             <button
               onClick={() => onReducir(producto.id)}
-              className="w-8 h-8 flex items-center justify-center rounded-full
-                         bg-ink-100 text-ink-600 border-2 border-ink-200
-                         transition-all duration-150 active:scale-90 hover:border-fiesta-magenta hover:text-fiesta-magenta"
+              className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-xl
+                         bg-ink-100 text-ink-600
+                         transition-all duration-150 active:scale-90 hover:bg-ink-200"
               aria-label="Quitar uno"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -159,10 +140,10 @@ export default function ProductCard({
             <button
               onClick={() => !maxStockAlcanzado && onAgregar(producto)}
               disabled={maxStockAlcanzado}
-              className={`w-8 h-8 flex items-center justify-center rounded-full text-white
-                         transition-all duration-150 border-2 border-white
+              className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-xl text-white
+                         transition-all duration-150
                          ${maxStockAlcanzado ? 'opacity-50 cursor-not-allowed' : 'active:scale-90'}`}
-              style={{ background: `linear-gradient(135deg, ${accent.border}, #a855f7)` }}
+              style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}
               aria-label="Agregar uno más"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -174,12 +155,12 @@ export default function ProductCard({
           <button
             onClick={() => !maxStockAlcanzado && onAgregar(producto)}
             disabled={maxStockAlcanzado}
-            className={`w-full text-white text-xs font-body font-black
-                       py-2 px-3 lg:py-1.5 rounded-full transition-all duration-200 border-2 border-white
+            className={`w-full text-white text-[12px] sm:text-xs font-body font-black
+                       py-2 px-3 rounded-xl transition-all duration-200
                        ${maxStockAlcanzado ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'}`}
             style={{
-              background: `linear-gradient(135deg, ${accent.border}, #a855f7)`,
-              boxShadow: maxStockAlcanzado ? 'none' : `0 3px 10px ${accent.shadow}`,
+              background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
+              boxShadow: maxStockAlcanzado ? 'none' : '0 2px 10px rgba(168,85,247,0.25)',
             }}
             aria-label={`Agregar ${producto.nombre} al carrito`}
           >

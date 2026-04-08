@@ -1,7 +1,8 @@
 import { NOMBRE_NEGOCIO } from '../data/productos';
 import { usePWA } from '../hooks/usePWA';
+import ThemeToggle from './ThemeToggle';
 
-export default function Header({ cantidadTotal, onAbrirCarrito }) {
+export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onToggleTema }) {
   const { installPrompt, mostrarGuiaIOS, instalarApp } = usePWA();
 
   const mostrarBotonInstalar = !!installPrompt || mostrarGuiaIOS;
@@ -19,7 +20,7 @@ export default function Header({ cantidadTotal, onAbrirCarrito }) {
 
   return (
     <div className="safe-top">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+      <div className="max-w-[1500px] mx-auto px-4 lg:px-10 py-3 flex items-center justify-between gap-2">
         {/* Logo / Nombre */}
         <div className="flex items-center gap-2 min-w-0">
           <span className="fp-header-balloon-wrap" aria-hidden>
@@ -69,8 +70,15 @@ export default function Header({ cantidadTotal, onAbrirCarrito }) {
             </button>
           )}
 
-          {/* Botón carrito — wrapper con overflow visible para que el badge no se corte */}
-          <div className="relative">
+          {/* Theme toggle — visible en todas las pantallas */}
+          <ThemeToggle
+            isDarkMode={temaOscuro}
+            onToggle={onToggleTema}
+            variant={temaOscuro ? 'catalogDark' : 'catalog'}
+          />
+
+          {/* Botón carrito */}
+          <div className="relative overflow-visible">
             <button
               onClick={onAbrirCarrito}
               className="relative p-2.5 rounded-full text-white transition-all duration-200 active:scale-90"
@@ -83,9 +91,9 @@ export default function Header({ cantidadTotal, onAbrirCarrito }) {
               </svg>
             </button>
             {cantidadTotal > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 flex items-center justify-center
-                               text-[11px] font-body font-black bg-fiesta-yellow text-ink-900 rounded-full px-1
-                               animate-cart-bounce border-2 border-white pointer-events-none">
+              <span className="absolute -top-2 -right-2 min-w-[22px] h-[22px] flex items-center justify-center
+                               text-[12px] leading-none font-body font-black tabular-nums bg-[#ffe55c] text-[#4b1d7a]
+                               rounded-full px-1 animate-cart-bounce border-2 border-[#1b2140] shadow-[0_2px_8px_rgba(0,0,0,0.25)] pointer-events-none">
                 {cantidadTotal > 99 ? '99+' : cantidadTotal}
               </span>
             )}
