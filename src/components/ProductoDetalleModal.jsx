@@ -75,8 +75,8 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar }) 
                      }`}
           style={{
             boxShadow: '0 -8px 60px rgba(10, 5, 20, 0.5)',
-            background: 'var(--surface-primary)',
-            border: '1px solid var(--border-soft)',
+            background: 'var(--surface-card)',
+            border: '1px solid var(--border-default)',
           }}
         >
           {/* Handle bar (solo en mobile) */}
