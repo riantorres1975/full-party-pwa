@@ -7,6 +7,13 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ───────────────────────────────────────────────────────────────────────────
+-- 1.5 TABLA ADMINS (Control de acceso seguro para RLS)
+-- ───────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.admins (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE
+);
+
+-- ───────────────────────────────────────────────────────────────────────────
 -- 2. TABLA PRODUCTOS
 -- ───────────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.productos (
@@ -28,36 +35,78 @@ CREATE INDEX IF NOT EXISTS idx_productos_marca     ON public.productos (marca);
 CREATE INDEX IF NOT EXISTS idx_productos_activo    ON public.productos (activo);
 
 -- ───────────────────────────────────────────────────────────────────────────
--- 3. ROW LEVEL SECURITY (RLS)
--- Sin estas políticas el anon key NO puede leer nada.
+-- 3. ROW LEVEL SECURITY (RLS) PRODUCTOS
 -- ───────────────────────────────────────────────────────────────────────────
 ALTER TABLE public.productos ENABLE ROW LEVEL SECURITY;
 
--- Lectura pública — todos los productos (activos y agotados) son visibles
--- El frontend se encarga de mostrar el estado "Agotado" visualmente
+DROP POLICY IF EXISTS "Lectura pública de productos" ON public.productos;
 CREATE POLICY "Lectura pública de productos"
   ON public.productos
   FOR SELECT
   USING (true);
 
--- Escritura solo para usuarios autenticados (panel de admin futuro)
+DROP POLICY IF EXISTS "Solo admins pueden insertar" ON public.productos;
 CREATE POLICY "Solo admins pueden insertar"
   ON public.productos
   FOR INSERT
-  WITH CHECK (auth.role() = 'authenticated');
+  WITH CHECK (auth.uid() IN (SELECT user_id FROM public.admins));
 
+DROP POLICY IF EXISTS "Solo admins pueden actualizar" ON public.productos;
 CREATE POLICY "Solo admins pueden actualizar"
   ON public.productos
   FOR UPDATE
-  USING (auth.role() = 'authenticated');
+  USING (auth.uid() IN (SELECT user_id FROM public.admins));
 
+DROP POLICY IF EXISTS "Solo admins pueden eliminar" ON public.productos;
 CREATE POLICY "Solo admins pueden eliminar"
   ON public.productos
   FOR DELETE
-  USING (auth.role() = 'authenticated');
+  USING (auth.uid() IN (SELECT user_id FROM public.admins));
 
 -- ───────────────────────────────────────────────────────────────────────────
--- 4. DATOS DE EJEMPLO (los mismos del catálogo estático)
+-- 4. TABLA PEDIDOS Y SU ROW LEVEL SECURITY (RLS)
+-- ───────────────────────────────────────────────────────────────────────────
+-- Crear la tabla pedidos si no está creada aún mediante panel
+CREATE TABLE IF NOT EXISTS public.pedidos (
+  id                UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  folio             TEXT          NOT NULL UNIQUE,
+  cliente_nombre    TEXT          NOT NULL,
+  cliente_telefono  TEXT          NOT NULL,
+  tipo_entrega      TEXT          NOT NULL,
+  direccion         TEXT,
+  total             NUMERIC(10,2) NOT NULL,
+  estado            TEXT          NOT NULL DEFAULT 'Por Surtir',
+  detalles_json     JSONB         NOT NULL,
+  notificado_estado TEXT,
+  created_at        TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.pedidos ENABLE ROW LEVEL SECURITY;
+
+-- Cualquier persona puede insertar (hacer un pedido) sin estar auth
+DROP POLICY IF EXISTS "Public puede insertar pedidos" ON public.pedidos;
+CREATE POLICY "Public puede insertar pedidos"
+  ON public.pedidos
+  FOR INSERT
+  WITH CHECK (true);
+
+-- Solo ADMINS pueden leer los pedidos completos
+DROP POLICY IF EXISTS "Solo admins pueden leer pedidos" ON public.pedidos;
+CREATE POLICY "Solo admins pueden leer pedidos"
+  ON public.pedidos
+  FOR SELECT
+  USING (auth.uid() IN (SELECT user_id FROM public.admins));
+
+-- Solo ADMINS pueden modificar o actualizar el estado
+DROP POLICY IF EXISTS "Solo admins pueden actualizar pedidos" ON public.pedidos;
+CREATE POLICY "Solo admins pueden actualizar pedidos"
+  ON public.pedidos
+  FOR UPDATE
+  USING (auth.uid() IN (SELECT user_id FROM public.admins));
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 5. DATOS DE EJEMPLO (los mismos del catálogo estático)
 -- Borra este bloque cuando subas tu inventario real.
 -- ───────────────────────────────────────────────────────────────────────────
 INSERT INTO public.productos
@@ -73,56 +122,15 @@ VALUES
    'Globo metálico corazón color rosa gold. Perfecto para XV años y bodas.',
    50.00,
    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80',
-   'globos-metal', 'Anagram', '18 pulgadas'),
-
-  ('Globo Número 1 Gigante',
-   'Globo metálico número 1 dorado. Grande y vistoso para el cumpleaños del año.',
-   65.00,
-   'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=600&q=80',
-   'globos-metal', 'Sempertex', 'Número 34'),
-
-  ('Globo Látex Pastel Surtido',
-   'Globo de látex en colores pastel suave. Venta por pieza, colores surtidos.',
-   18.00,
-   'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&q=80',
-   'globos', 'Sempertex', '11 pulgadas'),
-
-  ('Globo Látex Jumbo',
-   'Globo de látex gigante, perfecto para decoraciones de piso o arcos impactantes.',
-   35.00,
-   'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&q=80',
-   'globos', 'Sempertex', '36 pulgadas'),
-
-  ('Piñata Tradicional de Estrella',
-   'Piñata artesanal de estrella con colores brillantes para posada o cumpleaños.',
-   180.00,
-   'https://images.unsplash.com/photo-1547573854-74d2a71d0826?w=600&q=80',
-   'pinatas', 'Granmark', 'Grande'),
-
-  ('Kit Platos y Vasos Fiesta',
-   'Kit de 10 platos + 10 vasos desechables con diseño de fiesta colorido.',
-   75.00,
-   'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&q=80',
-   'desechables', 'Granmark', 'Chico'),
-
-  ('Banner de Cumpleaños',
-   'Banner de tela reutilizable con letras de FELIZ CUMPLEAÑOS en colores vibrantes.',
-   120.00,
-   'https://images.unsplash.com/photo-1558618047-f4e70c6c4e16?w=600&q=80',
-   'decoracion', 'Anagram', 'Grande');
+   'globos-metal', 'Anagram', '18 pulgadas')
+ON CONFLICT DO NOTHING;
 
 -- ───────────────────────────────────────────────────────────────────────────
--- 5. STORAGE BUCKET para imágenes (opcional — si quieres subir fotos reales)
+-- 6. PASO MANUAL FINAL (Para el panel de Supabase)
 -- ───────────────────────────────────────────────────────────────────────────
--- Ejecuta esto en Storage → New Bucket si prefieres no usar URLs externas:
---
--- INSERT INTO storage.buckets (id, name, public)
--- VALUES ('productos-imagenes', 'productos-imagenes', true);
---
--- CREATE POLICY "Imágenes públicas"
---   ON storage.objects FOR SELECT
---   USING (bucket_id = 'productos-imagenes');
---
--- Luego la URL de cada imagen será:
--- https://xxxx.supabase.co/storage/v1/object/public/productos-imagenes/foto.jpg
-
+-- Para darte permisos de Admin y que el panel funcione:
+-- 1. Ve a "Authentication" > "Users" en tu dashboard, copia el "User UID" de tu usuario.
+-- 2. Ve a "SQL Editor" y ejecuta esta única línea (quitando los guiones y poniendo tu UID real):
+-- 
+-- INSERT INTO public.admins (user_id) VALUES ('TU-UUID-AQUI');
+-- ───────────────────────────────────────────────────────────────────────────
