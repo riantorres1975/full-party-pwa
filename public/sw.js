@@ -1,5 +1,7 @@
 // Service Worker — Catálogo Digital PWA
-const CACHE_NAME = 'catalogo-v3';
+const CACHE_NAME = 'catalogo-v4';
+const IMG_CACHE  = 'catalogo-img-v1';
+const MAX_IMG_CACHE = 150; // max images to keep cached
 
 // Recursos a cachear en la instalación
 const STATIC_ASSETS = [
@@ -27,11 +29,12 @@ self.addEventListener('message', (event) => {
 
 // ── Activación: limpiar caches viejos ──────────────────────────────────────
 self.addEventListener('activate', (event) => {
+  const keepCaches = [CACHE_NAME, IMG_CACHE];
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== CACHE_NAME)
+          .filter((key) => !keepCaches.includes(key))
           .map((key) => caches.delete(key))
       )
     )
@@ -39,13 +42,59 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// ── Fetch: Network First con fallback a Cache ──────────────────────────────
+/**
+ * Is this request for an image?
+ */
+function isImageRequest(request) {
+  const url = request.url;
+  const accept = request.headers.get('Accept') || '';
+  return accept.includes('image/') ||
+    /\.(jpe?g|png|gif|webp|avif|svg|ico)(\?|$)/i.test(url);
+}
+
+/**
+ * Trim image cache to MAX_IMG_CACHE entries (LRU-like: delete oldest)
+ */
+async function trimImageCache() {
+  const cache = await caches.open(IMG_CACHE);
+  const keys = await cache.keys();
+  if (keys.length > MAX_IMG_CACHE) {
+    const toDelete = keys.slice(0, keys.length - MAX_IMG_CACHE);
+    await Promise.all(toDelete.map((k) => cache.delete(k)));
+  }
+}
+
+// ── Fetch handler ──────────────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   // Solo interceptar GET requests
   if (event.request.method !== 'GET') return;
 
-  // No interceptar requests a APIs externas
   const url = new URL(event.request.url);
+
+  // ── Imagen: Cache First (stale-while-revalidate) ─────────────────────
+  // Images from Supabase storage or external CDNs
+  if (isImageRequest(event.request)) {
+    event.respondWith(
+      caches.open(IMG_CACHE).then(async (cache) => {
+        const cached = await cache.match(event.request);
+        
+        // Background revalidate
+        const networkFetch = fetch(event.request).then((response) => {
+          if (response && response.ok) {
+            cache.put(event.request, response.clone());
+            trimImageCache();
+          }
+          return response;
+        }).catch(() => null);
+
+        // Return cached immediately, or wait for network
+        return cached || networkFetch;
+      })
+    );
+    return;
+  }
+
+  // ── Non-image same-origin: Network First ─────────────────────────────
   if (url.origin !== location.origin) return;
 
   event.respondWith(
