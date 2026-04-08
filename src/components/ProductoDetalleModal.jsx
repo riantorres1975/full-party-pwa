@@ -88,13 +88,19 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar }) 
           <button
             type="button"
             onClick={iniciarCierre}
-            className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full
-                       text-ink-400 hover:text-ink-900 transition-all duration-200
-                       flex items-center justify-center hover:bg-ink-100"
-            style={{ background: 'var(--surface-card)', border: '1px solid var(--border-soft)' }}
+            className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full
+                       transition-all duration-200 hover:scale-105 active:scale-95
+                       flex items-center justify-center"
+            style={{ 
+              background: 'var(--surface-card-alpha80)', 
+              backdropFilter: 'blur(8px)',
+              border: '1px solid var(--border-default)',
+              color: 'var(--text-primary)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+            }}
             aria-label="Cerrar"
           >
-            <X size={16} />
+            <X size={18} strokeWidth={2.5} />
           </button>
 
           {/* Layout: stacked en mobile, side-by-side en md+ */}
@@ -102,13 +108,16 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar }) 
             {/* Imagen */}
             <div
               className="w-full md:w-1/2 aspect-square sm:aspect-[4/3] md:aspect-auto md:min-h-[360px]
-                         overflow-hidden flex items-center justify-center flex-shrink-0"
+                         overflow-hidden flex items-center justify-center flex-shrink-0 p-6 sm:p-8"
               style={{ background: 'var(--surface-card)' }}
             >
               <img
                 src={producto.imagen_url}
                 alt={producto.nombre}
-                className="w-full h-full object-cover transition-transform duration-500 sm:hover:scale-[1.03]"
+                className="w-full h-full object-contain transition-transform duration-500 sm:hover:scale-[1.05]"
+                style={{
+                  filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.08))'
+                }}
                 onError={(e) => {
                   e.target.src = `https://placehold.co/900x900/f3e8ff/a855f7?text=${encodeURIComponent(producto.nombre)}`;
                 }}
