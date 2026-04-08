@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const STORAGE_KEY = 'fp-theme';
+const STORAGE_KEY = 'fp-theme-v2';
 
 function getInitialTheme() {
   const saved = localStorage.getItem(STORAGE_KEY);
