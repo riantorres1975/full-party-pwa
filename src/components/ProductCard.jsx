@@ -23,7 +23,7 @@ function ProductCardInner({
 
   return (
     <article
-      className="product-card rounded-2xl overflow-hidden transition-all duration-300"
+      className="product-card rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-300"
       style={{
         background: 'var(--surface-card)',
         border: '1px solid var(--border-soft)',
@@ -79,8 +79,8 @@ function ProductCardInner({
         </div>
 
         {/* Info */}
-        <div className="px-2.5 pt-2.5 pb-1.5 sm:px-3 sm:pt-3 sm:pb-2">
-          <h2 className="font-display text-[13px] sm:text-sm leading-snug text-ink-900 line-clamp-2">
+        <div className="px-2 pt-2 pb-1.5 sm:px-3 sm:pt-3 sm:pb-2">
+          <h2 className="font-display text-[12px] sm:text-[13px] leading-snug text-ink-900 line-clamp-2">
             {producto.nombre}
           </h2>
           {producto.descripcion && (
@@ -96,12 +96,12 @@ function ProductCardInner({
                 <span className="text-[11px] text-ink-400 line-through font-body font-bold">
                   {SIMBOLO_MONEDA}{precioBase.toFixed(2)}
                 </span>
-                <span className="font-body font-black text-sm" style={{ color: '#16a34a' }}>
+                <span className="font-body font-black text-[13px] sm:text-sm" style={{ color: '#16a34a' }}>
                   {SIMBOLO_MONEDA}{precioAplicable.toFixed(2)}
                 </span>
               </div>
             ) : (
-              <span className="font-body font-black text-sm text-ink-900">
+              <span className="font-body font-black text-[13px] sm:text-[14px] text-ink-900">
                 {SIMBOLO_MONEDA}{precioBase.toFixed(2)}
               </span>
             )}
@@ -109,7 +109,7 @@ function ProductCardInner({
         </div>
       </button>
 
-      <div className="px-2.5 pb-2.5 sm:px-3 sm:pb-3">
+      <div className="px-2 pb-2 sm:px-3 sm:pb-3">
         {/* Controles */}
         {agotado ? (
           <div className="w-full py-1.5 px-3 rounded-xl text-center
@@ -153,8 +153,8 @@ function ProductCardInner({
           <button
             onClick={() => !maxStockAlcanzado && onAgregar(producto)}
             disabled={maxStockAlcanzado}
-            className={`w-full text-white text-[12px] sm:text-xs font-body font-black
-                       py-2 px-3 rounded-xl transition-all duration-200
+            className={`w-full text-white text-[11px] sm:text-[12px] font-body font-black
+                       py-1.5 px-2.5 sm:py-2 sm:px-3 rounded-xl transition-all duration-200
                        ${maxStockAlcanzado ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'}`}
             style={{
               background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
