@@ -145,7 +145,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                 </svg>
               </button>
             )}
-            <button onClick={onCerrar}
+            <button onClick={onCerrar} aria-label="Cerrar carrito"
               className="p-2 rounded-full bg-ink-100 hover:bg-ink-200 text-ink-500 transition-colors">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />

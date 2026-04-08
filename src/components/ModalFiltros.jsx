@@ -207,6 +207,7 @@ export default function ModalFiltros({
           <button
             onClick={onCerrar}
             className="p-2 rounded-xl hover:bg-ink-100 text-ink-400 transition-colors"
+            aria-label="Cerrar filtros"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
