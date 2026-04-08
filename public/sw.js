@@ -100,6 +100,15 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
+        // Prevenir que Vercel SPA fallback (200 OK con HTML) se cacheé como un JS/CSS
+        const isAssetRequest = url.pathname.match(/\.(js|css)$/i);
+        const isHtmlResponse = response.headers.get('content-type')?.includes('text/html');
+
+        if (isAssetRequest && isHtmlResponse) {
+          // El chunk fue borrado del servidor (nueva versión en Vercel)
+          return Response.error(); 
+        }
+
         // Clonar y guardar en cache si la respuesta es válida
         if (response && response.status === 200) {
           const clone = response.clone();
