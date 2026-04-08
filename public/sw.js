@@ -23,6 +23,7 @@ self.addEventListener('install', (event) => {
 // Permite activar manualmente una nueva version desde la app
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
+    if (!event.source) return;
     self.skipWaiting();
   }
 });

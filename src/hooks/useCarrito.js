@@ -58,8 +58,13 @@ export function useCarrito() {
       
       // Validación estricta de stock máximo
       if (producto.stock_ilimitado === false) {
-        if (cantidadEnCarrito >= (producto.stock_actual || 0)) {
-          alert(`¡Ups! Solo nos quedan ${producto.stock_actual || 0} unidades de este artículo en tienda.`);
+        const stockActual = producto.stock_actual || 0;
+        if (cantidadEnCarrito >= stockActual) {
+          if (stockActual === 0) {
+            alert('Este artículo está agotado en tienda.');
+          } else {
+            alert(`Solo nos quedan ${stockActual} unidades de este artículo.`);
+          }
           return prev;
         }
       }
@@ -69,7 +74,19 @@ export function useCarrito() {
           i.id === producto.id ? { ...i, cantidad: i.cantidad + 1 } : i
         );
       }
-      return [...prev, { ...producto, cantidad: 1 }];
+      
+      const itemLimpio = {
+        id: producto.id,
+        nombre: producto.nombre,
+        precio: producto.precio,
+        imagen_url: producto.imagen_url,
+        cantidad: 1,
+        tamano: producto.tamano,
+      };
+      if (producto.precios_mayoreo) itemLimpio.precios_mayoreo = producto.precios_mayoreo;
+      if (producto.familia_mayoreo) itemLimpio.familia_mayoreo = producto.familia_mayoreo;
+
+      return [...prev, itemLimpio];
     });
   }, []);
 

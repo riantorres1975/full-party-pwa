@@ -24,7 +24,7 @@ export default function AppRouter() {
   const hash = useHashRoute();
   const { session, user, cargandoSesion, loading, error, signIn, signOut } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
-  const esRutaAdmin = hash === '#/admin' || hash.startsWith('#/admin');
+  const esRutaAdmin = hash.startsWith('#/admin');
 
   // Spinner mientras Supabase verifica la sesión
   if (cargandoSesion) {

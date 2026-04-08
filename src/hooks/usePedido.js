@@ -70,7 +70,7 @@ export function usePedido() {
       const esFolio = query.trim().toUpperCase().startsWith('FP-');
       const { data, error } = await supabase
         .from('pedidos')
-        .select('folio, cliente_nombre, cliente_telefono, estado, total, tipo_entrega, created_at, updated_at, detalles_json')
+        .select('folio, cliente_nombre, estado, total, tipo_entrega, created_at, updated_at, detalles_json')
         .eq(esFolio ? 'folio' : 'cliente_telefono', esFolio ? query.trim().toUpperCase() : query.trim())
         .order('created_at', { ascending: false })
         .limit(5);
