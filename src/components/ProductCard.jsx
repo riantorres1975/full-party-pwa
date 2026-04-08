@@ -37,7 +37,6 @@ function ProductCardInner({
         type="button"
         onClick={() => onAbrirDetalle?.(producto)}
         className="w-full text-left"
-        aria-label={`Ver detalles de ${producto.nombre}`}
       >
         {/* Imagen optimizada */}
         <div className="relative">
@@ -81,9 +80,9 @@ function ProductCardInner({
 
         {/* Info */}
         <div className="px-2.5 pt-2.5 pb-1.5 sm:px-3 sm:pt-3 sm:pb-2">
-          <h3 className="font-display text-[13px] sm:text-sm leading-snug text-ink-900 line-clamp-2">
+          <h2 className="font-display text-[13px] sm:text-sm leading-snug text-ink-900 line-clamp-2">
             {producto.nombre}
-          </h3>
+          </h2>
           {producto.descripcion && (
             <p className="text-[11px] font-body text-ink-400 leading-snug mt-0.5 line-clamp-1 sm:line-clamp-2">
               {producto.descripcion}
@@ -94,7 +93,7 @@ function ProductCardInner({
           <div className="mt-1.5">
             {hayDescuento && enCarrito ? (
               <div className="flex items-baseline gap-1.5">
-                <span className="text-[11px] text-ink-300 line-through font-body font-bold">
+                <span className="text-[11px] text-ink-400 line-through font-body font-bold">
                   {SIMBOLO_MONEDA}{precioBase.toFixed(2)}
                 </span>
                 <span className="font-body font-black text-sm" style={{ color: '#16a34a' }}>

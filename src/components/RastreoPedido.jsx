@@ -183,7 +183,7 @@ export default function RastreoPedido({ onCerrar }) {
       <div className="flex-shrink-0 px-5 pt-6 pb-4">
         <div className="flex items-center gap-3 mb-1">
           {onCerrar && (
-            <button onClick={onCerrar}
+            <button onClick={onCerrar} aria-label="Cerrar modal"
               className="p-2 rounded-full bg-ink-100 hover:bg-ink-200 text-ink-500 transition-colors">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
