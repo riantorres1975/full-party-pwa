@@ -27,7 +27,7 @@ export function useProductos() {
 
       const { data, error: sbError } = await supabase
         .from('productos')
-        .select('id,nombre,descripcion,precio,imagen_url,categoria,marca,tamano,activo,es_nuevo,stock_ilimitado,stock_actual,precios_mayoreo,familia_mayoreo,created_at')
+        .select('id,nombre,descripcion,precio,imagen_url,categoria,marca,tamano,activo,es_nuevo,stock_ilimitado,stock_actual,precios_mayoreo,created_at')
         .order('activo', { ascending: false })  // activos primero
         .order('nombre', { ascending: true });
 
