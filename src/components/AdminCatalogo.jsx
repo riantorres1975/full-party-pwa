@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Package, Pencil, Trash2, Search, AlertTriangle } from 'lucide-react';
+import { Package, Pencil, Trash2, Search, AlertTriangle, Wand2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { toTitleCase } from '../utils/normalizar';
 import {
   SIMBOLO_MONEDA,
   registrarCategoria,
@@ -49,6 +50,7 @@ export default function AdminCatalogo() {
   const [editando, setEditando] = useState(null);
   const [toggleId, setToggleId] = useState(null);
   const [eliminandoId, setEliminandoId] = useState(null);
+  const [normalizando, setNormalizando] = useState(false);
 
   const fetchProductos = useCallback(async () => {
     setCargando(true);
@@ -111,6 +113,44 @@ export default function AdminCatalogo() {
       toast.error(err.message || 'No se pudo actualizar');
     } finally {
       setToggleId(null);
+    }
+  }
+
+  async function normalizarTodos() {
+    const ok = await confirmDialog({
+      title: 'Normalizar todos los productos',
+      message: `Se actualizarán nombre, categoría, marca y tamaño de los ${productos.length} productos al formato Title Case. ¿Continuar?`,
+      confirmLabel: 'Normalizar',
+      variant: 'default',
+    });
+    if (!ok) return;
+
+    setNormalizando(true);
+    let actualizados = 0;
+    let errores = 0;
+
+    for (const p of productos) {
+      const updates = {
+        nombre:    toTitleCase(p.nombre),
+        categoria: toTitleCase(p.categoria),
+        marca:     toTitleCase(p.marca),
+        tamano:    toTitleCase(p.tamano),
+      };
+      // Solo actualizar si algo cambia
+      const hayCambio = Object.keys(updates).some(k => updates[k] !== p[k]);
+      if (!hayCambio) continue;
+
+      const { error } = await supabase.from('productos').update(updates).eq('id', p.id);
+      if (error) { errores++; } else { actualizados++; }
+    }
+
+    setNormalizando(false);
+    await fetchProductos();
+
+    if (errores === 0) {
+      toast.success(`${actualizados} productos normalizados correctamente.`);
+    } else {
+      toast.error(`${actualizados} actualizados, ${errores} con error.`);
     }
   }
 
@@ -180,7 +220,18 @@ export default function AdminCatalogo() {
                 />
             </div>
 
-            <div className="flex gap-2 overflow-x-auto pb-4">
+            <div className="flex gap-2 overflow-x-auto pb-4 items-center">
+              <button
+                type="button"
+                onClick={normalizarTodos}
+                disabled={normalizando || cargando || productos.length === 0}
+                className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-body font-black border-2 transition-colors ml-auto"
+                style={{ background: 'white', color: '#6b35b8', borderColor: '#d8b4fe' }}
+                title="Normalizar nombres, categorías, marcas y tamaños al formato Title Case"
+              >
+                <Wand2 size={13} />
+                {normalizando ? 'Normalizando…' : 'Normalizar datos'}
+              </button>
               <button
                 type="button"
                 onClick={() => setFiltroActivo('todos')}
