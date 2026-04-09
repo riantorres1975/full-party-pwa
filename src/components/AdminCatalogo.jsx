@@ -307,8 +307,8 @@ export default function AdminCatalogo() {
     <div className="min-w-0">
       {/* Toolbar fija: buscador + botones + filtros */}
       <div className="sticky top-[57px] lg:top-0 z-20 flex flex-col gap-3 bg-admin-bg pt-3 pb-3 -mx-3 px-3 sm:-mx-4 sm:px-4 lg:-mx-8 lg:px-8 border-b border-admin-border-soft">
-        <div className="flex gap-2 items-center shrink-0 overflow-x-auto hide-scrollbar">
-          <div className="relative flex-1">
+        <div className="flex gap-2 items-center shrink-0">
+          <div className="relative flex-1 min-w-0">
             <Search
               size={18}
               className="absolute left-4 top-1/2 -translate-y-1/2 text-admin-muted pointer-events-none"
@@ -333,77 +333,80 @@ export default function AdminCatalogo() {
             <Plus size={18} strokeWidth={3} />
             <span className="hidden sm:inline">Nuevo Artículo</span>
           </button>
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar items-center pb-1">
           <button
             type="button"
             onClick={() => setShowCatMgr(true)}
-            className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-3 rounded-2xl text-sm font-body font-black
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
                        border-2 transition-all duration-200 active:scale-95"
             style={{ borderColor: '#c084fc', color: '#7c3aed', background: '#faf5ff' }}
             title="Gestionar categorías"
           >
-            <Tag size={18} />
-            <span className="hidden sm:inline">Categorías</span>
+            <Tag size={14} />
+            Categorías
           </button>
           <button
             type="button"
             onClick={() => setShowMarcaMgr(true)}
-            className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-3 rounded-2xl text-sm font-body font-black
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
                        border-2 transition-all duration-200 active:scale-95"
             style={{ borderColor: '#93c5fd', color: '#2563eb', background: '#eff6ff' }}
             title="Gestionar marcas"
           >
-            <Bookmark size={18} />
-            <span className="hidden sm:inline">Marcas</span>
+            <Bookmark size={14} />
+            Marcas
           </button>
           <button
             type="button"
             onClick={() => setShowTamanoMgr(true)}
-            className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-3 rounded-2xl text-sm font-body font-black
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
                        border-2 transition-all duration-200 active:scale-95"
             style={{ borderColor: '#86efac', color: '#16a34a', background: '#f0fdf4' }}
             title="Gestionar tamaños"
           >
-            <Ruler size={18} />
-            <span className="hidden sm:inline">Tamaños</span>
+            <Ruler size={14} />
+            Tamaños
+          </button>
+
+          <span className="w-px h-5 bg-admin-border shrink-0" />
+
+          <button
+            type="button"
+            onClick={() => setFiltroActivo('todos')}
+            className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-body font-black border-2 transition-colors"
+            style={filtroActivo === 'todos'
+              ? { background: '#6b35b8', color: 'white', borderColor: '#6b35b8' }
+              : { background: '#f3f4f6', color: '#6b7280', borderColor: '#e5e7eb' }}
+          >
+            Todos
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFiltroActivo('stock-bajo')}
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black border-2 transition-colors"
+            style={filtroActivo === 'stock-bajo'
+              ? { background: '#fef2f2', color: '#b91c1c', borderColor: '#fca5a5' }
+              : { background: 'white', color: '#dc2626', borderColor: '#fecaca' }}
+          >
+            <span className="w-2 h-2 rounded-full bg-red-500" />
+            Stock Bajo ({productosEnAlerta.length})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFiltroActivo('nuevo')}
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black border-2 transition-colors"
+            style={filtroActivo === 'nuevo'
+              ? { background: '#f0fdf4', color: '#166534', borderColor: '#86efac' }
+              : { background: 'white', color: '#16a34a', borderColor: '#bbf7d0' }}
+          >
+            <span className="w-2 h-2 rounded-full bg-green-500" />
+            Nuevos ({productosNuevos.length})
           </button>
         </div>
-
-            <div className="flex gap-2 overflow-x-auto pb-4 items-center">
-              <button
-                type="button"
-                onClick={() => setFiltroActivo('todos')}
-                className="flex-shrink-0 px-4 py-2 rounded-full text-xs font-body font-black border-2 transition-colors"
-                style={filtroActivo === 'todos'
-                  ? { background: '#6b35b8', color: 'white', borderColor: '#6b35b8' }
-                  : { background: '#f3f4f6', color: '#6b7280', borderColor: '#e5e7eb' }}
-              >
-                Todos
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFiltroActivo('stock-bajo')}
-                className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-body font-black border-2 transition-colors"
-                style={filtroActivo === 'stock-bajo'
-                  ? { background: '#fef2f2', color: '#b91c1c', borderColor: '#fca5a5' }
-                  : { background: 'white', color: '#dc2626', borderColor: '#fecaca' }}
-              >
-                <span className="w-2 h-2 rounded-full bg-red-500" />
-                Stock Bajo ({productosEnAlerta.length})
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFiltroActivo('nuevo')}
-                className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-body font-black border-2 transition-colors"
-                style={filtroActivo === 'nuevo'
-                  ? { background: '#f0fdf4', color: '#166534', borderColor: '#86efac' }
-                  : { background: 'white', color: '#16a34a', borderColor: '#bbf7d0' }}
-              >
-                <span className="w-2 h-2 rounded-full bg-green-500" />
-                Nuevos ({productosNuevos.length})
-              </button>
-            </div>
 
             {/* Modal gestión de categorías */}
             {showCatMgr && (
