@@ -32,6 +32,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
     disponible, setDisponible, esNuevo, setEsNuevo,
     imagenUrl, setImagenUrl, archivo, setArchivo, fileRef,
     stockIlimitado, setStockIlimitado, stockActual, setStockActual,
+    agregarStock, setAgregarStock,
     stockMinimo, setStockMinimo,
     mayoreoActivo, setMayoreoActivo, preciosMayoreo, setPreciosMayoreo,
     enviando, setEnviando, error, setError,
@@ -339,12 +340,19 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
             {!stockIlimitado && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 animate-fade-in">
                 <div className="w-full">
-                  <label className="block text-xs font-body font-black text-ink-600 mb-1 pl-1">Cantidad en Stock</label>
+                  <label className="block text-xs font-body font-black text-ink-600 mb-1 pl-1">Stock actual</label>
+                  <div className={`${inputBase} flex items-center gap-2 opacity-70 cursor-default select-none`}>
+                    <span className="font-black">{stockActual || '0'}</span>
+                    <span className="text-ink-400 font-normal">unidades</span>
+                  </div>
+                </div>
+                <div className="w-full">
+                  <label className="block text-xs font-body font-black text-ink-600 mb-1 pl-1">Agregar al stock (+)</label>
                   <input
                     type="number"
                     min="0"
-                    value={stockActual}
-                    onChange={e => setStockActual(e.target.value)}
+                    value={agregarStock}
+                    onChange={e => setAgregarStock(e.target.value)}
                     className={inputBase}
                     placeholder="0"
                   />
