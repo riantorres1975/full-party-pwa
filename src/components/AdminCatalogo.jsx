@@ -204,9 +204,9 @@ export default function AdminCatalogo() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-5 min-w-0">
-      {/* Toolbar: buscador + botón nuevo */}
-      <div className="animate-fade-in flex flex-col gap-4 min-h-0">
+    <div className="min-w-0">
+      {/* Toolbar fija: buscador + botones + filtros */}
+      <div className="sticky top-0 z-20 flex flex-col gap-3 bg-admin-bg pt-3 pb-3 -mx-3 px-3 sm:-mx-4 sm:px-4 lg:-mx-8 lg:px-8 border-b border-admin-border-soft">
         <div className="flex gap-2 items-center shrink-0">
           <div className="relative flex-1">
             <Search
@@ -358,6 +358,11 @@ export default function AdminCatalogo() {
                 </div>
               </div>
             )}
+
+      </div>{/* fin sticky toolbar */}
+
+      {/* Contenido scrollable */}
+      <div className="space-y-4 mt-4">
 
             {cargando && (
               <div className="flex items-center justify-center py-16 gap-3">
