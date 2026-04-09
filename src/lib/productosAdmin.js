@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { throwIfSessionError } from './supabaseGuard';
 
 /** Bucket público para fotos de producto (crear en Supabase + políticas; ver supabase_storage_productos.sql) */
 export const BUCKET_IMAGENES_PRODUCTOS = 'productos-imagenes';
@@ -145,6 +146,8 @@ export async function insertarProducto({
     ({ data, error } = await supabase.from('productos').insert(rowSinEsNuevo).select().single());
   }
 
+  await throwIfSessionError(error);
+
   if (error) {
     throw new Error(error.message || 'No se pudo guardar el producto.');
   }
@@ -220,6 +223,8 @@ export async function actualizarProducto(id, {
     ({ data, error } = await supabase.from('productos').update(rowSinEsNuevo).eq('id', id).select().single());
   }
 
+  await throwIfSessionError(error);
+
   if (error) {
     throw new Error(error.message || 'No se pudo actualizar el producto.');
   }
@@ -236,6 +241,8 @@ export async function actualizarDisponibilidadProducto(id, activo) {
     .select()
     .single();
 
+  await throwIfSessionError(error);
+
   if (error) {
     throw new Error(error.message || 'No se pudo actualizar la disponibilidad.');
   }
@@ -246,6 +253,8 @@ export async function actualizarDisponibilidadProducto(id, activo) {
 export async function eliminarProducto(id) {
   if (!id) throw new Error('Falta el id del producto.');
   const { error } = await supabase.from('productos').delete().eq('id', id);
+
+  await throwIfSessionError(error);
 
   if (error) {
     throw new Error(error.message || 'No se pudo eliminar el producto.');

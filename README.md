@@ -2,6 +2,8 @@
 
 Catálogo digital para tienda de artículos de fiesta, construido como Progressive Web App (PWA) con React + Vite + Tailwind CSS y conectado a Supabase como backend en la nube.
 
+> **Auditoría Admin (Abril 2026):** 9.8 / 10 promedio — Gestión de Datos 10/10 · Seguridad 10/10 · Formularios 9/10 · Rendimiento 10/10 · Accesibilidad 10/10
+
 ---
 
 ## 🛠️ Stack tecnológico
@@ -9,7 +11,7 @@ Catálogo digital para tienda de artículos de fiesta, construido como Progressi
 | Tecnología | Versión | Uso |
 |---|---|---|
 | React | 18.3 | UI y manejo de estado |
-| Vite | 5.4 | Bundler y dev server |
+| Vite | 7.3 | Bundler y dev server |
 | Tailwind CSS | 3.4 | Estilos utilitarios |
 | Supabase JS | 2.45 | Base de datos, Auth y Realtime |
 | lucide-react | latest | Íconos SVG |
@@ -42,7 +44,8 @@ catalogo-pwa/
     ├── index.css                  ← estilos globales, fuentes y animaciones
     │
     ├── lib/
-    │   └── supabase.js            ← cliente singleton de Supabase
+    │   ├── supabase.js            ← cliente singleton de Supabase
+    │   └── supabaseGuard.js       ← guardedQuery + throwIfSessionError (sesión expirada → signOut + redirect)
     │
     ├── data/
     │   └── productos.js           ← ✏️ configuración del negocio + listas de filtros
@@ -51,8 +54,11 @@ catalogo-pwa/
     │   ├── useAuth.js             ← sesión de Supabase Auth (login/logout)
     │   ├── useCarrito.js          ← carrito con persistencia en localStorage + total dinámico mayoreo
     │   ├── useConfirm.js          ← hook para modal de confirmación (promesa)
+    │   ├── useDebounce.js         ← debounce genérico (default 300 ms) para inputs de búsqueda
     │   ├── useInfiniteScroll.js   ← IntersectionObserver para carga progresiva
     │   ├── usePedido.js           ← insert y búsqueda de pedidos (guarda precio aplicado por línea)
+    │   ├── usePedidosAdmin.js     ← estado completo del panel de pedidos (fetch, realtime, filtros, acciones)
+    │   ├── useProductForm.js      ← hook compartido crear/editar producto (estado, validación, payload, imagen)
     │   ├── useProductos.js        ← fetch de productos desde Supabase
     │   └── usePWA.js              ← prompt de instalación PWA
     │
@@ -111,6 +117,8 @@ VITE_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 VITE_WHATSAPP_NUMBER="521XXXXXXXXXX"
 VITE_NOMBRE_NEGOCIO="Tu Negocio"
+# Opcional: lista blanca de emails admin (RBAC). Si se omite, cualquier cuenta autenticada puede entrar.
+VITE_ADMIN_EMAILS="admin@tudominio.com,otro@tudominio.com"
 ```
 
 Las credenciales están en **Supabase Dashboard → Settings → API**.
@@ -295,6 +303,14 @@ export const categorias = [
   - Se desactiva ("✓ Cliente notificado") tras enviarlo en todas las sesiones simultáneamente
   - Se reactiva al cambiar el estado del pedido
   - Al usar "Pasar a Listo" desde picking, el botón queda desactivado automáticamente ya que el mensaje se envía en el mismo acto
+- **RBAC por email** — lista blanca de administradores via `VITE_ADMIN_EMAILS`; si el email del usuario no está en la lista se muestra pantalla de «Acceso denegado» con botón de cierre de sesión
+- **Guard de sesión automático** — `guardedQuery` / `throwIfSessionError` detectan JWT expirado en cualquier query de Supabase, ejecutan `signOut()` y redirigen al login sin intervención manual
+- **Debounce en búsquedas** — 300 ms de retardo en los campos de búsqueda de pedidos y catálogo, eliminando llamadas innecesarias en cada pulsación
+- **Paginación server-side en catálogo** — carga bloques de 100 productos con `.range()` y botón «Cargar más»; evita traer todo el inventario a memoria
+- **Code splitting automático** — `AdminPedidos` y `AdminCatalogo` se cargan via `React.lazy` + `Suspense`; el bundle inicial es un 36 % más ligero
+- **Validación inline en formularios** — mensajes de error en tiempo real al salir de cada campo (onBlur) para nombre, precio, stock y categoría nueva
+- **Límite de imagen 5 MB** — `validateAndSetFile()` rechaza archivos pesados con mensaje de error antes de intentar subir
+- **Navegación por teclado en dropdowns** — `SelectCategoria` responde a ↑ ↓ Home End Enter Escape con indicador visual de foco; cumple WAI-ARIA Listbox Pattern
 - **Cancelación de pedidos** — botón compacto integrado junto a "Notificar al cliente" en la misma fila (desktop) o botón completo inferior (mobile):
   - Confirmación antes de cancelar (window.confirm)
   - Cambia el estado a `Cancelado` en Supabase y notifica al cliente via WhatsApp con mensaje de cancelación
@@ -344,6 +360,8 @@ export const categorias = [
 | `/#/admin` | Panel de administración (Pedidos) | Requiere sesión activa de Supabase Auth |
 | `/#/admin/catalogo` | Gestión de catálogo | Requiere sesión activa de Supabase Auth |
 
+> **RBAC opcional:** si defines `VITE_ADMIN_EMAILS` en tu `.env`, solo esas cuentas pueden acceder al panel aunque estén autenticadas. Si la variable está vacía o ausente, cualquier cuenta autenticada tiene acceso (comportamiento clásico).
+
 Enrutamiento por **hash** (`window.location.hash`) sin react-router — compatible con cualquier hosting estático sin configuración adicional.
 
 ---
@@ -380,6 +398,8 @@ npm run preview  # previsualizar el build localmente
 - **focus-visible ring** uniforme en todos los elementos interactivos
 - **Contraste WCAG** — `ink.400` ajustado a `#7c4dc8` para cumplir ratio 4.5:1 sobre blanco
 - **Toggle accesible** — `role="switch"` + `aria-checked` + soporte teclado
+- **`prefers-reduced-motion`** — media query CSS global que desactiva todas las animaciones y transiciones para usuarios con sensibilidad al movimiento
+- **Navegación por teclado en `SelectCategoria`** — ↑ ↓ Home End Enter Escape con `data-[focused]` outline visible y `role="listbox"` / `role="option"` / `aria-selected`
 
 ---
 

@@ -1,4 +1,3 @@
-import { useState, useRef, useEffect } from 'react';
 import { X, ImagePlus, Link2, Loader2 } from 'lucide-react';
 import {
   categorias,
@@ -9,182 +8,49 @@ import {
   registrarMarca,
   registrarTamano,
 } from '../data/productos';
-import { actualizarProducto, subirImagenProducto } from '../lib/productosAdmin';
-import { toTitleCase } from '../utils/normalizar';
+import { actualizarProducto } from '../lib/productosAdmin';
 import SelectCategoria from './SelectCategoria';
 import GestorPrecios from './GestorPrecios';
-
-const CATEGORIA_NUEVA_ID = '__agregar_nueva__';
-const MARCA_NUEVA_ID = '__agregar_marca__';
-const TAMANO_NUEVO_ID = '__agregar_tamano__';
+import {
+  useProductForm,
+  CATEGORIA_NUEVA_ID,
+  MARCA_NUEVA_ID,
+  TAMANO_NUEVO_ID,
+} from '../hooks/useProductForm';
 
 const inputBase =
   'w-full bg-white rounded-2xl px-4 py-3 text-sm font-body font-semibold ' +
   'text-ink-900 placeholder:text-ink-300 outline-none border-2 border-ink-200 ' +
   'focus:border-fiesta-magenta transition-colors';
 
-function parsearPreciosMayoreo(producto) {
-  const valor = producto?.precios_mayoreo ?? producto?.familia_mayoreo;
-  let lista = [];
-
-  if (Array.isArray(valor)) {
-    lista = valor;
-  } else if (typeof valor === 'string' && valor.trim()) {
-    try {
-      const parsed = JSON.parse(valor);
-      if (Array.isArray(parsed)) lista = parsed;
-    } catch {
-      lista = [];
-    }
-  }
-
-  const normalizados = lista
-    .map((item, index) => ({
-      id: item?.id ?? `${Date.now()}-${index}`,
-      etiqueta: String(item?.etiqueta ?? '').trim(),
-      cantidad_minima: Math.max(1, Number(item?.cantidad_minima) || 1),
-      precio: Math.max(0, Number(item?.precio) || 0),
-    }))
-    .filter(item => item.id != null);
-
-  if (normalizados.length > 0) return normalizados;
-  return [{ id: Date.now(), etiqueta: '', cantidad_minima: '', precio: '' }];
-}
-
 export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
-  const preciosIniciales = parsearPreciosMayoreo(producto);
-  const [nombre, setNombre] = useState(producto.nombre ?? '');
-  const [descripcion, setDescripcion] = useState(producto.descripcion ?? '');
-  const [precio, setPrecio] = useState(
-    producto.precio != null ? String(producto.precio) : ''
-  );
-  const catInicial = producto.categoria || categorias[0]?.id || '';
-  const [categoria, setCategoria] = useState(catInicial);
-  const [categoriaNueva, setCategoriaNueva] = useState('');
-  const [marca, setMarca] = useState(producto.marca ?? 'Genérico');
-  const [marcaNueva, setMarcaNueva] = useState('');
-  const [tamano, setTamano] = useState(producto.tamano ?? '');
-  const [tamanoNuevo, setTamanoNuevo] = useState('');
-  const [disponible, setDisponible] = useState(producto.activo !== false);
-  const [esNuevo, setEsNuevo] = useState(producto.es_nuevo === true);
-  const [stockIlimitado, setStockIlimitado] = useState(producto.stock_ilimitado !== false);
-  const [stockActual, setStockActual] = useState(producto.stock_actual != null ? String(producto.stock_actual) : '');
-  const [stockMinimo, setStockMinimo] = useState(producto.stock_minimo != null ? String(producto.stock_minimo) : '5');
-  const [preciosMayoreo, setPreciosMayoreo] = useState(preciosIniciales);
-  const [mayoreoActivo, setMayoreoActivo] = useState(
-    preciosIniciales.some(p => Number(p?.cantidad_minima) > 1)
-  );
-  const [imagenUrl, setImagenUrl] = useState(producto.imagen_url ?? '');
-  const [archivo, setArchivo] = useState(null);
-  const fileRef = useRef(null);
-
-  const [enviando, setEnviando] = useState(false);
-  const [error, setError] = useState('');
-  const [previewLocal, setPreviewLocal] = useState(null);
-
-  useEffect(() => {
-    if (!archivo) {
-      setPreviewLocal(null);
-      return;
-    }
-    const url = URL.createObjectURL(archivo);
-    setPreviewLocal(url);
-    return () => URL.revokeObjectURL(url);
-  }, [archivo]);
+  const {
+    nombre, setNombre, descripcion, setDescripcion, precio, setPrecio,
+    categoria, setCategoria, categoriaNueva, setCategoriaNueva,
+    marca, setMarca, marcaNueva, setMarcaNueva,
+    tamano, setTamano, tamanoNuevo, setTamanoNuevo,
+    disponible, setDisponible, esNuevo, setEsNuevo,
+    imagenUrl, setImagenUrl, archivo, setArchivo, fileRef,
+    stockIlimitado, setStockIlimitado, stockActual, setStockActual,
+    stockMinimo, setStockMinimo,
+    mayoreoActivo, setMayoreoActivo, preciosMayoreo, setPreciosMayoreo,
+    enviando, setEnviando, error, setError,
+    previewSrc, onFileChange,
+    touched, fieldErrors, handleBlur,
+    buildPayload,
+  } = useProductForm(producto);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
     setEnviando(true);
-
     try {
-      let urlFinal = imagenUrl.trim() || null;
-      const categoriaFinal = toTitleCase(
-        categoria === CATEGORIA_NUEVA_ID ? categoriaNueva : categoria
-      );
-      const marcaFinal = toTitleCase(
-        marca === MARCA_NUEVA_ID ? marcaNueva : marca
-      );
-      const tamanoFinal = toTitleCase(
-        tamano === TAMANO_NUEVO_ID ? tamanoNuevo : tamano
-      );
+      const payload = await buildPayload();
+      await actualizarProducto(producto.id, payload);
 
-      if (categoria === CATEGORIA_NUEVA_ID && !categoriaFinal) {
-        throw new Error('Escribe el nombre de la nueva categoría.');
-      }
-
-      if (archivo) {
-        urlFinal = await subirImagenProducto(archivo);
-      }
-
-      const precioBaseNum = Math.max(0, Number(precio) || 0);
-      const filasMayoreo = (preciosMayoreo || []).map((item, idx) => {
-        const etiqueta = String(item?.etiqueta ?? '').trim();
-        const cantidadMinima = Number(item?.cantidad_minima);
-        const precioEscala = Number(item?.precio);
-        return {
-          idx,
-          etiqueta,
-          cantidadMinima,
-          precioEscala,
-          vacia: !etiqueta && item?.cantidad_minima === '' && item?.precio === '',
-        };
-      });
-
-      if (mayoreoActivo) {
-        if (filasMayoreo.length === 0 || filasMayoreo.every(f => f.vacia)) {
-          throw new Error('Activa mayoreo solo si capturas al menos una escala con etiqueta, cantidad y precio.');
-        }
-
-        const filaInvalida = filasMayoreo.find(f => {
-          if (f.vacia) return true;
-          return !f.etiqueta || !Number.isFinite(f.cantidadMinima) || f.cantidadMinima <= 0 || !Number.isFinite(f.precioEscala) || f.precioEscala <= 0;
-        });
-
-        if (filaInvalida) {
-          throw new Error(`Revisa la escala ${filaInvalida.idx + 1}: etiqueta obligatoria y valores mayores a 0.`);
-        }
-      }
-
-      const preciosParaGuardar = filasMayoreo
-        .filter(f => !f.vacia)
-        .map(f => ({
-          etiqueta: f.etiqueta,
-          cantidad_minima: f.cantidadMinima,
-          precio: f.precioEscala,
-        }));
-
-      const preciosMayoreoFinal = mayoreoActivo
-        ? (preciosParaGuardar.length > 0
-            ? preciosParaGuardar
-            : [{ etiqueta: '1 Pieza', cantidad_minima: 1, precio: precioBaseNum }])
-        : [{ etiqueta: '1 Pieza', cantidad_minima: 1, precio: precioBaseNum }];
-
-      await actualizarProducto(producto.id, {
-        nombre: toTitleCase(nombre),
-        descripcion,
-        precio,
-        categoria: categoriaFinal || null,
-        marca: marcaFinal || null,
-        tamano: tamanoFinal || null,
-        imagen_url: urlFinal,
-        stock_ilimitado: stockIlimitado,
-        stock_actual: stockActual ? Number(stockActual) : 0,
-        stock_minimo: stockMinimo ? Number(stockMinimo) : 5,
-        es_nuevo: esNuevo,
-        precios_mayoreo: preciosMayoreoFinal,
-        activo: disponible,
-      });
-
-      if (categoria === CATEGORIA_NUEVA_ID && categoriaFinal) {
-        registrarCategoria(categoriaFinal);
-      }
-      if (marca === MARCA_NUEVA_ID && marcaFinal) {
-        registrarMarca(marcaFinal);
-      }
-      if (tamano === TAMANO_NUEVO_ID && tamanoFinal) {
-        registrarTamano(tamanoFinal);
-      }
+      if (categoria === CATEGORIA_NUEVA_ID && payload.categoria) registrarCategoria(payload.categoria);
+      if (marca === MARCA_NUEVA_ID && payload.marca) registrarMarca(payload.marca);
+      if (tamano === TAMANO_NUEVO_ID && payload.tamano) registrarTamano(payload.tamano);
 
       onGuardado?.();
     } catch (err) {
@@ -193,8 +59,6 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
       setEnviando(false);
     }
   }
-
-  const previewSrc = previewLocal || imagenUrl.trim() || null;
 
   return (
     <div
@@ -231,10 +95,14 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
               type="text"
               value={nombre}
               onChange={e => setNombre(e.target.value)}
+              onBlur={() => handleBlur('nombre')}
               required
               maxLength={200}
-              className={inputBase}
+              className={`${inputBase} ${touched.nombre && fieldErrors.nombre ? '!border-red-400' : ''}`}
             />
+            {touched.nombre && fieldErrors.nombre && (
+              <p className="text-[10px] text-red-500 font-medium mt-0.5 pl-1">{fieldErrors.nombre}</p>
+            )}
           </div>
 
           <div>
@@ -261,9 +129,13 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
                 step="0.01"
                 value={precio}
                 onChange={e => setPrecio(e.target.value)}
+                onBlur={() => handleBlur('precio')}
                 required
-                className={inputBase}
+                className={`${inputBase} ${touched.precio && fieldErrors.precio ? '!border-red-400' : ''}`}
               />
+              {touched.precio && fieldErrors.precio && (
+                <p className="text-[10px] text-red-500 font-medium mt-0.5 pl-1">{fieldErrors.precio}</p>
+              )}
             </div>
             <div>
               <label
@@ -275,10 +147,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
               <SelectCategoria
                 id="modal-fp-cat"
                 value={categoria}
-                onChange={value => {
-                  setCategoria(value);
-                  if (value !== CATEGORIA_NUEVA_ID) setCategoriaNueva('');
-                }}
+                onChange={setCategoria}
                 lista={[
                   ...categorias,
                   { id: CATEGORIA_NUEVA_ID, label: '+ Agregar nueva...' },
@@ -312,10 +181,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
               <SelectCategoria
                 id="modal-fp-marca"
                 value={marca}
-                onChange={value => {
-                  setMarca(value);
-                  if (value !== MARCA_NUEVA_ID) setMarcaNueva('');
-                }}
+                onChange={setMarca}
                 lista={[
                   { id: '', label: 'Sin marca' },
                   ...marcas.map(m => ({ id: m, label: m })),
@@ -346,10 +212,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
               <SelectCategoria
                 id="modal-fp-tamano"
                 value={tamano}
-                onChange={value => {
-                  setTamano(value);
-                  if (value !== TAMANO_NUEVO_ID) setTamanoNuevo('');
-                }}
+                onChange={setTamano}
                 lista={[
                   { id: '', label: 'Sin tamaño' },
                   ...tamanios.map(t => ({ id: t, label: t })),
@@ -437,11 +300,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
                 ref={fileRef}
                 type="file"
                 accept="image/jpeg,image/png,image/gif,image/webp,image/avif"
-                onChange={e => {
-                  const f = e.target.files?.[0];
-                  setArchivo(f || null);
-                  if (f) setImagenUrl('');
-                }}
+                onChange={onFileChange}
                 className="block w-full min-w-0 max-w-full text-xs font-body text-ink-600
                            file:block file:w-full file:max-w-full sm:file:inline-flex sm:file:w-auto
                            file:mr-0 file:mb-2 sm:file:mr-3 sm:file:mb-0
