@@ -21,7 +21,7 @@ const TAMANO_NUEVO_ID = '__agregar_tamano__';
 
 
 
-export default function FormularioNuevoProducto({ onProductoCreado }) {
+export default function FormularioNuevoProducto({ onProductoCreado, isModal = false }) {
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [precio, setPrecio] = useState('');
@@ -212,9 +212,8 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
   const previewSrc = previewLocal || imagenUrl.trim() || null;
 
   return (
-    <div className="min-h-full font-sans p-4 md:p-6 lg:p-8">
-      {/* Contenedor Limpio */}
-      <div className="bg-white rounded-2xl p-6 md:p-8 border border-ink-100 shadow-[0_1px_3px_rgba(0,0,0,0.05)] w-full max-w-5xl mx-auto flex flex-col">
+    <div className={isModal ? 'font-sans p-4 md:p-6' : 'min-h-full font-sans p-4 md:p-6 lg:p-8'}>
+      <div className={`${isModal ? '' : 'bg-white rounded-2xl border border-ink-100 shadow-[0_1px_3px_rgba(0,0,0,0.05)]'} p-6 md:p-8 w-full max-w-5xl mx-auto flex flex-col`}>
         
         {/* HEADER */}
         <div className="mb-6 border-b border-ink-100 pb-5">

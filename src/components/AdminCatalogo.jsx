@@ -322,22 +322,25 @@ export default function AdminCatalogo() {
       {/* Modal Nuevo Artículo */}
       {creando && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
+          className="fixed inset-0 z-50 overflow-y-auto animate-fade-in"
           style={{ background: 'rgba(26, 7, 51, 0.55)' }}
           role="dialog"
           aria-modal="true"
           aria-label="Nuevo artículo"
+          onClick={(e) => { if (e.target === e.currentTarget) setCreando(false); }}
         >
-          <div className="relative w-full max-w-5xl max-h-[95dvh] overflow-y-auto bg-white sm:rounded-2xl shadow-2xl">
-            <button
-              type="button"
-              onClick={() => setCreando(false)}
-              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-ink-100 hover:bg-ink-200 text-ink-500 transition-colors"
-              aria-label="Cerrar"
-            >
-              <X size={18} />
-            </button>
-            <FormularioNuevoProducto onProductoCreado={() => { fetchProductos(); setCreando(false); }} />
+          <div className="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-6">
+            <div className="relative w-full max-w-5xl bg-white sm:rounded-2xl shadow-2xl sm:my-4">
+              <button
+                type="button"
+                onClick={() => setCreando(false)}
+                className="sticky top-3 float-right mr-3 z-10 p-2 rounded-full bg-ink-100 hover:bg-ink-200 text-ink-500 transition-colors"
+                aria-label="Cerrar"
+              >
+                <X size={18} />
+              </button>
+              <FormularioNuevoProducto isModal onProductoCreado={() => { fetchProductos(); setCreando(false); }} />
+            </div>
           </div>
         </div>
       )}
