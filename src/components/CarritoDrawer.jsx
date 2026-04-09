@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { generarMensajeWhatsApp } from '../utils/whatsapp';
 import { obtenerPrecioAplicable } from '../utils/precios';
-import { SIMBOLO_MONEDA } from '../data/productos';
+import { SIMBOLO_MONEDA, DIRECCION_TIENDA, HORARIO_TIENDA, MAPS_URL_TIENDA } from '../data/productos';
 import { usePedido } from '../hooks/usePedido';
 
 const INPUT_CLASS = `
@@ -26,6 +26,8 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
   const [telefono,  setTelefono]  = useState('');
   const [direccion, setDireccion] = useState('');
   const [errores,   setErrores]   = useState({});
+  // Confirmación post-guardar: { folio, url, itemsSnapshot, total, tipoEntrega, nombre }
+  const [pedidoGuardado, setPedidoGuardado] = useState(null);
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
@@ -34,6 +36,14 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
 
   // Limpiar errores al cambiar tipo
   useEffect(() => { setErrores({}); }, [tipoEntrega]);
+
+  // Resetear pantalla de confirmación al cerrar el drawer
+  useEffect(() => {
+    if (!isOpen) {
+      const t = setTimeout(() => setPedidoGuardado(null), 600);
+      return () => clearTimeout(t);
+    }
+  }, [isOpen]);
 
   // Capitaliza primera letra de cada palabra respetando acentos y Unicode
   // /\b\w/ no reconoce vocales acentuadas — usamos lookbehind de espacios/inicio
@@ -81,12 +91,26 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
     const url = generarMensajeWhatsApp(itemsConPrecioAplicado, totalCalculado, {
       tipo: tipoEntrega, nombre: nombre.trim(), telefono: telefonoLimpio, direccion, folio,
     });
-    window.open(url, '_blank', 'noopener,noreferrer');
 
-    // 4. Limpiar carrito y formulario
+    // 4. Mostrar pantalla de confirmación con folio y CTA de WhatsApp
+    setPedidoGuardado({
+      folio: folio || null,
+      url,
+      itemsSnapshot: itemsConPrecioAplicado,
+      total: totalCalculado,
+      tipoEntrega,
+      nombre: nombre.trim(),
+    });
+  };
+
+  const handleAbrirWhatsApp = () => {
+    if (pedidoGuardado?.url) {
+      window.open(pedidoGuardado.url, '_blank', 'noopener,noreferrer');
+    }
     onLimpiar();
     setNombre(''); setTelefono(''); setDireccion('');
     setTipoEntrega('tienda');
+    setPedidoGuardado(null);
   };
 
   return (
@@ -156,6 +180,58 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
 
         {/* Scroll area */}
         <div className="flex-1 overflow-y-auto">
+
+          {/* ── Pantalla de confirmación post-checkout ── */}
+          {pedidoGuardado ? (
+            <div className="flex flex-col items-center px-5 py-6 gap-4 animate-fade-in">
+              <div className="w-20 h-20 rounded-full flex items-center justify-center text-white text-4xl font-black animate-scale-in"
+                   style={{ background: 'linear-gradient(135deg, #25D366, #1db954)', boxShadow: '0 8px 24px #25D36655' }}>
+                ✓
+              </div>
+              <div className="text-center">
+                <p className="font-display text-xl text-ink-900">¡Pedido listo!</p>
+                <p className="text-sm text-ink-400 font-body mt-1">Solo falta enviarlo por WhatsApp</p>
+              </div>
+              {pedidoGuardado.folio && (
+                <div className="w-full rounded-2xl p-4 text-center"
+                     style={{ background: 'var(--surface-card)', border: '2px solid var(--border-default)' }}>
+                  <p className="text-xs font-body text-ink-400 font-semibold mb-1">Número de pedido</p>
+                  <p className="font-display text-2xl text-ink-900 tracking-wider">{pedidoGuardado.folio}</p>
+                  <p className="text-xs text-ink-400 font-body mt-1 mb-2">Guárdalo para rastrear tu pedido</p>
+                  <button
+                    onClick={() => navigator.clipboard?.writeText(pedidoGuardado.folio).catch(() => {})}
+                    className="text-xs font-body font-black px-3 py-1 rounded-full border transition-all hover:opacity-80"
+                    style={{ color: '#a855f7', borderColor: '#a855f720', background: 'var(--surface-elevated, var(--surface-card))' }}
+                  >
+                    📋 Copiar folio
+                  </button>
+                </div>
+              )}
+              <div className="w-full rounded-2xl p-4 space-y-2"
+                   style={{ background: 'var(--surface-section-gradient)', border: '2px solid var(--border-default)' }}>
+                <div className="flex justify-between text-sm">
+                  <span className="font-body text-ink-500">Productos</span>
+                  <span className="font-body font-black text-ink-800">
+                    {pedidoGuardado.itemsSnapshot.length} {pedidoGuardado.itemsSnapshot.length === 1 ? 'artículo' : 'artículos'}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="font-body text-ink-500">Entrega</span>
+                  <span className="font-body font-black text-ink-800">
+                    {pedidoGuardado.tipoEntrega === 'tienda' ? '🏪 Recoger en tienda' : '🚚 Domicilio'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-1 border-t border-ink-100">
+                  <span className="font-body text-ink-500 text-sm">Total</span>
+                  <span className="font-body font-black text-lg"
+                        style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    {SIMBOLO_MONEDA}{pedidoGuardado.total.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+          <>
 
           {/* Lista de items */}
           <div className="px-5 py-3">
@@ -269,6 +345,21 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                   ))}
                 </div>
 
+                {/* Info dirección de tienda — visible al seleccionar 'Recoger en tienda' */}
+                {tipoEntrega === 'tienda' && DIRECCION_TIENDA && (
+                  <div className="animate-fade-in rounded-xl px-3 py-2.5 text-xs font-body space-y-0.5"
+                       style={{ background: 'var(--surface-card)', border: '1px solid var(--border-soft)' }}>
+                    <p className="font-black" style={{ color: 'var(--text-primary)' }}>📍 {DIRECCION_TIENDA}</p>
+                    {HORARIO_TIENDA && <p style={{ color: 'var(--text-secondary)' }}>⏰ {HORARIO_TIENDA}</p>}
+                    {MAPS_URL_TIENDA && (
+                      <a href={MAPS_URL_TIENDA} target="_blank" rel="noopener noreferrer"
+                         className="font-black text-[10px]" style={{ color: '#a855f7' }}>
+                        Ver en Google Maps →
+                      </a>
+                    )}
+                  </div>
+                )}
+
                 {/* Campos del cliente */}
                 <div className="space-y-2">
                   {/* Nombre */}
@@ -327,48 +418,76 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
               </div>
             </div>
           )}
+          </>
+          )}
         </div>
 
         {/* Footer fijo — total + botón */}
-        {items.length > 0 && (
-          <div className="px-5 pt-3 pb-4 border-t-2 border-ink-100 space-y-3 flex-shrink-0">
-            <div className="flex justify-between items-center">
-              <span className="font-body text-sm font-bold text-ink-500">Total del pedido 🎊</span>
-              <span className="font-body text-xl font-black"
-                    style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
-                             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                {SIMBOLO_MONEDA}{totalCalculado.toFixed(2)}
-              </span>
-            </div>
-
-            <button
-              onClick={handleConfirmar}
-              disabled={!formularioListo || guardando}
-              className="w-full flex items-center justify-center gap-2.5 text-white
-                         font-body font-black text-base py-4 rounded-2xl
-                         transition-all duration-300 active:scale-[0.98]
-                         disabled:cursor-not-allowed"
-              style={formularioListo && !guardando
-                ? { background: 'linear-gradient(135deg, #25D366, #1db954)',
-                    boxShadow: '0 4px 20px #25D36655' }
-                : { background: 'linear-gradient(135deg, #a8d5b5, #7cb89a)',
-                    boxShadow: 'none', opacity: 0.6 }
-              }
-            >
-              {guardando ? (
-                <>
-                  <div className="w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-                  Guardando pedido...
-                </>
-              ) : (
-                <>
+        {(items.length > 0 || pedidoGuardado) && (
+          <div className="px-5 pt-3 pb-4 border-t-2 border-ink-100 flex-shrink-0 space-y-3">
+            {pedidoGuardado ? (
+              <>
+                <button
+                  onClick={handleAbrirWhatsApp}
+                  className="w-full flex items-center justify-center gap-2.5 text-white
+                             font-body font-black text-base py-4 rounded-2xl
+                             transition-all duration-300 active:scale-[0.98]"
+                  style={{ background: 'linear-gradient(135deg, #25D366, #1db954)', boxShadow: '0 4px 20px #25D36655' }}
+                >
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                   </svg>
-                  Confirmar Pedido por WhatsApp
-                </>
-              )}
-            </button>
+                  Enviar pedido a Full Party
+                </button>
+                <button
+                  onClick={() => setPedidoGuardado(null)}
+                  className="w-full text-center text-xs font-body font-semibold py-1"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  ← Volver al carrito
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between items-center">
+                  <span className="font-body text-sm font-bold text-ink-500">Total del pedido 🎊</span>
+                  <span className="font-body text-xl font-black"
+                        style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
+                                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    {SIMBOLO_MONEDA}{totalCalculado.toFixed(2)}
+                  </span>
+                </div>
+
+                <button
+                  onClick={handleConfirmar}
+                  disabled={!formularioListo || guardando}
+                  className="w-full flex items-center justify-center gap-2.5 text-white
+                             font-body font-black text-base py-4 rounded-2xl
+                             transition-all duration-300 active:scale-[0.98]
+                             disabled:cursor-not-allowed"
+                  style={formularioListo && !guardando
+                    ? { background: 'linear-gradient(135deg, #25D366, #1db954)',
+                        boxShadow: '0 4px 20px #25D36655' }
+                    : { background: 'linear-gradient(135deg, #a8d5b5, #7cb89a)',
+                        boxShadow: 'none', opacity: 0.6 }
+                  }
+                >
+                  {guardando ? (
+                    <>
+                      <div className="w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                      Guardando pedido...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                      </svg>
+                      Confirmar mi pedido
+                    </>
+                  )}
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

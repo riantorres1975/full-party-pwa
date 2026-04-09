@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useProductos }      from './hooks/useProductos';
 import { useCarrito }        from './hooks/useCarrito';
+import { categorias as CATEGORIAS_CONFIG } from './data/productos';
 import Header             from './components/Header';
 import BuscadorFiltros    from './components/BuscadorFiltros';
 import ModalFiltros       from './components/ModalFiltros';
@@ -110,6 +111,23 @@ export default function App({ temaOscuro, onToggleTema }) {
     });
   }, [productos, busqueda, filtros]);
 
+  // Build ordered category pill list from known config (only show if products exist with that category)
+  const pillasCategorias = useMemo(() => {
+    const usadas = new Set(productos.map(p => p.categoria).filter(Boolean));
+    return CATEGORIAS_CONFIG.filter(c => usadas.has(c.id));
+  }, [productos]);
+
+  const categoriaActivaSola =
+    filtros.categorias.length === 1 ? filtros.categorias[0] : null;
+
+  const seleccionarCategoriaPill = (catId) => {
+    if (catId === null) {
+      setFiltros(prev => ({ ...prev, categorias: [] }));
+    } else {
+      setFiltros(prev => ({ ...prev, categorias: [catId] }));
+    }
+  };
+
   const totalFiltrosActivos =
     filtros.categorias.length + filtros.marcas.length + filtros.tamanios.length;
 
@@ -143,6 +161,7 @@ export default function App({ temaOscuro, onToggleTema }) {
           <Header
             cantidadTotal={cantidadTotal}
             onAbrirCarrito={() => setCarritoAbierto(true)}
+            onRastreoClick={() => setRastreoAbierto(true)}
             temaOscuro={temaOscuro}
             onToggleTema={onToggleTema}
           />
@@ -157,9 +176,42 @@ export default function App({ temaOscuro, onToggleTema }) {
               onAbrirFiltros={() => setFiltrosAbiertos(true)}
             />
           </div>
+
+          {/* Pills de categorías — quick-access, solo mobile (sidebar lo cubre en desktop) */}
+          {pillasCategorias.length > 0 && !loading && (
+            <div className="lg:hidden overflow-x-auto hide-scrollbar pb-2 pt-1.5">
+              <div className="flex gap-2 px-4">
+                <button
+                  onClick={() => seleccionarCategoriaPill(null)}
+                  className="flex-shrink-0 text-[11px] font-body font-black px-3 py-1.5 rounded-full
+                             transition-all duration-200 active:scale-95 whitespace-nowrap"
+                  style={filtros.categorias.length === 0
+                    ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)', color: 'white', boxShadow: '0 2px 8px #ff3dac44' }
+                    : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-soft)' }
+                  }
+                >
+                  Todos
+                </button>
+                {pillasCategorias.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => seleccionarCategoriaPill(cat.id)}
+                    className="flex-shrink-0 text-[11px] font-body font-black px-3 py-1.5 rounded-full
+                               transition-all duration-200 active:scale-95 whitespace-nowrap"
+                    style={categoriaActivaSola === cat.id
+                      ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)', color: 'white', boxShadow: '0 2px 8px #ff3dac44' }
+                      : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-soft)' }
+                    }
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </header>
 
-        <main className={`lg:pb-0 lg:h-[calc(100vh-130px)] lg:overflow-hidden transition-all duration-300 ${items.length > 0 ? 'pb-32' : 'pb-8'}`}>
+        <main className={`lg:pb-0 lg:h-[calc(100vh-130px)] lg:overflow-hidden transition-all duration-300 ${items.length > 0 ? 'pb-40' : 'pb-8'}`}>
           <div className="max-w-[1500px] mx-auto w-full px-4 lg:px-10 h-full">
             <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-8 xl:gap-10 lg:items-start lg:h-full">
               <SidebarFiltrosDesktop
@@ -170,20 +222,21 @@ export default function App({ temaOscuro, onToggleTema }) {
               />
 
               <section className="lg:h-full lg:flex lg:flex-col min-h-0">
-                {/* Barra superior del catálogo — rastreo */}
-                <div className="px-3 lg:px-0 pb-2 w-full flex items-center gap-3">
-                  <button
-                    onClick={() => setRastreoAbierto(true)}
-                    className="flex items-center gap-2 text-xs font-body font-bold px-3.5 py-2 rounded-xl transition-all duration-200 active:scale-95"
-                    style={{
-                      background: 'var(--surface-card)',
-                      color: 'var(--text-secondary)',
-                      border: '1px solid var(--border-soft)',
-                      boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-                    }}
-                  >
-                    📦 Rastrear mi pedido
-                  </button>
+                {/* Strip de confianza */}
+                <div className="px-3 lg:px-0 pt-2 pb-1">
+                  <div className="flex items-center justify-start lg:justify-center gap-3 lg:gap-5 text-[10px] lg:text-xs font-body font-bold overflow-x-auto hide-scrollbar"
+                       style={{ color: 'var(--text-secondary)' }}>
+                    <span className="whitespace-nowrap">✓ Envío en Uruapan</span>
+                    <span className="whitespace-nowrap">✓ Pago al recibir</span>
+                    <span className="whitespace-nowrap">✓ Atención por WhatsApp</span>
+                    <button
+                      onClick={() => setRastreoAbierto(true)}
+                      className="whitespace-nowrap ml-auto lg:hidden flex items-center gap-1 transition-colors"
+                      style={{ color: 'var(--color-fiesta-purple, #a855f7)' }}
+                    >
+                      📦 Rastrear pedido
+                    </button>
+                  </div>
                 </div>
 
                 <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-4">

@@ -1,8 +1,9 @@
+import { Package } from 'lucide-react';
 import { NOMBRE_NEGOCIO } from '../data/productos';
 import { usePWA } from '../hooks/usePWA';
 import ThemeToggle from './ThemeToggle';
 
-export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onToggleTema }) {
+export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onToggleTema, onRastreoClick }) {
   const { installPrompt, mostrarGuiaIOS, instalarApp } = usePWA();
 
   const mostrarBotonInstalar = !!installPrompt || mostrarGuiaIOS;
@@ -47,7 +48,7 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
               {NOMBRE_NEGOCIO}
             </h1>
             <p className="text-[10px] font-body font-bold tracking-widest uppercase text-ink-400">
-              ✨ Catálogo Digital ✨
+              Globos · Decoración · Fiestas
             </p>
           </div>
         </div>
@@ -67,6 +68,20 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
                   d="M12 18.5l-6-6m6 6l6-6m-6 6V3" />
               </svg>
               <span className="hidden sm:inline">Instalar</span>
+            </button>
+          )}
+
+          {/* Rastreo de pedido */}
+          {onRastreoClick && (
+            <button
+              onClick={onRastreoClick}
+              className="flex items-center gap-1 p-2 rounded-full transition-all duration-200 active:scale-90"
+              style={{ color: 'var(--text-secondary)' }}
+              aria-label="Rastrear mi pedido"
+              title="Rastrear pedido"
+            >
+              <Package className="w-5 h-5" />
+              <span className="hidden sm:inline text-xs font-body font-bold">Rastrear</span>
             </button>
           )}
 

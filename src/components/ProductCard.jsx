@@ -18,6 +18,26 @@ function ProductCardInner({
   const precioAplicable = obtenerPrecioAplicable(producto, cantidad || 1);
   const hayDescuento = precioAplicable < precioBase;
 
+  // Badge "Últimos X" cuando stock es bajo
+  const stockBajo = !agotado &&
+    producto.stock_ilimitado === false &&
+    (producto.stock_actual || 0) > 0 &&
+    (producto.stock_actual || 0) <= 5;
+
+  // Hint de precio mayoreo (tier mínimo)
+  const mayoreoMinTier = (() => {
+    let escalas = producto.precios_mayoreo;
+    if (typeof escalas === 'string') {
+      try { escalas = JSON.parse(escalas); } catch { escalas = []; }
+    }
+    if (!Array.isArray(escalas) || escalas.length === 0) return null;
+    const validas = escalas
+      .map(e => ({ min: Number(e?.cantidad_minima) || 0, precio: Number(e?.precio) }))
+      .filter(e => e.min > 0 && Number.isFinite(e.precio) && e.precio < precioBase)
+      .sort((a, b) => a.min - b.min);
+    return validas[0] || null;
+  })();
+
   // First 4 images are above-the-fold on most screens
   const isPriority = index < 4;
 
@@ -55,6 +75,15 @@ function ProductCardInner({
                                px-3 py-1.5 rounded-full backdrop-blur-sm tracking-wide">
                 😔 Agotado
               </span>
+            </div>
+          )}
+
+          {/* Badge stock bajo */}
+          {stockBajo && (
+            <div className="absolute bottom-2 left-2 text-[9px] font-body font-black
+                            px-2 py-0.5 rounded-full text-white"
+                 style={{ background: 'linear-gradient(135deg, #f97316, #dc2626)' }}>
+              Últimos {producto.stock_actual}
             </div>
           )}
 
@@ -105,6 +134,12 @@ function ProductCardInner({
                 {SIMBOLO_MONEDA}{precioBase.toFixed(2)}
               </span>
             )}
+            {/* Hint mayoreo — siempre visible si el producto tiene tiers */}
+            {mayoreoMinTier && !agotado && (
+              <p className="text-[10px] font-body font-semibold mt-0.5" style={{ color: '#16a34a' }}>
+                desde {SIMBOLO_MONEDA}{mayoreoMinTier.precio.toFixed(2)} × {mayoreoMinTier.min}+
+              </p>
+            )}
           </div>
         </div>
       </button>
@@ -121,7 +156,7 @@ function ProductCardInner({
           <div className="flex items-center justify-between w-full">
             <button
               onClick={() => onReducir(producto.id)}
-              className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-xl
+              className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl
                          bg-ink-100 text-ink-600
                          transition-all duration-150 active:scale-90 hover:bg-ink-200"
               aria-label="Quitar uno"
@@ -138,7 +173,7 @@ function ProductCardInner({
             <button
               onClick={() => !maxStockAlcanzado && onAgregar(producto)}
               disabled={maxStockAlcanzado}
-              className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-xl text-white
+              className={`w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl text-white
                          transition-all duration-150
                          ${maxStockAlcanzado ? 'opacity-50 cursor-not-allowed' : 'active:scale-90'}`}
               style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}
