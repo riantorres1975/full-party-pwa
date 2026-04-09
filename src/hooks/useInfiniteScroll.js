@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 const INITIAL_COUNT = 12;
 const BATCH_SIZE    = 12;
@@ -7,7 +7,7 @@ const BATCH_SIZE    = 12;
  * useInfiniteScroll
  * Expone:
  *  - visibleCount   → cuántos items mostrar actualmente
- *  - sentinelRef    → ref para el elemento centinela (div al final del grid)
+ *  - sentinelRef    → callback ref para el elemento centinela (div al final del grid)
  *  - hayMas         → boolean: ¿quedan items por mostrar?
  *  - cargando       → boolean: true durante el breve flash de carga
  *  - reset()        → llama al cambiar el array (búsqueda/filtros)
@@ -15,7 +15,6 @@ const BATCH_SIZE    = 12;
 export function useInfiniteScroll(totalItems) {
   const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
   const [cargando,     setCargando]     = useState(false);
-  const sentinelRef = useRef(null);
   const observerRef = useRef(null);
   const totalRef    = useRef(totalItems);
 
@@ -39,9 +38,10 @@ export function useInfiniteScroll(totalItems) {
     });
   };
 
-  // Conectar IntersectionObserver al centinela (montaje único)
-  useEffect(() => {
-    if (!sentinelRef.current) return;
+  // Callback ref: reconecta el observer cada vez que el sentinel se monta/desmonta
+  const sentinelRef = useCallback((node) => {
+    if (observerRef.current) observerRef.current.disconnect();
+    if (!node) return;
 
     observerRef.current = new IntersectionObserver(
       (entries) => {
@@ -49,11 +49,8 @@ export function useInfiniteScroll(totalItems) {
       },
       { rootMargin: '200px' }
     );
-
-    observerRef.current.observe(sentinelRef.current);
-
-    return () => observerRef.current?.disconnect();
-  }, []); // stable — only mount/unmount
+    observerRef.current.observe(node);
+  }, []);
 
   return { visibleCount, sentinelRef, hayMas, cargando, reset };
 }
