@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Package, Pencil, Trash2, Search, AlertTriangle, Wand2 } from 'lucide-react';
+import { Package, Pencil, Trash2, Search, AlertTriangle, Wand2, Plus, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toTitleCase } from '../utils/normalizar';
 import {
@@ -41,7 +41,7 @@ function MiniaturaProducto({ url, nombre }) {
 export default function AdminCatalogo() {
   const toast = useToast();
   const { isOpen: confirmOpen, config: confirmConfig, confirm: confirmDialog, onConfirm, onCancel } = useConfirm();
-  const [pestana, setPestana] = useState('nuevo');
+  const [creando, setCreando] = useState(false);
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [errorLista, setErrorLista] = useState('');
@@ -176,49 +176,35 @@ export default function AdminCatalogo() {
 
   return (
     <div className="space-y-4 sm:space-y-5 min-w-0">
-      {/* Pestañas — segmented control pill SaaS */}
-      <div className="flex bg-admin-elevated rounded-xl p-1 border border-admin-border w-fit">
-        {[{ key: 'nuevo', label: 'Nuevo Artículo' }, { key: 'inventario', label: 'Inventario' }].map(tab => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setPestana(tab.key)}
-            className={`px-4 py-2 text-sm font-body font-bold rounded-lg transition-all duration-200 ${
-              pestana === tab.key
-                ? 'bg-admin-card text-admin-text shadow-card'
-                : 'text-admin-muted hover:text-admin-text'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Contenido con transición suave */}
-      <div className="relative">
-        {pestana === 'nuevo' && (
-          <div className="animate-fade-in">
-            <FormularioNuevoProducto onProductoCreado={fetchProductos} />
+      {/* Toolbar: buscador + botón nuevo */}
+      <div className="animate-fade-in flex flex-col gap-4 min-h-0">
+        <div className="flex gap-2 items-center shrink-0">
+          <div className="relative flex-1">
+            <Search
+              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-admin-muted pointer-events-none"
+            />
+            <input
+              type="search"
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+              placeholder="Buscar por nombre, marca, tamaño o categoría…"
+              className="w-full bg-admin-card rounded-2xl pl-12 pr-4 py-3 text-sm font-body font-semibold
+                         text-admin-text placeholder:text-admin-inactive outline-none border-2 border-admin-border
+                         focus:border-fiesta-magenta transition-colors"
+            />
           </div>
-        )}
-
-        {pestana === 'inventario' && (
-          <div className="animate-fade-in flex flex-col gap-4 min-h-0">
-            <div className="relative shrink-0">
-              <Search
-                size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-admin-muted pointer-events-none"
-              />
-              <input
-                type="search"
-                value={busqueda}
-                onChange={e => setBusqueda(e.target.value)}
-                placeholder="Buscar por nombre, marca, tamaño o categoría…"
-                className="w-full bg-admin-card rounded-2xl pl-12 pr-4 py-3 text-sm font-body font-semibold
-                           text-admin-text placeholder:text-admin-inactive outline-none border-2 border-admin-border
-                           focus:border-fiesta-magenta transition-colors"
-                />
-            </div>
+          <button
+            type="button"
+            onClick={() => setCreando(true)}
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-3 rounded-2xl text-sm font-body font-black
+                       text-white transition-all duration-200 active:scale-95"
+            style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)', boxShadow: '0 4px 14px #ff3dac33' }}
+          >
+            <Plus size={18} strokeWidth={3} />
+            <span className="hidden sm:inline">Nuevo Artículo</span>
+          </button>
+        </div>
 
             <div className="flex gap-2 overflow-x-auto pb-4 items-center">
               <button
@@ -383,8 +369,29 @@ export default function AdminCatalogo() {
               </div>
             )}
           </div>
-        )}
-      </div>
+
+      {/* Modal Nuevo Artículo */}
+      {creando && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
+          style={{ background: 'rgba(26, 7, 51, 0.55)' }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Nuevo artículo"
+        >
+          <div className="relative w-full max-w-5xl max-h-[95dvh] overflow-y-auto bg-white sm:rounded-2xl shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setCreando(false)}
+              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-ink-100 hover:bg-ink-200 text-ink-500 transition-colors"
+              aria-label="Cerrar"
+            >
+              <X size={18} />
+            </button>
+            <FormularioNuevoProducto onProductoCreado={() => { fetchProductos(); setCreando(false); }} />
+          </div>
+        </div>
+      )}
 
       {editando && (
         <ModalEditarProducto
