@@ -19,12 +19,9 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker
       .register('/sw.js')
       .then((registration) => {
-        const avisarUpdate = () => {
-          window.dispatchEvent(new Event('fp-sw-update'));
-        };
-
+        // Si hay un SW esperando, activarlo inmediatamente
         if (registration.waiting) {
-          avisarUpdate();
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
         }
 
         registration.addEventListener('updatefound', () => {
@@ -33,14 +30,28 @@ if ('serviceWorker' in navigator) {
 
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              avisarUpdate();
+              // Auto-aplicar: activar el nuevo SW sin esperar clic del usuario
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
             }
           });
         });
 
+        // Cuando el nuevo SW toma control, recargar para usar los assets nuevos
         navigator.serviceWorker.addEventListener('controllerchange', () => {
           window.location.reload();
         });
+
+        // Escuchar mensaje del SW cuando detecta chunks faltantes (nueva versión)
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data?.type === 'FORCE_RELOAD') {
+            window.location.reload();
+          }
+        });
+
+        // Chequear actualizaciones cada 5 minutos (en vez de cada 24h por defecto)
+        setInterval(() => {
+          registration.update().catch(() => {});
+        }, 5 * 60 * 1000);
       })
       .catch(() => {});
   });

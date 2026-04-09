@@ -1,12 +1,10 @@
 // Service Worker — Catálogo Digital PWA
-const CACHE_NAME = 'catalogo-v5';
+const CACHE_NAME = 'catalogo-v6';
 const IMG_CACHE  = 'catalogo-img-v1';
 const MAX_IMG_CACHE = 150; // max images to keep cached
 
-// Recursos a cachear en la instalación
+// Recursos a cachear en la instalación (NO incluir index.html — siempre se pide al server)
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
   '/manifest.json',
 ];
 
@@ -72,6 +70,18 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
+  // ── Navegación (HTML): SIEMPRE network, sin cache ────────────────────
+  // Esto garantiza que tras un deploy las pestañas reciban el nuevo index.html
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('/manifest.json')
+        .then(() => new Response('<html><body><script>location.reload()</script></body></html>',
+          { headers: { 'Content-Type': 'text/html' } }))
+      )
+    );
+    return;
+  }
+
   // ── Imagen: Cache First (stale-while-revalidate) ─────────────────────
   // Images from Supabase storage or external CDNs
   if (isImageRequest(event.request)) {
@@ -106,7 +116,11 @@ self.addEventListener('fetch', (event) => {
         const isHtmlResponse = response.headers.get('content-type')?.includes('text/html');
 
         if (isAssetRequest && isHtmlResponse) {
-          // El chunk fue borrado del servidor (nueva versión en Vercel)
+          // El chunk fue borrado del servidor (nueva versión en deploy)
+          // Notificar a todos los clientes que recarguen
+          self.clients.matchAll().then((clients) => {
+            clients.forEach((client) => client.postMessage({ type: 'FORCE_RELOAD' }));
+          });
           return Response.error(); 
         }
 
