@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Package, Pencil, Trash2, Search, AlertTriangle, Plus, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import {
@@ -320,7 +321,7 @@ export default function AdminCatalogo() {
           </div>
 
       {/* Modal Nuevo Artículo */}
-      {creando && (
+      {creando && createPortal(
         <div
           className="fixed inset-0 z-50 overflow-y-auto animate-fade-in"
           style={{ background: 'rgba(26, 7, 51, 0.55)' }}
@@ -342,7 +343,8 @@ export default function AdminCatalogo() {
               <FormularioNuevoProducto isModal onProductoCreado={() => { fetchProductos(); setCreando(false); }} />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {editando && (

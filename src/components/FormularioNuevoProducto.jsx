@@ -218,7 +218,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
         {/* HEADER */}
         <div className="mb-6 border-b border-ink-100 pb-5">
           <h2 className="text-xl sm:text-2xl font-black text-ink-900 tracking-tight">Nuevo Artículo</h2>
-          <p className="text-xs sm:text-sm font-medium text-ink-500 mt-1">Gemas de metadata y configuración total del producto.</p>
+          <p className="text-xs sm:text-sm font-medium text-ink-500 mt-1">Completa los datos del producto para agregarlo al catálogo.</p>
         </div>
 
         {/* BODY */}
