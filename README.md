@@ -58,7 +58,11 @@ catalogo-pwa/
     │
     ├── utils/
     │   ├── precios.js             ← calcula precio aplicable por mayoreo
+    │   ├── validarTelefono.js     ← validación de teléfonos mexicanos (ladas IFT)
     │   └── whatsapp.js            ← genera URL de WhatsApp con precio aplicado por artículo
+    │
+    ├── __tests__/
+    │   └── seguridad.test.mjs     ← suite de pruebas de seguridad (52 tests)
     │
     └── components/
         ├── Header.jsx             ← logo + botón de carrito con badge
@@ -219,6 +223,7 @@ export const categorias = [
 ### Catálogo público (`/`)
 
 - **Diseño Premium y Responsivo** — interfaz estética, minimalista, con sombras, gradientes y animaciones sutiles
+- **Grid optimizado para desktop** — distribución adaptativa de 5-6 columnas en pantallas grandes con sidebar compacto y aprovechamiento máximo del ancho
 - **Modo Claro y Oscuro (Dark Mode)** — alternable desde el header para todas las vistas
 - **Filtros optimizados para gran escala** — listas de categorías con buscador interno (*inline*) para catálogos extensos (+50)
 - **Modal de Detalle Inteligente** — *bottom-sheet* en móvil y *side-by-side* optimizado en desktop
@@ -234,7 +239,11 @@ export const categorias = [
 
 - **Persistencia en localStorage** — el carrito sobrevive recargas accidentales con clave `carritoPWA`
 - **Formulario de entrega** — toggle entre "🏪 Recoger en tienda" y "🚚 Envío a domicilio"
-- **Validación en tiempo real** — nombre requerido, teléfono de exactamente 10 dígitos
+- **Validación en tiempo real** — nombre requerido, teléfono validado contra ladas reales de México (IFT)
+- **Validación de ladas mexicanas** — solo acepta números con códigos de área reales (55, 33, 81, 452, etc.); rechaza ladas falsas, dígitos repetidos y secuencias obvias
+- **Honeypot anti-bot** — campo invisible que detecta bots y descarta pedidos spam silenciosamente
+- **Rate limit por sesión** — máximo 5 pedidos cada 30 minutos por sesión del navegador
+- **Validación de stock en carrito** — el drawer respeta el stock máximo y no permite agregar más unidades de las disponibles
 - **Formato automático de nombre** — capitaliza la primera letra de cada palabra respetando acentos (`León`, `Pérez`)
 - **Limpieza de teléfono** — elimina espacios del autocompletado del celular antes de enviar
 - **Precios escalonados por mayoreo** — cálculo automático por cantidad en carrito con `obtenerPrecioAplicable(...)`
@@ -248,6 +257,7 @@ export const categorias = [
 - **Folio único** generado por función SQL (`FP-XXXX`) incluido en el mensaje
 - Si Supabase falla, WhatsApp se abre igual (degradación elegante, sin folio)
 - **Rastreo público** — el cliente ingresa su folio o teléfono y ve un stepper animado con el estado actual
+- **Vista de rastreo centrada** — layout optimizado para desktop con ancho máximo para mejor legibilidad
 
 ### Panel de administración (`/#/admin`)
 

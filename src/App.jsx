@@ -212,8 +212,8 @@ export default function App({ temaOscuro, onToggleTema }) {
         </header>
 
         <main className={`lg:pb-0 lg:h-[calc(100vh-130px)] lg:overflow-hidden transition-all duration-300 ${items.length > 0 ? 'pb-40' : 'pb-8'}`}>
-          <div className="max-w-[1500px] mx-auto w-full px-4 lg:px-10 h-full">
-            <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-8 xl:gap-10 lg:items-start lg:h-full">
+          <div className="max-w-[1600px] mx-auto w-full px-3 lg:px-6 h-full">
+            <div className="lg:grid lg:grid-cols-[230px_minmax(0,1fr)] lg:gap-6 xl:gap-8 lg:items-start lg:h-full">
               <SidebarFiltrosDesktop
                 filtros={filtros}
                 toggleFiltro={toggleFiltro}

@@ -1,8 +1,26 @@
 import { useEffect, useState } from 'react';
 import { generarMensajeWhatsApp } from '../utils/whatsapp';
 import { obtenerPrecioAplicable } from '../utils/precios';
+import { validarTelefonoMX } from '../utils/validarTelefono';
 import { SIMBOLO_MONEDA, DIRECCION_TIENDA, HORARIO_TIENDA, MAPS_URL_TIENDA } from '../data/productos';
 import { usePedido } from '../hooks/usePedido';
+
+// ── Rate limit por sesión (máx. pedidos por ventana de tiempo) ───────────────
+const MAX_PEDIDOS_POR_SESION = 5;
+const VENTANA_MS = 30 * 60 * 1000; // 30 minutos
+
+function checkRateLimit() {
+  try {
+    const raw = sessionStorage.getItem('fp_order_ts');
+    const timestamps = raw ? JSON.parse(raw) : [];
+    const ahora = Date.now();
+    const recientes = timestamps.filter(t => ahora - t < VENTANA_MS);
+    if (recientes.length >= MAX_PEDIDOS_POR_SESION) return false;
+    recientes.push(ahora);
+    sessionStorage.setItem('fp_order_ts', JSON.stringify(recientes));
+    return true;
+  } catch { return true; }
+}
 
 const INPUT_CLASS = `
   w-full rounded-xl px-3 py-2.5 text-sm font-body font-semibold
@@ -26,6 +44,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
   const [telefono,  setTelefono]  = useState('');
   const [direccion, setDireccion] = useState('');
   const [errores,   setErrores]   = useState({});
+  const [honeypot,  setHoneypot]  = useState(''); // campo trampa invisible
   // Confirmación post-guardar: { folio, url, itemsSnapshot, total, tipoEntrega, nombre }
   const [pedidoGuardado, setPedidoGuardado] = useState(null);
 
@@ -50,8 +69,9 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
   const capitalizarNombre = (str) =>
     str.replace(/(^|[\s\-])(\S)/gu, (_, sep, letra) => sep + letra.toUpperCase());
 
-  const telefonoLimpio = telefono.replace(/\s/g, '');
-  const telefonoValido = /^\d{10}$/.test(telefonoLimpio);
+  const telefonoLimpio = telefono.replace(/\D/g, '');
+  const resultadoTel = validarTelefonoMX(telefonoLimpio);
+  const telefonoValido = resultadoTel.valido;
   const formularioListo = nombre.trim().length > 0 && telefonoValido &&
     (tipoEntrega === 'tienda' || direccion.trim().length > 0);
 
@@ -63,7 +83,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
   const validar = () => {
     const e = {};
     if (!nombre.trim())    e.nombre   = 'Ingresa tu nombre';
-    if (!telefonoValido)   e.telefono = 'Debe tener exactamente 10 dígitos';
+    if (!telefonoValido)   e.telefono = resultadoTel.error || 'Número de teléfono inválido';
     if (tipoEntrega === 'envio' && !direccion.trim())
       e.direccion = 'Ingresa la dirección de envío';
     setErrores(e);
@@ -72,6 +92,15 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
 
   const handleConfirmar = async () => {
     if (!validar()) return;
+
+    // Honeypot: si un bot llenó el campo oculto, rechazar silenciosamente
+    if (honeypot) return;
+
+    // Rate limit por sesión
+    if (!checkRateLimit()) {
+      setErrores({ nombre: 'Demasiados pedidos seguidos. Intenta en unos minutos.' });
+      return;
+    }
 
     const itemsConPrecioAplicado = items.map(item => ({
       ...item,
@@ -292,7 +321,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                         <span className="font-body font-black text-sm text-ink-900 w-5 text-center">{item.cantidad}</span>
                         
                         {(() => {
-                          const maxStockAlcanzado = item.stock_ilimitado === false && item.cantidad >= (item.stock_actual || 0);
+                          const maxStockAlcanzado = item.stock_ilimitado !== true && item.stock_actual != null && item.cantidad >= item.stock_actual;
                           return (
                             <button onClick={() => !maxStockAlcanzado && onAgregar(item)}
                               disabled={maxStockAlcanzado}
@@ -382,7 +411,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                     <input
                       type="tel"
                       value={telefono}
-                      onChange={(e) => setTelefono(e.target.value)}
+                      onChange={(e) => setTelefono(e.target.value.replace(/[^\d]/g, ''))}
                       placeholder="📞 Tu número de teléfono"
                       maxLength={10}
                       className={INPUT_CLASS}
@@ -394,8 +423,19 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                         ? errores.telefono
                         : telefonoValido
                           ? '✓ Teléfono válido'
-                          : `${telefono.replace(/\s/g,'').length}/10 dígitos`}
+                          : `${telefonoLimpio.length}/10 dígitos`}
                     </p>
+                  </div>
+
+                  {/* Honeypot — campo invisible anti-bot */}
+                  <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }}>
+                    <input
+                      type="text"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={honeypot}
+                      onChange={(e) => setHoneypot(e.target.value)}
+                    />
                   </div>
 
                   {/* Dirección — solo si es envío */}

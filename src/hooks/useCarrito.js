@@ -82,6 +82,8 @@ export function useCarrito() {
         imagen_url: producto.imagen_url,
         cantidad: 1,
         tamano: producto.tamano,
+        stock_ilimitado: producto.stock_ilimitado ?? true,
+        stock_actual: producto.stock_actual ?? null,
       };
       if (producto.precios_mayoreo) itemLimpio.precios_mayoreo = producto.precios_mayoreo;
       if (producto.familia_mayoreo) itemLimpio.familia_mayoreo = producto.familia_mayoreo;
