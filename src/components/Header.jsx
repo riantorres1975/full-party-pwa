@@ -1,10 +1,10 @@
-import { Package } from 'lucide-react';
+import { Package, LayoutGrid } from 'lucide-react';
 import { NOMBRE_NEGOCIO } from '../data/productos';
 import { usePWA } from '../hooks/usePWA';
 import ThemeToggle from './ThemeToggle';
 import { useState } from 'react';
 
-export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onToggleTema, onRastreoClick }) {
+export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onToggleTema, onRastreoClick, isAdmin = false }) {
   const { installPrompt, mostrarGuiaIOS, instalarApp } = usePWA();
   const [showIOSGuide, setShowIOSGuide] = useState(false);
 
@@ -72,6 +72,25 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
               </svg>
               <span className="hidden sm:inline">Instalar</span>
             </button>
+          )}
+
+          {/* Acceso rápido al admin — solo visible si hay sesión activa */}
+          {isAdmin && (
+            <a
+              href="#/admin"
+              className="flex items-center gap-1.5 text-xs font-body font-bold px-2.5 py-1.5 rounded-full
+                         border-2 transition-all duration-200 active:scale-95"
+              style={{
+                color: temaOscuro ? '#c4b5fd' : '#52278f',
+                borderColor: temaOscuro ? '#363b64' : '#e0c4f8',
+                background: temaOscuro ? 'rgba(42,15,80,0.5)' : '#f3e8ff',
+              }}
+              aria-label="Ir al panel de administración"
+              title="Panel admin"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Admin</span>
+            </a>
           )}
 
           {/* Rastreo de pedido */}
