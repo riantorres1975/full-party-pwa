@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { categorias, marcas, tamanios } from '../data/productos';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 /**
  * Mini buscador dentro de una sección de filtros
@@ -154,9 +155,13 @@ export default function ModalFiltros({
   filtros, toggleFiltro, limpiarFiltros,
   totalResultados,
 }) {
+  const panelRef = useRef(null);
+  useFocusTrap(panelRef, isOpen);
+
   useEffect(() => {
-    document.body.style.overflow = isOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    if (isOpen) document.documentElement.classList.add('overflow-hidden');
+    else        document.documentElement.classList.remove('overflow-hidden');
+    return () => document.documentElement.classList.remove('overflow-hidden');
   }, [isOpen]);
 
   const totalActivos =
@@ -175,6 +180,7 @@ export default function ModalFiltros({
 
       {/* Panel */}
       <div
+        ref={panelRef}
         role="dialog"
         aria-label="Filtros"
         aria-modal="true"

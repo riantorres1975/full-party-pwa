@@ -8,17 +8,30 @@ import ThemeToggle from './ThemeToggle';
 import { useToast } from './ui/ToastProvider';
 import { SkeletonPedido } from './ui/Skeleton';
 import BottomNav from './ui/BottomNav';
+import ConfirmModal from './ui/ConfirmModal';
+import { useConfirm } from '../hooks/useConfirm';
 
 const ESTADOS = ['Por Surtir', 'Armando Pedido', 'Listo para Entrega'];
 const ESTADOS_CON_CANCELADO = [...ESTADOS, 'Cancelado'];
 
 const ESTADO_META = {
-  'Por Surtir':         { color: '#ef4444', bg: '#fee2e2', colorClass: 'text-status-pending',  bgClass: 'bg-status-pending-light',  borderClass: 'border-status-pending',  icon: ShoppingBag },
-  'Armando Pedido':     { color: '#eab308', bg: '#fef9c3', colorClass: 'text-status-progress', bgClass: 'bg-status-progress-light', borderClass: 'border-status-progress', icon: Clock },
-  'Listo para Entrega': { color: '#22c55e', bg: '#dcfce7', colorClass: 'text-status-done',     bgClass: 'bg-status-done-light',     borderClass: 'border-status-done',     icon: CheckCircle2 },
-  'Cancelado':          { color: '#6b7280', bg: '#f3f4f6', colorClass: 'text-gray-500',        bgClass: 'bg-gray-100',              borderClass: 'border-gray-500',        icon: XCircle },
+  'Por Surtir':         { color: '#ef4444', bg: '#fee2e2', colorClass: 'text-status-pending',  bgClass: 'bg-status-pending-light',  borderClass: 'border-status-pending',  accentClass: 'bg-status-pending',  icon: ShoppingBag },
+  'Armando Pedido':     { color: '#eab308', bg: '#fef9c3', colorClass: 'text-status-progress', bgClass: 'bg-status-progress-light', borderClass: 'border-status-progress', accentClass: 'bg-status-progress', icon: Clock },
+  'Listo para Entrega': { color: '#22c55e', bg: '#dcfce7', colorClass: 'text-status-done',     bgClass: 'bg-status-done-light',     borderClass: 'border-status-done',     accentClass: 'bg-status-done',     icon: CheckCircle2 },
+  'Cancelado':          { color: '#6b7280', bg: '#f3f4f6', colorClass: 'text-gray-500',        bgClass: 'bg-gray-100',              borderClass: 'border-gray-500',        accentClass: 'bg-gray-500',        icon: XCircle },
 };
 
+
+// ── Helper puro: normalizar artículos para picking ──────────────────────────
+function normalizarArticulos(lista, modoPicking) {
+  return (lista || []).map(i => ({
+    ...i,
+    encontrado:
+      typeof i.encontrado === 'boolean'
+        ? i.encontrado
+        : (modoPicking ? false : undefined),
+  }));
+}
 
 // ── Lista de artículos expandible + Picking dinámico ────────────────────────
 function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
@@ -141,21 +154,12 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, esD
   const toast = useToast();
   const modoPicking = estadoPedido === 'Armando Pedido';
 
-  const normalizarArticulos = (lista) =>
-    (lista || []).map(i => ({
-      ...i,
-      encontrado:
-        typeof i.encontrado === 'boolean'
-          ? i.encontrado
-          : (modoPicking ? false : undefined),
-    }));
-
   const [abierto,          setAbierto]          = useState(estadoPedido === 'Armando Pedido');
-  const [articulosSurtidos, setArticulosSurtidos] = useState(() => normalizarArticulos(items));
+  const [articulosSurtidos, setArticulosSurtidos] = useState(() => normalizarArticulos(items, modoPicking));
   const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
-    setArticulosSurtidos(normalizarArticulos(items));
+    setArticulosSurtidos(normalizarArticulos(items, modoPicking));
   }, [items, modoPicking, pedido?.id, pedido?.updated_at, pedido?.estado]);
 
   const nuevoTotal = articulosSurtidos
@@ -430,7 +434,7 @@ function TarjetaPedidoCompacta({ pedido, seleccionado, onClick }) {
                   ${seleccionado ? 'bg-admin-elevated border-admin-border shadow-card-hover' : 'bg-admin-card border-transparent hover:bg-admin-elevated'}`}
     >
       {/* Accent bar */}
-      <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-full ${meta.bgClass.replace('bg-', 'bg-').replace('-light', '')}`} style={{ background: meta.color }} />
+      <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-full ${meta.accentClass}`} />
 
       <div className="flex items-center gap-3">
         {/* Avatar */}
@@ -671,6 +675,7 @@ function useAdminVistaInicial() {
 
 export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema }) {
   const toast = useToast();
+  const { isOpen: cancelConfirmOpen, config: cancelConfig, confirm: confirmCancelar, onConfirm: onConfirmCancelar, onCancel: onCancelCancelar } = useConfirm();
   const [vistaAdmin, setVistaAdmin] = useAdminVistaInicial();
   const [pedidos,      setPedidos]      = useState([]);
   const [loading,      setLoading]      = useState(true);
@@ -688,7 +693,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
     setError('');
     const { data, error: err } = await supabase
       .from('pedidos')
-      .select('*')
+      .select('id,folio,cliente_nombre,cliente_telefono,tipo_entrega,direccion,total,estado,detalles_json,notificado_estado,created_at,updated_at')
       .order('created_at', { ascending: false });
 
     if (err) setError(err.message);
@@ -751,9 +756,12 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
 
   // ── Cancelar pedido con confirmación ───────────────────────────────────────
   async function cancelarPedido(pedido) {
-    const ok = window.confirm(
-      `¿Seguro que deseas cancelar el pedido ${pedido.folio} de ${pedido.cliente_nombre}?\n\nSe abrirá WhatsApp para notificar al cliente.`
-    );
+    const ok = await confirmCancelar({
+      title: 'Cancelar pedido',
+      message: `¿Seguro que deseas cancelar el pedido ${pedido.folio} de ${pedido.cliente_nombre}? Se abrirá WhatsApp para notificar al cliente.`,
+      confirmLabel: 'Sí, cancelar',
+      variant: 'danger',
+    });
     if (!ok) return;
 
     setActualizando(pedido.id);
@@ -856,6 +864,12 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
 
   return (
     <div className="min-h-screen bg-admin-bg lg:flex lg:h-screen lg:overflow-hidden">
+      <ConfirmModal
+        open={cancelConfirmOpen}
+        {...cancelConfig}
+        onConfirm={onConfirmCancelar}
+        onCancel={onCancelCancelar}
+      />
       {/* Skip link */}
       <a href="#admin-main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-admin-card focus:text-admin-text focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-elevated focus:text-sm focus:font-body focus:font-bold">
         Saltar al contenido

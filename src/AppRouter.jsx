@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import App         from './App';
 import LoginAdmin  from './components/LoginAdmin';
-import AdminPedidos from './components/AdminPedidos';
 import { useAuth } from './hooks/useAuth';
 import { useTheme } from './hooks/useTheme';
 import { ToastProvider } from './components/ui/ToastProvider';
+
+const AdminPedidos = lazy(() => import('./components/AdminPedidos'));
 
 /**
  * AppRouter — enrutamiento por hash sin react-router.
@@ -57,19 +58,29 @@ export default function AppRouter() {
     // Autenticado → Dashboard
     return (
       <ToastProvider>
-        <AdminPedidos
-        user={user}
-        temaOscuro={isDarkMode}
-        onToggleTema={toggleTheme}
-        onSignOut={async () => {
-          await signOut();
-          window.location.hash = '';
-        }}
-      />
+        <Suspense fallback={
+          <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--surface-primary)' }}>
+            <div className="w-8 h-8 rounded-full border-[3px] border-purple-700 border-t-purple-300 animate-spin" />
+          </div>
+        }>
+          <AdminPedidos
+          user={user}
+          temaOscuro={isDarkMode}
+          onToggleTema={toggleTheme}
+          onSignOut={async () => {
+            await signOut();
+            window.location.hash = '';
+          }}
+        />
+        </Suspense>
       </ToastProvider>
     );
   }
 
   // Ruta pública → catálogo normal
-  return <App temaOscuro={isDarkMode} onToggleTema={toggleTheme} />;
+  return (
+    <ToastProvider>
+      <App temaOscuro={isDarkMode} onToggleTema={toggleTheme} />
+    </ToastProvider>
+  );
 }

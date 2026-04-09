@@ -63,6 +63,8 @@ function OptimizedImageInner({
         ref={imgRef}
         src={error ? fallbackSrc : src}
         alt={alt}
+        width={400}
+        height={400}
         loading={priority ? 'eager' : 'lazy'}
         decoding="async"
         fetchpriority={priority ? 'high' : 'auto'}

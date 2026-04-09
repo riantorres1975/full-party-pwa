@@ -38,6 +38,7 @@ function borrarStorage() {
 export function useCarrito() {
   // 1. LAZY INIT — lee localStorage solo en el primer render
   const [items, setItems] = useState(() => leerStorage());
+  const [stockError, setStockError] = useState(null);
 
   // 2. SINCRONIZACIÓN AUTOMÁTICA — escribe en cada cambio
   useEffect(() => {
@@ -52,6 +53,7 @@ export function useCarrito() {
   // ── Mutaciones del carrito ─────────────────────────────────────────────────
 
   const agregarItem = useCallback((producto) => {
+    setStockError(null);
     setItems((prev) => {
       const existe = prev.find((i) => i.id === producto.id);
       const cantidadEnCarrito = existe ? existe.cantidad : 0;
@@ -60,11 +62,10 @@ export function useCarrito() {
       if (producto.stock_ilimitado === false) {
         const stockActual = producto.stock_actual || 0;
         if (cantidadEnCarrito >= stockActual) {
-          if (stockActual === 0) {
-            alert('Este artículo está agotado en tienda.');
-          } else {
-            alert(`Solo nos quedan ${stockActual} unidades de este artículo.`);
-          }
+          const msg = stockActual === 0
+            ? 'Este artículo está agotado en tienda.'
+            : `Solo nos quedan ${stockActual} unidades de este artículo.`;
+          queueMicrotask(() => setStockError(msg));
           return prev;
         }
       }
@@ -132,6 +133,7 @@ export function useCarrito() {
     items,
     total,
     cantidadTotal,
+    stockError,
     agregarItem,
     reducirItem,
     eliminarItem,
