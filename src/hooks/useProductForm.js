@@ -66,6 +66,7 @@ export function useProductForm(producto = null) {
 
   const [stockIlimitado, setStockIlimitado] = useState(isEdit ? (producto.stock_ilimitado !== false) : true);
   const [stockActual, setStockActual] = useState(isEdit ? (producto.stock_actual != null ? String(producto.stock_actual) : '') : '');
+  const [agregarStock, setAgregarStock] = useState('');
   const [stockMinimo, setStockMinimo] = useState(isEdit ? (producto.stock_minimo != null ? String(producto.stock_minimo) : '5') : '5');
 
   const preciosIniciales = isEdit ? parsearPreciosMayoreo(producto) : [emptyRow()];
@@ -226,7 +227,9 @@ export function useProductForm(producto = null) {
       tamano: tamanoFinal || null,
       imagen_url: urlFinal,
       stock_ilimitado: stockIlimitado,
-      stock_actual: stockActual ? Number(stockActual) : 0,
+      stock_actual: isEdit
+        ? (Number(stockActual) || 0) + (Number(agregarStock) || 0)
+        : (stockActual ? Number(stockActual) : 0),
       stock_minimo: stockMinimo ? Number(stockMinimo) : 5,
       es_nuevo: esNuevo,
       precios_mayoreo: preciosMayoreoFinal,
@@ -242,7 +245,7 @@ export function useProductForm(producto = null) {
     setTamano(''); setTamanoNuevo('');
     setDisponible(true); setEsNuevo(false);
     setImagenUrl(''); setArchivo(null);
-    setStockIlimitado(true); setStockActual(''); setStockMinimo('5');
+    setStockIlimitado(true); setStockActual(''); setAgregarStock(''); setStockMinimo('5');
     setMayoreoActivo(false);
     setPreciosMayoreo([emptyRow()]);
     setTouched({}); setFieldErrors({});
@@ -268,6 +271,7 @@ export function useProductForm(producto = null) {
     fileRef,
     stockIlimitado, setStockIlimitado,
     stockActual, setStockActual,
+    agregarStock, setAgregarStock,
     stockMinimo, setStockMinimo,
     mayoreoActivo, setMayoreoActivo,
     preciosMayoreo, setPreciosMayoreo,
