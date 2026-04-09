@@ -516,6 +516,27 @@ body.theme-dark .hover\:bg-red-50:hover {
   background-color: #2a1525 !important;
 }
 
+/* ── Picking mode rows (AdminPedidos) ────────────────────────────────────── */
+body.theme-dark .bg-amber-50  { background-color: #1e1500 !important; }
+body.theme-dark .bg-emerald-50 { background-color: #001912 !important; }
+body.theme-dark .border-amber-200  { border-color: #3d2c00 !important; }
+body.theme-dark .border-emerald-200 { border-color: #0d3322 !important; }
+body.theme-dark .text-amber-600  { color: #fbbf24 !important; }
+body.theme-dark .text-emerald-700 { color: #34d399 !important; }
+body.theme-dark .text-emerald-600 { color: #34d399 !important; }
+
+/* ── State feedback (forms) ──────────────────────────────────────────────── */
+body.theme-dark .bg-red-50    { background-color: #2a1015 !important; }
+body.theme-dark .border-red-100 { border-color: #4d1a25 !important; }
+body.theme-dark .bg-emerald-50 { background-color: #001912 !important; }
+body.theme-dark .border-emerald-100 { border-color: #0d3322 !important; }
+
+/* ── SelectCategoria dropdown (portal) ───────────────────────────────────── */
+body.theme-dark .bg-purple-100 { background-color: #2d1a5e !important; }
+body.theme-dark [role="listbox"] button:hover {
+  background-color: var(--admin-elevated) !important;
+}
+
 .safe-top    { padding-top:    env(safe-area-inset-top,    0px); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
 

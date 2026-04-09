@@ -127,8 +127,8 @@ export default function SelectCategoria({
         ref={listRef}
         role="listbox"
         aria-labelledby={id}
-        className="fixed z-[9999] max-h-52 overflow-y-auto overscroll-y-contain rounded-2xl border-2 border-ink-200
-                   bg-white py-1 shadow-xl [scrollbar-width:thin] [scrollbar-color:rgba(107,53,184,0.35)_transparent]"
+        className="fixed z-[9999] max-h-52 overflow-y-auto overscroll-y-contain rounded-2xl border-2
+                   bg-admin-card border-admin-border py-1 shadow-xl [scrollbar-width:thin] [scrollbar-color:rgba(107,53,184,0.35)_transparent]"
         style={{
           top: pos.top,
           left: pos.left,
@@ -150,14 +150,10 @@ export default function SelectCategoria({
                   onChange(c.id);
                   setAbierto(false);
                 }}
-                className="w-full text-left px-4 py-2.5 text-sm font-body font-semibold transition-colors
+                className={`w-full text-left px-4 py-2.5 text-sm font-body font-semibold transition-colors
                            hover:bg-purple-50 active:bg-purple-100
-                           data-[focused]:bg-purple-50 data-[focused]:outline data-[focused]:outline-2 data-[focused]:-outline-offset-2 data-[focused]:outline-purple-400"
-                style={
-                  seleccionada
-                    ? { background: '#f3e8ff', color: '#5b21b6' }
-                    : { color: '#1f2937' }
-                }
+                           data-[focused]:bg-purple-50 data-[focused]:outline data-[focused]:outline-2 data-[focused]:-outline-offset-2 data-[focused]:outline-purple-400
+                           text-admin-text ${seleccionada ? 'bg-purple-100 text-admin-text-secondary' : ''}`}
               >
                 {c.label}
               </button>

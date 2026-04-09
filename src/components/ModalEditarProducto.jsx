@@ -239,8 +239,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
           </div>
 
           <div
-            className="rounded-2xl px-4 py-3 border-2 border-ink-100"
-            style={{ background: '#faf8ff' }}
+            className="rounded-2xl px-4 py-3 border-2 border-admin-border bg-admin-elevated"
           >
             <label className="flex items-start gap-3 cursor-pointer select-none">
               <input
@@ -256,7 +255,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
             </label>
           </div>
 
-          <div className="rounded-2xl px-4 py-3 border-2 border-ink-100" style={{ background: '#faf8ff' }}>
+          <div className="rounded-2xl px-4 py-3 border-2 border-admin-border bg-admin-elevated">
             <label className="flex items-start gap-3 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -273,8 +272,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
           </div>
 
           <div
-            className="rounded-2xl p-4 border-2 border-dashed border-purple-200"
-            style={{ background: 'linear-gradient(180deg, #fefcff 0%, #f8f4ff 100%)' }}
+            className="rounded-2xl p-4 border-2 border-dashed border-admin-border bg-admin-elevated"
           >
             <p className="text-xs font-body font-black text-ink-700 mb-3 flex items-center gap-2">
               <ImagePlus size={16} className="text-fiesta-magenta" />
@@ -327,7 +325,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
           )}
 
           {/* SECCIÓN INVENTARIO */}
-          <div className="col-span-1 sm:col-span-2 bg-slate-50/50 border border-slate-200 rounded-xl p-4 sm:p-5 mt-1">
+          <div className="col-span-1 sm:col-span-2 bg-admin-elevated border border-admin-border rounded-xl p-4 sm:p-5 mt-1">
             <label className="flex items-center gap-3 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -366,7 +364,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
             )}
           </div>
 
-          <div className="bg-slate-50/50 border border-slate-200 rounded-xl p-4 sm:p-5">
+          <div className="bg-admin-elevated border border-admin-border rounded-xl p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-body font-black text-ink-800">Precios por mayoreo</p>
