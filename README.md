@@ -295,6 +295,14 @@ export const categorias = [
   - Se desactiva ("✓ Cliente notificado") tras enviarlo en todas las sesiones simultáneamente
   - Se reactiva al cambiar el estado del pedido
   - Al usar "Pasar a Listo" desde picking, el botón queda desactivado automáticamente ya que el mensaje se envía en el mismo acto
+- **Cancelación de pedidos** — botón compacto integrado junto a "Notificar al cliente" en la misma fila (desktop) o botón completo inferior (mobile):
+  - Confirmación antes de cancelar (window.confirm)
+  - Cambia el estado a `Cancelado` en Supabase y notifica al cliente via WhatsApp con mensaje de cancelación
+  - **Restauración automática de stock** — si el pedido ya estaba en "Listo para Entrega" (stock descontado), al cancelar se suma de vuelta la cantidad de cada artículo al `stock_actual` y se reactiva el producto
+  - La tarjeta pasa a modo solo-lectura: badge "Cancelado", indicador "Pedido cancelado" y "✓ Cliente notificado"
+  - Contador "Cancelado" visible en los counter cards y sidebar stats
+  - El rastreo público muestra una pantalla especial "❌ Pedido Cancelado" cuando el cliente busca su folio
+  - El constraint de Supabase `pedidos_estado_check` debe incluir `'Cancelado'` (SQL: `ALTER TABLE pedidos DROP CONSTRAINT pedidos_estado_check; ALTER TABLE pedidos ADD CONSTRAINT pedidos_estado_check CHECK (estado IN ('Por Surtir', 'Armando Pedido', 'Listo para Entrega', 'Cancelado'));`)
 
 ### Gestión de catálogo (`/#/admin/catalogo`)
 
