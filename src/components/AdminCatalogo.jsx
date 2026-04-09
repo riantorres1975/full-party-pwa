@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Package, Pencil, Trash2, Search, AlertTriangle, Plus, X } from 'lucide-react';
+import { Package, Pencil, Trash2, Search, AlertTriangle, Plus, X, Tag, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { guardedQuery } from '../lib/supabaseGuard';
 import {
@@ -12,6 +12,8 @@ import {
 import {
   actualizarDisponibilidadProducto,
   eliminarProducto,
+  renameCategoria,
+  eliminarCategoria,
 } from '../lib/productosAdmin';
 import FormularioNuevoProducto from './FormularioNuevoProducto';
 import ModalEditarProducto from './ModalEditarProducto';
@@ -90,12 +92,23 @@ export default function AdminCatalogo() {
     fetchProductos();
   }, [fetchProductos]);
 
+  const [showCatMgr, setShowCatMgr] = useState(false);
+  const [catEditando, setCatEditando] = useState(null);
+  const [catNuevoNombre, setCatNuevoNombre] = useState('');
+  const [catGuardando, setCatGuardando] = useState(null);
+
   const productosEnAlerta = useMemo(() => {
     return productos.filter(p => p.stock_ilimitado === false && p.stock_actual <= (p.stock_minimo || 5));
   }, [productos]);
 
   const productosNuevos = useMemo(() => {
     return productos.filter(p => p.es_nuevo === true);
+  }, [productos]);
+
+  const todasCategorias = useMemo(() => {
+    const seen = new Set();
+    productos.forEach(p => { if (p.categoria) seen.add(p.categoria); });
+    return Array.from(seen).sort();
   }, [productos]);
 
   const filtrados = useMemo(() => {
@@ -153,6 +166,43 @@ export default function AdminCatalogo() {
     }
   }
 
+  async function handleRenameCategoria(vieja) {
+    const nueva = catNuevoNombre.trim();
+    if (!nueva || nueva === vieja) { setCatEditando(null); return; }
+    setCatGuardando(vieja);
+    try {
+      await renameCategoria(vieja, nueva);
+      setProductos(prev => prev.map(p => p.categoria === vieja ? { ...p, categoria: nueva } : p));
+      toast.success(`Categoría renombrada a "${nueva}"`);
+      setCatEditando(null);
+      setCatNuevoNombre('');
+    } catch (err) {
+      toast.error(err.message || 'Error al renombrar');
+    } finally {
+      setCatGuardando(null);
+    }
+  }
+
+  async function handleEliminarCategoria(nombre) {
+    const ok = await confirmDialog({
+      title: '¿Eliminar categoría?',
+      message: `Los productos con la categoría "${nombre}" quedarán sin categoría. ¿Continuar?`,
+      confirmLabel: 'Eliminar',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    setCatGuardando(nombre);
+    try {
+      await eliminarCategoria(nombre);
+      setProductos(prev => prev.map(p => p.categoria === nombre ? { ...p, categoria: null } : p));
+      toast.success(`Categoría "${nombre}" eliminada`);
+    } catch (err) {
+      toast.error(err.message || 'Error al eliminar');
+    } finally {
+      setCatGuardando(null);
+    }
+  }
+
   return (
     <div className="space-y-4 sm:space-y-5 min-w-0">
       {/* Toolbar: buscador + botón nuevo */}
@@ -182,6 +232,17 @@ export default function AdminCatalogo() {
           >
             <Plus size={18} strokeWidth={3} />
             <span className="hidden sm:inline">Nuevo Artículo</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowCatMgr(true)}
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-3 rounded-2xl text-sm font-body font-black
+                       border-2 transition-all duration-200 active:scale-95"
+            style={{ borderColor: '#c084fc', color: '#7c3aed', background: '#faf5ff' }}
+            title="Gestionar categorías"
+          >
+            <Tag size={18} />
+            <span className="hidden sm:inline">Categorías</span>
           </button>
         </div>
 
@@ -221,6 +282,82 @@ export default function AdminCatalogo() {
                 Nuevos ({productosNuevos.length})
               </button>
             </div>
+
+            {/* Modal gestión de categorías */}
+            {showCatMgr && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={e => { if (e.target === e.currentTarget) { setShowCatMgr(false); setCatEditando(null); } }}>
+                <div className="bg-admin-card border border-admin-border rounded-2xl w-full max-w-sm shadow-2xl flex flex-col max-h-[80vh]">
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-admin-border shrink-0">
+                    <div className="flex items-center gap-2">
+                      <Tag size={18} className="text-purple-500" />
+                      <h2 className="text-base font-body font-black text-admin-text">Gestionar Categorías</h2>
+                    </div>
+                    <button onClick={() => { setShowCatMgr(false); setCatEditando(null); setCatNuevoNombre(''); }} className="text-admin-muted hover:text-admin-text transition-colors" aria-label="Cerrar">
+                      <X size={20} />
+                    </button>
+                  </div>
+                  <div className="overflow-y-auto px-4 py-3 space-y-2 flex-1">
+                    {todasCategorias.length === 0 && (
+                      <p className="text-sm text-admin-muted text-center py-6">No hay categorías todavía</p>
+                    )}
+                    {todasCategorias.map(cat => (
+                      <div key={cat} className="flex items-center gap-2 bg-admin-elevated rounded-xl px-3 py-2 border border-admin-border">
+                        {catEditando === cat ? (
+                          <>
+                            <input
+                              autoFocus
+                              type="text"
+                              value={catNuevoNombre}
+                              onChange={e => setCatNuevoNombre(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') handleRenameCategoria(cat);
+                                if (e.key === 'Escape') { setCatEditando(null); setCatNuevoNombre(''); }
+                              }}
+                              className="flex-1 bg-admin-card border border-admin-border rounded-lg px-2 py-1 text-sm font-body text-admin-text outline-none focus:border-purple-400"
+                            />
+                            <button
+                              onClick={() => handleRenameCategoria(cat)}
+                              disabled={catGuardando === cat}
+                              className="shrink-0 text-emerald-600 hover:text-emerald-500 disabled:opacity-40 transition-colors"
+                              aria-label="Confirmar"
+                            >
+                              <Check size={18} />
+                            </button>
+                            <button
+                              onClick={() => { setCatEditando(null); setCatNuevoNombre(''); }}
+                              className="shrink-0 text-admin-muted hover:text-admin-text transition-colors"
+                              aria-label="Cancelar"
+                            >
+                              <X size={16} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="flex-1 text-sm font-body font-bold text-admin-text truncate">{cat}</span>
+                            <span className="text-xs text-admin-muted shrink-0">{productos.filter(p => p.categoria === cat).length} prod.</span>
+                            <button
+                              onClick={() => { setCatEditando(cat); setCatNuevoNombre(cat); }}
+                              className="shrink-0 text-admin-muted hover:text-purple-500 transition-colors"
+                              aria-label={`Renombrar ${cat}`}
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              onClick={() => handleEliminarCategoria(cat)}
+                              disabled={catGuardando === cat}
+                              className="shrink-0 text-admin-muted hover:text-red-500 disabled:opacity-40 transition-colors"
+                              aria-label={`Eliminar ${cat}`}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {cargando && (
               <div className="flex items-center justify-center py-16 gap-3">
