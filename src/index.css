@@ -501,6 +501,10 @@ body.theme-dark .hover\:bg-red-50:hover {
 .safe-top    { padding-top:    env(safe-area-inset-top,    0px); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
 
+/* Ocultar scrollbar manteniendo scroll funcional */
+.hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+
 /* Globo animado en header */
 .fp-header-balloon-wrap {
   width: 2.1rem;

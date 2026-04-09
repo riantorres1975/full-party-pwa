@@ -1,10 +1,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIGURACIÓN DEL NEGOCIO
 // ─────────────────────────────────────────────────────────────────────────────
-export const NUMERO_WHATSAPP = import.meta.env.VITE_WHATSAPP_NUMBER;
-export const NOMBRE_NEGOCIO  = import.meta.env.VITE_NOMBRE_NEGOCIO;
-export const MONEDA          = 'MXN';
-export const SIMBOLO_MONEDA  = '$';
+export const NUMERO_WHATSAPP   = import.meta.env.VITE_WHATSAPP_NUMBER;
+export const NOMBRE_NEGOCIO    = import.meta.env.VITE_NOMBRE_NEGOCIO;
+export const MONEDA            = 'MXN';
+export const SIMBOLO_MONEDA    = '$';
+export const DIRECCION_TIENDA  = import.meta.env.VITE_DIRECCION_TIENDA  || 'Uruapan, Michoacán';
+export const HORARIO_TIENDA    = import.meta.env.VITE_HORARIO_TIENDA    || 'Lun–Sáb 9am–7pm';
+export const MAPS_URL_TIENDA   = import.meta.env.VITE_MAPS_URL_TIENDA   || '';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // OPCIONES DE FILTRADO
