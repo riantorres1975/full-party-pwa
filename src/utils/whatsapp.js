@@ -7,6 +7,10 @@ import { NUMERO_WHATSAPP, NOMBRE_NEGOCIO, SIMBOLO_MONEDA } from '../data/product
  * @param {Object} entrega  - { tipo, nombre, telefono, direccion, folio? }
  */
 export function generarMensajeWhatsApp(items, total, entrega) {
+  if (!NUMERO_WHATSAPP || !/^\d{10,15}$/.test(NUMERO_WHATSAPP)) {
+    throw new Error('NUMERO_WHATSAPP no está configurado o es inválido.');
+  }
+
   // 1. Diccionario de emojis con Code Points para evitar errores en Desktop
   const EMOJI = {
     fiesta: String.fromCodePoint(0x1F389),

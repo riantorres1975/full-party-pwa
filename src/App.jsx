@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useProductos }      from './hooks/useProductos';
 import { useCarrito }        from './hooks/useCarrito';
+import { useToast }          from './components/ui/ToastProvider';
 import { categorias as CATEGORIAS_CONFIG } from './data/productos';
 import Header             from './components/Header';
 import BuscadorFiltros    from './components/BuscadorFiltros';
@@ -33,7 +34,14 @@ export default function App({ temaOscuro, onToggleTema }) {
 
   const { items, total, cantidadTotal,
           agregarItem, reducirItem, eliminarItem, limpiarCarrito, getCantidad,
+          stockError,
   } = useCarrito();
+
+  const toast = useToast();
+
+  useEffect(() => {
+    if (stockError) toast.warning(stockError);
+  }, [stockError]);
 
   useEffect(() => {
     const yaVioIntro = sessionStorage.getItem('fp_intro_v1') === '1';

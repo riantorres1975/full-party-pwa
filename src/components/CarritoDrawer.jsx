@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { generarMensajeWhatsApp } from '../utils/whatsapp';
 import { obtenerPrecioAplicable } from '../utils/precios';
 import { validarTelefonoMX } from '../utils/validarTelefono';
 import { SIMBOLO_MONEDA, DIRECCION_TIENDA, HORARIO_TIENDA, MAPS_URL_TIENDA } from '../data/productos';
 import { usePedido } from '../hooks/usePedido';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 // ── Rate limit por sesión (máx. pedidos por ventana de tiempo) ───────────────
 const MAX_PEDIDOS_POR_SESION = 5;
@@ -47,6 +48,8 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
   const [honeypot,  setHoneypot]  = useState(''); // campo trampa invisible
   // Confirmación post-guardar: { folio, url, itemsSnapshot, total, tipoEntrega, nombre }
   const [pedidoGuardado, setPedidoGuardado] = useState(null);
+  const panelRef = useRef(null);
+  useFocusTrap(panelRef, isOpen);
 
   useEffect(() => {
     if (isOpen) {
@@ -160,6 +163,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
 
       {/* Panel */}
       <div
+        ref={panelRef}
         role="dialog"
         aria-label="Carrito de compras"
         aria-modal="true"

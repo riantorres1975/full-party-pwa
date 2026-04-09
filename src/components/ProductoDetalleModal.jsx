@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { SIMBOLO_MONEDA } from '../data/productos';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 export default function ProductoDetalleModal({ producto, onCerrar, onAgregar }) {
   const [cerrando, setCerrando] = useState(false);
   const closeTimerRef = useRef(null);
+  const dialogRef = useRef(null);
+  useFocusTrap(dialogRef, !!producto && !cerrando);
 
   function iniciarCierre() {
     if (closeTimerRef.current) return;
@@ -21,8 +24,7 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar }) 
 
     setCerrando(false);
 
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    document.documentElement.classList.add('overflow-hidden');
 
     function onKeyDown(e) {
       if (e.key === 'Escape') iniciarCierre();
@@ -35,7 +37,7 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar }) 
         clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
       }
-      document.body.style.overflow = prevOverflow;
+      document.documentElement.classList.remove('overflow-hidden');
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [producto]);
@@ -61,6 +63,7 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar }) 
       {/* Contenedor: bottom-sheet en móvil, centrado side-by-side en desktop */}
       <div className="absolute inset-0 flex items-end sm:items-center justify-center sm:p-5">
         <section
+          ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-label={`Detalle de ${producto.nombre}`}

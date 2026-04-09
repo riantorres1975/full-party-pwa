@@ -39,7 +39,7 @@ function Stepper({ estadoActual }) {
       <div className="w-full px-2 pt-2 pb-4 flex flex-col items-center gap-2">
         <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl border-2"
              style={{ background: '#f3f4f6', borderColor: '#d1d5db' }}>
-          ❌
+          <span aria-hidden="true">❌</span>
         </div>
         <p className="font-body font-black text-sm text-center" style={{ color: '#6b7280' }}>
           Pedido Cancelado
@@ -89,7 +89,7 @@ function Stepper({ estadoActual }) {
                   : { background: 'var(--surface-muted)', borderColor: 'var(--border-default)' }
                 }
               >
-                {completado ? paso.emoji : <span className="text-ink-300 text-xs font-black">{i + 1}</span>}
+                {completado ? <span aria-hidden="true">{paso.emoji}</span> : <span className="text-ink-300 text-xs font-black">{i + 1}</span>}
               </div>
 
               {/* Texto */}
@@ -134,12 +134,12 @@ function TarjetaPedido({ pedido }) {
           </div>
           <span className="text-xs font-body font-black px-3 py-1.5 rounded-full"
                 style={{ background: pasoActual.colorLight, color: pasoActual.color }}>
-            {pasoActual.emoji} {pedido.estado}
+            <span aria-hidden="true">{pasoActual.emoji}</span> {pedido.estado}
           </span>
         </div>
         <p className="text-sm font-body font-bold text-ink-700">{pedido.cliente_nombre}</p>
         <p className="text-xs font-body text-ink-400">
-          {pedido.tipo_entrega === 'envio' ? '🚚 Envío a domicilio' : '🏪 Recoger en tienda'}
+          {pedido.tipo_entrega === 'envio' ? <><span aria-hidden="true">🚚</span> Envío a domicilio</> : <><span aria-hidden="true">🏪</span> Recoger en tienda</>}
         </p>
       </div>
 
@@ -218,7 +218,7 @@ export default function RastreoPedido({ onCerrar }) {
             </button>
           )}
           <div>
-            <h1 className="font-display text-2xl text-ink-900">📦 Rastrear Pedido</h1>
+            <h1 className="font-display text-2xl text-ink-900"><span aria-hidden="true">📦</span> Rastrear Pedido</h1>
             <p className="text-xs font-body text-ink-400 mt-0.5">Ingresa tu folio o número de teléfono</p>
           </div>
         </div>
@@ -248,7 +248,7 @@ export default function RastreoPedido({ onCerrar }) {
           >
             {buscando
               ? <div className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-              : '🔍'}
+              : <span aria-hidden="true">🔍</span>}
             {enCooldown ? 'Espera...' : 'Buscar'}
           </button>
         </div>
@@ -263,7 +263,7 @@ export default function RastreoPedido({ onCerrar }) {
         {/* Estado inicial */}
         {pedidos === null && !buscando && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="text-5xl mb-3 animate-float">🎁</div>
+            <div className="text-5xl mb-3 animate-float" aria-hidden="true">🎁</div>
             <p className="font-display text-lg text-ink-500">¿Dónde está tu pedido?</p>
             <p className="text-xs font-body text-ink-400 mt-1 max-w-xs">
               Usa el folio que recibiste por WhatsApp o tu número de teléfono
@@ -274,7 +274,7 @@ export default function RastreoPedido({ onCerrar }) {
         {/* Sin resultados */}
         {pedidos !== null && pedidos.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="text-5xl mb-3">😔</div>
+            <div className="text-5xl mb-3" aria-hidden="true">😔</div>
             <p className="font-display text-lg text-ink-500">No encontramos pedidos</p>
             <p className="text-xs font-body text-ink-400 mt-1">
               Verifica el folio o teléfono e intenta de nuevo
