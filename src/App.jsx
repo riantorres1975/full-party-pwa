@@ -204,12 +204,25 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
         {/* ── Anuncio / Banner para clientes ── */}
         {anuncioActivo && anuncioMsg && !anuncioCerrado && (
-          <div className="relative px-4 py-2.5 text-center text-sm font-body font-bold"
-               style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#78350f' }}>
-            <span>{anuncioMsg}</span>
+          <div
+            className="relative overflow-hidden text-center font-body font-black"
+            style={{
+              background: 'linear-gradient(90deg, #f97316, #ec4899, #a855f7, #f97316)',
+              backgroundSize: '300% 100%',
+              animation: 'bannerSlideDown 0.4s ease-out, bannerShimmer 6s linear infinite, bannerPulseGlow 3s ease-in-out infinite',
+              color: 'white',
+              textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+            }}
+          >
+            <div className="flex items-center justify-center gap-2 px-10 py-2.5">
+              <span className="text-base animate-bounce" style={{ animationDuration: '2s' }}>📢</span>
+              <span className="text-sm leading-snug">{anuncioMsg}</span>
+            </div>
             <button
               onClick={() => setAnuncioCerrado(true)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-900/60 hover:text-amber-900 transition-colors"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center
+                         rounded-full bg-white/20 text-white/80 hover:bg-white/30 hover:text-white
+                         text-xs font-bold transition-all duration-200 active:scale-90"
               aria-label="Cerrar anuncio"
             >
               ✕
