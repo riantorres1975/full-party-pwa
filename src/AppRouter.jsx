@@ -16,7 +16,11 @@ function useHashRoute() {
   useEffect(() => {
     const handler = () => setHash(window.location.hash);
     window.addEventListener('hashchange', handler);
-    return () => window.removeEventListener('hashchange', handler);
+    window.addEventListener('popstate', handler);
+    return () => {
+      window.removeEventListener('hashchange', handler);
+      window.removeEventListener('popstate', handler);
+    };
   }, []);
   return hash;
 }

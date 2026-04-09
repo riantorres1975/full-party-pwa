@@ -53,10 +53,14 @@ function ProductCardInner({
         opacity: agotado ? 0.65 : 1,
       }}
     >
-      <button
-        type="button"
+      {/* Clickable area for detail — not a <button> to avoid nesting issues */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => onAbrirDetalle?.(producto)}
-        className="w-full text-left"
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onAbrirDetalle?.(producto); } }}
+        className="w-full text-left cursor-pointer"
+        aria-label={`Ver detalle de ${producto.nombre}`}
       >
         {/* Imagen optimizada */}
         <div className="relative">
@@ -73,7 +77,7 @@ function ProductCardInner({
             <div className="absolute inset-0 flex items-center justify-center bg-black/20">
               <span className="bg-ink-900/80 text-white text-[11px] font-body font-black
                                px-3 py-1.5 rounded-full backdrop-blur-sm tracking-wide">
-                😔 Agotado
+                <span aria-hidden="true">😔</span> Agotado
               </span>
             </div>
           )}
@@ -142,7 +146,7 @@ function ProductCardInner({
             )}
           </div>
         </div>
-      </button>
+      </div>
 
       <div className="px-2 pb-2 sm:px-3 sm:pb-3">
         {/* Controles */}
@@ -159,7 +163,7 @@ function ProductCardInner({
               className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl
                          bg-ink-100 text-ink-600
                          transition-all duration-150 active:scale-90 hover:bg-ink-200"
-              aria-label="Quitar uno"
+              aria-label={`Quitar uno de ${producto.nombre}`}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" />
@@ -177,7 +181,7 @@ function ProductCardInner({
                          transition-all duration-150
                          ${maxStockAlcanzado ? 'opacity-50 cursor-not-allowed' : 'active:scale-90'}`}
               style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}
-              aria-label="Agregar uno más"
+              aria-label={`Agregar uno más de ${producto.nombre}`}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
