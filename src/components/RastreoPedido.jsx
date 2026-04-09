@@ -182,7 +182,8 @@ export default function RastreoPedido({ onCerrar }) {
   const handleKeyDown = (e) => { if (e.key === 'Enter') handleBuscar(); };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--surface-primary)' }}>
+    <div className="min-h-screen flex flex-col items-center" style={{ background: 'var(--surface-primary)' }}>
+      <div className="w-full max-w-xl flex flex-col min-h-screen">
 
       {/* Header */}
       <div className="flex-shrink-0 px-5 pt-6 pb-4">
@@ -264,6 +265,7 @@ export default function RastreoPedido({ onCerrar }) {
         {pedidos?.map(pedido => (
           <TarjetaPedido key={pedido.folio} pedido={pedido} />
         ))}
+      </div>
       </div>
     </div>
   );
