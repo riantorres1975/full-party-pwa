@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { MessageCircle, ChevronDown, Package, LayoutGrid, ClipboardList, Search, RefreshCw, LogOut, ShoppingBag, Clock, CheckCircle2, Phone, Truck, Store, MapPin } from 'lucide-react';
+import { MessageCircle, ChevronDown, Package, LayoutGrid, ClipboardList, Search, RefreshCw, LogOut, ShoppingBag, Clock, CheckCircle2, XCircle, Phone, Truck, Store, MapPin } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { SIMBOLO_MONEDA } from '../data/productos';
 import AdminCatalogo from './AdminCatalogo';
@@ -9,11 +9,13 @@ import { SkeletonPedido } from './ui/Skeleton';
 import BottomNav from './ui/BottomNav';
 
 const ESTADOS = ['Por Surtir', 'Armando Pedido', 'Listo para Entrega'];
+const ESTADOS_CON_CANCELADO = [...ESTADOS, 'Cancelado'];
 
 const ESTADO_META = {
   'Por Surtir':         { color: '#ef4444', bg: '#fee2e2', icon: ShoppingBag },
   'Armando Pedido':     { color: '#eab308', bg: '#fef9c3', icon: Clock },
   'Listo para Entrega': { color: '#22c55e', bg: '#dcfce7', icon: CheckCircle2 },
+  'Cancelado':          { color: '#6b7280', bg: '#f3f4f6', icon: XCircle },
 };
 
 
@@ -71,6 +73,9 @@ export function notificarCliente(pedido, articulosSurtidos = null) {
       case 'Listo para Entrega':
         // Este caso se dispara si está "Listo" pero NO se pasó el array de articulosSurtidos
         mensaje = `¡Buenas noticias ${nombre}! ${EMOJI.fiesta} Tu pedido *${folio}* ya está listo. Puedes pasar a recogerlo o en breve saldrá a domicilio. ¡A celebrar! ${EMOJI.festejo}`;
+        break;
+      case 'Cancelado':
+        mensaje = `Hola ${nombre}, lamentamos informarte que tu pedido *${folio}* ha sido cancelado. ${EMOJI.cruz}\n\nSi tienes dudas, no dudes en escribirnos. ¡Esperamos verte pronto! ${EMOJI.globo}`;
         break;
       default:
         mensaje = `Hola ${nombre}, hay una actualización en tu pedido *${folio}*. Estado actual: ${estado}.`;
@@ -531,7 +536,7 @@ function TarjetaPedidoCompacta({ pedido, seleccionado, onClick }) {
 }
 
 // ── Tarjeta de un pedido ─────────────────────────────────────────────────────
-function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onNotificar, onPickingListo, esDesktop }) {
+function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onNotificar, onPickingListo, onCancelar, esDesktop }) {
   const meta = ESTADO_META[pedido.estado] ?? ESTADO_META['Por Surtir'];
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const fecha    = new Date(pedido.created_at).toLocaleDateString('es-MX', {
@@ -707,6 +712,31 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
         }
         {yaNotificado ? '✓ Cliente notificado' : notificando ? 'Enviando...' : 'Notificar al cliente'}
       </button>
+
+      {/* Botón cancelar pedido */}
+      {pedido.estado !== 'Cancelado' && (
+        <button
+          onClick={() => onCancelar(pedido)}
+          disabled={esActualizando}
+          className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-body font-bold
+                     transition-all duration-200 active:scale-95 disabled:opacity-50
+                     border-2 border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300
+                     ${esDesktop ? 'w-[220px] ml-auto' : 'w-full'}`}
+        >
+          <XCircle size={14} />
+          Cancelar pedido
+        </button>
+      )}
+
+      {/* Indicador de pedido cancelado */}
+      {pedido.estado === 'Cancelado' && (
+        <div className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-body font-bold
+                        ${esDesktop ? 'w-[220px] ml-auto' : 'w-full'}`}
+             style={{ background: '#f3f4f6', color: '#6b7280' }}>
+          <XCircle size={14} />
+          Pedido cancelado
+        </div>
+      )}
     </div>
   );
 }
@@ -813,6 +843,41 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
     setActualizando(null);
   }
 
+  // ── Cancelar pedido con confirmación ───────────────────────────────────────
+  async function cancelarPedido(pedido) {
+    const ok = window.confirm(
+      `¿Seguro que deseas cancelar el pedido ${pedido.folio} de ${pedido.cliente_nombre}?\n\nSe abrirá WhatsApp para notificar al cliente.`
+    );
+    if (!ok) return;
+
+    setActualizando(pedido.id);
+    const { error: err } = await supabase
+      .from('pedidos')
+      .update({ estado: 'Cancelado', notificado_estado: null })
+      .eq('id', pedido.id);
+
+    if (err) {
+      toast.error('Error al cancelar: ' + err.message);
+    } else {
+      // Actualización optimista
+      setPedidos(prev => prev.map(p =>
+        p.id === pedido.id ? { ...p, estado: 'Cancelado', notificado_estado: null } : p
+      ));
+      toast.success(`Pedido ${pedido.folio} cancelado`);
+      // Abrir WhatsApp para notificar al cliente
+      notificarCliente({ ...pedido, estado: 'Cancelado' });
+      // Persistir que ya se notificó
+      await supabase
+        .from('pedidos')
+        .update({ notificado_estado: 'Cancelado' })
+        .eq('id', pedido.id);
+      setPedidos(prev => prev.map(p =>
+        p.id === pedido.id ? { ...p, notificado_estado: 'Cancelado' } : p
+      ));
+    }
+    setActualizando(null);
+  }
+
   // ── Notificar al cliente (persiste en Supabase + Realtime) ─────────────────
   async function notificar(pedido) {
     setNotificando(pedido.id);
@@ -843,7 +908,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
   });
 
   // ── Contadores por estado ──────────────────────────────────────────────────
-  const contadores = ESTADOS.reduce((acc, e) => {
+  const contadores = ESTADOS_CON_CANCELADO.reduce((acc, e) => {
     acc[e] = pedidos.filter(p => p.estado === e).length;
     return acc;
   }, { todos: pedidos.length });
@@ -943,7 +1008,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
           <div className="hidden lg:block px-6 pt-4 mt-4 border-t border-admin-border">
             <p className="text-[10px] font-body font-bold text-admin-muted uppercase tracking-wider mb-3">Hoy</p>
             <div className="space-y-2">
-              {ESTADOS.map(e => (
+              {ESTADOS_CON_CANCELADO.map(e => (
                 <div key={e} className="flex items-center gap-2 text-xs font-body">
                   <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: ESTADO_META[e].color }} />
                   <span className="text-admin-muted truncate flex-1">{e}</span>
@@ -995,9 +1060,9 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
           <>
             <h2 className="sr-only">Gestión de pedidos</h2>
         <section className="bg-admin-card rounded-2xl border border-admin-border p-4 sm:p-5 space-y-4 shadow-card">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {[{ key: 'todos', label: 'Total', icon: ClipboardList, color: '#6b35b8', bg: '#f3e8ff' },
-              ...ESTADOS.map(e => ({ key: e, label: e, ...ESTADO_META[e] }))
+              ...ESTADOS_CON_CANCELADO.map(e => ({ key: e, label: e, ...ESTADO_META[e] }))
             ].map(({ key, label, icon: IconComponent, color, bg }) => {
               const isActive = filtroEstado === key;
               return (
@@ -1101,6 +1166,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
                       actualizando={actualizando}
                       notificando={notificando === pedido.id}
                       onNotificar={notificar}
+                      onCancelar={cancelarPedido}
                       onPickingListo={(pedidoActualizado) =>
                         setPedidos(prev => prev.map(p =>
                           p.id === pedidoActualizado.id ? pedidoActualizado : p
@@ -1122,7 +1188,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
 
                     <div className="flex-1 overflow-y-auto p-3">
                       {/* Grouped by status */}
-                      {ESTADOS.map(estado => {
+                      {ESTADOS_CON_CANCELADO.map(estado => {
                         const grupo = pedidosFiltrados.filter(p => p.estado === estado);
                         if (grupo.length === 0) return null;
                         const m = ESTADO_META[estado];
@@ -1163,6 +1229,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
                           actualizando={actualizando}
                           notificando={notificando === pedidoSeleccionado.id}
                           onNotificar={notificar}
+                          onCancelar={cancelarPedido}
                           onPickingListo={(pedidoActualizado) =>
                             setPedidos(prev => prev.map(p =>
                               p.id === pedidoActualizado.id ? pedidoActualizado : p
