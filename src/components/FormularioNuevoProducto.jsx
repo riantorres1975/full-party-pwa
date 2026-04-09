@@ -10,6 +10,7 @@ import {
   registrarTamano,
 } from '../data/productos';
 import { insertarProducto, subirImagenProducto } from '../lib/productosAdmin';
+import { toTitleCase } from '../utils/normalizar';
 import SelectCategoria from './SelectCategoria';
 import GestorPrecios from './GestorPrecios';
 import Toggle from './ui/Toggle';
@@ -92,10 +93,15 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
 
     try {
       let urlFinal = imagenUrl.trim() || null;
-      const categoriaFinal =
-        categoria === CATEGORIA_NUEVA_ID ? categoriaNueva.trim() : categoria;
-      const marcaFinal = marca === MARCA_NUEVA_ID ? marcaNueva.trim() : marca;
-      const tamanoFinal = tamano === TAMANO_NUEVO_ID ? tamanoNuevo.trim() : tamano;
+      const categoriaFinal = toTitleCase(
+        categoria === CATEGORIA_NUEVA_ID ? categoriaNueva : categoria
+      );
+      const marcaFinal = toTitleCase(
+        marca === MARCA_NUEVA_ID ? marcaNueva : marca
+      );
+      const tamanoFinal = toTitleCase(
+        tamano === TAMANO_NUEVO_ID ? tamanoNuevo : tamano
+      );
 
       if (categoria === CATEGORIA_NUEVA_ID && !categoriaFinal) {
         throw new Error('Escribe el nombre de la nueva categoría.');
@@ -149,7 +155,7 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
         : [{ etiqueta: '1 Pieza', cantidad_minima: 1, precio: precioBaseNum }];
 
       await insertarProducto({
-        nombre,
+        nombre: toTitleCase(nombre),
         descripcion,
         precio,
         categoria: categoriaFinal || null,
