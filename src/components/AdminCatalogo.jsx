@@ -55,7 +55,7 @@ export default function AdminCatalogo() {
     setErrorLista('');
     const { data, error } = await supabase
       .from('productos')
-      .select('id,nombre,descripcion,precio,imagen_url,categoria,marca,tamano,activo,es_nuevo,stock_ilimitado,stock_actual,precios_mayoreo,created_at')
+            .select('*')
       .order('nombre', { ascending: true });
 
     if (error) {
