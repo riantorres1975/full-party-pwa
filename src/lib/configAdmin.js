@@ -13,7 +13,7 @@ export async function getConfig(clave, defaultVal = null) {
     .maybeSingle();
 
   if (error) return defaultVal;
-  return data ? JSON.parse(data.valor) : defaultVal;
+  return data ? data.valor : defaultVal;
 }
 
 /**
@@ -24,7 +24,7 @@ export async function setConfig(clave, valor) {
   const { error } = await guardedQuery((client) =>
     client
       .from('configuracion')
-      .upsert({ clave, valor: JSON.stringify(valor) }, { onConflict: 'clave' })
+      .upsert({ clave, valor }, { onConflict: 'clave' })
   );
   if (error) throwIfSessionError(error);
   if (error) throw new Error(`Error guardando config "${clave}": ${error.message}`);

@@ -20,13 +20,9 @@ export function useAnuncio() {
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return;
-        if (data) {
-          try {
-            const parsed = JSON.parse(data.valor);
-            setAnuncio({ mensaje: parsed.mensaje || '', activo: !!parsed.activo });
-          } catch {
-            /* ignore parse errors */
-          }
+        if (data?.valor) {
+          const v = data.valor;
+          setAnuncio({ mensaje: v.mensaje || '', activo: !!v.activo });
         }
         setLoading(false);
       });
