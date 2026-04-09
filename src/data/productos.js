@@ -13,21 +13,7 @@ export const MAPS_URL_TIENDA   = import.meta.env.VITE_MAPS_URL_TIENDA   || '';
 // OPCIONES DE FILTRADO
 // Agrega/quita valores según tu inventario real.
 // ─────────────────────────────────────────────────────────────────────────────
-export const categorias = [
-  { id: 'desechables',     label: '🍽️ Desechables'        },
-  { id: 'decoracion',      label: '✨ Decoración'         },
-  { id: 'globo-latex',     label: '🎈 Globos Latex'       },
-  { id: 'globo-número-16', label: '✨ Globos Números'     },
-  { id: 'guirnalda',       label: '🎉 Guirnaldas'         },
-  { id: 'cortina-metalica',label: '🎊 Cortinas'           },
-  { id: 'banderines',      label: '🎏 Banderines'         },
-  { id: 'Cumpleaños',      label: '🎂 Cumpleaños'         },
-  { id: 'vela-número',     label: '🕯️ Vela Número'        },
-  { id: 'orbz',            label: '🔮 Orbz'               },
-  { id: 'Infladora-globos',label: '💨 Infladora de Globos'},
-  { id: 'kits',            label: '🎁 Kits de Decoración' },
-  { id: 'batucada',        label: '🥁 Batucada'           },
-];
+export const categorias = [];
 
 export function registrarCategoria(categoriaTexto) {
   const limpia = String(categoriaTexto || '').trim();
