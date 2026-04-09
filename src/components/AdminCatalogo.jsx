@@ -338,42 +338,6 @@ export default function AdminCatalogo() {
         <div className="flex gap-2 overflow-x-auto hide-scrollbar items-center pb-1">
           <button
             type="button"
-            onClick={() => setShowCatMgr(true)}
-            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
-                       border-2 transition-all duration-200 active:scale-95"
-            style={{ borderColor: '#c084fc', color: '#7c3aed', background: '#faf5ff' }}
-            title="Gestionar categorías"
-          >
-            <Tag size={14} />
-            Categorías
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowMarcaMgr(true)}
-            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
-                       border-2 transition-all duration-200 active:scale-95"
-            style={{ borderColor: '#93c5fd', color: '#2563eb', background: '#eff6ff' }}
-            title="Gestionar marcas"
-          >
-            <Bookmark size={14} />
-            Marcas
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowTamanoMgr(true)}
-            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
-                       border-2 transition-all duration-200 active:scale-95"
-            style={{ borderColor: '#86efac', color: '#16a34a', background: '#f0fdf4' }}
-            title="Gestionar tamaños"
-          >
-            <Ruler size={14} />
-            Tamaños
-          </button>
-
-          <span className="w-px h-5 bg-admin-border shrink-0" />
-
-          <button
-            type="button"
             onClick={() => setFiltroActivo('todos')}
             className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-body font-black border-2 transition-colors"
             style={filtroActivo === 'todos'
@@ -405,6 +369,42 @@ export default function AdminCatalogo() {
           >
             <span className="w-2 h-2 rounded-full bg-green-500" />
             Nuevos ({productosNuevos.length})
+          </button>
+
+          <span className="w-px h-5 bg-admin-border shrink-0" />
+
+          <button
+            type="button"
+            onClick={() => setShowCatMgr(true)}
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
+                       border-2 transition-all duration-200 active:scale-95"
+            style={{ borderColor: '#c084fc', color: '#7c3aed', background: '#faf5ff' }}
+            title="Gestionar categorías"
+          >
+            <Tag size={14} />
+            Categorías
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowMarcaMgr(true)}
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
+                       border-2 transition-all duration-200 active:scale-95"
+            style={{ borderColor: '#93c5fd', color: '#2563eb', background: '#eff6ff' }}
+            title="Gestionar marcas"
+          >
+            <Bookmark size={14} />
+            Marcas
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowTamanoMgr(true)}
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
+                       border-2 transition-all duration-200 active:scale-95"
+            style={{ borderColor: '#86efac', color: '#16a34a', background: '#f0fdf4' }}
+            title="Gestionar tamaños"
+          >
+            <Ruler size={14} />
+            Tamaños
           </button>
         </div>
 
