@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Package, Pencil, Trash2, Search, AlertTriangle, Plus, X, Tag, Check } from 'lucide-react';
+import { Package, Pencil, Trash2, Search, AlertTriangle, Plus, X, Tag, Check, Bookmark, Ruler } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { guardedQuery } from '../lib/supabaseGuard';
 import {
@@ -14,6 +14,10 @@ import {
   eliminarProducto,
   renameCategoria,
   eliminarCategoria,
+  renameMarca,
+  eliminarMarca,
+  renameTamano,
+  eliminarTamano,
 } from '../lib/productosAdmin';
 import FormularioNuevoProducto from './FormularioNuevoProducto';
 import ModalEditarProducto from './ModalEditarProducto';
@@ -97,6 +101,16 @@ export default function AdminCatalogo() {
   const [catNuevoNombre, setCatNuevoNombre] = useState('');
   const [catGuardando, setCatGuardando] = useState(null);
 
+  const [showMarcaMgr, setShowMarcaMgr] = useState(false);
+  const [marcaEditando, setMarcaEditando] = useState(null);
+  const [marcaNuevoNombre, setMarcaNuevoNombre] = useState('');
+  const [marcaGuardando, setMarcaGuardando] = useState(null);
+
+  const [showTamanoMgr, setShowTamanoMgr] = useState(false);
+  const [tamanoEditando, setTamanoEditando] = useState(null);
+  const [tamanoNuevoNombre, setTamanoNuevoNombre] = useState('');
+  const [tamanoGuardando, setTamanoGuardando] = useState(null);
+
   const productosEnAlerta = useMemo(() => {
     return productos.filter(p => p.stock_ilimitado === false && p.stock_actual <= (p.stock_minimo || 5));
   }, [productos]);
@@ -108,6 +122,18 @@ export default function AdminCatalogo() {
   const todasCategorias = useMemo(() => {
     const seen = new Set();
     productos.forEach(p => { if (p.categoria) seen.add(p.categoria); });
+    return Array.from(seen).sort();
+  }, [productos]);
+
+  const todasMarcas = useMemo(() => {
+    const seen = new Set();
+    productos.forEach(p => { if (p.marca) seen.add(p.marca); });
+    return Array.from(seen).sort();
+  }, [productos]);
+
+  const todosTamanos = useMemo(() => {
+    const seen = new Set();
+    productos.forEach(p => { if (p.tamano) seen.add(p.tamano); });
     return Array.from(seen).sort();
   }, [productos]);
 
@@ -203,11 +229,85 @@ export default function AdminCatalogo() {
     }
   }
 
+  async function handleRenameMarca(vieja) {
+    const nueva = marcaNuevoNombre.trim();
+    if (!nueva || nueva === vieja) { setMarcaEditando(null); return; }
+    setMarcaGuardando(vieja);
+    try {
+      await renameMarca(vieja, nueva);
+      setProductos(prev => prev.map(p => p.marca === vieja ? { ...p, marca: nueva } : p));
+      toast.success(`Marca renombrada a "${nueva}"`);
+      setMarcaEditando(null);
+      setMarcaNuevoNombre('');
+    } catch (err) {
+      toast.error(err.message || 'Error al renombrar');
+    } finally {
+      setMarcaGuardando(null);
+    }
+  }
+
+  async function handleEliminarMarca(nombre) {
+    const ok = await confirmDialog({
+      title: '¿Eliminar marca?',
+      message: `Los productos con la marca "${nombre}" quedarán sin marca. ¿Continuar?`,
+      confirmLabel: 'Eliminar',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    setMarcaGuardando(nombre);
+    try {
+      await eliminarMarca(nombre);
+      setProductos(prev => prev.map(p => p.marca === nombre ? { ...p, marca: null } : p));
+      toast.success(`Marca "${nombre}" eliminada`);
+    } catch (err) {
+      toast.error(err.message || 'Error al eliminar');
+    } finally {
+      setMarcaGuardando(null);
+    }
+  }
+
+  async function handleRenameTamano(viejo) {
+    const nuevo = tamanoNuevoNombre.trim();
+    if (!nuevo || nuevo === viejo) { setTamanoEditando(null); return; }
+    setTamanoGuardando(viejo);
+    try {
+      await renameTamano(viejo, nuevo);
+      setProductos(prev => prev.map(p => p.tamano === viejo ? { ...p, tamano: nuevo } : p));
+      toast.success(`Tamaño renombrado a "${nuevo}"`);
+      setTamanoEditando(null);
+      setTamanoNuevoNombre('');
+    } catch (err) {
+      toast.error(err.message || 'Error al renombrar');
+    } finally {
+      setTamanoGuardando(null);
+    }
+  }
+
+  async function handleEliminarTamano(nombre) {
+    const ok = await confirmDialog({
+      title: '¿Eliminar tamaño?',
+      message: `Los productos con el tamaño "${nombre}" quedarán sin tamaño. ¿Continuar?`,
+      confirmLabel: 'Eliminar',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    setTamanoGuardando(nombre);
+    try {
+      await eliminarTamano(nombre);
+      setProductos(prev => prev.map(p => p.tamano === nombre ? { ...p, tamano: null } : p));
+      toast.success(`Tamaño "${nombre}" eliminado`);
+    } catch (err) {
+      toast.error(err.message || 'Error al eliminar');
+    } finally {
+      setTamanoGuardando(null);
+    }
+  }
+
   return (
     <div className="min-w-0">
       {/* Toolbar fija: buscador + botones + filtros */}
       <div className="sticky top-[57px] lg:top-0 z-20 flex flex-col gap-3 bg-admin-bg pt-3 pb-3 -mx-3 px-3 sm:-mx-4 sm:px-4 lg:-mx-8 lg:px-8 border-b border-admin-border-soft">
-        <div className="flex gap-2 items-center shrink-0">
+        <div className="flex gap-2 items-center shrink-0 overflow-x-auto hide-scrollbar">
           <div className="relative flex-1">
             <Search
               size={18}
@@ -243,6 +343,28 @@ export default function AdminCatalogo() {
           >
             <Tag size={18} />
             <span className="hidden sm:inline">Categorías</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowMarcaMgr(true)}
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-3 rounded-2xl text-sm font-body font-black
+                       border-2 transition-all duration-200 active:scale-95"
+            style={{ borderColor: '#93c5fd', color: '#2563eb', background: '#eff6ff' }}
+            title="Gestionar marcas"
+          >
+            <Bookmark size={18} />
+            <span className="hidden sm:inline">Marcas</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowTamanoMgr(true)}
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-3 rounded-2xl text-sm font-body font-black
+                       border-2 transition-all duration-200 active:scale-95"
+            style={{ borderColor: '#86efac', color: '#16a34a', background: '#f0fdf4' }}
+            title="Gestionar tamaños"
+          >
+            <Ruler size={18} />
+            <span className="hidden sm:inline">Tamaños</span>
           </button>
         </div>
 
@@ -359,7 +481,123 @@ export default function AdminCatalogo() {
               </div>
             )}
 
-      </div>{/* fin sticky toolbar */}
+            {/* Modal gestión de marcas */}
+            {showMarcaMgr && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={e => { if (e.target === e.currentTarget) { setShowMarcaMgr(false); setMarcaEditando(null); } }}>
+                <div className="bg-admin-card border border-admin-border rounded-2xl w-full max-w-sm shadow-2xl flex flex-col max-h-[80vh]">
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-admin-border shrink-0">
+                    <div className="flex items-center gap-2">
+                      <Bookmark size={18} className="text-blue-500" />
+                      <h2 className="text-base font-body font-black text-admin-text">Gestionar Marcas</h2>
+                    </div>
+                    <button onClick={() => { setShowMarcaMgr(false); setMarcaEditando(null); setMarcaNuevoNombre(''); }} className="text-admin-muted hover:text-admin-text transition-colors" aria-label="Cerrar">
+                      <X size={20} />
+                    </button>
+                  </div>
+                  <div className="overflow-y-auto px-4 py-3 space-y-2 flex-1">
+                    {todasMarcas.length === 0 && (
+                      <p className="text-sm text-admin-muted text-center py-6">No hay marcas todavía</p>
+                    )}
+                    {todasMarcas.map(m => (
+                      <div key={m} className="flex items-center gap-2 bg-admin-elevated rounded-xl px-3 py-2 border border-admin-border">
+                        {marcaEditando === m ? (
+                          <>
+                            <input
+                              autoFocus
+                              type="text"
+                              value={marcaNuevoNombre}
+                              onChange={e => setMarcaNuevoNombre(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') handleRenameMarca(m);
+                                if (e.key === 'Escape') { setMarcaEditando(null); setMarcaNuevoNombre(''); }
+                              }}
+                              className="flex-1 bg-admin-card border border-admin-border rounded-lg px-2 py-1 text-sm font-body text-admin-text outline-none focus:border-blue-400"
+                            />
+                            <button onClick={() => handleRenameMarca(m)} disabled={marcaGuardando === m} className="shrink-0 text-emerald-600 hover:text-emerald-500 disabled:opacity-40 transition-colors" aria-label="Confirmar">
+                              <Check size={18} />
+                            </button>
+                            <button onClick={() => { setMarcaEditando(null); setMarcaNuevoNombre(''); }} className="shrink-0 text-admin-muted hover:text-admin-text transition-colors" aria-label="Cancelar">
+                              <X size={16} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="flex-1 text-sm font-body font-bold text-admin-text truncate">{m}</span>
+                            <span className="text-xs text-admin-muted shrink-0">{productos.filter(p => p.marca === m).length} prod.</span>
+                            <button onClick={() => { setMarcaEditando(m); setMarcaNuevoNombre(m); }} className="shrink-0 text-admin-muted hover:text-blue-500 transition-colors" aria-label={`Renombrar ${m}`}>
+                              <Pencil size={15} />
+                            </button>
+                            <button onClick={() => handleEliminarMarca(m)} disabled={marcaGuardando === m} className="shrink-0 text-admin-muted hover:text-red-500 disabled:opacity-40 transition-colors" aria-label={`Eliminar ${m}`}>
+                              <Trash2 size={15} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal gestión de tamaños */}
+            {showTamanoMgr && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={e => { if (e.target === e.currentTarget) { setShowTamanoMgr(false); setTamanoEditando(null); } }}>
+                <div className="bg-admin-card border border-admin-border rounded-2xl w-full max-w-sm shadow-2xl flex flex-col max-h-[80vh]">
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-admin-border shrink-0">
+                    <div className="flex items-center gap-2">
+                      <Ruler size={18} className="text-green-500" />
+                      <h2 className="text-base font-body font-black text-admin-text">Gestionar Tamaños</h2>
+                    </div>
+                    <button onClick={() => { setShowTamanoMgr(false); setTamanoEditando(null); setTamanoNuevoNombre(''); }} className="text-admin-muted hover:text-admin-text transition-colors" aria-label="Cerrar">
+                      <X size={20} />
+                    </button>
+                  </div>
+                  <div className="overflow-y-auto px-4 py-3 space-y-2 flex-1">
+                    {todosTamanos.length === 0 && (
+                      <p className="text-sm text-admin-muted text-center py-6">No hay tamaños todavía</p>
+                    )}
+                    {todosTamanos.map(t => (
+                      <div key={t} className="flex items-center gap-2 bg-admin-elevated rounded-xl px-3 py-2 border border-admin-border">
+                        {tamanoEditando === t ? (
+                          <>
+                            <input
+                              autoFocus
+                              type="text"
+                              value={tamanoNuevoNombre}
+                              onChange={e => setTamanoNuevoNombre(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') handleRenameTamano(t);
+                                if (e.key === 'Escape') { setTamanoEditando(null); setTamanoNuevoNombre(''); }
+                              }}
+                              className="flex-1 bg-admin-card border border-admin-border rounded-lg px-2 py-1 text-sm font-body text-admin-text outline-none focus:border-green-400"
+                            />
+                            <button onClick={() => handleRenameTamano(t)} disabled={tamanoGuardando === t} className="shrink-0 text-emerald-600 hover:text-emerald-500 disabled:opacity-40 transition-colors" aria-label="Confirmar">
+                              <Check size={18} />
+                            </button>
+                            <button onClick={() => { setTamanoEditando(null); setTamanoNuevoNombre(''); }} className="shrink-0 text-admin-muted hover:text-admin-text transition-colors" aria-label="Cancelar">
+                              <X size={16} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="flex-1 text-sm font-body font-bold text-admin-text truncate">{t}</span>
+                            <span className="text-xs text-admin-muted shrink-0">{productos.filter(p => p.tamano === t).length} prod.</span>
+                            <button onClick={() => { setTamanoEditando(t); setTamanoNuevoNombre(t); }} className="shrink-0 text-admin-muted hover:text-green-500 transition-colors" aria-label={`Renombrar ${t}`}>
+                              <Pencil size={15} />
+                            </button>
+                            <button onClick={() => handleEliminarTamano(t)} disabled={tamanoGuardando === t} className="shrink-0 text-admin-muted hover:text-red-500 disabled:opacity-40 transition-colors" aria-label={`Eliminar ${t}`}>
+                              <Trash2 size={15} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+      </div>
 
       {/* Contenido scrollable */}
       <div className="space-y-4 mt-4">
