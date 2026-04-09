@@ -206,7 +206,7 @@ export default function AdminCatalogo() {
   return (
     <div className="min-w-0">
       {/* Toolbar fija: buscador + botones + filtros */}
-      <div className="sticky top-0 z-20 flex flex-col gap-3 bg-admin-bg pt-3 pb-3 -mx-3 px-3 sm:-mx-4 sm:px-4 lg:-mx-8 lg:px-8 border-b border-admin-border-soft">
+      <div className="sticky top-[57px] lg:top-0 z-20 flex flex-col gap-3 bg-admin-bg pt-3 pb-3 -mx-3 px-3 sm:-mx-4 sm:px-4 lg:-mx-8 lg:px-8 border-b border-admin-border-soft">
         <div className="flex gap-2 items-center shrink-0">
           <div className="relative flex-1">
             <Search
@@ -395,8 +395,7 @@ export default function AdminCatalogo() {
 
             {!cargando && !errorLista && filtrados.length > 0 && (
               <div
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto overscroll-y-contain min-h-0 pr-1 -mr-0.5
-                           [scrollbar-width:thin] max-h-[calc(100dvh-15.5rem)] sm:max-h-[calc(100dvh-13rem)] pb-24"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-24"
               >
                 {filtrados.map(p => (
                   <div
