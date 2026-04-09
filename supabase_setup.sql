@@ -106,6 +106,34 @@ CREATE POLICY "Solo admins pueden actualizar pedidos"
   USING (auth.uid() IN (SELECT user_id FROM public.admins));
 
 -- ───────────────────────────────────────────────────────────────────────────
+-- 4.5 TABLA CONFIGURACION (key-value para anuncios, ajustes, etc.)
+-- ───────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.configuracion (
+  clave TEXT PRIMARY KEY,
+  valor JSONB NOT NULL DEFAULT '{}'::JSONB
+);
+
+ALTER TABLE public.configuracion ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Lectura pública de configuracion" ON public.configuracion;
+CREATE POLICY "Lectura pública de configuracion"
+  ON public.configuracion
+  FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "Solo admins pueden insertar config" ON public.configuracion;
+CREATE POLICY "Solo admins pueden insertar config"
+  ON public.configuracion
+  FOR INSERT
+  WITH CHECK (auth.uid() IN (SELECT user_id FROM public.admins));
+
+DROP POLICY IF EXISTS "Solo admins pueden actualizar config" ON public.configuracion;
+CREATE POLICY "Solo admins pueden actualizar config"
+  ON public.configuracion
+  FOR UPDATE
+  USING (auth.uid() IN (SELECT user_id FROM public.admins));
+
+-- ───────────────────────────────────────────────────────────────────────────
 -- 5. DATOS DE EJEMPLO (los mismos del catálogo estático)
 -- Borra este bloque cuando subas tu inventario real.
 -- ───────────────────────────────────────────────────────────────────────────

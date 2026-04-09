@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Package, Pencil, Trash2, Search, AlertTriangle, Plus, X, Tag, Check, Bookmark, Ruler } from 'lucide-react';
+import { Package, Pencil, Trash2, Search, AlertTriangle, Plus, X, Tag, Check, Bookmark, Ruler, Megaphone } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { guardedQuery } from '../lib/supabaseGuard';
 import {
@@ -19,6 +19,7 @@ import {
   renameTamano,
   eliminarTamano,
 } from '../lib/productosAdmin';
+import { getConfig, setConfig } from '../lib/configAdmin';
 import FormularioNuevoProducto from './FormularioNuevoProducto';
 import ModalEditarProducto from './ModalEditarProducto';
 import Toggle from './ui/Toggle';
@@ -110,6 +111,19 @@ export default function AdminCatalogo() {
   const [tamanoEditando, setTamanoEditando] = useState(null);
   const [tamanoNuevoNombre, setTamanoNuevoNombre] = useState('');
   const [tamanoGuardando, setTamanoGuardando] = useState(null);
+
+  // ── Anuncio / Banner ──
+  const [showAnuncioEditor, setShowAnuncioEditor] = useState(false);
+  const [anuncioMsg, setAnuncioMsg] = useState('');
+  const [anuncioActivo, setAnuncioActivo] = useState(false);
+  const [anuncioGuardando, setAnuncioGuardando] = useState(false);
+
+  useEffect(() => {
+    getConfig('anuncio', { mensaje: '', activo: false }).then(v => {
+      setAnuncioMsg(v.mensaje || '');
+      setAnuncioActivo(!!v.activo);
+    });
+  }, []);
 
   const productosEnAlerta = useMemo(() => {
     return productos.filter(p => p.stock_ilimitado === false && p.stock_actual <= (p.stock_minimo || 5));
@@ -406,7 +420,87 @@ export default function AdminCatalogo() {
             <Ruler size={14} />
             Tamaños
           </button>
+          <button
+            type="button"
+            onClick={() => setShowAnuncioEditor(v => !v)}
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
+                       border-2 transition-all duration-200 active:scale-95"
+            style={anuncioActivo
+              ? { borderColor: '#f59e0b', color: '#92400e', background: '#fffbeb' }
+              : { borderColor: '#d1d5db', color: '#6b7280', background: '#f9fafb' }}
+            title="Anuncio para clientes"
+          >
+            <Megaphone size={14} />
+            Anuncio
+            {anuncioActivo && <span className="w-2 h-2 rounded-full bg-amber-500" />}
+          </button>
         </div>
+
+        {/* ── Editor de anuncio inline ── */}
+        {showAnuncioEditor && (
+          <div className="bg-admin-card border border-admin-border rounded-xl p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Megaphone size={16} className="text-amber-500" />
+                <span className="text-xs font-body font-black text-admin-text">Anuncio para clientes</span>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <span className="text-[11px] font-body font-bold text-admin-muted">
+                  {anuncioActivo ? 'Activo' : 'Inactivo'}
+                </span>
+                <Toggle
+                  checked={anuncioActivo}
+                  onChange={async (val) => {
+                    setAnuncioActivo(val);
+                    setAnuncioGuardando(true);
+                    try {
+                      await setConfig('anuncio', { mensaje: anuncioMsg, activo: val });
+                      toast.success(val ? 'Anuncio activado' : 'Anuncio desactivado');
+                    } catch (err) {
+                      toast.error(err.message || 'Error al guardar');
+                      setAnuncioActivo(!val);
+                    } finally {
+                      setAnuncioGuardando(false);
+                    }
+                  }}
+                />
+              </label>
+            </div>
+            <textarea
+              value={anuncioMsg}
+              onChange={e => setAnuncioMsg(e.target.value)}
+              maxLength={200}
+              rows={2}
+              placeholder="Escribe un mensaje corto para tus clientes…"
+              className="w-full bg-admin-bg rounded-xl px-3 py-2 text-sm font-body text-admin-text placeholder:text-admin-inactive
+                         outline-none border border-admin-border focus:border-fiesta-magenta transition-colors resize-none"
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-body text-admin-muted">{anuncioMsg.length}/200</span>
+              <button
+                type="button"
+                disabled={anuncioGuardando}
+                onClick={async () => {
+                  setAnuncioGuardando(true);
+                  try {
+                    await setConfig('anuncio', { mensaje: anuncioMsg.trim(), activo: anuncioActivo });
+                    toast.success('Anuncio guardado');
+                  } catch (err) {
+                    toast.error(err.message || 'Error al guardar');
+                  } finally {
+                    setAnuncioGuardando(false);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black text-white
+                           transition-all duration-200 active:scale-95 disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
+              >
+                <Check size={14} />
+                {anuncioGuardando ? 'Guardando…' : 'Guardar mensaje'}
+              </button>
+            </div>
+          </div>
+        )}
 
             {/* Modal gestión de categorías */}
             {showCatMgr && (
