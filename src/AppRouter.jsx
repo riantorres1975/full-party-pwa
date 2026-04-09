@@ -4,6 +4,7 @@ import LoginAdmin  from './components/LoginAdmin';
 import AdminPedidos from './components/AdminPedidos';
 import { useAuth } from './hooks/useAuth';
 import { useTheme } from './hooks/useTheme';
+import { ToastProvider } from './components/ui/ToastProvider';
 
 /**
  * AppRouter — enrutamiento por hash sin react-router.
@@ -43,11 +44,16 @@ export default function AppRouter() {
   if (esRutaAdmin) {
     // No autenticado → Login
     if (!session) {
-      return <LoginAdmin onLogin={signIn} loading={loading} error={error} />;
+      return (
+        <ToastProvider>
+          <LoginAdmin onLogin={signIn} loading={loading} error={error} />
+        </ToastProvider>
+      );
     }
     // Autenticado → Dashboard
     return (
-      <AdminPedidos
+      <ToastProvider>
+        <AdminPedidos
         user={user}
         temaOscuro={isDarkMode}
         onToggleTema={toggleTheme}
@@ -56,6 +62,7 @@ export default function AppRouter() {
           window.location.hash = '';
         }}
       />
+      </ToastProvider>
     );
   }
 

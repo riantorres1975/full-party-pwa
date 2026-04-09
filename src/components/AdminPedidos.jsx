@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { MessageCircle, ChevronDown, Package, LayoutGrid, ClipboardList, Search, RefreshCw, LogOut, ShoppingBag, Clock, CheckCircle2 } from 'lucide-react';
+import { MessageCircle, ChevronDown, Package, LayoutGrid, ClipboardList, Search, RefreshCw, LogOut, ShoppingBag, Clock, CheckCircle2, Phone, Truck, Store, MapPin } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { SIMBOLO_MONEDA } from '../data/productos';
 import AdminCatalogo from './AdminCatalogo';
 import ThemeToggle from './ThemeToggle';
+import { useToast } from './ui/ToastProvider';
+import { SkeletonPedido } from './ui/Skeleton';
+import BottomNav from './ui/BottomNav';
 
 const ESTADOS = ['Por Surtir', 'Armando Pedido', 'Listo para Entrega'];
 
@@ -104,12 +107,12 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
   const surtidoPicking = modoPicking && marcado;
 
   const claseFila = esDesktop
-    ? 'flex items-center gap-2 lg:gap-3 py-1.5 lg:py-2 border-b border-purple-50 last:border-0 transition-opacity duration-150'
-    : 'flex gap-3 py-3 border-b border-ink-100 last:border-0 transition-opacity duration-200';
+    ? 'flex items-center gap-2 lg:gap-3 py-1.5 lg:py-2 border-b border-admin-border-soft last:border-0 transition-opacity duration-150'
+    : 'flex gap-3 py-3 border-b border-admin-border last:border-0 transition-opacity duration-200';
 
   const claseMiniatura = esDesktop
-    ? 'w-9 h-9 lg:w-10 lg:h-10 rounded-lg overflow-hidden flex-shrink-0 bg-purple-50 border border-purple-100 flex items-center justify-center'
-    : 'w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-ink-50 border-2 border-ink-100 flex items-center justify-center';
+    ? 'w-9 h-9 lg:w-10 lg:h-10 rounded-lg overflow-hidden flex-shrink-0 bg-admin-elevated border border-admin-border-soft flex items-center justify-center'
+    : 'w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-admin-elevated border-2 border-admin-border flex items-center justify-center';
 
   const claseCheckbox = esDesktop
     ? 'flex-shrink-0 w-5 h-5 lg:w-6 lg:h-6 rounded-md border-2 flex items-center justify-center transition-all duration-150 active:scale-90'
@@ -157,7 +160,7 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className={`text-xs font-body font-bold leading-snug line-clamp-1 ${tachado ? 'line-through text-ink-300' : 'text-ink-800'}`}>
+        <p className={`text-xs font-body font-bold leading-snug line-clamp-1 ${tachado ? 'line-through text-admin-inactive' : 'text-admin-text'}`}>
           {item.nombre}
         </p>
         {modoPicking && (
@@ -175,24 +178,24 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
           </p>
         )}
         {esDesktop && (
-          <p className="text-[10px] font-body text-ink-400">Cant: {item.cantidad}</p>
+          <p className="text-[10px] font-body text-admin-muted">Cant: {item.cantidad}</p>
         )}
         {!esDesktop && item.tamano && (
-          <p className="text-[11px] font-body text-ink-400 mt-0.5">Tamaño: {item.tamano}</p>
+          <p className="text-[11px] font-body text-admin-muted mt-0.5">Tamaño: {item.tamano}</p>
         )}
         {!esDesktop && item.familia_mayoreo && (
-          <p className="text-[11px] font-body text-ink-400">Mayoreo: {item.familia_mayoreo}</p>
+          <p className="text-[11px] font-body text-admin-muted">Mayoreo: {item.familia_mayoreo}</p>
         )}
-        {!esDesktop && <p className="text-[11px] font-body text-ink-400">Cantidad: {item.cantidad}</p>}
+        {!esDesktop && <p className="text-[11px] font-body text-admin-muted">Cantidad: {item.cantidad}</p>}
       </div>
 
       <div className={clasePrecio}>
-        <p className={tachado ? 'line-through text-ink-300' : 'text-ink-800'}>
+        <p className={tachado ? 'line-through text-admin-inactive' : 'text-admin-text'}>
           {SIMBOLO_MONEDA}{subtotal}
         </p>
         {hayDescuento ? (
           <div className="text-right leading-tight">
-            <p className="text-[10px] font-body text-ink-300 line-through">
+            <p className="text-[10px] font-body text-admin-inactive line-through">
               {SIMBOLO_MONEDA}{precioBase.toFixed(2)} c/u
             </p>
             <p className="text-[10px] font-body font-bold text-emerald-600">
@@ -200,7 +203,7 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
             </p>
           </div>
         ) : (
-          !esDesktop && <p className="text-[10px] font-body text-ink-400">{SIMBOLO_MONEDA}{precioAplicado.toFixed(2)} c/u</p>
+          !esDesktop && <p className="text-[10px] font-body text-admin-muted">{SIMBOLO_MONEDA}{precioAplicado.toFixed(2)} c/u</p>
         )}
       </div>
     </div>
@@ -208,6 +211,7 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
 }
 
 function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, esDesktop }) {
+  const toast = useToast();
   const modoPicking = estadoPedido === 'Armando Pedido';
 
   const normalizarArticulos = (lista) =>
@@ -310,7 +314,7 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, esD
       .eq('id', pedido.id);
 
     if (error) {
-      alert('Error al guardar: ' + error.message);
+      toast.error('Error al guardar: ' + error.message);
       setGuardando(false);
       return;
     }
@@ -340,9 +344,10 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, esD
         onClick={() => setAbierto(v => !v)}
         className="w-full flex items-center justify-between px-3 py-2.5 transition-colors duration-150"
         style={{ background: meta.bg }}
+        aria-expanded={abierto}
       >
         <span className="text-xs font-body font-black flex items-center gap-2" style={{ color: meta.color }}>
-          {modoPicking ? '📋 Picking — Surtir Pedido' : '🛒 Lista de Artículos'}
+          {modoPicking ? 'Picking — Surtir Pedido' : 'Lista de Artículos'}
           <span className="px-2 py-0.5 rounded-full text-[10px]"
                 style={{ background: meta.color, color: 'white' }}>
             {hayFaltantes
@@ -357,52 +362,81 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, esD
         }} />
       </button>
 
+      {/* Progress bar for picking */}
+      {modoPicking && abierto && (
+        <div className="h-1 bg-admin-elevated">
+          <div
+            className="h-full bg-green-500 transition-all duration-300 ease-out"
+            style={{ width: `${items.length > 0 ? (articulosSurtidos.filter(a => a.encontrado).length / items.length) * 100 : 0}%` }}
+          />
+        </div>
+      )}
+
       {/* Contenido */}
       {abierto && (
-        <div className={`bg-white animate-fade-in ${esDesktop ? 'px-2 lg:px-3' : 'px-3'}`}>
+        <div className={`bg-admin-card animate-fade-in ${esDesktop ? 'px-2 lg:px-3' : 'px-3'}`}>
           {modoPicking && (
-            <p className="text-[11px] font-body font-bold text-amber-600 px-1 py-2">
-              Marca solo lo surtido. Lo que quede sin marcar se tomará como faltante.
-            </p>
+            <div className="flex items-center gap-2 px-1 py-2">
+              <p className="text-[11px] font-body font-bold text-amber-600 flex-1">
+                Marca solo lo surtido. Lo que quede sin marcar se tomará como faltante.
+              </p>
+              <span className="text-xs font-body font-black text-admin-text whitespace-nowrap">
+                {articulosSurtidos.filter(a => a.encontrado).length}/{items.length}
+              </span>
+            </div>
           )}
           <div>
-            {articulosSurtidos.map((item, i) => (
-              <ItemArticulo
-                key={i}
-                item={item}
-                modoPicking={modoPicking}
-                encontrado={item.encontrado}
-                onToggle={() => toggleArticulo(i)}
-                esDesktop={esDesktop}
-              />
-            ))}
+            {/* Sort: pending first, surtidos at bottom in picking mode */}
+            {(modoPicking
+              ? [...articulosSurtidos.filter(a => !a.encontrado), ...articulosSurtidos.filter(a => a.encontrado)]
+              : articulosSurtidos
+            ).map((item, _i) => {
+              const originalIdx = articulosSurtidos.indexOf(item);
+              return (
+                <div
+                  key={originalIdx}
+                  onClick={modoPicking ? () => toggleArticulo(originalIdx) : undefined}
+                  className={modoPicking ? 'cursor-pointer' : ''}
+                  role={modoPicking ? 'button' : undefined}
+                  tabIndex={modoPicking ? 0 : undefined}
+                  onKeyDown={modoPicking ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleArticulo(originalIdx); } } : undefined}
+                >
+                  <ItemArticulo
+                    item={item}
+                    modoPicking={modoPicking}
+                    encontrado={item.encontrado}
+                    onToggle={() => toggleArticulo(originalIdx)}
+                    esDesktop={esDesktop}
+                  />
+                </div>
+              );
+            })}
           </div>
 
           {/* Panel resumen — en picking activo O si hay faltantes en Listo */}
           {(modoPicking || (estadoPedido === 'Listo para Entrega' && hayFaltantes)) && (
-            <div className={`rounded-xl p-3 space-y-2 ${esDesktop ? 'mx-2 mt-2 mb-2' : 'mx-3 mb-3 mt-1'}`}
-                 style={{ background: '#f8f4ff', border: '2px solid #e0c4f8' }}>
+            <div className={`rounded-xl p-3 space-y-2 ${esDesktop ? 'mx-2 mt-2 mb-2' : 'mx-3 mb-3 mt-1'} bg-admin-elevated border-2 border-admin-border`}>
 
               {/* Totales */}
               <div className="flex justify-between items-center text-xs font-body">
-                <span className="text-ink-400 font-bold">Total original</span>
-                <span className={`font-black ${hayFaltantes ? 'line-through text-ink-300' : 'text-ink-700'}`}>
+                <span className="text-admin-muted font-bold">Total original</span>
+                <span className={`font-black ${hayFaltantes ? 'line-through text-admin-inactive' : 'text-admin-text-secondary'}`}>
                   {SIMBOLO_MONEDA}{totalOriginal.toFixed(2)}
                 </span>
               </div>
               {hayFaltantes && (
                 <div className="flex justify-between items-center text-xs font-body">
-                  <span className="text-ink-400 font-bold">Artículos faltantes</span>
+                  <span className="text-admin-muted font-bold">Artículos faltantes</span>
                   <span className="font-black text-red-400">
                     − {SIMBOLO_MONEDA}{(totalOriginal - nuevoTotal).toFixed(2)}
                   </span>
                 </div>
               )}
-              <div className="flex justify-between items-center pt-1 border-t border-purple-200">
-                <span className="text-sm font-body font-black text-ink-800">
+              <div className="flex justify-between items-center pt-1 border-t border-admin-border">
+                <span className="text-sm font-body font-black text-admin-text">
                   {hayFaltantes ? 'Nuevo total' : 'Total a cobrar'}
                 </span>
-                <span className="text-base font-body font-black" style={{ color: '#22c55e' }}>
+                <span className="text-base font-body font-black text-status-done">
                   {SIMBOLO_MONEDA}{nuevoTotal.toFixed(2)}
                 </span>
               </div>
@@ -430,7 +464,7 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, esD
                 >
                   {guardando
                     ? <div className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-                    : '🎉'
+                    : <CheckCircle2 size={16} />
                   }
                   {guardando
                     ? 'Guardando...'
@@ -450,35 +484,47 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, esD
 
 function TarjetaPedidoCompacta({ pedido, seleccionado, onClick }) {
   const meta = ESTADO_META[pedido.estado] ?? ESTADO_META['Por Surtir'];
+  const initials = pedido.cliente_nombre
+    ?.split(' ')
+    .slice(0, 2)
+    .map(w => w[0]?.toUpperCase())
+    .join('') || '??';
+
+  // Relative timestamp
+  const diffMs = Date.now() - new Date(pedido.created_at).getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const timeAgo = diffMin < 1 ? 'ahora' : diffMin < 60 ? `${diffMin}m` : diffMin < 1440 ? `${Math.floor(diffMin / 60)}h` : `${Math.floor(diffMin / 1440)}d`;
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full text-left rounded-2xl p-3 border-2 transition-all duration-200"
-      style={{
-        background: seleccionado ? '#fff8fe' : 'white',
-        borderColor: seleccionado ? meta.color : meta.bg,
-        boxShadow: seleccionado ? `0 6px 18px ${meta.color}30` : '0 2px 10px rgba(26, 7, 51, 0.05)',
-      }}
+      className={`relative w-full text-left rounded-xl p-3 pl-5 border transition-all duration-200 overflow-hidden
+                  ${seleccionado ? 'bg-admin-elevated border-admin-border shadow-card-hover' : 'bg-admin-card border-transparent hover:bg-admin-elevated'}`}
     >
-      <div className="flex items-center justify-between gap-2">
-        <p className="font-display text-sm text-ink-900 truncate">{pedido.folio}</p>
-        <span
-          className="text-[10px] font-body font-black px-2 py-1 rounded-full"
+      {/* Accent bar */}
+      <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-full" style={{ background: meta.color }} />
+
+      <div className="flex items-center gap-3">
+        {/* Avatar */}
+        <div
+          className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
           style={{ background: meta.bg, color: meta.color }}
         >
-          {pedido.estado}
-        </span>
-      </div>
-
-      <p className="mt-1 text-sm font-body font-bold text-ink-800 truncate">{pedido.cliente_nombre}</p>
-
-      <div className="mt-2 flex items-center justify-between">
-        <span className="text-[11px] font-body text-ink-400">Total</span>
-        <span className="text-sm font-body font-black" style={{ color: meta.color }}>
-          {SIMBOLO_MONEDA}{Number(pedido.total).toFixed(2)}
-        </span>
+          {initials}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <p className="font-body font-bold text-sm text-admin-text truncate">{pedido.cliente_nombre}</p>
+            <span className="text-[10px] font-body text-admin-muted flex-shrink-0">{timeAgo}</span>
+          </div>
+          <div className="flex items-center justify-between gap-2 mt-0.5">
+            <span className="text-xs font-body text-admin-muted truncate">{pedido.folio}</span>
+            <span className="text-xs font-body font-black flex-shrink-0" style={{ color: meta.color }}>
+              {SIMBOLO_MONEDA}{Number(pedido.total).toFixed(2)}
+            </span>
+          </div>
+        </div>
       </div>
     </button>
   );
@@ -487,6 +533,7 @@ function TarjetaPedidoCompacta({ pedido, seleccionado, onClick }) {
 // ── Tarjeta de un pedido ─────────────────────────────────────────────────────
 function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onNotificar, onPickingListo, esDesktop }) {
   const meta = ESTADO_META[pedido.estado] ?? ESTADO_META['Por Surtir'];
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const fecha    = new Date(pedido.created_at).toLocaleDateString('es-MX', {
     day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
   });
@@ -494,15 +541,15 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
   const yaNotificado = pedido.notificado_estado === pedido.estado;
 
   const claseHeader = esDesktop
-    ? 'flex items-center justify-between gap-3 pb-3 mb-3 border-b border-purple-100'
+    ? 'flex items-center justify-between gap-3 pb-3 mb-3 border-b border-admin-border-soft'
     : 'flex items-start justify-between gap-2 mb-3';
 
   const claseInfoCliente = esDesktop
-    ? 'pb-2 mb-2 border-b border-purple-50'
-    : 'space-y-1 mb-3 pb-3 border-b border-ink-100';
+    ? 'pb-2 mb-2 border-b border-admin-border-soft'
+    : 'space-y-1 mb-3 pb-3 border-b border-admin-border';
 
   const claseTotal = esDesktop
-    ? 'flex items-center justify-end gap-3 pb-3 border-b border-purple-50'
+    ? 'flex items-center justify-end gap-3 pb-3 border-b border-admin-border-soft'
     : 'flex items-center justify-between mb-3';
 
   const claseBotones = esDesktop
@@ -515,17 +562,16 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
 
   return (
     <div
-      className="bg-white rounded-2xl p-5 transition-all duration-300 border border-ink-100"
+      className="bg-admin-card rounded-2xl p-5 transition-all duration-300 border border-admin-border shadow-card"
       style={{
-        boxShadow: `0 1px 3px rgba(0,0,0,0.05)`,
         opacity: esActualizando ? 0.6 : 1,
       }}
     >
       {/* Header */}
       <div className={claseHeader}>
         <div className="flex items-center gap-3">
-          <span className={`font-display text-ink-900 ${esDesktop ? 'text-sm' : 'text-base'}`}>{pedido.folio}</span>
-          {!esDesktop && <p className="text-[11px] font-body text-ink-400 mt-0.5">{fecha}</p>}
+          <span className={`font-display text-admin-text ${esDesktop ? 'text-sm' : 'text-base'}`}>{pedido.folio}</span>
+          {!esDesktop && <p className="text-[11px] font-body text-admin-muted mt-0.5">{fecha}</p>}
         </div>
         <span
           className="text-xs font-body font-bold px-2.5 py-1 rounded-full flex-shrink-0 flex items-center gap-1.5"
@@ -537,13 +583,13 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
 
       {/* Info cliente */}
       <div className={claseInfoCliente}>
-        <p className="text-sm font-body font-bold text-ink-800">{pedido.cliente_nombre}</p>
-        <p className="text-xs font-body text-ink-400">📞 {pedido.cliente_telefono}</p>
-        <p className="text-xs font-body text-ink-400">
-          {pedido.tipo_entrega === 'envio' ? '🚚 Envío a domicilio' : '🏪 Recoger en tienda'}
+        <p className="text-sm font-body font-bold text-admin-text">{pedido.cliente_nombre}</p>
+        <p className="flex items-center gap-1.5 text-xs font-body text-admin-muted"><Phone size={12} /> {pedido.cliente_telefono}</p>
+        <p className="flex items-center gap-1.5 text-xs font-body text-admin-muted">
+          {pedido.tipo_entrega === 'envio' ? <><Truck size={12} /> Envío a domicilio</> : <><Store size={12} /> Recoger en tienda</>}
         </p>
         {pedido.direccion && (
-          <p className="text-xs font-body text-ink-400 leading-relaxed">📍 {pedido.direccion}</p>
+          <p className="flex items-center gap-1.5 text-xs font-body text-admin-muted leading-relaxed"><MapPin size={12} className="flex-shrink-0" /> {pedido.direccion}</p>
         )}
       </div>
 
@@ -561,7 +607,7 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
 
       {/* Total */}
       <div className={claseTotal}>
-        <span className="text-xs font-body text-ink-400 font-bold">Total</span>
+        <span className="text-xs font-body text-admin-muted font-bold">Total</span>
         <span className={`font-body font-black ${esDesktop ? 'text-lg' : 'text-base'}`} style={{ color: meta.color }}>
           {SIMBOLO_MONEDA}{Number(pedido.total).toFixed(2)}
         </span>
@@ -570,31 +616,78 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
       {/* Selector de estado */}
       <div className="relative mb-3">
         {esActualizando && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 rounded-xl"
-               style={{ background: 'rgba(255,255,255,0.8)' }}>
+          <div className="absolute inset-0 flex items-center justify-center z-10 rounded-xl bg-admin-card/80">
             <div className="w-4 h-4 rounded-full border-2 border-ink-200 border-t-ink-600 animate-spin" />
           </div>
         )}
-        <div className={claseBotones}>
-          {ESTADOS.map(estado => {
-            const m       = ESTADO_META[estado];
-            const activo  = pedido.estado === estado;
-            return (
-              <button
-                key={estado}
-                onClick={() => !activo && onCambiarEstado(pedido.id, estado)}
-                disabled={activo || esActualizando}
-                className={claseBotonEstado}
-                style={activo
-                  ? { background: m.color, color: 'white', boxShadow: `0 2px 8px ${m.color}55` }
-                  : { background: m.bg, color: m.color }
-                }
-              >
-                <m.icon size={14} className="inline mr-1" /> {estado}
-              </button>
-            );
-          })}
-        </div>
+        {/* Mobile: custom dropdown */}
+        {!esDesktop && (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setDropdownOpen(v => !v)}
+              disabled={esActualizando}
+              className="w-full flex items-center justify-between gap-2 bg-admin-card border-2 border-admin-border rounded-xl px-4 py-3 text-sm font-body font-bold text-admin-text focus:outline-none focus:ring-2 focus:ring-fiesta-magenta transition-colors"
+              style={{ borderLeftColor: meta.color, borderLeftWidth: '3px' }}
+            >
+              <span className="flex items-center gap-2">
+                <meta.icon size={14} style={{ color: meta.color }} />
+                {pedido.estado}
+              </span>
+              <ChevronDown size={16} className={`text-admin-muted transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {dropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setDropdownOpen(false)} />
+                <div className="absolute left-0 right-0 top-full mt-1 z-20 bg-admin-card border border-admin-border rounded-xl shadow-elevated overflow-hidden">
+                  {ESTADOS.map(estado => {
+                    const m = ESTADO_META[estado];
+                    const activo = pedido.estado === estado;
+                    return (
+                      <button
+                        key={estado}
+                        type="button"
+                        onClick={() => {
+                          if (!activo) onCambiarEstado(pedido.id, estado);
+                          setDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-4 py-3 text-sm font-body font-bold transition-colors text-left
+                                   ${activo ? 'bg-admin-elevated text-admin-text' : 'text-admin-muted hover:bg-admin-elevated hover:text-admin-text'}`}
+                      >
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: m.color }} />
+                        <span className="flex-1">{estado}</span>
+                        {activo && <CheckCircle2 size={14} style={{ color: m.color }} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+        {/* Desktop: button grid */}
+        {esDesktop && (
+          <div className={claseBotones}>
+            {ESTADOS.map(estado => {
+              const m       = ESTADO_META[estado];
+              const activo  = pedido.estado === estado;
+              return (
+                <button
+                  key={estado}
+                  onClick={() => !activo && onCambiarEstado(pedido.id, estado)}
+                  disabled={activo || esActualizando}
+                  className={claseBotonEstado}
+                  style={activo
+                    ? { background: m.color, color: 'white', boxShadow: `0 2px 8px ${m.color}55` }
+                    : { background: m.bg, color: m.color }
+                  }
+                >
+                  <m.icon size={14} className="inline mr-1" /> {estado}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Botón notificar por WhatsApp */}
@@ -641,6 +734,7 @@ function useAdminVistaInicial() {
 }
 
 export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema }) {
+  const toast = useToast();
   const [vistaAdmin, setVistaAdmin] = useAdminVistaInicial();
   const [pedidos,      setPedidos]      = useState([]);
   const [loading,      setLoading]      = useState(true);
@@ -709,7 +803,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
       .eq('id', pedidoId);
 
     if (err) {
-      alert('Error al actualizar: ' + err.message);
+      toast.error('Error al actualizar: ' + err.message);
     } else {
       // Actualización optimista — Realtime lo propagará al resto de sesiones
       setPedidos(prev => prev.map(p =>
@@ -767,46 +861,44 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
   }, [pedidosFiltrados, pedidoSeleccionadoId]);
 
   return (
-    <div className="min-h-screen bg-ink-50 lg:flex lg:h-screen lg:overflow-hidden">
+    <div className="min-h-screen bg-admin-bg lg:flex lg:h-screen lg:overflow-hidden">
+      {/* Skip link */}
+      <a href="#admin-main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-admin-card focus:text-admin-text focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-elevated focus:text-sm focus:font-body focus:font-bold">
+        Saltar al contenido
+      </a>
 
       {/* ── Sidebar Nativo (Desktop) / Header (Mobile) ── */}
-      <header className="sticky top-0 z-30 border-b border-ink-200 bg-white/95 backdrop-blur-md lg:static lg:h-full lg:w-64 lg:flex-shrink-0 lg:flex lg:flex-col lg:border-b-0 lg:border-r lg:bg-white">
-        <div className="px-4 sm:px-6 py-3 sm:py-4 flex flex-col gap-3 lg:gap-6 lg:p-6 lg:flex-1">
-          <div className="flex items-center justify-between gap-2 min-w-0 lg:flex-col lg:items-start lg:gap-6">
+      <header className="sticky top-0 z-30 border-b border-admin-border backdrop-blur-md lg:static lg:h-full lg:w-64 lg:flex-shrink-0 lg:flex lg:flex-col lg:border-b-0 lg:border-r" style={{ backgroundColor: 'var(--admin-card)' }}>
+        <div className="px-4 sm:px-6 py-3 sm:py-4 flex flex-col gap-3 lg:gap-0 lg:p-0 lg:flex-1">
+          {/* ── Brand Header ── */}
+          <div className="flex items-center justify-between gap-2 min-w-0 lg:flex-col lg:items-start lg:gap-0 lg:p-6 lg:pb-4">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-ink-50 border border-ink-200 flex items-center justify-center shrink-0">
-                <LayoutGrid size={20} className="text-ink-700" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-fiesta-magenta to-fiesta-cyan flex items-center justify-center shrink-0 text-white font-display text-sm shadow-card">
+                FP
               </div>
               <div className="min-w-0">
-                <h1 className="font-display text-base sm:text-lg text-ink-900 leading-tight">Panel Admin</h1>
-                <p className="text-[11px] sm:text-xs font-body text-ink-500 truncate mt-0.5" title={user?.email ?? ''}>
+                <h1 className="font-display text-base sm:text-lg text-admin-text leading-tight">Full Party</h1>
+                <p className="text-[11px] sm:text-xs font-body text-admin-muted truncate mt-0.5" title={user?.email ?? ''}>
                   {user?.email}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0 lg:w-full lg:flex-col lg:items-stretch lg:gap-3">
+            <div className="flex items-center gap-2 shrink-0 lg:hidden">
               <button
                 type="button"
                 onClick={fetchPedidos}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-body font-bold text-ink-700 hover:text-ink-900 bg-ink-50 hover:bg-ink-100 border border-ink-200 transition-colors disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-body font-bold text-admin-text-secondary hover:text-admin-text bg-admin-elevated hover:bg-admin-input border border-admin-border transition-colors disabled:opacity-50"
                 title="Actualizar pedidos"
                 disabled={vistaAdmin !== 'pedidos'}
               >
                 <RefreshCw size={14} />
-                <span className="hidden sm:inline lg:inline">Recargar Data</span>
               </button>
-              <div className="lg:mt-1 lg:flex lg:justify-center">
-                <ThemeToggle
-                  isDarkMode={temaOscuro}
-                  onToggle={onToggleTema}
-                  variant="admin"
-                />
-              </div>
+              <ThemeToggle isDarkMode={temaOscuro} onToggle={onToggleTema} variant="admin" />
               <button
                 type="button"
                 onClick={onSignOut}
-                className="lg:hidden inline-flex items-center justify-center p-2 rounded-lg text-ink-500 bg-ink-50 hover:bg-ink-100 border border-ink-200 transition-colors"
+                className="inline-flex items-center justify-center p-2 rounded-lg text-admin-muted bg-admin-elevated hover:bg-admin-input border border-admin-border transition-colors"
                 title="Cerrar sesión"
               >
                 <LogOut size={16} />
@@ -814,33 +906,71 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
             </div>
           </div>
 
-          <nav className="flex gap-1 w-full sm:w-auto mt-2 lg:flex-col lg:w-full lg:mt-6 lg:gap-2">
+          {/* ── Nav Items (hidden on mobile — BottomNav handles it) ── */}
+          <nav className="hidden lg:flex lg:flex-col lg:w-full lg:px-3 lg:gap-1" aria-label="Secciones admin">
             <button
               type="button"
               onClick={() => setVistaAdmin('pedidos')}
-              className={`flex items-center gap-2 px-1 py-3 lg:px-4 lg:py-3 text-sm font-body font-bold transition-all lg:rounded-xl lg:border-none border-b-[3px] 
-                         ${vistaAdmin === 'pedidos' ? 'text-ink-900 border-ink-900 lg:bg-ink-900 lg:text-white lg:shadow-md' : 'text-ink-500 border-transparent hover:text-ink-800 lg:hover:bg-ink-50'}`}
+              aria-current={vistaAdmin === 'pedidos' ? 'page' : undefined}
+              className={`relative flex items-center gap-2.5 px-1 py-3 lg:px-3 lg:py-2.5 text-sm font-body font-bold transition-all lg:rounded-xl lg:border-none border-b-[3px] 
+                         ${vistaAdmin === 'pedidos'
+                           ? 'text-admin-text border-admin-text lg:bg-admin-elevated lg:border-l-[3px] lg:border-l-fiesta-magenta lg:border-b-0'
+                           : 'text-admin-muted border-transparent hover:text-admin-text lg:hover:bg-admin-elevated'}`}
             >
               <ClipboardList size={18} />
               Pedidos
+              {(contadores['Por Surtir'] ?? 0) > 0 && (
+                <span className="ml-auto bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
+                  {contadores['Por Surtir']}
+                </span>
+              )}
             </button>
             <button
               type="button"
               onClick={() => setVistaAdmin('catalogo')}
-              className={`flex flex-1 sm:flex-none items-center justify-center sm:justify-start gap-2 px-1 py-3 lg:px-4 lg:py-3 text-sm font-body font-bold transition-all lg:rounded-xl lg:border-none border-b-[3px]
-                         ${vistaAdmin === 'catalogo' ? 'text-ink-900 border-ink-900 lg:bg-ink-900 lg:text-white lg:shadow-md' : 'text-ink-500 border-transparent hover:text-ink-800 lg:hover:bg-ink-50'}`}
-              style={{ marginLeft: window.innerWidth < 1024 ? '1rem' : '0' }}
+              aria-current={vistaAdmin === 'catalogo' ? 'page' : undefined}
+              className={`flex flex-1 sm:flex-none items-center justify-center sm:justify-start gap-2.5 px-1 py-3 lg:px-3 lg:py-2.5 text-sm font-body font-bold transition-all lg:rounded-xl lg:border-none border-b-[3px] ml-4 lg:ml-0
+                         ${vistaAdmin === 'catalogo'
+                           ? 'text-admin-text border-admin-text lg:bg-admin-elevated lg:border-l-[3px] lg:border-l-fiesta-magenta lg:border-b-0'
+                           : 'text-admin-muted border-transparent hover:text-admin-text lg:hover:bg-admin-elevated'}`}
             >
               <LayoutGrid size={18} />
               Catálogo
             </button>
           </nav>
-          
-          <div className="hidden lg:flex mt-auto pt-6 w-full">
+
+          {/* ── Quick Stats (Desktop only) ── */}
+          <div className="hidden lg:block px-6 pt-4 mt-4 border-t border-admin-border">
+            <p className="text-[10px] font-body font-bold text-admin-muted uppercase tracking-wider mb-3">Hoy</p>
+            <div className="space-y-2">
+              {ESTADOS.map(e => (
+                <div key={e} className="flex items-center gap-2 text-xs font-body">
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: ESTADO_META[e].color }} />
+                  <span className="text-admin-muted truncate flex-1">{e}</span>
+                  <span className="font-bold text-admin-text">{contadores[e] ?? 0}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Sidebar Footer (Desktop only) ── */}
+          <div className="hidden lg:flex flex-col gap-3 mt-auto px-6 pt-6 pb-6 border-t border-admin-border">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-body font-bold text-admin-muted">Tema</span>
+              <ThemeToggle isDarkMode={temaOscuro} onToggle={onToggleTema} variant="admin" />
+            </div>
+            <button
+              type="button"
+              onClick={fetchPedidos}
+              className="flex w-full items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-body font-bold text-admin-text-secondary bg-admin-elevated hover:bg-admin-input border border-admin-border transition-colors"
+            >
+              <RefreshCw size={14} />
+              Recargar datos
+            </button>
             <button
               type="button"
               onClick={onSignOut}
-              className="flex w-full items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-body font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-transparent transition-colors"
+              className="flex w-full items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-body font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-transparent transition-colors"
               title="Cerrar sesión"
             >
               <LogOut size={16} />
@@ -851,54 +981,75 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
       </header>
 
       {/* ── Main Content ── */}
-      <main className="flex-1 min-w-0 lg:h-screen lg:overflow-y-auto">
+      <main id="admin-main" className="flex-1 min-w-0 lg:h-screen lg:overflow-y-auto">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-4 lg:p-8 lg:max-w-7xl">
 
-        {vistaAdmin === 'catalogo' && <AdminCatalogo />}
+        {vistaAdmin === 'catalogo' && (
+          <>
+            <h2 className="sr-only">Catálogo de productos</h2>
+            <AdminCatalogo />
+          </>
+        )}
 
         {vistaAdmin === 'pedidos' && (
           <>
-        <section className="bg-white rounded-2xl border border-ink-100 p-4 sm:p-5 space-y-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            <h2 className="sr-only">Gestión de pedidos</h2>
+        <section className="bg-admin-card rounded-2xl border border-admin-border p-4 sm:p-5 space-y-4 shadow-card">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[{ key: 'todos', label: 'Total', icon: ClipboardList, color: '#6b35b8', bg: '#f3e8ff' },
               ...ESTADOS.map(e => ({ key: e, label: e, ...ESTADO_META[e] }))
-            ].map(({ key, label, icon: IconComponent, color, bg }) => (
-              <button
-                key={key}
-                onClick={() => setFiltroEstado(key)}
-                className={`flex flex-col rounded-2xl p-4 text-left transition-all duration-200 active:scale-[0.98] border
-                            ${filtroEstado === key ? 'border-transparent ring-2 ring-offset-2 ring-ink-900 bg-ink-900 text-white' : 'border-ink-200 bg-white hover:border-ink-300 text-ink-900'}`}
-                style={{
-                  boxShadow: filtroEstado === key ? '0 4px 12px rgba(0,0,0,0.1)' : 'none',
-                }}
-              >
-                <IconComponent size={20} className={filtroEstado === key ? 'text-white' : 'text-ink-500'} />
-                <p className="font-body font-black text-xl sm:text-2xl mt-2 mb-1">
-                  {contadores[key] ?? 0}
-                </p>
-                <p className={`text-[11px] sm:text-xs font-body font-bold ${filtroEstado === key ? 'text-ink-200' : 'text-ink-500'}`}>
-                  {label}
-                </p>
-              </button>
-            ))}
+            ].map(({ key, label, icon: IconComponent, color, bg }) => {
+              const isActive = filtroEstado === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setFiltroEstado(key)}
+                  className={`group relative flex items-center gap-3 rounded-2xl p-4 text-left transition-all duration-200 active:scale-[0.98] border overflow-hidden
+                              ${isActive ? 'border-transparent ring-2 ring-offset-2 shadow-card-hover' : 'border-admin-border bg-admin-card hover:border-admin-border-soft text-admin-text shadow-card'}`}
+                  style={isActive ? { background: color, ringColor: color, '--tw-ring-color': color } : undefined}
+                >
+                  {/* Accent bar */}
+                  {!isActive && <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-full" style={{ background: color }} />}
+                  {/* Icon circle */}
+                  <div
+                    className="flex-shrink-0 w-10 h-10 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-colors"
+                    style={{ background: isActive ? 'rgba(255,255,255,0.2)' : bg }}
+                  >
+                    <IconComponent size={18} style={{ color: isActive ? '#fff' : color }} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className={`font-display text-2xl sm:text-xl leading-none ${isActive ? 'text-white' : ''}`} role="status">
+                      {contadores[key] ?? 0}
+                    </p>
+                    <p className={`text-[10px] sm:text-xs font-body font-bold mt-0.5 truncate ${isActive ? 'text-white/70' : 'text-admin-muted'}`}>
+                      {label}
+                    </p>
+                  </div>
+                  {/* Live dot for "Por Surtir" */}
+                  {key === 'Por Surtir' && (contadores[key] ?? 0) > 0 && (
+                    <span className={`absolute top-2 right-2 w-2.5 h-2.5 rounded-full animate-[pulseLive_2s_ease-in-out_infinite] border-2 border-white ${isActive ? 'bg-white' : 'bg-red-500'}`} />
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-300" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-admin-muted" />
             <input
               type="text"
               value={busqueda}
               onChange={e => setBusqueda(e.target.value)}
               placeholder="Buscar por folio, nombre o teléfono..."
-              className="w-full bg-ink-50 rounded-2xl pl-9 pr-9 py-3 text-sm font-body font-semibold
-                         text-ink-900 placeholder:text-ink-300 outline-none border-2
-                         border-ink-200 focus:border-fiesta-magenta transition-colors"
+              className="w-full bg-admin-input rounded-2xl pl-9 pr-9 py-3 text-sm font-body font-semibold
+                         text-admin-text placeholder:text-admin-inactive outline-none border-2
+                         border-admin-border focus:border-fiesta-magenta transition-colors"
             />
             {busqueda && (
               <button
                 type="button"
                 onClick={() => setBusqueda('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-300 hover:text-ink-500"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-admin-inactive hover:text-admin-muted"
                 aria-label="Limpiar búsqueda"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -911,17 +1062,16 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
 
         {/* ── Estados ── */}
         {loading && (
-          <div className="flex items-center justify-center py-16 gap-3">
-            <div className="w-6 h-6 rounded-full border-[3px] border-ink-200 border-t-fiesta-magenta animate-spin" />
-            <span className="text-sm font-body font-bold text-ink-400">Cargando pedidos...</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 py-4">
+            {[1,2,3].map(i => <SkeletonPedido key={i} />)}
           </div>
         )}
 
         {error && (
-          <div className="bg-white rounded-2xl p-5 text-center border-2 border-red-100">
+          <div className="bg-admin-card rounded-2xl p-5 text-center border-2 border-red-100">
             <p className="text-sm font-body font-bold text-red-400">⚠️ {error}</p>
             <button onClick={fetchPedidos}
-              className="mt-3 text-xs font-body font-black text-ink-500 underline">
+              className="mt-3 text-xs font-body font-black text-admin-muted underline">
               Reintentar
             </button>
           </div>
@@ -935,14 +1085,14 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
                 <div className="w-16 h-16 rounded-full bg-purple-50 border-2 border-purple-100 flex items-center justify-center mb-3">
                   <ClipboardList size={28} className="text-purple-300" />
                 </div>
-                <p className="font-display text-2xl text-ink-700">Todo al día</p>
-                <p className="text-sm font-body text-ink-400 mt-1">
+                <p className="font-display text-2xl text-admin-text-secondary">Todo al día</p>
+                <p className="text-sm font-body text-admin-muted mt-1">
                   No hay pedidos activos en este momento
                 </p>
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4" aria-live="polite">
                   {pedidosFiltrados.map(pedido => (
                     <TarjetaPedido
                       key={pedido.id}
@@ -961,30 +1111,47 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
                   ))}
                 </div>
 
-                <div className="hidden lg:grid lg:grid-cols-[35%_65%] gap-4 h-[calc(100dvh-18rem)] min-h-[560px]">
-                  <div className="bg-white rounded-2xl border border-ink-200 overflow-hidden flex flex-col" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                    <div className="px-5 py-4 border-b border-ink-100">
-                      <p className="font-display text-base text-ink-900">Pedidos</p>
-                      <p className="text-xs font-body font-bold text-ink-400 mt-0.5">
+                <div className="hidden lg:grid lg:grid-cols-[32%_68%] gap-4 h-[calc(100dvh-18rem)] min-h-[560px]">
+                  <div className="bg-admin-card rounded-2xl border border-admin-border overflow-hidden flex flex-col shadow-card">
+                    <div className="px-5 py-4 border-b border-admin-border">
+                      <p className="font-display text-base text-admin-text">Pedidos</p>
+                      <p className="text-xs font-body font-bold text-admin-muted mt-0.5">
                         {pedidosFiltrados.length} resultado{pedidosFiltrados.length !== 1 ? 's' : ''}
                       </p>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                      {pedidosFiltrados.map(pedido => (
-                        <TarjetaPedidoCompacta
-                          key={pedido.id}
-                          pedido={pedido}
-                          seleccionado={pedido.id === pedidoSeleccionadoId}
-                          onClick={() => setPedidoSeleccionadoId(pedido.id)}
-                        />
-                      ))}
+                    <div className="flex-1 overflow-y-auto p-3">
+                      {/* Grouped by status */}
+                      {ESTADOS.map(estado => {
+                        const grupo = pedidosFiltrados.filter(p => p.estado === estado);
+                        if (grupo.length === 0) return null;
+                        const m = ESTADO_META[estado];
+                        return (
+                          <div key={estado} className="mb-3">
+                            <div className="sticky top-0 z-10 flex items-center gap-2 px-2 py-1.5 bg-admin-card/95 backdrop-blur-sm">
+                              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: m.color }} />
+                              <span className="text-[10px] font-body font-bold text-admin-muted uppercase tracking-wider">{estado}</span>
+                              <span className="text-[10px] font-body text-admin-inactive">{grupo.length}</span>
+                            </div>
+                            <div className="space-y-1">
+                              {grupo.map(pedido => (
+                                <TarjetaPedidoCompacta
+                                  key={pedido.id}
+                                  pedido={pedido}
+                                  seleccionado={pedido.id === pedidoSeleccionadoId}
+                                  onClick={() => setPedidoSeleccionadoId(pedido.id)}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-2xl border border-ink-200 overflow-hidden flex flex-col" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                    <div className="px-5 py-4 border-b border-ink-100">
-                      <p className="font-display text-base text-ink-900">Detalle del pedido</p>
+                  <div className="bg-admin-card rounded-2xl border border-admin-border overflow-hidden flex flex-col shadow-card">
+                    <div className="px-5 py-4 border-b border-admin-border">
+                      <p className="font-display text-base text-admin-text">Detalle del pedido</p>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4">
@@ -1005,8 +1172,8 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
                         />
                       ) : (
                         <div className="h-full min-h-[360px] flex flex-col items-center justify-center text-center">
-                          <ClipboardList size={40} className="text-ink-300 mb-3" />
-                          <p className="font-display text-xl text-ink-500">
+                          <ClipboardList size={40} className="text-admin-muted mb-3" />
+                          <p className="font-display text-xl text-admin-muted">
                             Selecciona un pedido para ver los detalles
                           </p>
                         </div>
@@ -1021,7 +1188,17 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
           </>
         )}
       </div>
+      {/* Mobile bottom padding for BottomNav */}
+      <div className="h-16 lg:hidden" />
       </main>
+
+      {/* ── Bottom Navigation (Mobile) ── */}
+      <BottomNav
+        active={vistaAdmin}
+        onChange={setVistaAdmin}
+        badge={contadores['Por Surtir'] ?? 0}
+        onCuenta={onSignOut}
+      />
     </div>
   );
 }

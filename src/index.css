@@ -10,6 +10,13 @@
     box-sizing: border-box;
   }
 
+  /* Uniform focus-visible ring for admin */
+  :focus-visible {
+    outline: 2px solid var(--admin-muted, #7c4dc8);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
   html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
@@ -62,6 +69,45 @@
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+@keyframes shrinkWidth {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ADMIN DESIGN TOKENS — CSS Custom Properties
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --admin-bg:           #f8f5ff;
+  --admin-card:         #ffffff;
+  --admin-elevated:     #f3f0f8;
+  --admin-input:        #f9f7fc;
+  --admin-border:       #e0c4f8;
+  --admin-border-soft:  #f3e8ff;
+  --admin-text:         #1a0733;
+  --admin-text-secondary: #52278f;
+  --admin-muted:        #7c4dc8;
+  --admin-inactive:     #9ca3af;
+}
+
+body.theme-dark {
+  --admin-bg:           #0f1124;
+  --admin-card:         #1a1d33;
+  --admin-elevated:     #202545;
+  --admin-input:        #14172b;
+  --admin-border:       #2b2f52;
+  --admin-border-soft:  #363b64;
+  --admin-text:         #f4f3ff;
+  --admin-text-secondary: #c4b5fd;
+  --admin-muted:        #b7b2df;
+  --admin-inactive:     #7f7aa8;
 }
 
 @layer components {

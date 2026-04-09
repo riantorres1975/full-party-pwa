@@ -50,6 +50,7 @@ catalogo-pwa/
     ├── hooks/
     │   ├── useAuth.js             ← sesión de Supabase Auth (login/logout)
     │   ├── useCarrito.js          ← carrito con persistencia en localStorage + total dinámico mayoreo
+    │   ├── useConfirm.js          ← hook para modal de confirmación (promesa)
     │   ├── useInfiniteScroll.js   ← IntersectionObserver para carga progresiva
     │   ├── usePedido.js           ← insert y búsqueda de pedidos (guarda precio aplicado por línea)
     │   ├── useProductos.js        ← fetch de productos desde Supabase
@@ -76,7 +77,14 @@ catalogo-pwa/
         ├── FormularioNuevoProducto.jsx ← alta de productos con layout compacto de 2 columnas
         ├── ModalEditarProducto.jsx ← edición de productos en modal
         ├── GestorPrecios.jsx      ← editor de precios escalonados por mayoreo
-        └── SelectCategoria.jsx    ← selector reutilizable de categoría
+        ├── SelectCategoria.jsx    ← selector reutilizable de categoría
+        │
+        └── ui/                        ← componentes reutilizables del design system
+            ├── Toggle.jsx             ← toggle switch unificado (sm/md, accesible)
+            ├── ToastProvider.jsx      ← sistema de notificaciones toast + useToast hook
+            ├── ConfirmModal.jsx       ← modal de confirmación (reemplaza window.confirm)
+            ├── Skeleton.jsx           ← skeleton loaders (pedido, producto)
+            └── BottomNav.jsx          ← navegación inferior mobile con badges
 ```
 
 ---
@@ -243,17 +251,25 @@ export const categorias = [
 
 ### Panel de administración (`/#/admin`)
 
-- **Login protegido** con Supabase Auth — email y contraseña
+- **Diseño SaaS premium** — rediseño completo inspirado en Stripe/Shopify/Notion con design tokens unificados
+- **Design system propio** — CSS custom properties (`--admin-*`) para dark mode sin `!important`, tokens semánticos de color, sombra y estado
+- **Login split-screen** — branding a la izquierda + formulario a la derecha en desktop, con autofocus y animación de entrada
+- **Sidebar desktop** — avatar con iniciales, nav con badges de pedidos pendientes, quick stats "Hoy", toggle de tema y botón de cerrar sesión
+- **Bottom navigation mobile** — 3 tabs (Pedidos con badge, Catálogo, Cuenta) con indicador activo, safe-area compatible
+- **Counter cards con estado** — accent bar lateral por color de estado, iconos circulares, número prominente, dot pulsante "live" en Por Surtir
 - **Navegación interna por hash** entre `/#/admin` (Pedidos) y `/#/admin/catalogo` (Catálogo)
-- **Tarjetas resumen** filtrables: Total / Por Surtir / Armando Pedido / Listo para Entrega
 - **Buscador** por folio, nombre de cliente o teléfono
-- **Cambio de estado** con botones de un toque y actualización optimista
+- **Cambio de estado** — dropdown custom en mobile, botones en desktop, con actualización optimista
+- **Sistema de feedback** — toasts (success/error/info/warning) con auto-dismiss y progress bar, modal de confirmación estilizado (reemplaza window.alert/confirm), skeleton loaders
 - **Realtime automático** vía `postgres_changes`:
   - `INSERT` → nuevo pedido aparece arriba sin recargar
   - `UPDATE` → solo esa tarjeta se actualiza en todas las sesiones abiertas
   - `DELETE` → la tarjeta desaparece
 - **Lista de artículos expandible** — acordeón en cada tarjeta con miniatura, nombre, tamaño, familia de mayoreo, cantidad y precio. El color del acordeón se adapta al estado del pedido
-- **Picking dinámico** — cuando el pedido está en "Armando Pedido" el acordeón cambia a modo surtido:
+- **Picking dinámico premium** — cuando el pedido está en "Armando Pedido" el acordeón cambia a modo surtido:
+  - **Progress bar visual** que se llena en tiempo real conforme se surten artículos
+  - **Filas clickeables completas** — no solo el checkbox, toda la fila es interactiva
+  - **Artículos surtidos se mueven al final** — los pendientes siempre quedan arriba para facilitar el surtido
   - Checkboxes táctiles grandes por artículo, iniciando en pendiente por surtir
   - Estados visuales claros por fila: pendiente (ámbar) vs surtido (verde), sin tachado durante picking
   - Al dejar sin marcar un artículo: se toma como faltante y se actualiza `activo = false` para reflejar agotado en catálogo público en tiempo real
@@ -261,6 +277,8 @@ export const categorias = [
   - Panel de totales dinámico con total original, descuento por faltantes y nuevo total
   - Badge del encabezado muestra `entregados/total` cuando hay faltantes
   - Botón **"Pasar a Listo"** que en un solo `UPDATE` a Supabase: cambia el estado, guarda el total ajustado, persiste `encontrado: true/false` por artículo en `detalles_json`, y abre WhatsApp con mensaje detallado automáticamente
+- **Master-detail desktop** — panel izquierdo con pedidos agrupados por estado (sticky headers, avatar con iniciales, timestamp relativo), panel derecho con detalle completo del pedido seleccionado
+- **Tarjetas de pedido mobile** — iconos Lucide (Phone, Truck, Store, MapPin) en lugar de emojis, dropdown de estado custom, WhatsApp como CTA principal
 - **Vista "Listo para Entrega"**: los artículos no entregados se muestran con imagen en escala de grises, nombre y precio tachados, y el panel de descuento visible para referencia
 - **Trazabilidad de descuentos**: si hubo mayoreo, el admin ve precio base tachado, precio aplicado y ahorro por línea
 - **Notificación al cliente por WhatsApp** — sincronizada entre sesiones via `notificado_estado` en Supabase:
@@ -278,7 +296,9 @@ export const categorias = [
 - **Indicadores de nivel de stock**: distintivo visual con símbolo (∞) esmeralda para stock ilimitado y etiquetas con alerta roja vibrante cuando se alcanza el stock bajo
 - **Toggle de disponibilidad** por producto (actualiza `activo` en tiempo real)
 - **Edición completa** en modal (nombre, descripción, precio, categoría, marca, tamaño, stock, imagen y disponibilidad)
-- **Eliminación de productos** con confirmación para evitar borrados accidentales
+- **Tabs tipo segmented control** — estilo pill en lugar de underline tabs
+- **Toggle unificado** — componente `Toggle` reutilizable con soporte `role="switch"`, aria-checked y focus-visible
+- **Eliminación de productos** con modal de confirmación estilizado (no nativo del navegador)
 
 #### Mensajes de notificación por estado
 
@@ -329,6 +349,19 @@ npm run dev      # servidor de desarrollo → http://localhost:5173
 npm run build    # build de producción   → /dist
 npm run preview  # previsualizar el build localmente
 ```
+
+---
+
+## ♿ Accesibilidad
+
+- **Skip link** "Saltar al contenido" visible al navegar con Tab
+- **Estructura semántica** — `<main>`, `<nav>`, `<header>` con `aria-label`
+- **aria-live="polite"** en contenedor de pedidos para anunciar cambios en realtime
+- **aria-expanded** en acordeones, **aria-current="page"** en nav activa
+- **role="status"** en contadores de pedidos
+- **focus-visible ring** uniforme en todos los elementos interactivos
+- **Contraste WCAG** — `ink.400` ajustado a `#7c4dc8` para cumplir ratio 4.5:1 sobre blanco
+- **Toggle accesible** — `role="switch"` + `aria-checked` + soporte teclado
 
 ---
 

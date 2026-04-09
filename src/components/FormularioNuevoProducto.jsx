@@ -12,20 +12,13 @@ import {
 import { insertarProducto, subirImagenProducto } from '../lib/productosAdmin';
 import SelectCategoria from './SelectCategoria';
 import GestorPrecios from './GestorPrecios';
+import Toggle from './ui/Toggle';
 
 const CATEGORIA_NUEVA_ID = '__agregar_nueva__';
 const MARCA_NUEVA_ID = '__agregar_marca__';
 const TAMANO_NUEVO_ID = '__agregar_tamano__';
 
-// Helper component for modern Toggle Switch
-function CustomToggle({ checked, onChange, id }) {
-  return (
-    <label htmlFor={id} className="relative inline-flex items-center cursor-pointer shrink-0">
-      <input id={id} type="checkbox" className="sr-only peer" checked={checked} onChange={onChange} />
-      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-300/50 rounded-full peer peer-checked:after:translate-x-[100%] rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-pink-400 shadow-inner"></div>
-    </label>
-  );
-}
+
 
 export default function FormularioNuevoProducto({ onProductoCreado }) {
   const [nombre, setNombre] = useState('');
@@ -306,7 +299,7 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
                   <h3 className="text-xs font-bold text-ink-900 leading-tight">Disponible</h3>
                   <p className="text-[10px] font-medium text-ink-500">Venta activa</p>
                 </div>
-                <CustomToggle id="toggle-visibilidad" checked={disponible} onChange={e => setDisponible(e.target.checked)} />
+                <Toggle id="toggle-visibilidad" checked={disponible} onChange={() => setDisponible(v => !v)} />
               </div>
 
               <div className="bg-ink-50 rounded-xl p-3 border border-transparent flex items-center justify-between w-full gap-3">
@@ -314,7 +307,7 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
                   <h3 className="text-xs font-bold text-ink-900 leading-tight">Etiqueta Novedad</h3>
                   <p className="text-[10px] font-medium text-ink-500">Primero en tienda</p>
                 </div>
-                <CustomToggle id="toggle-nuevo" checked={esNuevo} onChange={e => setEsNuevo(e.target.checked)} />
+                <Toggle id="toggle-nuevo" checked={esNuevo} onChange={() => setEsNuevo(v => !v)} />
               </div>
             </div>
 
@@ -475,7 +468,7 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
                     </div>
                     <div className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-gray-100 shrink-0">
                       <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">Ilimitado</span>
-                      <CustomToggle id="toggle-stock" checked={stockIlimitado} onChange={e => setStockIlimitado(e.target.checked)} />
+                      <Toggle id="toggle-stock" checked={stockIlimitado} onChange={() => setStockIlimitado(v => !v)} />
                     </div>
                   </div>
 
@@ -515,11 +508,11 @@ export default function FormularioNuevoProducto({ onProductoCreado }) {
                         Activa solo si manejarás escalas por cantidad.
                       </p>
                     </div>
-                    <CustomToggle
+                    <Toggle
                       id="toggle-mayoreo"
                       checked={mayoreoActivo}
-                      onChange={e => {
-                        const activo = e.target.checked;
+                      onChange={() => {
+                        const activo = !mayoreoActivo;
                         setMayoreoActivo(activo);
                         if (activo) {
                           setPreciosMayoreo(prev => {

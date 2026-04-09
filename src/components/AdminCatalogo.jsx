@@ -13,6 +13,10 @@ import {
 } from '../lib/productosAdmin';
 import FormularioNuevoProducto from './FormularioNuevoProducto';
 import ModalEditarProducto from './ModalEditarProducto';
+import Toggle from './ui/Toggle';
+import ConfirmModal from './ui/ConfirmModal';
+import { useToast } from './ui/ToastProvider';
+import { useConfirm } from '../hooks/useConfirm';
 
 function MiniaturaProducto({ url, nombre }) {
   const [fallo, setFallo] = useState(false);
@@ -33,28 +37,9 @@ function MiniaturaProducto({ url, nombre }) {
   );
 }
 
-function ToggleDisponible({ activo, disabled, onToggle }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={activo}
-      disabled={disabled}
-      onClick={onToggle}
-      className="relative w-11 h-6 rounded-full flex-shrink-0 transition-colors duration-200
-                 focus:outline-none focus-visible:ring-2 focus-visible:ring-fiesta-magenta focus-visible:ring-offset-2
-                 disabled:opacity-50"
-      style={{ background: activo ? '#22c55e' : '#d1d5db' }}
-    >
-      <span
-        className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200"
-        style={{ transform: activo ? 'translateX(1.25rem)' : 'translateX(0)' }}
-      />
-    </button>
-  );
-}
-
 export default function AdminCatalogo() {
+  const toast = useToast();
+  const { isOpen: confirmOpen, config: confirmConfig, confirm: confirmDialog, onConfirm, onCancel } = useConfirm();
   const [pestana, setPestana] = useState('nuevo');
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -123,22 +108,27 @@ export default function AdminCatalogo() {
       await actualizarDisponibilidadProducto(p.id, siguiente);
     } catch (err) {
       setProductos(prev => prev.map(x => (x.id === p.id ? { ...x, activo: p.activo } : x)));
-      alert(err.message || 'No se pudo actualizar');
+      toast.error(err.message || 'No se pudo actualizar');
     } finally {
       setToggleId(null);
     }
   }
 
   async function handleEliminar(p) {
-    if (!window.confirm(`¿Eliminar "${p.nombre}" del catálogo? Esta acción no se puede deshacer.`)) {
-      return;
-    }
+    const ok = await confirmDialog({
+      title: '¿Eliminar producto?',
+      message: `"${p.nombre}" se eliminará del catálogo. Esta acción no se puede deshacer.`,
+      confirmLabel: 'Eliminar',
+      variant: 'danger',
+    });
+    if (!ok) return;
     setEliminandoId(p.id);
     try {
       await eliminarProducto(p.id);
       setProductos(prev => prev.filter(x => x.id !== p.id));
+      toast.success(`"${p.nombre}" eliminado`);
     } catch (err) {
-      alert(err.message || 'No se pudo eliminar');
+      toast.error(err.message || 'No se pudo eliminar');
     } finally {
       setEliminandoId(null);
     }
@@ -146,22 +136,22 @@ export default function AdminCatalogo() {
 
   return (
     <div className="space-y-4 sm:space-y-5 min-w-0">
-      {/* Pestañas — estilo limpio subrayado SaaS */}
-      <div className="flex border-b border-ink-200 mb-2 gap-6 px-1">
-        <button
-          type="button"
-          onClick={() => setPestana('nuevo')}
-          className={`pb-3 text-sm font-body font-bold border-b-[3px] transition-colors ${pestana === 'nuevo' ? 'border-ink-900 text-ink-900' : 'border-transparent text-ink-500 hover:text-ink-700 hover:border-ink-300'}`}
-        >
-          Nuevo Artículo
-        </button>
-        <button
-          type="button"
-          onClick={() => setPestana('inventario')}
-          className={`pb-3 text-sm font-body font-bold border-b-[3px] transition-colors ${pestana === 'inventario' ? 'border-ink-900 text-ink-900' : 'border-transparent text-ink-500 hover:text-ink-700 hover:border-ink-300'}`}
-        >
-          Inventario
-        </button>
+      {/* Pestañas — segmented control pill SaaS */}
+      <div className="flex bg-admin-elevated rounded-xl p-1 border border-admin-border w-fit">
+        {[{ key: 'nuevo', label: 'Nuevo Artículo' }, { key: 'inventario', label: 'Inventario' }].map(tab => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setPestana(tab.key)}
+            className={`px-4 py-2 text-sm font-body font-bold rounded-lg transition-all duration-200 ${
+              pestana === tab.key
+                ? 'bg-admin-card text-admin-text shadow-card'
+                : 'text-admin-muted hover:text-admin-text'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* Contenido con transición suave */}
@@ -177,15 +167,15 @@ export default function AdminCatalogo() {
             <div className="relative shrink-0">
               <Search
                 size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-400 pointer-events-none"
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-admin-muted pointer-events-none"
               />
               <input
                 type="search"
                 value={busqueda}
                 onChange={e => setBusqueda(e.target.value)}
                 placeholder="Buscar por nombre, marca, tamaño o categoría…"
-                className="w-full bg-white rounded-2xl pl-12 pr-4 py-3 text-sm font-body font-semibold
-                           text-ink-900 placeholder:text-ink-300 outline-none border-2 border-ink-200
+                className="w-full bg-admin-card rounded-2xl pl-12 pr-4 py-3 text-sm font-body font-semibold
+                           text-admin-text placeholder:text-admin-inactive outline-none border-2 border-admin-border
                            focus:border-fiesta-magenta transition-colors"
                 />
             </div>
@@ -217,18 +207,18 @@ export default function AdminCatalogo() {
 
             {cargando && (
               <div className="flex items-center justify-center py-16 gap-3">
-                <div className="w-6 h-6 rounded-full border-[3px] border-ink-200 border-t-fiesta-magenta animate-spin" />
-                <span className="text-sm font-body font-bold text-ink-400">Cargando inventario…</span>
+                <div className="w-6 h-6 rounded-full border-[3px] border-admin-border border-t-fiesta-magenta animate-spin" />
+                <span className="text-sm font-body font-bold text-admin-muted">Cargando inventario…</span>
               </div>
             )}
 
             {!cargando && errorLista && (
-              <div className="bg-white rounded-2xl p-5 border-2 border-red-100 text-center">
+              <div className="bg-admin-card rounded-2xl p-5 border-2 border-red-100 text-center">
                 <p className="text-sm font-body font-bold text-red-500">⚠️ {errorLista}</p>
                 <button
                   type="button"
                   onClick={fetchProductos}
-                  className="mt-3 text-xs font-body font-black text-ink-500 underline"
+                  className="mt-3 text-xs font-body font-black text-admin-muted underline"
                 >
                   Reintentar
                 </button>
@@ -236,9 +226,9 @@ export default function AdminCatalogo() {
             )}
 
             {!cargando && !errorLista && filtrados.length === 0 && (
-              <div className="text-center py-14 bg-white rounded-2xl border-2 border-purple-100">
+              <div className="text-center py-14 bg-admin-card rounded-2xl border-2 border-admin-border">
                 <p className="text-3xl mb-2">📭</p>
-                <p className="font-body font-bold text-ink-500">
+                <p className="font-body font-bold text-admin-muted">
                   {busqueda ? 'Ningún producto coincide con la búsqueda.' : 'Sin productos aún.'}
                 </p>
               </div>
@@ -252,21 +242,21 @@ export default function AdminCatalogo() {
                 {filtrados.map(p => (
                   <div
                     key={p.id}
-                    className="bg-white rounded-2xl border border-ink-100 p-4 flex flex-col gap-4
-                               transition-shadow hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)]"
+                    className="bg-admin-card rounded-2xl border border-admin-border p-4 flex flex-col gap-4
+                               transition-shadow hover:shadow-card-hover"
                   >
                     <div className="flex gap-3 min-w-0 items-start">
                       <div
-                        className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-ink-50 border border-ink-100
+                        className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-admin-elevated border border-admin-border
                                    flex items-center justify-center"
                       >
                         <MiniaturaProducto url={p.imagen_url} nombre={p.nombre} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-body font-black text-ink-900 text-sm leading-snug line-clamp-2" title={p.nombre}>
+                        <p className="font-body font-black text-admin-text text-sm leading-snug line-clamp-2" title={p.nombre}>
                           {p.nombre}
                         </p>
-                        <p className="text-[11px] font-body text-ink-500 mt-1 line-clamp-1">
+                        <p className="text-[11px] font-body text-admin-muted mt-1 line-clamp-1">
                           {p.marca ? (
                             <span>Marca: {p.marca}</span>
                           ) : (
@@ -280,7 +270,7 @@ export default function AdminCatalogo() {
                           )}
                         </p>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <p className="text-sm font-body font-black text-ink-900">
+                          <p className="text-sm font-body font-black text-admin-text">
                             {SIMBOLO_MONEDA}
                             {Number(p.precio).toFixed(2)}
                           </p>
@@ -304,15 +294,15 @@ export default function AdminCatalogo() {
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-3 mt-auto pt-4 border-t border-ink-100">
+                    <div className="flex flex-col gap-3 mt-auto pt-4 border-t border-admin-border">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-body font-bold text-ink-600">
+                        <span className="text-xs font-body font-bold text-admin-text-secondary">
                           {p.activo !== false ? 'Activo' : 'Oculto'}
                         </span>
-                        <ToggleDisponible
-                          activo={p.activo !== false}
+                        <Toggle
+                          checked={p.activo !== false}
                           disabled={toggleId === p.id}
-                          onToggle={() => handleToggleDisponibilidad(p)}
+                          onChange={() => handleToggleDisponibilidad(p)}
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-2 mt-1">
@@ -320,7 +310,7 @@ export default function AdminCatalogo() {
                           type="button"
                           onClick={() => setEditando(p)}
                           className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-body font-bold
-                                     text-ink-700 bg-white border border-ink-200 transition-colors hover:bg-ink-50 hover:text-ink-900 active:scale-95"
+                                     text-admin-text-secondary bg-admin-card border border-admin-border transition-colors hover:bg-admin-elevated hover:text-admin-text active:scale-95"
                         >
                           <Pencil size={14} />
                           Editar
@@ -330,7 +320,7 @@ export default function AdminCatalogo() {
                           onClick={() => handleEliminar(p)}
                           disabled={eliminandoId === p.id}
                           className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-body font-bold
-                                     text-rose-600 bg-white transition-colors hover:bg-rose-50 hover:text-rose-700 active:scale-95 disabled:opacity-50"
+                                     text-rose-600 bg-admin-card transition-colors hover:bg-rose-50 hover:text-rose-700 active:scale-95 disabled:opacity-50"
                         >
                           <Trash2 size={14} />
                           {eliminandoId === p.id ? '…' : 'Borrar'}
@@ -355,6 +345,12 @@ export default function AdminCatalogo() {
           }}
         />
       )}
+      <ConfirmModal
+        open={confirmOpen}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+        {...confirmConfig}
+      />
     </div>
   );
 }
