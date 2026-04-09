@@ -24,6 +24,7 @@ export default function SelectCategoria({
   opcionExtra = null,
 }) {
   const [abierto, setAbierto] = useState(false);
+  const [focusIndex, setFocusIndex] = useState(-1);
   const wrapRef = useRef(null);
   const listRef = useRef(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
@@ -82,13 +83,42 @@ export default function SelectCategoria({
   }, [abierto]);
 
   useEffect(() => {
-    if (!abierto) return;
+    if (!abierto) { setFocusIndex(-1); return; }
     function onKey(e) {
-      if (e.key === 'Escape') setAbierto(false);
+      switch (e.key) {
+        case 'Escape':
+          setAbierto(false);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          setFocusIndex(prev => Math.min(prev + 1, items.length - 1));
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setFocusIndex(prev => Math.max(prev - 1, 0));
+          break;
+        case 'Home':
+          e.preventDefault();
+          setFocusIndex(0);
+          break;
+        case 'End':
+          e.preventDefault();
+          setFocusIndex(items.length - 1);
+          break;
+        case 'Enter':
+          if (focusIndex >= 0 && focusIndex < items.length) {
+            e.preventDefault();
+            onChange(items[focusIndex].id);
+            setAbierto(false);
+          }
+          break;
+        default:
+          break;
+      }
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [abierto]);
+  }, [abierto, focusIndex, items, onChange]);
 
   const listaNode =
     abierto &&
@@ -106,20 +136,23 @@ export default function SelectCategoria({
           boxShadow: '0 12px 40px rgba(26, 7, 51, 0.15)',
         }}
       >
-        {items.map(c => {
+        {items.map((c, index) => {
           const seleccionada = value === c.id;
+          const focused = index === focusIndex;
           return (
             <li key={c.id} role="presentation">
               <button
                 type="button"
                 role="option"
                 aria-selected={seleccionada}
+                data-focused={focused || undefined}
                 onClick={() => {
                   onChange(c.id);
                   setAbierto(false);
                 }}
                 className="w-full text-left px-4 py-2.5 text-sm font-body font-semibold transition-colors
-                           hover:bg-purple-50 active:bg-purple-100"
+                           hover:bg-purple-50 active:bg-purple-100
+                           data-[focused]:bg-purple-50 data-[focused]:outline data-[focused]:outline-2 data-[focused]:-outline-offset-2 data-[focused]:outline-purple-400"
                 style={
                   seleccionada
                     ? { background: '#f3e8ff', color: '#5b21b6' }

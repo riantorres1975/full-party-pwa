@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Package, Pencil, Trash2, Search, AlertTriangle, Plus, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { guardedQuery } from '../lib/supabaseGuard';
 import {
   SIMBOLO_MONEDA,
   registrarCategoria,
@@ -18,6 +19,7 @@ import Toggle from './ui/Toggle';
 import ConfirmModal from './ui/ConfirmModal';
 import { useToast } from './ui/ToastProvider';
 import { useConfirm } from '../hooks/useConfirm';
+import { useDebounce } from '../hooks/useDebounce';
 
 function MiniaturaProducto({ url, nombre }) {
   const [fallo, setFallo] = useState(false);
@@ -45,23 +47,31 @@ export default function AdminCatalogo() {
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [errorLista, setErrorLista] = useState('');
-  const [busqueda, setBusqueda] = useState('');
+  const [busquedaInput, setBusquedaInput] = useState('');
+  const busqueda = useDebounce(busquedaInput, 300);
   const [filtroActivo, setFiltroActivo] = useState('todos');
   const [editando, setEditando] = useState(null);
   const [toggleId, setToggleId] = useState(null);
   const [eliminandoId, setEliminandoId] = useState(null);
+  const [pagina, setPagina] = useState(0);
+  const [hayMas, setHayMas] = useState(false);
+  const PAGE_SIZE = 100;
 
-  const fetchProductos = useCallback(async () => {
-    setCargando(true);
+  const fetchProductos = useCallback(async (page = 0, append = false) => {
+    if (!append) setCargando(true);
     setErrorLista('');
-    const { data, error } = await supabase
-      .from('productos')
-            .select('*')
-      .order('nombre', { ascending: true });
+    const from = page * PAGE_SIZE;
+    const { data, error, count } = await guardedQuery((client) =>
+      client
+        .from('productos')
+        .select('*', { count: 'exact' })
+        .order('nombre', { ascending: true })
+        .range(from, from + PAGE_SIZE - 1)
+    );
 
     if (error) {
       setErrorLista(error.message);
-      setProductos([]);
+      if (!append) setProductos([]);
     } else {
       const lista = data ?? [];
       lista.forEach(p => {
@@ -69,7 +79,9 @@ export default function AdminCatalogo() {
         registrarMarca(p.marca);
         registrarTamano(p.tamano);
       });
-      setProductos(lista);
+      setProductos(prev => append ? [...prev, ...lista] : lista);
+      setHayMas((count ?? 0) > from + PAGE_SIZE);
+      setPagina(page);
     }
     setCargando(false);
   }, []);
@@ -147,8 +159,8 @@ export default function AdminCatalogo() {
             />
             <input
               type="search"
-              value={busqueda}
-              onChange={e => setBusqueda(e.target.value)}
+              value={busquedaInput}
+              onChange={e => setBusquedaInput(e.target.value)}
               placeholder="Buscar por nombre, marca, tamaño o categoría…"
               className="w-full bg-admin-card rounded-2xl pl-12 pr-4 py-3 text-sm font-body font-semibold
                          text-admin-text placeholder:text-admin-inactive outline-none border-2 border-admin-border
@@ -316,6 +328,20 @@ export default function AdminCatalogo() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Botón cargar más */}
+            {!cargando && hayMas && (
+              <div className="flex justify-center pt-4 pb-8">
+                <button
+                  type="button"
+                  onClick={() => fetchProductos(pagina + 1, true)}
+                  className="px-6 py-2.5 rounded-xl text-sm font-body font-bold text-admin-text-secondary
+                             bg-admin-elevated hover:bg-admin-input border border-admin-border transition-colors"
+                >
+                  Cargar más productos
+                </button>
               </div>
             )}
           </div>

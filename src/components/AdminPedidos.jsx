@@ -1,24 +1,24 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { MessageCircle, ChevronDown, Package, LayoutGrid, ClipboardList, Search, RefreshCw, LogOut, ShoppingBag, Clock, CheckCircle2, XCircle, Phone, Truck, Store, MapPin } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { SIMBOLO_MONEDA } from '../data/productos';
 import { notificarCliente } from '../utils/whatsapp';
-import AdminCatalogo from './AdminCatalogo';
 import ThemeToggle from './ThemeToggle';
 import { useToast } from './ui/ToastProvider';
 import { SkeletonPedido } from './ui/Skeleton';
 import BottomNav from './ui/BottomNav';
 import ConfirmModal from './ui/ConfirmModal';
 import { useConfirm } from '../hooks/useConfirm';
+import { usePedidosAdmin, ESTADOS, ESTADOS_CON_CANCELADO } from '../hooks/usePedidosAdmin';
+import { useDebounce } from '../hooks/useDebounce';
 
-const ESTADOS = ['Por Surtir', 'Armando Pedido', 'Listo para Entrega'];
-const ESTADOS_CON_CANCELADO = [...ESTADOS, 'Cancelado'];
+const AdminCatalogo = lazy(() => import('./AdminCatalogo'));
 
 const ESTADO_META = {
-  'Por Surtir':         { color: '#ef4444', bg: '#fee2e2', colorClass: 'text-status-pending',  bgClass: 'bg-status-pending-light',  borderClass: 'border-status-pending',  accentClass: 'bg-status-pending',  icon: ShoppingBag },
-  'Armando Pedido':     { color: '#eab308', bg: '#fef9c3', colorClass: 'text-status-progress', bgClass: 'bg-status-progress-light', borderClass: 'border-status-progress', accentClass: 'bg-status-progress', icon: Clock },
-  'Listo para Entrega': { color: '#22c55e', bg: '#dcfce7', colorClass: 'text-status-done',     bgClass: 'bg-status-done-light',     borderClass: 'border-status-done',     accentClass: 'bg-status-done',     icon: CheckCircle2 },
-  'Cancelado':          { color: '#6b7280', bg: '#f3f4f6', colorClass: 'text-gray-500',        bgClass: 'bg-gray-100',              borderClass: 'border-gray-500',        accentClass: 'bg-gray-500',        icon: XCircle },
+  'Por Surtir':         { color: '#ef4444', bg: '#fee2e2', colorClass: 'text-status-pending',  bgClass: 'bg-status-pending-light',  borderClass: 'border-status-pending',  accentClass: 'bg-status-pending',  icon: ShoppingBag, activeStyle: { background: '#ef4444', color: 'white', boxShadow: '0 2px 8px #ef444455' }, inactiveStyle: { background: '#fee2e2', color: '#ef4444' } },
+  'Armando Pedido':     { color: '#eab308', bg: '#fef9c3', colorClass: 'text-status-progress', bgClass: 'bg-status-progress-light', borderClass: 'border-status-progress', accentClass: 'bg-status-progress', icon: Clock, activeStyle: { background: '#eab308', color: 'white', boxShadow: '0 2px 8px #eab30855' }, inactiveStyle: { background: '#fef9c3', color: '#eab308' } },
+  'Listo para Entrega': { color: '#22c55e', bg: '#dcfce7', colorClass: 'text-status-done',     bgClass: 'bg-status-done-light',     borderClass: 'border-status-done',     accentClass: 'bg-status-done',     icon: CheckCircle2, activeStyle: { background: '#22c55e', color: 'white', boxShadow: '0 2px 8px #22c55e55' }, inactiveStyle: { background: '#dcfce7', color: '#22c55e' } },
+  'Cancelado':          { color: '#6b7280', bg: '#f3f4f6', colorClass: 'text-gray-500',        bgClass: 'bg-gray-100',              borderClass: 'border-gray-500',        accentClass: 'bg-gray-500',        icon: XCircle, activeStyle: { background: '#6b7280', color: 'white', boxShadow: '0 2px 8px #6b728055' }, inactiveStyle: { background: '#f3f4f6', color: '#6b7280' } },
 };
 
 
@@ -560,10 +560,7 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
                   onClick={() => !activo && onCambiarEstado(pedido.id, estado)}
                   disabled={activo || esActualizando}
                   className={claseBotonEstado}
-                  style={activo
-                    ? { background: m.color, color: 'white', boxShadow: `0 2px 8px ${m.color}55` }
-                    : { background: m.bg, color: m.color }
-                  }
+                  style={activo ? m.activeStyle : m.inactiveStyle}
                 >
                   <span className="flex items-center gap-2">
                     <m.icon size={18} strokeWidth={2.5} />
@@ -587,10 +584,7 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
                   onClick={() => !activo && onCambiarEstado(pedido.id, estado)}
                   disabled={activo || esActualizando}
                   className={claseBotonEstado}
-                  style={activo
-                    ? { background: m.color, color: 'white', boxShadow: `0 2px 8px ${m.color}55` }
-                    : { background: m.bg, color: m.color }
-                  }
+                  style={activo ? m.activeStyle : m.inactiveStyle}
                 >
                   <m.icon size={14} className="inline mr-1" /> {estado}
                 </button>
@@ -677,190 +671,21 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
   const toast = useToast();
   const { isOpen: cancelConfirmOpen, config: cancelConfig, confirm: confirmCancelar, onConfirm: onConfirmCancelar, onCancel: onCancelCancelar } = useConfirm();
   const [vistaAdmin, setVistaAdmin] = useAdminVistaInicial();
-  const [pedidos,      setPedidos]      = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [error,        setError]        = useState('');
-  const [actualizando, setActualizando] = useState(null);
-  const [filtroEstado, setFiltroEstado] = useState('todos');
-  const [busqueda,     setBusqueda]     = useState('');
-  // { [pedidoId]: estadoEnQueSeNotificó } — se borra al cambiar estado
-  const [notificando,  setNotificando]  = useState(null); // id del pedido siendo notificado
-  const [pedidoSeleccionadoId, setPedidoSeleccionadoId] = useState(null);
+  const [busquedaInput, setBusquedaInput] = useState('');
+  const busquedaDebounced = useDebounce(busquedaInput, 300);
 
-  // ── Fetch pedidos ──────────────────────────────────────────────────────────
-  const fetchPedidos = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    const { data, error: err } = await supabase
-      .from('pedidos')
-      .select('id,folio,cliente_nombre,cliente_telefono,tipo_entrega,direccion,total,estado,detalles_json,notificado_estado,created_at,updated_at')
-      .order('created_at', { ascending: false });
+  const {
+    pedidos, setPedidos, loading, error,
+    actualizando, filtroEstado, setFiltroEstado,
+    busqueda, setBusqueda, notificando,
+    pedidoSeleccionadoId, setPedidoSeleccionadoId,
+    fetchPedidos, pedidosFiltrados, contadores,
+    pedidoSeleccionado,
+    cambiarEstado, cancelarPedido, notificar,
+  } = usePedidosAdmin({ toast, confirmCancelar });
 
-    if (err) setError(err.message);
-    else setPedidos(data ?? []);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { fetchPedidos(); }, [fetchPedidos]);
-
-  // ── Realtime — escucha INSERT, UPDATE y DELETE en tiempo real ───────────────
-  useEffect(() => {
-    const channel = supabase
-      .channel('pedidos-admin-rt')
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'pedidos' },
-        ({ new: nuevo }) => {
-          setPedidos(prev => [nuevo, ...prev]); // aparece arriba inmediatamente
-        }
-      )
-      .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'pedidos' },
-        ({ new: actualizado }) => {
-          setPedidos(prev => prev.map(p => p.id === actualizado.id ? actualizado : p));
-        }
-      )
-      .on('postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'pedidos' },
-        ({ old: eliminado }) => {
-          setPedidos(prev => prev.filter(p => p.id !== eliminado.id));
-        }
-      )
-      .subscribe((status) => {
-        // 'SUBSCRIBED' confirma que el canal está activo
-        if (status === 'CHANNEL_ERROR') {
-          console.warn('[Realtime] Error en canal de pedidos — verifica que Replication esté activo en Supabase');
-        }
-      });
-
-    return () => supabase.removeChannel(channel);
-  }, []); // sin dependencias — se monta una sola vez
-
-  // ── Cambiar estado ─────────────────────────────────────────────────────────
-  async function cambiarEstado(pedidoId, nuevoEstado) {
-    setActualizando(pedidoId);
-    const { error: err } = await supabase
-      .from('pedidos')
-      .update({ estado: nuevoEstado, notificado_estado: null })
-      .eq('id', pedidoId);
-
-    if (err) {
-      toast.error('Error al actualizar: ' + err.message);
-    } else {
-      // Actualización optimista — Realtime lo propagará al resto de sesiones
-      setPedidos(prev => prev.map(p =>
-        p.id === pedidoId ? { ...p, estado: nuevoEstado, notificado_estado: null } : p
-      ));
-    }
-    setActualizando(null);
-  }
-
-  // ── Cancelar pedido con confirmación ───────────────────────────────────────
-  async function cancelarPedido(pedido) {
-    const ok = await confirmCancelar({
-      title: 'Cancelar pedido',
-      message: `¿Seguro que deseas cancelar el pedido ${pedido.folio} de ${pedido.cliente_nombre}? Se abrirá WhatsApp para notificar al cliente.`,
-      confirmLabel: 'Sí, cancelar',
-      variant: 'danger',
-    });
-    if (!ok) return;
-
-    setActualizando(pedido.id);
-
-    // ── Restaurar stock si el pedido ya había descontado inventario ──────────
-    if (pedido.estado === 'Listo para Entrega') {
-      try {
-        const articulos = (pedido.detalles_json || []).filter(a => a.encontrado !== false && a.id);
-        await Promise.all(articulos.map(async (art) => {
-          const { data: prodData, error: errFetch } = await supabase
-            .from('productos')
-            .select('stock_actual, stock_ilimitado')
-            .eq('id', art.id)
-            .single();
-          if (errFetch || !prodData || prodData.stock_ilimitado !== false) return;
-          const nuevoStock = (Number(prodData.stock_actual) || 0) + Number(art.cantidad);
-          await supabase
-            .from('productos')
-            .update({ stock_actual: nuevoStock, activo: true })
-            .eq('id', art.id);
-        }));
-      } catch (err) {
-        console.warn('[Cancelar] Falla parcial al restaurar inventario', err);
-      }
-    }
-
-    const { error: err } = await supabase
-      .from('pedidos')
-      .update({ estado: 'Cancelado', notificado_estado: null })
-      .eq('id', pedido.id);
-
-    if (err) {
-      toast.error('Error al cancelar: ' + err.message);
-    } else {
-      // Actualización optimista
-      setPedidos(prev => prev.map(p =>
-        p.id === pedido.id ? { ...p, estado: 'Cancelado', notificado_estado: null } : p
-      ));
-      toast.success(`Pedido ${pedido.folio} cancelado`);
-      // Abrir WhatsApp para notificar al cliente
-      notificarCliente({ ...pedido, estado: 'Cancelado' });
-      // Persistir que ya se notificó
-      await supabase
-        .from('pedidos')
-        .update({ notificado_estado: 'Cancelado' })
-        .eq('id', pedido.id);
-      setPedidos(prev => prev.map(p =>
-        p.id === pedido.id ? { ...p, notificado_estado: 'Cancelado' } : p
-      ));
-    }
-    setActualizando(null);
-  }
-
-  // ── Notificar al cliente (persiste en Supabase + Realtime) ─────────────────
-  async function notificar(pedido) {
-    setNotificando(pedido.id);
-    notificarCliente(pedido); // abre WhatsApp
-    const { error: err } = await supabase
-      .from('pedidos')
-      .update({ notificado_estado: pedido.estado })
-      .eq('id', pedido.id);
-
-    if (!err) {
-      // Actualización optimista
-      setPedidos(prev => prev.map(p =>
-        p.id === pedido.id ? { ...p, notificado_estado: pedido.estado } : p
-      ));
-    }
-    setNotificando(null);
-  }
-
-  // ── Filtrado local ─────────────────────────────────────────────────────────
-  const pedidosFiltrados = pedidos.filter(p => {
-    const coincideEstado = filtroEstado === 'todos' || p.estado === filtroEstado;
-    const q = busqueda.toLowerCase();
-    const coincideBusqueda = !busqueda ||
-      p.folio.toLowerCase().includes(q) ||
-      p.cliente_nombre.toLowerCase().includes(q) ||
-      p.cliente_telefono.includes(q);
-    return coincideEstado && coincideBusqueda;
-  });
-
-  // ── Contadores por estado ──────────────────────────────────────────────────
-  const contadores = ESTADOS_CON_CANCELADO.reduce((acc, e) => {
-    acc[e] = pedidos.filter(p => p.estado === e).length;
-    return acc;
-  }, { todos: pedidos.length });
-
-  const pedidoSeleccionado = pedidosFiltrados.find(p => p.id === pedidoSeleccionadoId) ?? null;
-
-  useEffect(() => {
-    if (pedidosFiltrados.length === 0) {
-      setPedidoSeleccionadoId(null);
-      return;
-    }
-    if (!pedidoSeleccionadoId || !pedidosFiltrados.some(p => p.id === pedidoSeleccionadoId)) {
-      setPedidoSeleccionadoId(pedidosFiltrados[0].id);
-    }
-  }, [pedidosFiltrados, pedidoSeleccionadoId]);
+  // Sincronizar debounce → hook
+  useEffect(() => { setBusqueda(busquedaDebounced); }, [busquedaDebounced, setBusqueda]);
 
   return (
     <div className="min-h-screen bg-admin-bg lg:flex lg:h-screen lg:overflow-hidden">
@@ -898,6 +723,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
                 onClick={fetchPedidos}
                 className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-body font-bold text-admin-text-secondary hover:text-admin-text bg-admin-elevated hover:bg-admin-input border border-admin-border transition-colors disabled:opacity-50"
                 title="Actualizar pedidos"
+                aria-label="Actualizar pedidos"
                 disabled={vistaAdmin !== 'pedidos'}
               >
                 <RefreshCw size={14} />
@@ -908,6 +734,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
                 onClick={onSignOut}
                 className="inline-flex items-center justify-center p-2 rounded-lg text-admin-muted bg-admin-elevated hover:bg-admin-input border border-admin-border transition-colors"
                 title="Cerrar sesión"
+                aria-label="Cerrar sesión"
               >
                 <LogOut size={16} />
               </button>
@@ -995,7 +822,14 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
         {vistaAdmin === 'catalogo' && (
           <>
             <h2 className="sr-only">Catálogo de productos</h2>
-            <AdminCatalogo />
+            <Suspense fallback={
+              <div className="flex items-center justify-center py-16 gap-3">
+                <div className="w-6 h-6 rounded-full border-[3px] border-admin-border border-t-fiesta-magenta animate-spin" />
+                <span className="text-sm font-body font-bold text-admin-muted">Cargando catálogo…</span>
+              </div>
+            }>
+              <AdminCatalogo />
+            </Suspense>
           </>
         )}
 
@@ -1046,17 +880,17 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-admin-muted" />
             <input
               type="text"
-              value={busqueda}
-              onChange={e => setBusqueda(e.target.value)}
+              value={busquedaInput}
+              onChange={e => setBusquedaInput(e.target.value)}
               placeholder="Buscar por folio, nombre o teléfono..."
               className="w-full bg-admin-input rounded-2xl pl-9 pr-9 py-3 text-sm font-body font-semibold
                          text-admin-text placeholder:text-admin-inactive outline-none border-2
                          border-admin-border focus:border-fiesta-magenta transition-colors"
             />
-            {busqueda && (
+            {busquedaInput && (
               <button
                 type="button"
-                onClick={() => setBusqueda('')}
+                onClick={() => setBusquedaInput('')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-admin-inactive hover:text-admin-muted"
                 aria-label="Limpiar búsqueda"
               >

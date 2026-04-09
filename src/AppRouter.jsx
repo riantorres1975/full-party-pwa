@@ -7,6 +7,11 @@ import { ToastProvider } from './components/ui/ToastProvider';
 
 const AdminPedidos = lazy(() => import('./components/AdminPedidos'));
 
+const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || '')
+  .split(',')
+  .map(e => e.trim().toLowerCase())
+  .filter(Boolean);
+
 /**
  * AppRouter — enrutamiento por hash sin react-router.
  * /        → catálogo público
@@ -53,6 +58,19 @@ export default function AppRouter() {
         <ToastProvider>
           <LoginAdmin onLogin={signIn} loading={loading} error={error} />
         </ToastProvider>
+      );
+    }
+    // RBAC — si VITE_ADMIN_EMAILS está definido, verificar pertenencia
+    const emailUsuario = user?.email?.toLowerCase() || '';
+    if (ADMIN_EMAILS.length > 0 && !ADMIN_EMAILS.includes(emailUsuario)) {
+      return (
+        <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1a0733, #3d1a6e)' }}>
+          <div className="text-center space-y-3 p-8">
+            <p className="text-lg font-bold text-red-400">Acceso denegado</p>
+            <p className="text-sm text-purple-300">Tu cuenta no tiene permisos de administrador.</p>
+            <button onClick={async () => { await signOut(); window.location.hash = ''; }} className="text-sm underline text-purple-400 hover:text-purple-200 transition-colors">Cerrar sesión</button>
+          </div>
+        </div>
       );
     }
     // Autenticado → Dashboard

@@ -1,5 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
-import { ImagePlus, Link2, Loader2, CheckCircle2, UploadCloud, X } from 'lucide-react';
+import { UploadCloud, X, Loader2, CheckCircle2, Link2 } from 'lucide-react';
 import {
   categorias,
   marcas,
@@ -9,179 +8,52 @@ import {
   registrarMarca,
   registrarTamano,
 } from '../data/productos';
-import { insertarProducto, subirImagenProducto } from '../lib/productosAdmin';
-import { toTitleCase } from '../utils/normalizar';
+import { insertarProducto } from '../lib/productosAdmin';
 import SelectCategoria from './SelectCategoria';
 import GestorPrecios from './GestorPrecios';
 import Toggle from './ui/Toggle';
-
-const CATEGORIA_NUEVA_ID = '__agregar_nueva__';
-const MARCA_NUEVA_ID = '__agregar_marca__';
-const TAMANO_NUEVO_ID = '__agregar_tamano__';
+import {
+  useProductForm,
+  CATEGORIA_NUEVA_ID,
+  MARCA_NUEVA_ID,
+  TAMANO_NUEVO_ID,
+} from '../hooks/useProductForm';
 
 
 
 export default function FormularioNuevoProducto({ onProductoCreado, isModal = false }) {
-  const [nombre, setNombre] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  const [precio, setPrecio] = useState('');
-  const [categoria, setCategoria] = useState(categorias[0]?.id ?? '');
-  const [categoriaNueva, setCategoriaNueva] = useState('');
-  const [marca, setMarca] = useState('Genérico');
-  const [marcaNueva, setMarcaNueva] = useState('');
-  const [tamano, setTamano] = useState('');
-  const [tamanoNuevo, setTamanoNuevo] = useState('');
-  const [disponible, setDisponible] = useState(true);
-  const [esNuevo, setEsNuevo] = useState(false);
-  const [imagenUrl, setImagenUrl] = useState('');
-  const [archivo, setArchivo] = useState(null);
-  const fileRef = useRef(null);
-
-  const [stockIlimitado, setStockIlimitado] = useState(true);
-  const [stockActual, setStockActual] = useState('');
-  const [stockMinimo, setStockMinimo] = useState('5');
-  const [mayoreoActivo, setMayoreoActivo] = useState(false);
-  const [preciosMayoreo, setPreciosMayoreo] = useState([
-    { id: Date.now(), etiqueta: '', cantidad_minima: '', precio: '' },
-  ]);
-
-  const [enviando, setEnviando] = useState(false);
-  const [error, setError] = useState('');
-  const [exito, setExito] = useState(false);
-  const [previewLocal, setPreviewLocal] = useState(null);
-  
-  // Drag & Drop state
-  const [dragHover, setDragHover] = useState(false);
-
-  useEffect(() => {
-    if (!archivo) {
-      setPreviewLocal(null);
-      return;
-    }
-    const url = URL.createObjectURL(archivo);
-    setPreviewLocal(url);
-    return () => URL.revokeObjectURL(url);
-  }, [archivo]);
-
-  function resetFormulario() {
-    setNombre('');
-    setDescripcion('');
-    setPrecio('');
-    setCategoria(categorias[0]?.id ?? '');
-    setCategoriaNueva('');
-    setMarca('Genérico');
-    setMarcaNueva('');
-    setTamano('');
-    setTamanoNuevo('');
-    setDisponible(true);
-    setEsNuevo(false);
-    setImagenUrl('');
-    setArchivo(null);
-    setStockIlimitado(true);
-    setStockActual('');
-    setStockMinimo('5');
-    setMayoreoActivo(false);
-    setPreciosMayoreo([{ id: Date.now(), etiqueta: '', cantidad_minima: '', precio: '' }]);
-    if (fileRef.current) fileRef.current.value = '';
-  }
+  const form = useProductForm(null);
+  const {
+    nombre, setNombre, descripcion, setDescripcion, precio, setPrecio,
+    categoria, setCategoria, categoriaNueva, setCategoriaNueva,
+    marca, setMarca, marcaNueva, setMarcaNueva,
+    tamano, setTamano, tamanoNuevo, setTamanoNuevo,
+    disponible, setDisponible, esNuevo, setEsNuevo,
+    imagenUrl, setImagenUrl, archivo, setArchivo, fileRef,
+    stockIlimitado, setStockIlimitado, stockActual, setStockActual,
+    stockMinimo, setStockMinimo,
+    mayoreoActivo, setMayoreoActivo, preciosMayoreo, setPreciosMayoreo,
+    enviando, setEnviando, error, setError, exito, setExito,
+    previewSrc, dragHover, onDragOver, onDragLeave, onDrop, onFileChange,
+    touched, fieldErrors, handleBlur,
+    buildPayload, reset,
+  } = form;
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
     setExito(false);
     setEnviando(true);
-
     try {
-      let urlFinal = imagenUrl.trim() || null;
-      const categoriaFinal = toTitleCase(
-        categoria === CATEGORIA_NUEVA_ID ? categoriaNueva : categoria
-      );
-      const marcaFinal = toTitleCase(
-        marca === MARCA_NUEVA_ID ? marcaNueva : marca
-      );
-      const tamanoFinal = toTitleCase(
-        tamano === TAMANO_NUEVO_ID ? tamanoNuevo : tamano
-      );
+      const payload = await buildPayload();
+      await insertarProducto(payload);
 
-      if (categoria === CATEGORIA_NUEVA_ID && !categoriaFinal) {
-        throw new Error('Escribe el nombre de la nueva categoría.');
-      }
-
-      if (archivo) {
-        urlFinal = await subirImagenProducto(archivo);
-      }
-
-      const precioBaseNum = Math.max(0, Number(precio) || 0);
-      const filasMayoreo = (preciosMayoreo || []).map((item, idx) => {
-        const etiqueta = String(item?.etiqueta ?? '').trim();
-        const cantidadMinima = Number(item?.cantidad_minima);
-        const precioEscala = Number(item?.precio);
-        return {
-          idx,
-          etiqueta,
-          cantidadMinima,
-          precioEscala,
-          vacia: !etiqueta && item?.cantidad_minima === '' && item?.precio === '',
-        };
-      });
-
-      if (mayoreoActivo) {
-        if (filasMayoreo.length === 0 || filasMayoreo.every(f => f.vacia)) {
-          throw new Error('Activa mayoreo solo si capturas al menos una escala con etiqueta, cantidad y precio.');
-        }
-
-        const filaInvalida = filasMayoreo.find(f => {
-          if (f.vacia) return true;
-          return !f.etiqueta || !Number.isFinite(f.cantidadMinima) || f.cantidadMinima <= 0 || !Number.isFinite(f.precioEscala) || f.precioEscala <= 0;
-        });
-
-        if (filaInvalida) {
-          throw new Error(`Revisa la escala ${filaInvalida.idx + 1}: etiqueta obligatoria y valores mayores a 0.`);
-        }
-      }
-
-      const preciosParaGuardar = filasMayoreo
-        .filter(f => !f.vacia)
-        .map(f => ({
-          etiqueta: f.etiqueta,
-          cantidad_minima: f.cantidadMinima,
-          precio: f.precioEscala,
-        }));
-
-      const preciosMayoreoFinal = mayoreoActivo
-        ? (preciosParaGuardar.length > 0
-            ? preciosParaGuardar
-            : [{ etiqueta: '1 Pieza', cantidad_minima: 1, precio: precioBaseNum }])
-        : [{ etiqueta: '1 Pieza', cantidad_minima: 1, precio: precioBaseNum }];
-
-      await insertarProducto({
-        nombre: toTitleCase(nombre),
-        descripcion,
-        precio,
-        categoria: categoriaFinal || null,
-        marca: marcaFinal || null,
-        tamano: tamanoFinal || null,
-        imagen_url: urlFinal,
-        stock_ilimitado: stockIlimitado,
-        stock_actual: stockActual ? Number(stockActual) : 0,
-        stock_minimo: stockMinimo ? Number(stockMinimo) : 5,
-        es_nuevo: esNuevo,
-        precios_mayoreo: preciosMayoreoFinal,
-        activo: disponible,
-      });
-
-      if (categoria === CATEGORIA_NUEVA_ID && categoriaFinal) {
-        registrarCategoria(categoriaFinal);
-      }
-      if (marca === MARCA_NUEVA_ID && marcaFinal) {
-        registrarMarca(marcaFinal);
-      }
-      if (tamano === TAMANO_NUEVO_ID && tamanoFinal) {
-        registrarTamano(tamanoFinal);
-      }
+      if (categoria === CATEGORIA_NUEVA_ID && payload.categoria) registrarCategoria(payload.categoria);
+      if (marca === MARCA_NUEVA_ID && payload.marca) registrarMarca(payload.marca);
+      if (tamano === TAMANO_NUEVO_ID && payload.tamano) registrarTamano(payload.tamano);
 
       setExito(true);
-      resetFormulario();
+      reset();
       onProductoCreado?.();
     } catch (err) {
       setError(err.message || 'Error al guardar');
@@ -190,26 +62,6 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
     }
   }
 
-  // Drag handlers
-  const onDragOver = (e) => {
-    e.preventDefault();
-    setDragHover(true);
-  };
-  const onDragLeave = (e) => {
-    e.preventDefault();
-    setDragHover(false);
-  };
-  const onDrop = (e) => {
-    e.preventDefault();
-    setDragHover(false);
-    const f = e.dataTransfer.files?.[0];
-    if (f && f.type.startsWith('image/')) {
-      setArchivo(f);
-      setImagenUrl('');
-    }
-  };
-
-  const previewSrc = previewLocal || imagenUrl.trim() || null;
 
   return (
     <div className={isModal ? 'font-sans p-4 md:p-6' : 'min-h-full font-sans p-4 md:p-6 lg:p-8'}>
@@ -272,11 +124,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                 ref={fileRef}
                 type="file"
                 accept="image/jpeg,image/png,image/gif,image/webp,image/avif"
-                onChange={e => {
-                  const f = e.target.files?.[0];
-                  setArchivo(f || null);
-                  if (f) setImagenUrl('');
-                }}
+                onChange={onFileChange}
                 className="hidden"
               />
               
@@ -332,11 +180,15 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                     type="text"
                     value={nombre}
                     onChange={e => setNombre(e.target.value)}
+                    onBlur={() => handleBlur('nombre')}
                     placeholder="Ej. Set de globos..."
                     required
                     maxLength={200}
-                    className="w-full bg-ink-50 border border-transparent rounded-lg px-3 py-2 text-sm font-medium text-ink-900 focus:bg-white focus:border-ink-400 focus:outline-none focus:ring-1 focus:ring-ink-200 transition-all shadow-sm"
+                    className={`w-full bg-ink-50 border rounded-lg px-3 py-2 text-sm font-medium text-ink-900 focus:bg-white focus:border-ink-400 focus:outline-none focus:ring-1 focus:ring-ink-200 transition-all shadow-sm ${touched.nombre && fieldErrors.nombre ? 'border-red-400' : 'border-transparent'}`}
                   />
+                  {touched.nombre && fieldErrors.nombre && (
+                    <p className="text-[10px] text-red-500 font-medium mt-0.5">{fieldErrors.nombre}</p>
+                  )}
                 </div>
 
                 <div className="col-span-full md:col-span-2">
@@ -353,11 +205,15 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                       step="0.01"
                       value={precio}
                       onChange={e => setPrecio(e.target.value)}
+                      onBlur={() => handleBlur('precio')}
                       placeholder="0.00"
                       required
-                      className="w-full bg-ink-50 border border-transparent rounded-lg pl-8 pr-3 py-2 text-sm font-medium text-ink-900 focus:bg-white focus:border-ink-400 focus:outline-none focus:ring-1 focus:ring-ink-200 transition-all shadow-sm"
+                      className={`w-full bg-ink-50 border rounded-lg pl-8 pr-3 py-2 text-sm font-medium text-ink-900 focus:bg-white focus:border-ink-400 focus:outline-none focus:ring-1 focus:ring-ink-200 transition-all shadow-sm ${touched.precio && fieldErrors.precio ? 'border-red-400' : 'border-transparent'}`}
                     />
                   </div>
+                  {touched.precio && fieldErrors.precio && (
+                    <p className="text-[10px] text-red-500 font-medium mt-0.5">{fieldErrors.precio}</p>
+                  )}
                 </div>
 
                 {/* Fila 2 */}
