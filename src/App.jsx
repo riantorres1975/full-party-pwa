@@ -3,6 +3,7 @@ import { useProductos }      from './hooks/useProductos';
 import { useCarrito }        from './hooks/useCarrito';
 import { useToast }          from './components/ui/ToastProvider';
 import { categorias as CATEGORIAS_CONFIG } from './data/productos';
+import { useAnuncio }         from './hooks/useAnuncio';
 import Header             from './components/Header';
 import BuscadorFiltros    from './components/BuscadorFiltros';
 import ModalFiltros       from './components/ModalFiltros';
@@ -17,6 +18,8 @@ import SidebarFiltrosDesktop from './components/SidebarFiltrosDesktop';
 export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   // ── Datos desde Supabase ───────────────────────────────────────────────────
   const { productos, loading, error, refetch } = useProductos();
+  const { mensaje: anuncioMsg, activo: anuncioActivo } = useAnuncio();
+  const [anuncioCerrado, setAnuncioCerrado] = useState(false);
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [busqueda,        setBusqueda]        = useState('');
@@ -198,6 +201,21 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
             </div>
           )}
         </header>
+
+        {/* ── Anuncio / Banner para clientes ── */}
+        {anuncioActivo && anuncioMsg && !anuncioCerrado && (
+          <div className="relative px-4 py-2.5 text-center text-sm font-body font-bold"
+               style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#78350f' }}>
+            <span>{anuncioMsg}</span>
+            <button
+              onClick={() => setAnuncioCerrado(true)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-900/60 hover:text-amber-900 transition-colors"
+              aria-label="Cerrar anuncio"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         <main className={`lg:pb-0 lg:h-[calc(100vh-130px)] lg:overflow-hidden transition-all duration-300 ${items.length > 0 ? 'pb-40' : 'pb-8'}`}>
           <div className="max-w-[1600px] mx-auto w-full px-3 lg:px-6 h-full">
