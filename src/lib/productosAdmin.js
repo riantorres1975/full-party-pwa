@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { throwIfSessionError } from './supabaseGuard';
+import { guardedQuery, throwIfSessionError } from './supabaseGuard';
 
 /** Bucket público para fotos de producto (crear en Supabase + políticas; ver supabase_storage_productos.sql) */
 export const BUCKET_IMAGENES_PRODUCTOS = 'productos-imagenes';
