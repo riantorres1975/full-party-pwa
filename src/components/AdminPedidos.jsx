@@ -695,48 +695,53 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
         )}
       </div>
 
-      {/* Botón notificar por WhatsApp */}
-      <button
-        onClick={() => !yaNotificado && !notificando && onNotificar(pedido)}
-        disabled={yaNotificado || notificando}
-        className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-body font-black text-white
-                   transition-all duration-200 active:scale-95 disabled:cursor-not-allowed ${esDesktop ? 'w-[220px] ml-auto' : 'w-full'}`}
-        style={yaNotificado
-          ? { background: '#d1fae5', color: '#6ee7b7', boxShadow: 'none' }
-          : { background: 'linear-gradient(135deg, #25D366, #1db954)', boxShadow: '0 3px 12px #25D36633' }
-        }
-      >
-        {notificando
-          ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-          : <MessageCircle size={16} />
-        }
-        {yaNotificado ? '✓ Cliente notificado' : notificando ? 'Enviando...' : 'Notificar al cliente'}
-      </button>
+      {/* Botones de acción: notificar + cancelar */}
+      <div className={`flex items-center gap-2 ${esDesktop ? 'justify-end' : 'flex-col'}`}>
+        {/* Botón cancelar pedido */}
+        {pedido.estado !== 'Cancelado' && (
+          <button
+            onClick={() => onCancelar(pedido)}
+            disabled={esActualizando}
+            title="Cancelar pedido"
+            className={`flex items-center justify-center gap-1.5 rounded-xl font-body font-bold
+                       transition-all duration-200 active:scale-95 disabled:opacity-50
+                       border border-red-200 text-red-400 hover:bg-red-50 hover:border-red-300 hover:text-red-500
+                       ${esDesktop ? 'py-2 px-3 text-xs' : 'py-2.5 w-full text-xs order-2'}`}
+          >
+            <XCircle size={14} />
+            {!esDesktop && 'Cancelar pedido'}
+          </button>
+        )}
 
-      {/* Botón cancelar pedido */}
-      {pedido.estado !== 'Cancelado' && (
+        {/* Indicador de pedido cancelado */}
+        {pedido.estado === 'Cancelado' && (
+          <div className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-body font-bold
+                          ${esDesktop ? '' : 'w-full order-2'}`}
+               style={{ background: '#f3f4f6', color: '#6b7280' }}>
+            <XCircle size={14} />
+            Pedido cancelado
+          </div>
+        )}
+
+        {/* Botón notificar por WhatsApp */}
         <button
-          onClick={() => onCancelar(pedido)}
-          disabled={esActualizando}
-          className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-body font-bold
-                     transition-all duration-200 active:scale-95 disabled:opacity-50
-                     border-2 border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300
-                     ${esDesktop ? 'w-[220px] ml-auto' : 'w-full'}`}
+          onClick={() => !yaNotificado && !notificando && onNotificar(pedido)}
+          disabled={yaNotificado || notificando}
+          className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-body font-black text-white
+                     transition-all duration-200 active:scale-95 disabled:cursor-not-allowed
+                     ${esDesktop ? 'flex-1 max-w-[220px]' : 'w-full order-1'}`}
+          style={yaNotificado
+            ? { background: '#d1fae5', color: '#6ee7b7', boxShadow: 'none' }
+            : { background: 'linear-gradient(135deg, #25D366, #1db954)', boxShadow: '0 3px 12px #25D36633' }
+          }
         >
-          <XCircle size={14} />
-          Cancelar pedido
+          {notificando
+            ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+            : <MessageCircle size={16} />
+          }
+          {yaNotificado ? '✓ Cliente notificado' : notificando ? 'Enviando...' : 'Notificar al cliente'}
         </button>
-      )}
-
-      {/* Indicador de pedido cancelado */}
-      {pedido.estado === 'Cancelado' && (
-        <div className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-body font-bold
-                        ${esDesktop ? 'w-[220px] ml-auto' : 'w-full'}`}
-             style={{ background: '#f3f4f6', color: '#6b7280' }}>
-          <XCircle size={14} />
-          Pedido cancelado
-        </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -851,6 +856,29 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
     if (!ok) return;
 
     setActualizando(pedido.id);
+
+    // ── Restaurar stock si el pedido ya había descontado inventario ──────────
+    if (pedido.estado === 'Listo para Entrega') {
+      try {
+        const articulos = (pedido.detalles_json || []).filter(a => a.encontrado !== false && a.id);
+        await Promise.all(articulos.map(async (art) => {
+          const { data: prodData, error: errFetch } = await supabase
+            .from('productos')
+            .select('stock_actual, stock_ilimitado')
+            .eq('id', art.id)
+            .single();
+          if (errFetch || !prodData || prodData.stock_ilimitado !== false) return;
+          const nuevoStock = (Number(prodData.stock_actual) || 0) + Number(art.cantidad);
+          await supabase
+            .from('productos')
+            .update({ stock_actual: nuevoStock, activo: true })
+            .eq('id', art.id);
+        }));
+      } catch (err) {
+        console.warn('[Cancelar] Falla parcial al restaurar inventario', err);
+      }
+    }
+
     const { error: err } = await supabase
       .from('pedidos')
       .update({ estado: 'Cancelado', notificado_estado: null })
