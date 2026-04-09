@@ -245,6 +245,30 @@ export async function eliminarCategoria(nombre) {
   ));
 }
 
+export async function renameMarca(vieja, nueva) {
+  throwIfSessionError(await guardedQuery(() =>
+    supabase.from('productos').update({ marca: nueva }).eq('marca', vieja)
+  ));
+}
+
+export async function eliminarMarca(nombre) {
+  throwIfSessionError(await guardedQuery(() =>
+    supabase.from('productos').update({ marca: null }).eq('marca', nombre)
+  ));
+}
+
+export async function renameTamano(viejo, nuevo) {
+  throwIfSessionError(await guardedQuery(() =>
+    supabase.from('productos').update({ tamano: nuevo }).eq('tamano', viejo)
+  ));
+}
+
+export async function eliminarTamano(nombre) {
+  throwIfSessionError(await guardedQuery(() =>
+    supabase.from('productos').update({ tamano: null }).eq('tamano', nombre)
+  ));
+}
+
 export async function actualizarDisponibilidadProducto(id, activo) {
   const { data, error } = await supabase
     .from('productos')

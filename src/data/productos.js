@@ -52,29 +52,9 @@ export function registrarTamano(tamanoTexto) {
   return limpia;
 }
 
-export const marcas = [
-  'Glomex',
-  'Sempertex',
-  'Decoratex',
-  'Full Party',
-  'El Bueno',
-  'Mega Shine',
-  'Peyma',
-  'Genérico',
-];
+export const marcas = [];
 
-export const tamanios = [
-  '5',
-  '10',
-  '12',
-  '18',
-  '24',
-  '36',
-  'Número 16',
-  'Número 32',
-  'Número 40',
-  'Kit completo',
-];
+export const tamanios = [];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PRODUCTOS
