@@ -33,6 +33,24 @@ const PASOS = [
 const ORDEN = PASOS.map(p => p.estado);
 
 function Stepper({ estadoActual }) {
+  // Si está cancelado, mostrar indicador especial en lugar del stepper
+  if (estadoActual === 'Cancelado') {
+    return (
+      <div className="w-full px-2 pt-2 pb-4 flex flex-col items-center gap-2">
+        <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl border-2"
+             style={{ background: '#f3f4f6', borderColor: '#d1d5db' }}>
+          ❌
+        </div>
+        <p className="font-body font-black text-sm text-center" style={{ color: '#6b7280' }}>
+          Pedido Cancelado
+        </p>
+        <p className="font-body text-[11px] text-center text-ink-400">
+          Este pedido ha sido cancelado
+        </p>
+      </div>
+    );
+  }
+
   const indexActual = ORDEN.indexOf(estadoActual);
 
   return (
@@ -94,7 +112,10 @@ function Stepper({ estadoActual }) {
 
 function TarjetaPedido({ pedido }) {
   const [expandido, setExpandido] = useState(false);
-  const pasoActual = PASOS.find(p => p.estado === pedido.estado) ?? PASOS[0];
+  const esCancelado = pedido.estado === 'Cancelado';
+  const pasoActual = esCancelado
+    ? { color: '#6b7280', colorLight: '#f3f4f6', emoji: '❌', estado: 'Cancelado' }
+    : (PASOS.find(p => p.estado === pedido.estado) ?? PASOS[0]);
   const fecha = new Date(pedido.created_at).toLocaleDateString('es-MX', {
     day: '2-digit', month: 'short', year: 'numeric',
   });
