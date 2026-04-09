@@ -450,15 +450,16 @@ export default function AdminCatalogo() {
                 </span>
                 <Toggle
                   checked={anuncioActivo}
-                  onChange={async (val) => {
-                    setAnuncioActivo(val);
+                  onChange={async () => {
+                    const nuevoVal = !anuncioActivo;
+                    setAnuncioActivo(nuevoVal);
                     setAnuncioGuardando(true);
                     try {
-                      await setConfig('anuncio', { mensaje: anuncioMsg, activo: val });
-                      toast.success(val ? 'Anuncio activado' : 'Anuncio desactivado');
+                      await setConfig('anuncio', { mensaje: anuncioMsg, activo: nuevoVal });
+                      toast.success(nuevoVal ? 'Anuncio activado' : 'Anuncio desactivado');
                     } catch (err) {
                       toast.error(err.message || 'Error al guardar');
-                      setAnuncioActivo(!val);
+                      setAnuncioActivo(!nuevoVal);
                     } finally {
                       setAnuncioGuardando(false);
                     }
