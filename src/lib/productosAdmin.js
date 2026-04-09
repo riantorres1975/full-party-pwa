@@ -233,6 +233,18 @@ export async function actualizarProducto(id, {
 }
 
 /** Solo cambia disponibilidad (activo) — útil para toggles en inventario. */
+export async function renameCategoria(vieja, nueva) {
+  throwIfSessionError(await guardedQuery(() =>
+    supabase.from('productos').update({ categoria: nueva }).eq('categoria', vieja)
+  ));
+}
+
+export async function eliminarCategoria(nombre) {
+  throwIfSessionError(await guardedQuery(() =>
+    supabase.from('productos').update({ categoria: null }).eq('categoria', nombre)
+  ));
+}
+
 export async function actualizarDisponibilidadProducto(id, activo) {
   const { data, error } = await supabase
     .from('productos')
