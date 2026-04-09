@@ -1,0 +1,78 @@
+import { useEffect, useRef } from 'react';
+import { AlertTriangle } from 'lucide-react';
+
+export default function ConfirmModal({
+  open,
+  title = '¿Estás seguro?',
+  message = '',
+  confirmLabel = 'Confirmar',
+  cancelLabel = 'Cancelar',
+  variant = 'danger', // 'danger' | 'warning' | 'info'
+  onConfirm,
+  onCancel,
+}) {
+  const confirmRef = useRef(null);
+  const previousFocus = useRef(null);
+
+  useEffect(() => {
+    if (open) {
+      previousFocus.current = document.activeElement;
+      setTimeout(() => confirmRef.current?.focus(), 50);
+    } else if (previousFocus.current) {
+      previousFocus.current.focus();
+      previousFocus.current = null;
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (e.key === 'Escape') onCancel?.();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [open, onCancel]);
+
+  if (!open) return null;
+
+  const variants = {
+    danger: { icon: 'bg-red-100 text-red-600', btn: 'bg-red-600 hover:bg-red-700 focus-visible:ring-red-500' },
+    warning: { icon: 'bg-amber-100 text-amber-600', btn: 'bg-amber-600 hover:bg-amber-700 focus-visible:ring-amber-500' },
+    info: { icon: 'bg-blue-100 text-blue-600', btn: 'bg-blue-600 hover:bg-blue-700 focus-visible:ring-blue-500' },
+  };
+  const v = variants[variant] || variants.danger;
+
+  return (
+    <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
+      {/* Card */}
+      <div className="relative bg-admin-card border border-admin-border rounded-2xl shadow-elevated p-6 w-full max-w-sm animate-[scaleIn_200ms_ease-out]">
+        <div className="flex items-start gap-4">
+          <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${v.icon}`}>
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 id="confirm-title" className="text-base font-bold text-admin-text">{title}</h3>
+            {message && <p className="mt-1 text-sm text-admin-muted">{message}</p>}
+          </div>
+        </div>
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={onCancel}
+            className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-xl border border-admin-border text-admin-text hover:bg-admin-bg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-fiesta-magenta"
+          >
+            {cancelLabel}
+          </button>
+          <button
+            ref={confirmRef}
+            onClick={onConfirm}
+            className={`flex-1 px-4 py-2.5 text-sm font-semibold rounded-xl text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${v.btn}`}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
