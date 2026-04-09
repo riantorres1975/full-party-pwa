@@ -1,13 +1,27 @@
-import { ClipboardList, LayoutGrid, User } from 'lucide-react';
+import { useState } from 'react';
+import { ClipboardList, LayoutGrid, LogOut } from 'lucide-react';
+import ConfirmModal from './ConfirmModal';
 
 const TABS = [
   { key: 'pedidos', label: 'Pedidos', icon: ClipboardList },
   { key: 'catalogo', label: 'Catálogo', icon: LayoutGrid },
-  { key: 'cuenta', label: 'Cuenta', icon: User },
+  { key: 'salir', label: 'Salir', icon: LogOut },
 ];
 
-export default function BottomNav({ active, onChange, badge = 0, onCuenta }) {
+export default function BottomNav({ active, onChange, badge = 0, onSignOut }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
   return (
+    <>
+    <ConfirmModal
+      open={confirmOpen}
+      title="¿Cerrar sesión?"
+      message="Serás redirigido al inicio."
+      confirmLabel="Cerrar sesión"
+      variant="warning"
+      onConfirm={() => { setConfirmOpen(false); onSignOut?.(); }}
+      onCancel={() => setConfirmOpen(false)}
+    />
     <nav
       className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-admin-card/90 backdrop-blur-lg border-t border-admin-border safe-area-bottom"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
@@ -15,10 +29,10 @@ export default function BottomNav({ active, onChange, badge = 0, onCuenta }) {
     >
       <div className="flex items-center justify-around h-14">
         {TABS.map(({ key, label, icon: Icon }) => {
-          const isActive = key === active || (key === 'cuenta' && active === 'cuenta');
+          const isActive = key === active;
           const handleClick = () => {
-            if (key === 'cuenta') {
-              onCuenta?.();
+            if (key === 'salir') {
+              setConfirmOpen(true);
             } else {
               onChange(key);
             }
@@ -50,5 +64,6 @@ export default function BottomNav({ active, onChange, badge = 0, onCuenta }) {
         })}
       </div>
     </nav>
+    </>
   );
 }

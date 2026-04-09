@@ -12,10 +12,10 @@ const ESTADOS = ['Por Surtir', 'Armando Pedido', 'Listo para Entrega'];
 const ESTADOS_CON_CANCELADO = [...ESTADOS, 'Cancelado'];
 
 const ESTADO_META = {
-  'Por Surtir':         { color: '#ef4444', bg: '#fee2e2', icon: ShoppingBag },
-  'Armando Pedido':     { color: '#eab308', bg: '#fef9c3', icon: Clock },
-  'Listo para Entrega': { color: '#22c55e', bg: '#dcfce7', icon: CheckCircle2 },
-  'Cancelado':          { color: '#6b7280', bg: '#f3f4f6', icon: XCircle },
+  'Por Surtir':         { color: '#ef4444', bg: '#fee2e2', colorClass: 'text-status-pending',  bgClass: 'bg-status-pending-light',  borderClass: 'border-status-pending',  icon: ShoppingBag },
+  'Armando Pedido':     { color: '#eab308', bg: '#fef9c3', colorClass: 'text-status-progress', bgClass: 'bg-status-progress-light', borderClass: 'border-status-progress', icon: Clock },
+  'Listo para Entrega': { color: '#22c55e', bg: '#dcfce7', colorClass: 'text-status-done',     bgClass: 'bg-status-done-light',     borderClass: 'border-status-done',     icon: CheckCircle2 },
+  'Cancelado':          { color: '#6b7280', bg: '#f3f4f6', colorClass: 'text-gray-500',        bgClass: 'bg-gray-100',              borderClass: 'border-gray-500',        icon: XCircle },
 };
 
 
@@ -449,7 +449,7 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, esD
               {/* Advertencia faltantes */}
               {hayFaltantes && (
                 <p className="text-[11px] font-body text-amber-600 bg-amber-50 rounded-lg px-2 py-1.5 leading-snug">
-                  ⚠️ {articulosSurtidos.filter(a => !a.encontrado).length} artículo(s) sin existencia
+                  <span aria-hidden="true">⚠️</span> {articulosSurtidos.filter(a => !a.encontrado).length} artículo(s) sin existencia
                   — se descontarán del total y se notificará al cliente.
                 </p>
               )}
@@ -508,13 +508,12 @@ function TarjetaPedidoCompacta({ pedido, seleccionado, onClick }) {
                   ${seleccionado ? 'bg-admin-elevated border-admin-border shadow-card-hover' : 'bg-admin-card border-transparent hover:bg-admin-elevated'}`}
     >
       {/* Accent bar */}
-      <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-full" style={{ background: meta.color }} />
+      <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-full ${meta.bgClass.replace('bg-', 'bg-').replace('-light', '')}`} style={{ background: meta.color }} />
 
       <div className="flex items-center gap-3">
         {/* Avatar */}
         <div
-          className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
-          style={{ background: meta.bg, color: meta.color }}
+          className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${meta.bgClass} ${meta.colorClass}`}
         >
           {initials}
         </div>
@@ -525,7 +524,7 @@ function TarjetaPedidoCompacta({ pedido, seleccionado, onClick }) {
           </div>
           <div className="flex items-center justify-between gap-2 mt-0.5">
             <span className="text-xs font-body text-admin-muted truncate">{pedido.folio}</span>
-            <span className="text-xs font-body font-black flex-shrink-0" style={{ color: meta.color }}>
+            <span className={`text-xs font-body font-black flex-shrink-0 ${meta.colorClass}`}>
               {SIMBOLO_MONEDA}{Number(pedido.total).toFixed(2)}
             </span>
           </div>
@@ -538,7 +537,6 @@ function TarjetaPedidoCompacta({ pedido, seleccionado, onClick }) {
 // ── Tarjeta de un pedido ─────────────────────────────────────────────────────
 function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onNotificar, onPickingListo, onCancelar, esDesktop }) {
   const meta = ESTADO_META[pedido.estado] ?? ESTADO_META['Por Surtir'];
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const fecha    = new Date(pedido.created_at).toLocaleDateString('es-MX', {
     day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
   });
@@ -559,11 +557,11 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
 
   const claseBotones = esDesktop
     ? 'flex flex-wrap items-center justify-end gap-2'
-    : 'grid grid-cols-3 gap-1.5';
+    : 'flex flex-col gap-1.5';
 
   const claseBotonEstado = esDesktop
     ? 'py-1.5 px-3 min-w-[142px] rounded-lg text-xs font-body font-bold whitespace-nowrap transition-all duration-200 active:scale-95 disabled:cursor-default'
-    : 'py-1.5 px-2 rounded-xl text-[11px] font-body font-black transition-all duration-200 active:scale-95 disabled:cursor-default';
+    : 'py-3.5 px-4 rounded-xl text-sm font-body font-bold w-full transition-all duration-200 active:scale-95 disabled:cursor-default';
 
   return (
     <div
@@ -575,12 +573,11 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
       {/* Header */}
       <div className={claseHeader}>
         <div className="flex items-center gap-3">
-          <span className={`font-display text-admin-text ${esDesktop ? 'text-sm' : 'text-base'}`}>{pedido.folio}</span>
+          <span className={`font-body font-bold text-admin-text ${esDesktop ? 'text-sm' : 'text-base'}`}>{pedido.folio}</span>
           {!esDesktop && <p className="text-[11px] font-body text-admin-muted mt-0.5">{fecha}</p>}
         </div>
         <span
-          className="text-xs font-body font-bold px-2.5 py-1 rounded-full flex-shrink-0 flex items-center gap-1.5"
-          style={{ background: meta.bg, color: meta.color }}
+          className={`text-xs font-body font-bold px-2.5 py-1 rounded-full flex-shrink-0 flex items-center gap-1.5 ${meta.bgClass} ${meta.colorClass}`}
         >
           <meta.icon size={14} strokeWidth={2.5} /> {pedido.estado}
         </span>
@@ -613,7 +610,7 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
       {/* Total */}
       <div className={claseTotal}>
         <span className="text-xs font-body text-admin-muted font-bold">Total</span>
-        <span className={`font-body font-black ${esDesktop ? 'text-lg' : 'text-base'}`} style={{ color: meta.color }}>
+        <span className={`font-body font-black ${esDesktop ? 'text-lg' : 'text-base'} ${meta.colorClass}`}>
           {SIMBOLO_MONEDA}{Number(pedido.total).toFixed(2)}
         </span>
       </div>
@@ -625,49 +622,31 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
             <div className="w-4 h-4 rounded-full border-2 border-ink-200 border-t-ink-600 animate-spin" />
           </div>
         )}
-        {/* Mobile: custom dropdown */}
+        {/* Mobile: full-width button stack */}
         {!esDesktop && (
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setDropdownOpen(v => !v)}
-              disabled={esActualizando}
-              className="w-full flex items-center justify-between gap-2 bg-admin-card border-2 border-admin-border rounded-xl px-4 py-3 text-sm font-body font-bold text-admin-text focus:outline-none focus:ring-2 focus:ring-fiesta-magenta transition-colors"
-              style={{ borderLeftColor: meta.color, borderLeftWidth: '3px' }}
-            >
-              <span className="flex items-center gap-2">
-                <meta.icon size={14} style={{ color: meta.color }} />
-                {pedido.estado}
-              </span>
-              <ChevronDown size={16} className={`text-admin-muted transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {dropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setDropdownOpen(false)} />
-                <div className="absolute left-0 right-0 top-full mt-1 z-20 bg-admin-card border border-admin-border rounded-xl shadow-elevated overflow-hidden">
-                  {ESTADOS.map(estado => {
-                    const m = ESTADO_META[estado];
-                    const activo = pedido.estado === estado;
-                    return (
-                      <button
-                        key={estado}
-                        type="button"
-                        onClick={() => {
-                          if (!activo) onCambiarEstado(pedido.id, estado);
-                          setDropdownOpen(false);
-                        }}
-                        className={`w-full flex items-center gap-2.5 px-4 py-3 text-sm font-body font-bold transition-colors text-left
-                                   ${activo ? 'bg-admin-elevated text-admin-text' : 'text-admin-muted hover:bg-admin-elevated hover:text-admin-text'}`}
-                      >
-                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: m.color }} />
-                        <span className="flex-1">{estado}</span>
-                        {activo && <CheckCircle2 size={14} style={{ color: m.color }} />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
+          <div className={claseBotones}>
+            {ESTADOS.map(estado => {
+              const m = ESTADO_META[estado];
+              const activo = pedido.estado === estado;
+              return (
+                <button
+                  key={estado}
+                  onClick={() => !activo && onCambiarEstado(pedido.id, estado)}
+                  disabled={activo || esActualizando}
+                  className={claseBotonEstado}
+                  style={activo
+                    ? { background: m.color, color: 'white', boxShadow: `0 2px 8px ${m.color}55` }
+                    : { background: m.bg, color: m.color }
+                  }
+                >
+                  <span className="flex items-center gap-2">
+                    <m.icon size={18} strokeWidth={2.5} />
+                    <span>{estado}</span>
+                  </span>
+                  {activo && <CheckCircle2 size={16} className="ml-auto" />}
+                </button>
+              );
+            })}
           </div>
         )}
         {/* Desktop: button grid */}
@@ -1111,7 +1090,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
                     <IconComponent size={18} style={{ color: isActive ? '#fff' : color }} />
                   </div>
                   <div className="min-w-0">
-                    <p className={`font-display text-2xl sm:text-xl leading-none ${isActive ? 'text-white' : ''}`} role="status">
+                    <p className={`font-body font-black text-2xl sm:text-xl leading-none tabular-nums ${isActive ? 'text-white' : ''}`} role="status">
                       {contadores[key] ?? 0}
                     </p>
                     <p className={`text-[10px] sm:text-xs font-body font-bold mt-0.5 truncate ${isActive ? 'text-white/70' : 'text-admin-muted'}`}>
@@ -1161,8 +1140,8 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
         )}
 
         {error && (
-          <div className="bg-admin-card rounded-2xl p-5 text-center border-2 border-red-100">
-            <p className="text-sm font-body font-bold text-red-400">⚠️ {error}</p>
+          <div className="bg-admin-card rounded-2xl p-5 text-center border-2 border-red-100" role="alert">
+            <p className="text-sm font-body font-bold text-red-400"><span aria-hidden="true">⚠️</span> {error}</p>
             <button onClick={fetchPedidos}
               className="mt-3 text-xs font-body font-black text-admin-muted underline">
               Reintentar
@@ -1178,7 +1157,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
                 <div className="w-16 h-16 rounded-full bg-purple-50 border-2 border-purple-100 flex items-center justify-center mb-3">
                   <ClipboardList size={28} className="text-purple-300" />
                 </div>
-                <p className="font-display text-2xl text-admin-text-secondary">Todo al día</p>
+                <p className="font-body font-semibold text-xl text-admin-text-secondary">Todo al día</p>
                 <p className="text-sm font-body text-admin-muted mt-1">
                   No hay pedidos activos en este momento
                 </p>
@@ -1208,7 +1187,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
                 <div className="hidden lg:grid lg:grid-cols-[32%_68%] gap-4 h-[calc(100dvh-18rem)] min-h-[560px]">
                   <div className="bg-admin-card rounded-2xl border border-admin-border overflow-hidden flex flex-col shadow-card">
                     <div className="px-5 py-4 border-b border-admin-border">
-                      <p className="font-display text-base text-admin-text">Pedidos</p>
+                      <p className="font-body font-semibold text-sm text-admin-text">Pedidos</p>
                       <p className="text-xs font-body font-bold text-admin-muted mt-0.5">
                         {pedidosFiltrados.length} resultado{pedidosFiltrados.length !== 1 ? 's' : ''}
                       </p>
@@ -1245,7 +1224,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
 
                   <div className="bg-admin-card rounded-2xl border border-admin-border overflow-hidden flex flex-col shadow-card">
                     <div className="px-5 py-4 border-b border-admin-border">
-                      <p className="font-display text-base text-admin-text">Detalle del pedido</p>
+                      <p className="font-body font-semibold text-sm text-admin-text">Detalle del pedido</p>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4">
@@ -1268,7 +1247,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
                       ) : (
                         <div className="h-full min-h-[360px] flex flex-col items-center justify-center text-center">
                           <ClipboardList size={40} className="text-admin-muted mb-3" />
-                          <p className="font-display text-xl text-admin-muted">
+                          <p className="font-body font-medium text-lg text-admin-muted">
                             Selecciona un pedido para ver los detalles
                           </p>
                         </div>
@@ -1292,7 +1271,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
         active={vistaAdmin}
         onChange={setVistaAdmin}
         badge={contadores['Por Surtir'] ?? 0}
-        onCuenta={onSignOut}
+        onSignOut={onSignOut}
       />
     </div>
   );
