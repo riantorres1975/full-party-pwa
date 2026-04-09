@@ -49,8 +49,12 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
   const [pedidoGuardado, setPedidoGuardado] = useState(null);
 
   useEffect(() => {
-    document.body.style.overflow = isOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    if (isOpen) {
+      document.documentElement.classList.add('overflow-hidden');
+    } else {
+      document.documentElement.classList.remove('overflow-hidden');
+    }
+    return () => document.documentElement.classList.remove('overflow-hidden');
   }, [isOpen]);
 
   // Limpiar errores al cambiar tipo

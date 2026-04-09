@@ -17,7 +17,9 @@ export function useInfiniteScroll(totalItems) {
   const [cargando,     setCargando]     = useState(false);
   const sentinelRef = useRef(null);
   const observerRef = useRef(null);
+  const totalRef    = useRef(totalItems);
 
+  totalRef.current = totalItems;
   const hayMas = visibleCount < totalItems;
 
   // Resetear al inicio cuando cambia el dataset (filtros / búsqueda)
@@ -26,34 +28,32 @@ export function useInfiniteScroll(totalItems) {
     setCargando(false);
   }, []);
 
-  // Cargar siguiente batch con un pequeño delay para mostrar el spinner
-  const cargarMas = useCallback(() => {
-    if (cargando || !hayMas) return;
+  // Cargar siguiente batch sin delay artificial
+  const cargarMasRef = useRef(null);
+  cargarMasRef.current = () => {
+    if (cargando || visibleCount >= totalRef.current) return;
     setCargando(true);
-    // rAF garantiza que el spinner se pinte antes de agregar los items
     requestAnimationFrame(() => {
-      setTimeout(() => {
-        setVisibleCount(prev => Math.min(prev + BATCH_SIZE, totalItems));
-        setCargando(false);
-      }, 300);
+      setVisibleCount(prev => Math.min(prev + BATCH_SIZE, totalRef.current));
+      setCargando(false);
     });
-  }, [cargando, hayMas, totalItems]);
+  };
 
-  // Conectar IntersectionObserver al centinela
+  // Conectar IntersectionObserver al centinela (montaje único)
   useEffect(() => {
     if (!sentinelRef.current) return;
 
     observerRef.current = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) cargarMas();
+        if (entries[0].isIntersecting) cargarMasRef.current?.();
       },
-      { rootMargin: '200px' }   // empieza a cargar 200px antes del borde
+      { rootMargin: '200px' }
     );
 
     observerRef.current.observe(sentinelRef.current);
 
     return () => observerRef.current?.disconnect();
-  }, [cargarMas]);
+  }, []); // stable — only mount/unmount
 
   return { visibleCount, sentinelRef, hayMas, cargando, reset };
 }

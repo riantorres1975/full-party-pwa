@@ -2,9 +2,11 @@ import { Package } from 'lucide-react';
 import { NOMBRE_NEGOCIO } from '../data/productos';
 import { usePWA } from '../hooks/usePWA';
 import ThemeToggle from './ThemeToggle';
+import { useState } from 'react';
 
 export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onToggleTema, onRastreoClick }) {
   const { installPrompt, mostrarGuiaIOS, instalarApp } = usePWA();
+  const [showIOSGuide, setShowIOSGuide] = useState(false);
 
   const mostrarBotonInstalar = !!installPrompt || mostrarGuiaIOS;
 
@@ -15,7 +17,8 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
     }
 
     if (mostrarGuiaIOS) {
-      window.alert('Para instalar en iPhone: abre Compartir y selecciona "Agregar a pantalla de inicio".');
+      setShowIOSGuide(true);
+      setTimeout(() => setShowIOSGuide(false), 5000);
     }
   }
 
@@ -115,6 +118,15 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
           </div>
         </div>
       </div>
+
+      {/* iOS install guide banner */}
+      {showIOSGuide && (
+        <div className="mx-4 mt-1 mb-0 px-3 py-2 rounded-xl text-xs font-body font-bold text-center animate-fade-in"
+             style={{ background: 'var(--surface-muted)', color: 'var(--text-secondary)' }}
+             role="status">
+          Abre <strong>Compartir</strong> y selecciona <strong>"Agregar a pantalla de inicio"</strong>
+        </div>
+      )}
     </div>
   );
 }

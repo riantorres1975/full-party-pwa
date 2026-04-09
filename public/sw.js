@@ -1,5 +1,5 @@
 // Service Worker — Catálogo Digital PWA
-const CACHE_NAME = 'catalogo-v4';
+const CACHE_NAME = 'catalogo-v5';
 const IMG_CACHE  = 'catalogo-img-v1';
 const MAX_IMG_CACHE = 150; // max images to keep cached
 

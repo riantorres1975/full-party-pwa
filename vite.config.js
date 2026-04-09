@@ -11,7 +11,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
+          vendor:   ['react', 'react-dom'],
+          icons:    ['lucide-react'],
+          supabase: ['@supabase/supabase-js'],
         },
       },
     },

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { MessageCircle, ChevronDown, Package, LayoutGrid, ClipboardList, Search, RefreshCw, LogOut, ShoppingBag, Clock, CheckCircle2, XCircle, Phone, Truck, Store, MapPin } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { SIMBOLO_MONEDA } from '../data/productos';
+import { notificarCliente } from '../utils/whatsapp';
 import AdminCatalogo from './AdminCatalogo';
 import ThemeToggle from './ThemeToggle';
 import { useToast } from './ui/ToastProvider';
@@ -18,85 +19,6 @@ const ESTADO_META = {
   'Cancelado':          { color: '#6b7280', bg: '#f3f4f6', colorClass: 'text-gray-500',        bgClass: 'bg-gray-100',              borderClass: 'border-gray-500',        icon: XCircle },
 };
 
-
-// ── Notificación WhatsApp al cliente ────────────────────────────────────────
-export function notificarCliente(pedido, articulosSurtidos = null) {
-  const { cliente_nombre: nombre, cliente_telefono: tel, folio, estado } = pedido;
-
-  // Diccionario de emojis blindado (Code Points) para WhatsApp Web en PC
-  const EMOJI = {
-    caja: String.fromCodePoint(0x1F4E6),    // 📦
-    check: String.fromCodePoint(0x2705),    // ✅
-    cruz: String.fromCodePoint(0x274C),     // ❌
-    alerta: String.fromCodePoint(0x26A0),   // ⚠️
-    dinero: String.fromCodePoint(0x1F4B0),  // 💰
-    fiesta: String.fromCodePoint(0x1F389),  // 🎉
-    bolsa: String.fromCodePoint(0x1F6CD),   // 🛍️
-    mono: String.fromCodePoint(0x1F380),    // 🎀
-    globo: String.fromCodePoint(0x1F388),   // 🎈
-    festejo: String.fromCodePoint(0x1F973)  // 🥳
-  };
-
-  let mensaje = '';
-
-  // 1. Lógica cuando el pedido está listo y tenemos la lista de surtido
-  if (estado === 'Listo para Entrega' && articulosSurtidos) {
-    const encontrados = articulosSurtidos.filter(a => a.encontrado);
-    const faltantes   = articulosSurtidos.filter(a => !a.encontrado);
-    const nuevoTotal  = encontrados.reduce((s, a) => s + a.precio * a.cantidad, 0);
-
-    const listaEncontrados = encontrados
-      .map(a => `  ${EMOJI.check} ${a.cantidad}x ${a.nombre} - ${SIMBOLO_MONEDA}${(a.precio * a.cantidad).toFixed(2)}`)
-      .join('\n');
-
-    const listaFaltantes = faltantes.length > 0
-      ? `\n${EMOJI.alerta} *Lamentablemente no tuvimos en existencia:*\n` +
-        faltantes.map(a => `  ${EMOJI.cruz} ${a.nombre}`).join('\n') + '\n'
-      : '';
-
-    mensaje =
-      `¡Hola ${nombre}! Tu pedido *${folio}* ya está listo y empacado. ${EMOJI.caja}\n\n` +
-      `*Artículos incluidos:*\n${listaEncontrados}\n` +
-      listaFaltantes +
-      `\n${EMOJI.dinero} *Tu total a pagar es: ${SIMBOLO_MONEDA}${nuevoTotal.toFixed(2)}*\n\n` +
-      `¡Nos vemos pronto! ${EMOJI.fiesta}`;
-      
-  } else {
-    // 2. Lógica para los demás estados
-    switch (estado) {
-      case 'Por Surtir':
-        mensaje = `¡Hola ${nombre}! ${EMOJI.fiesta} Recibimos tu pedido *${folio}* y ya está en nuestro sistema. En breve comenzamos a prepararlo. ¡Gracias por tu compra! ${EMOJI.bolsa}`;
-        break;
-      case 'Armando Pedido':
-        mensaje = `¡Hola ${nombre}! ${EMOJI.mono} Te confirmamos que ya estamos preparando tu pedido *${folio}*. En cuanto esté listo te avisamos. ¡Pronto la fiesta! ${EMOJI.globo}`;
-        break;
-      case 'Listo para Entrega':
-        // Este caso se dispara si está "Listo" pero NO se pasó el array de articulosSurtidos
-        mensaje = `¡Buenas noticias ${nombre}! ${EMOJI.fiesta} Tu pedido *${folio}* ya está listo. Puedes pasar a recogerlo o en breve saldrá a domicilio. ¡A celebrar! ${EMOJI.festejo}`;
-        break;
-      case 'Cancelado':
-        mensaje = `Hola ${nombre}, lamentamos informarte que tu pedido *${folio}* ha sido cancelado. ${EMOJI.cruz}\n\nSi tienes dudas, no dudes en escribirnos. ¡Esperamos verte pronto! ${EMOJI.globo}`;
-        break;
-      default:
-        mensaje = `Hola ${nombre}, hay una actualización en tu pedido *${folio}*. Estado actual: ${estado}.`;
-    }
-  }
-
-  // 3. Generación de URL Segura y apertura
-  const telefonoLimpio = tel.replace(/[\s\-\(\)]/g, '');
-  
-  const phoneParam = (telefonoLimpio.startsWith('52') && telefonoLimpio.length >= 12) 
-    ? telefonoLimpio 
-    : `52${telefonoLimpio}`;
-
-  const params = new URLSearchParams({
-    phone: phoneParam,
-    text: mensaje
-  });
-
-  const url = `https://api.whatsapp.com/send?${params.toString()}`;
-  window.open(url, '_blank', 'noopener,noreferrer');
-}
 
 // ── Lista de artículos expandible + Picking dinámico ────────────────────────
 function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
