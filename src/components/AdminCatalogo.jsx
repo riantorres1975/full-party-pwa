@@ -94,11 +94,17 @@ export default function AdminCatalogo() {
     return productos.filter(p => p.stock_ilimitado === false && p.stock_actual <= (p.stock_minimo || 5));
   }, [productos]);
 
+  const productosNuevos = useMemo(() => {
+    return productos.filter(p => p.es_nuevo === true);
+  }, [productos]);
+
   const filtrados = useMemo(() => {
     let lista = productos;
 
     if (filtroActivo === 'stock-bajo') {
       lista = productosEnAlerta;
+    } else if (filtroActivo === 'nuevo') {
+      lista = productosNuevos;
     }
 
     const q = busqueda.trim().toLowerCase();
@@ -111,7 +117,7 @@ export default function AdminCatalogo() {
       const c = (p.categoria || '').toLowerCase();
       return n.includes(q) || m.includes(q) || t.includes(q) || c.includes(q);
     });
-  }, [productos, busqueda, filtroActivo, productosEnAlerta]);
+  }, [productos, busqueda, filtroActivo, productosEnAlerta, productosNuevos]);
 
   async function handleToggleDisponibilidad(p) {
     const siguiente = !p.activo;
@@ -201,6 +207,18 @@ export default function AdminCatalogo() {
               >
                 <span className="w-2 h-2 rounded-full bg-red-500" />
                 Stock Bajo ({productosEnAlerta.length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFiltroActivo('nuevo')}
+                className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-body font-black border-2 transition-colors"
+                style={filtroActivo === 'nuevo'
+                  ? { background: '#f0fdf4', color: '#166534', borderColor: '#86efac' }
+                  : { background: 'white', color: '#16a34a', borderColor: '#bbf7d0' }}
+              >
+                <span className="w-2 h-2 rounded-full bg-green-500" />
+                Nuevos ({productosNuevos.length})
               </button>
             </div>
 
