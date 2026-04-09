@@ -98,7 +98,7 @@ export default function AppRouter() {
   // Ruta pública → catálogo normal
   return (
     <ToastProvider>
-      <App temaOscuro={isDarkMode} onToggleTema={toggleTheme} />
+      <App temaOscuro={isDarkMode} onToggleTema={toggleTheme} isAdmin={!!session} />
     </ToastProvider>
   );
 }

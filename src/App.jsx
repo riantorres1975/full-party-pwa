@@ -14,7 +14,7 @@ import RastreoPedido      from './components/RastreoPedido';
 import RedesSociales      from './components/RedesSociales';
 import SidebarFiltrosDesktop from './components/SidebarFiltrosDesktop';
 
-export default function App({ temaOscuro, onToggleTema }) {
+export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   // ── Datos desde Supabase ───────────────────────────────────────────────────
   const { productos, loading, error, refetch } = useProductos();
 
@@ -172,6 +172,7 @@ export default function App({ temaOscuro, onToggleTema }) {
             onRastreoClick={() => setRastreoAbierto(true)}
             temaOscuro={temaOscuro}
             onToggleTema={onToggleTema}
+            isAdmin={isAdmin}
           />
 
           <div className="pt-1">
