@@ -36,7 +36,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
   const { items, total, cantidadTotal,
           agregarItem, reducirItem, eliminarItem, limpiarCarrito, getCantidad,
-          stockError,
+          stockError, sincronizarStock,
   } = useCarrito();
 
   const toast = useToast();
@@ -44,6 +44,11 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   useEffect(() => {
     if (stockError) toast.warning(stockError);
   }, [stockError]);
+
+  // ── Sincronizar carrito cuando productos cambian en tiempo real ─────────
+  useEffect(() => {
+    if (productos.length > 0) sincronizarStock(productos);
+  }, [productos, sincronizarStock]);
 
   useEffect(() => {
     const yaVioIntro = sessionStorage.getItem('fp_intro_v1') === '1';
@@ -312,6 +317,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
         onReducir={reducirItem}
         onEliminar={eliminarItem}
         onLimpiar={limpiarCarrito}
+        productos={productos}
       />
 
       <ModalFiltros

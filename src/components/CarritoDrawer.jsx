@@ -36,7 +36,7 @@ const inputDynStyle = {
   borderColor: 'var(--border-default)',
 };
 
-export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgregar, onReducir, onEliminar, onLimpiar }) {
+export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgregar, onReducir, onEliminar, onLimpiar, productos = [] }) {
 
   const { guardarPedido, guardando } = usePedido();
 
@@ -79,8 +79,16 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
   const telefonoLimpio = telefono.replace(/\D/g, '');
   const resultadoTel = validarTelefonoMX(telefonoLimpio);
   const telefonoValido = resultadoTel.valido;
+
+  // Verificar si algún item del carrito está agotado en tiempo real
+  const hayAgotados = items.some(item => {
+    const real = productos.find(p => p.id === item.id);
+    if (!real) return false;
+    return real.activo === false || (real.stock_ilimitado === false && (real.stock_actual || 0) === 0);
+  });
+
   const formularioListo = nombre.trim().length > 0 && telefonoValido &&
-    (tipoEntrega === 'tienda' || direccion.trim().length > 0);
+    (tipoEntrega === 'tienda' || direccion.trim().length > 0) && !hayAgotados;
 
   const totalCalculado = items.reduce((acc, item) => {
     const precioAplicable = obtenerPrecioAplicable(item, item.cantidad);
@@ -287,12 +295,39 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                   const precioAplicable = obtenerPrecioAplicable(item, item.cantidad);
                   const hayDescuento = precioAplicable < precioBase;
                   const subtotal = precioAplicable * item.cantidad;
+
+                  // Cruzar con datos en vivo del producto
+                  const prodReal = productos.find(p => p.id === item.id);
+                  const agotadoRT = prodReal
+                    ? (prodReal.activo === false || (prodReal.stock_ilimitado === false && (prodReal.stock_actual || 0) === 0))
+                    : false;
+                  const stockBajoRT = prodReal && !agotadoRT && prodReal.stock_ilimitado === false
+                    && (prodReal.stock_actual || 0) > 0 && item.cantidad >= (prodReal.stock_actual || 0);
+
                   return (
                     <li key={item.id}
-                        className="flex gap-3 items-center bg-white rounded-2xl p-3"
-                        style={{ border: `2px solid ${c}22` }}>
+                        className="relative flex gap-3 items-center bg-white rounded-2xl p-3"
+                        style={{ border: `2px solid ${agotadoRT ? '#ef4444' : c + '22'}`, opacity: agotadoRT ? 0.7 : 1 }}>
+
+                      {/* Badge agotado en tiempo real */}
+                      {agotadoRT && (
+                        <div className="absolute -top-2 -right-2 z-10 bg-red-500 text-white text-[9px] font-body font-black
+                                        px-2 py-0.5 rounded-full shadow-md">
+                          Agotado
+                        </div>
+                      )}
+
+                      {/* Badge stock bajo en tiempo real */}
+                      {stockBajoRT && !agotadoRT && (
+                        <div className="absolute -top-2 -right-2 z-10 text-white text-[9px] font-body font-black
+                                        px-2 py-0.5 rounded-full shadow-md"
+                             style={{ background: 'linear-gradient(135deg, #f97316, #dc2626)' }}>
+                          Máximo {prodReal.stock_actual}
+                        </div>
+                      )}
+
                       <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-ink-50"
-                           style={{ border: `2px solid ${c}44` }}>
+                           style={{ border: `2px solid ${c}44`, filter: agotadoRT ? 'grayscale(60%)' : 'none' }}>
                         <img src={item.imagen_url} alt={item.nombre}
                           className="w-full h-full object-cover"
                           onError={(e) => { e.target.src = `https://placehold.co/56x56/f3e8ff/a855f7?text=?`; }} />
@@ -313,15 +348,17 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                             {SIMBOLO_MONEDA}{precioBase.toFixed(2)} c/u
                           </p>
                         )}
-                        <p className="font-body text-sm font-black mt-0.5" style={{ color: c }}>
+                        <p className="font-body text-sm font-black mt-0.5" style={{ color: agotadoRT ? '#9ca3af' : c }}>
                           {SIMBOLO_MONEDA}{subtotal.toFixed(2)}
                         </p>
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <button onClick={() => onReducir(item.id)}
-                          className="w-7 h-7 flex items-center justify-center rounded-full
+                        <button onClick={() => !agotadoRT && onReducir(item.id)}
+                          disabled={agotadoRT}
+                          className={`w-7 h-7 flex items-center justify-center rounded-full
                                      bg-ink-100 text-ink-600 border-2 border-ink-200
-                                     transition-all active:scale-90 hover:border-fiesta-magenta">
+                                     transition-all hover:border-fiesta-magenta
+                                     ${agotadoRT ? 'opacity-40 cursor-not-allowed' : 'active:scale-90'}`}>
                           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" />
                           </svg>
@@ -329,7 +366,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                         <span className="font-body font-black text-sm text-ink-900 w-5 text-center">{item.cantidad}</span>
                         
                         {(() => {
-                          const maxStockAlcanzado = item.stock_ilimitado !== true && item.stock_actual != null && item.cantidad >= item.stock_actual;
+                          const maxStockAlcanzado = agotadoRT || (item.stock_ilimitado !== true && item.stock_actual != null && item.cantidad >= item.stock_actual);
                           return (
                             <button onClick={() => !maxStockAlcanzado && onAgregar(item)}
                               disabled={maxStockAlcanzado}
@@ -505,6 +542,12 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                     {SIMBOLO_MONEDA}{totalCalculado.toFixed(2)}
                   </span>
                 </div>
+
+                {hayAgotados && (
+                  <p className="text-xs font-body font-bold text-red-500 text-center py-1">
+                    ⚠️ Tienes productos agotados en el carrito. Retíralos para continuar.
+                  </p>
+                )}
 
                 <button
                   onClick={handleConfirmar}

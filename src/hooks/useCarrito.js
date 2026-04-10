@@ -117,6 +117,47 @@ export function useCarrito() {
   // Alias semántico para compatibilidad con props existentes
   const limpiarCarrito = vaciarCarrito;
 
+  // ── Sincronizar carrito con datos de productos en vivo (Realtime) ────────
+  const sincronizarStock = useCallback((productosActuales) => {
+    if (!productosActuales || productosActuales.length === 0) return;
+    const mapaProductos = new Map(productosActuales.map(p => [p.id, p]));
+
+    setItems(prev => {
+      let cambio = false;
+      const nuevos = prev.map(item => {
+        const real = mapaProductos.get(item.id);
+        if (!real) return item; // producto eliminado — se queda hasta que el user lo quite
+
+        const updates = {};
+
+        // Sincronizar campos clave
+        if (real.stock_actual !== item.stock_actual)       updates.stock_actual = real.stock_actual;
+        if (real.stock_ilimitado !== item.stock_ilimitado) updates.stock_ilimitado = real.stock_ilimitado;
+        if (real.precio !== item.precio)                   updates.precio = real.precio;
+        if (real.activo !== item.activo)                   updates.activo = real.activo;
+        if (real.precios_mayoreo !== item.precios_mayoreo) updates.precios_mayoreo = real.precios_mayoreo;
+        if (real.nombre !== item.nombre)                   updates.nombre = real.nombre;
+        if (real.imagen_url !== item.imagen_url)           updates.imagen_url = real.imagen_url;
+
+        // Ajustar cantidad si excede el stock disponible
+        const stockReal = real.stock_actual || 0;
+        if (real.stock_ilimitado === false && item.cantidad > stockReal && stockReal > 0) {
+          updates.cantidad = stockReal;
+        }
+        // Si está inactivo o stock llegó a 0 (y no es ilimitado) — no eliminamos, marcamos
+        if (real.activo === false || (real.stock_ilimitado === false && stockReal === 0)) {
+          updates.activo = real.activo;
+        }
+
+        if (Object.keys(updates).length === 0) return item;
+        cambio = true;
+        return { ...item, ...updates };
+      });
+
+      return cambio ? nuevos : prev;
+    });
+  }, []);
+
   // ── Derivados ──────────────────────────────────────────────────────────────
   const total = items.reduce((acc, i) => {
     const precioAplicable = obtenerPrecioAplicable(i, i.cantidad);
@@ -140,5 +181,6 @@ export function useCarrito() {
     limpiarCarrito,
     vaciarCarrito,
     getCantidad,
+    sincronizarStock,
   };
 }

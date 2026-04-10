@@ -4,7 +4,7 @@ import { registrarCategoria, registrarMarca, registrarTamano } from '../data/pro
 
 /**
  * useProductos
- * Fetch de todos los productos desde Supabase.
+ * Fetch de todos los productos desde Supabase + suscripción Realtime.
  * Retorna { productos, loading, error, refetch }
  *
  * - productos : array con los datos ([] mientras carga)
@@ -56,6 +56,39 @@ export function useProductos() {
     fetchProductos();
     return () => { cancelado = true; };
   }, [tick]);
+
+  // ── Suscripción Realtime — escucha INSERT / UPDATE / DELETE en productos ──
+  useEffect(() => {
+    const channel = supabase
+      .channel('productos-rt')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'productos' },
+        ({ new: nuevo }) => {
+          registrarCategoria(nuevo.categoria);
+          registrarMarca(nuevo.marca);
+          registrarTamano(nuevo.tamano);
+          setProductos(prev => [nuevo, ...prev]);
+        })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'productos' },
+        ({ new: actualizado }) => {
+          registrarCategoria(actualizado.categoria);
+          registrarMarca(actualizado.marca);
+          registrarTamano(actualizado.tamano);
+          setProductos(prev =>
+            prev.map(p => p.id === actualizado.id ? actualizado : p)
+          );
+        })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'productos' },
+        ({ old: eliminado }) => {
+          setProductos(prev => prev.filter(p => p.id !== eliminado.id));
+        })
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR') {
+          console.warn('[Realtime] Error en canal de productos — verifica que Replication esté activo en Supabase');
+        }
+      });
+
+    return () => supabase.removeChannel(channel);
+  }, []);
 
   const refetch = () => setTick(t => t + 1);
 
