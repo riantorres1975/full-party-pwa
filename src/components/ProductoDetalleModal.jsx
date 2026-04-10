@@ -161,7 +161,7 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
                               md:pt-6 md:px-6 md:pb-6 flex flex-col">
 
                 {(esNuevo || agotado || stockBajo || (enCarrito && !agotado)) && (
-                  <div className="flex flex-wrap gap-2 mb-3 pr-10 sm:pr-12">
+                  <div className="flex flex-wrap gap-1.5 mb-2.5">
                     {esNuevo && (
                       <span
                         className="inline-flex items-center gap-1 text-[10px] font-body font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white shadow-sm"
