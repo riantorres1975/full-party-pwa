@@ -258,7 +258,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                   </div>
                 </div>
 
-                <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-4">
+                <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-16">
                   {loading && <ProductosSkeleton cantidad={8} />}
 
                   {!loading && error && (
