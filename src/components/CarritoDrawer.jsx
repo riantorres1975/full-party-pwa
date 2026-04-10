@@ -191,7 +191,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
             )}
           </div>
           <div className="flex items-center gap-2">
-            {items.length > 0 && (
+            {items.length > 0 && !pedidoGuardado && (
               <button
                 onClick={onLimpiar}
                 className="p-2 rounded-full bg-ink-100 hover:bg-red-50 text-ink-400
