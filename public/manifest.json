@@ -4,8 +4,8 @@
   "description": "Ordena tus productos favoritos desde tu celular",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#0a0a0a",
+  "background_color": "#fbf7f3",
+  "theme_color": "#fbf7f3",
   "orientation": "any",
   "icons": [
     {
