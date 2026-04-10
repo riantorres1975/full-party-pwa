@@ -54,7 +54,7 @@ export function usePedido() {
       return { folio: data.folio, error: null };
     } catch (err) {
       console.error('[usePedido] guardarPedido:', err.message);
-      return { folio: null, error: err.message };
+      return { folio: null, error: 'No se pudo registrar el pedido. Tu pedido se enviará por WhatsApp.' };
     } finally {
       setGuardando(false);
     }
@@ -78,7 +78,8 @@ export function usePedido() {
       if (error) throw error;
       return { pedidos: data ?? [], error: null };
     } catch (err) {
-      return { pedidos: [], error: err.message };
+      console.error('[usePedido] buscarPedido:', err.message);
+      return { pedidos: [], error: 'No se pudo buscar el pedido. Intenta de nuevo.' };
     } finally {
       setBuscando(false);
     }

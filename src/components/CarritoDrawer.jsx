@@ -97,10 +97,17 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
 
   const validar = () => {
     const e = {};
-    if (!nombre.trim())    e.nombre   = 'Ingresa tu nombre';
+    const nombreLimpio = nombre.trim();
+    if (!nombreLimpio) e.nombre = 'Ingresa tu nombre';
+    else if (nombreLimpio.length > 100) e.nombre = 'Nombre demasiado largo (máx. 100 caracteres)';
     if (!telefonoValido)   e.telefono = resultadoTel.error || 'Número de teléfono inválido';
-    if (tipoEntrega === 'envio' && !direccion.trim())
-      e.direccion = 'Ingresa la dirección de envío';
+    if (tipoEntrega === 'envio') {
+      const dirLimpia = direccion.trim();
+      if (!dirLimpia) e.direccion = 'Ingresa la dirección de envío';
+      else if (dirLimpia.length > 300) e.direccion = 'Dirección demasiado larga (máx. 300 caracteres)';
+    }
+    if (items.length === 0) e.nombre = 'El carrito está vacío';
+    if (items.length > 50) e.nombre = 'Demasiados productos en el carrito';
     setErrores(e);
     return Object.keys(e).length === 0;
   };
@@ -472,9 +479,12 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                     </p>
                   </div>
 
-                  {/* Honeypot — campo invisible anti-bot */}
-                  <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }}>
+                  {/* Honeypot — campo invisible anti-bot (name atractivo para crawlers) */}
+                  <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+                    <label htmlFor="website">Website</label>
                     <input
+                      id="website"
+                      name="website"
                       type="text"
                       tabIndex={-1}
                       autoComplete="off"

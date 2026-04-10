@@ -1,4 +1,18 @@
+# Env (NUNCA commitear credenciales)
 .env
 .env.local
+.env.*.local
+
+# Deps & build
 node_modules
 dist
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

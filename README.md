@@ -13,7 +13,7 @@ Catálogo digital para tienda de artículos de fiesta, construido como Progressi
 | React | 18.3 | UI y manejo de estado |
 | Vite | 7.3 | Bundler y dev server |
 | Tailwind CSS | 3.4 | Estilos utilitarios |
-| Supabase JS | 2.45 | Base de datos, Auth y Realtime |
+| Supabase JS | 2.98 | Base de datos, Auth y Realtime |
 | lucide-react | latest | Íconos SVG |
 | PWA nativa | — | Service Worker + manifest.json |
 
@@ -36,6 +36,12 @@ catalogo-pwa/
 │   └── sw.js                      ← Service Worker — estrategia Network First
 │
 ├── supabase_setup.sql             ← Script único de BD (Tablas, RLS, Políticas de Admin)
+├── supabase_rate_limit.sql        ← Rate limiting server-side + validación en BD
+├── vercel.json                    ← Headers de seguridad (CSP, HSTS, X-Frame-Options)
+│
+├── .github/
+│   └── workflows/
+│       └── security.yml           ← CI: npm audit + build + security tests (push + semanal)
 │
 └── src/
     ├── main.jsx                   ← entry point + registro del Service Worker
@@ -127,10 +133,11 @@ Las credenciales están en **Supabase Dashboard → Settings → API**.
 
 ### 3. Crear las tablas en Supabase
 
-Ejecuta el script unificado en **Supabase → SQL Editor**:
+Ejecuta los scripts en **Supabase → SQL Editor**:
 
 ```text
-1. supabase_setup.sql  → Tablas, índices, y candados de seguridad (Políticas RLS rigurosas).
+1. supabase_setup.sql       → Tablas, índices y políticas RLS.
+2. supabase_rate_limit.sql  → Rate limiting server-side + validaciones en BD (opcional pero recomendado).
 ```
 
 > **IMPORTANTE:** Lee el final del archivo `supabase_setup.sql` para el paso manual de asignar tu propio UUID a la tabla segura `public.admins`, lo cual te habilitará para leer pedidos completos y editar el catálogo.
@@ -155,7 +162,7 @@ En **Supabase → Authentication → Users → Add user**, crea el usuario con e
 
 ```bash
 npm run dev
-# http://localhost:5173
+# http://localhost:3000
 ```
 
 ---
@@ -400,7 +407,9 @@ Enrutamiento por **hash** (`window.location.hash`) sin react-router — compatib
 npm run build   # genera la carpeta /dist lista para subir
 ```
 
-Sube la carpeta `/dist` a **Netlify** o **Vercel** y agrega las variables de entorno (`VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`) en la configuración del hosting.
+Sube la carpeta `/dist` a **Vercel** y agrega las variables de entorno (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_ADMIN_EMAILS`) en la configuración del hosting.
+
+El archivo `vercel.json` incluido configura automáticamente los headers de seguridad (CSP, HSTS, X-Frame-Options, etc.).
 
 > En Netlify agrega un archivo `public/_redirects` con el contenido `/* /index.html 200` para que la navegación funcione correctamente al recargar.
 
@@ -409,7 +418,7 @@ Sube la carpeta `/dist` a **Netlify** o **Vercel** y agrega las variables de ent
 ## 📋 Scripts disponibles
 
 ```bash
-npm run dev      # servidor de desarrollo → http://localhost:5173
+npm run dev      # servidor de desarrollo → http://localhost:3000
 npm run build    # build de producción   → /dist
 npm run preview  # previsualizar el build localmente
 ```
@@ -428,6 +437,50 @@ npm run preview  # previsualizar el build localmente
 - **Toggle accesible** — `role="switch"` + `aria-checked` + soporte teclado
 - **`prefers-reduced-motion`** — media query CSS global que desactiva todas las animaciones y transiciones para usuarios con sensibilidad al movimiento
 - **Navegación por teclado en `SelectCategoria`** — ↑ ↓ Home End Enter Escape con `data-[focused]` outline visible y `role="listbox"` / `role="option"` / `aria-selected`
+
+---
+
+## 🔒 Seguridad
+
+### Auditoría (Abril 2026)
+
+Se realizó una auditoría de seguridad completa del proyecto con las siguientes mejoras implementadas:
+
+#### Headers de seguridad (`vercel.json`)
+
+| Header | Valor |
+|---|---|
+| Content-Security-Policy | Restrictivo: solo `self`, Supabase y Google Fonts |
+| Strict-Transport-Security | 2 años con preload |
+| X-Frame-Options | DENY (anti-clickjacking) |
+| X-Content-Type-Options | nosniff |
+| Referrer-Policy | strict-origin-when-cross-origin |
+| Permissions-Policy | camera, microphone deshabilitados |
+
+#### Protecciones implementadas
+
+- **Row Level Security (RLS)** — control de acceso a nivel de base de datos
+- **RBAC por email** — lista blanca de administradores via `VITE_ADMIN_EMAILS`
+- **Rate limiting dual** — client-side (5 pedidos/30min) + server-side (trigger en BD)
+- **Validación de inputs** — límites de longitud en nombre (100), dirección (300), items (50)
+- **Honeypot anti-bot** — campo invisible con atributos atractivos para crawlers
+- **Validación de teléfono** — 190+ ladas mexicanas reales (IFT)
+- **Upload seguro** — validación de MIME type, extensión, tamaño (5 MB) y magic bytes
+- **Sanitización de errores** — mensajes genéricos al usuario, detalles solo en console
+- **Session guard** — auto-logout en JWT expirado con detección robusta
+- **Service Worker seguro** — sin inline scripts, fallback offline CSP-compatible
+- **Cache seguro** — `sw.js` con `no-cache`, assets con `immutable`
+- **MFA habilitado** — autenticación de dos factores para cuentas admin
+- **52 tests de seguridad** — suite automatizada que valida todas las defensas
+- **CI/CD con auditoría** — GitHub Actions ejecuta `npm audit` + build + tests en cada push
+
+#### Rate limiting server-side (`supabase_rate_limit.sql`)
+
+Trigger en PostgreSQL que valida antes de cada INSERT en `pedidos`:
+- Máximo 10 pedidos por teléfono en 30 minutos
+- Longitud máxima de nombre, dirección y teléfono
+- Total no negativo
+- Al menos 1 producto, máximo 50 por pedido
 
 ---
 
