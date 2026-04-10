@@ -10,6 +10,8 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
   const dialogRef = useRef(null);
   useFocusTrap(dialogRef, !!producto && !cerrando);
 
+  const modalHeight = 'min(92dvh, 820px)';
+
   function iniciarCierre() {
     if (closeTimerRef.current) return;
     setCerrando(true);
@@ -93,7 +95,7 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
           aria-modal="true"
           aria-label={`Detalle de ${producto.nombre}`}
           className={`relative w-full sm:max-w-[480px] md:max-w-[720px] lg:max-w-[800px]
-                     max-h-[94vh] sm:max-h-[88vh]
+                     h-[92dvh] sm:h-auto
                      rounded-t-3xl sm:rounded-2xl overflow-hidden
                      shadow-2xl transition-all duration-200 ease-out
                      ${
@@ -102,6 +104,8 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
                         : 'opacity-100 translate-y-0 scale-100'
                      }`}
           style={{
+            height: modalHeight,
+            maxHeight: modalHeight,
             boxShadow: '0 -8px 60px rgba(10, 5, 20, 0.5)',
             background: 'var(--surface-card)',
             border: '1px solid var(--border-default)',
@@ -132,11 +136,11 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
           </button>
 
           {/* Layout: stacked en mobile, side-by-side en md+ */}
-          <div className="md:flex md:items-stretch max-h-[94vh] sm:max-h-[88vh]">
+          <div className="flex h-full flex-col md:flex-row md:items-stretch">
             {/* Imagen */}
-            <div className="relative w-full md:w-1/2 flex-shrink-0">
+            <div className="relative w-full md:w-1/2 flex-shrink-0 md:h-full">
               <div
-                className="aspect-square sm:aspect-[4/3] md:aspect-auto md:min-h-[400px] md:h-full
+                className="h-[38dvh] min-h-[250px] sm:h-[40dvh] md:h-full md:min-h-0
                            overflow-hidden flex items-center justify-center p-6 sm:p-8 relative"
                 style={{ background: 'var(--surface-card)' }}
               >
@@ -148,47 +152,51 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
                     e.target.src = `https://placehold.co/900x900/f3e8ff/a855f7?text=${encodeURIComponent(producto.nombre)}`;
                   }}
                 />
-
-                {/* Badges flotantes sobre la imagen */}
-                <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-                  {esNuevo && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-body font-black uppercase tracking-wider
-                                     px-2.5 py-1 rounded-full text-white shadow-md"
-                          style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}>
-                      <Sparkles size={10} /> Nuevo
-                    </span>
-                  )}
-                  {agotado && (
-                    <span className="text-[10px] font-body font-black uppercase tracking-wider
-                                     px-2.5 py-1 rounded-full text-white bg-ink-800/80 backdrop-blur-sm shadow-md">
-                      😔 Agotado
-                    </span>
-                  )}
-                  {stockBajo && (
-                    <span className="text-[10px] font-body font-black
-                                     px-2.5 py-1 rounded-full text-white shadow-md"
-                          style={{ background: 'linear-gradient(135deg, #f97316, #dc2626)' }}>
-                      ¡Últimos {producto.stock_actual}!
-                    </span>
-                  )}
-                </div>
-
-                {enCarrito && !agotado && (
-                  <div className="absolute top-3 right-3 min-w-[28px] h-7
-                                  flex items-center justify-center px-2 rounded-full
-                                  text-[12px] font-body font-black
-                                  bg-white text-ink-900 shadow-lg"
-                       style={{ boxShadow: '0 2px 12px rgba(168,85,247,0.3)' }}>
-                    {cantidad}
-                  </div>
-                )}
               </div>
             </div>
 
             {/* Contenido */}
-            <div className="md:w-1/2 md:flex md:flex-col">
-              <div className="px-5 pt-4 pb-5 overflow-y-auto flex-1
+            <div className="min-h-0 md:w-1/2 md:flex md:flex-col md:h-full">
+              <div className="px-5 pt-4 pb-5 overflow-y-auto flex-1 min-h-0
                               md:pt-6 md:px-6 md:pb-6 flex flex-col">
+
+                {(esNuevo || agotado || stockBajo || (enCarrito && !agotado)) && (
+                  <div className="flex flex-wrap gap-2 mb-3 pr-10 sm:pr-12">
+                    {esNuevo && (
+                      <span
+                        className="inline-flex items-center gap-1 text-[10px] font-body font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white shadow-sm"
+                        style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}
+                      >
+                        <Sparkles size={10} /> Nuevo
+                      </span>
+                    )}
+                    {agotado && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-body font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white shadow-sm bg-ink-800/80">
+                        😔 Agotado
+                      </span>
+                    )}
+                    {stockBajo && (
+                      <span
+                        className="inline-flex items-center text-[10px] font-body font-black px-2.5 py-1 rounded-full text-white shadow-sm"
+                        style={{ background: 'linear-gradient(135deg, #f97316, #dc2626)' }}
+                      >
+                        ¡Últimos {producto.stock_actual}!
+                      </span>
+                    )}
+                    {enCarrito && !agotado && (
+                      <span
+                        className="inline-flex items-center gap-1 text-[10px] font-body font-black px-2.5 py-1 rounded-full"
+                        style={{
+                          background: 'rgba(168,85,247,0.12)',
+                          color: '#7c3aed',
+                          border: '1px solid rgba(168,85,247,0.2)',
+                        }}
+                      >
+                        <ShoppingCart size={10} strokeWidth={2.5} /> {cantidad} en carrito
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {/* Categoría chip */}
                 {categoria && (
