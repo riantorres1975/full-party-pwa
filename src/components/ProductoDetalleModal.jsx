@@ -136,12 +136,12 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
           </button>
 
           {/* Layout: stacked en mobile, side-by-side en md+ */}
-          <div className="flex h-full flex-col md:flex-row md:items-stretch">
+          <div className="flex h-full flex-col md:flex-row md:items-stretch overflow-hidden">
             {/* Imagen */}
-            <div className="relative w-full md:w-1/2 flex-shrink-0 md:h-full">
+            <div className="relative w-full md:w-1/2 shrink md:shrink-0 md:h-full min-h-0">
               <div
-                className="h-[38dvh] min-h-[250px] sm:h-[40dvh] md:h-full md:min-h-0
-                           overflow-hidden flex items-center justify-center p-6 sm:p-8 relative"
+                className="h-[32dvh] min-h-[180px] sm:h-[38dvh] md:h-full md:min-h-0
+                           overflow-hidden flex items-center justify-center p-4 sm:p-8 relative"
                 style={{ background: 'var(--surface-card)' }}
               >
                 <img
@@ -156,8 +156,8 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
             </div>
 
             {/* Contenido */}
-            <div className="min-h-0 md:w-1/2 md:flex md:flex-col md:h-full">
-              <div className="px-5 pt-4 pb-5 overflow-y-auto flex-1 min-h-0
+            <div className="min-h-0 flex-1 md:w-1/2 flex flex-col md:h-full">
+              <div className="px-5 pt-3 pb-3 overflow-y-auto flex-1 min-h-0
                               md:pt-6 md:px-6 md:pb-6 flex flex-col">
 
                 {(esNuevo || agotado || stockBajo || (enCarrito && !agotado)) && (
@@ -310,7 +310,7 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
               </div>
 
               {/* Botón agregar — fuera del scroll, siempre visible */}
-              <div className="px-5 pb-5 pt-3 md:px-6 md:pb-6 flex-shrink-0"
+              <div className="px-5 pb-5 pt-2 md:px-6 md:pb-6 flex-shrink-0"
                    style={{ borderTop: '1px solid var(--border-soft)' }}>
                 <button
                   type="button"
