@@ -178,7 +178,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
         className={`
           fixed inset-x-0 bottom-0 z-50 rounded-t-3xl shadow-2xl
           max-h-[92vh] flex flex-col safe-bottom
-          sm:max-w-xl sm:left-auto sm:right-6 sm:rounded-3xl sm:bottom-6
+          sm:w-[26rem] sm:max-w-[calc(100vw-3rem)] sm:left-auto sm:right-6 sm:rounded-3xl sm:bottom-6
           transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
           ${isOpen ? 'translate-y-0' : 'translate-y-full sm:translate-y-[calc(100%+2rem)]'}
         `}
