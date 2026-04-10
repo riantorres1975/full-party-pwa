@@ -127,12 +127,19 @@ function ProductCardInner({
           {/* Precio */}
           <div className="mt-auto pt-1.5">
             {hayDescuento && enCarrito ? (
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-[11px] text-ink-400 line-through font-body font-bold">
+              <div className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-body font-black text-[15px] sm:text-base"
+                        style={{ color: '#16a34a' }}>
+                    {SIMBOLO_MONEDA}{precioAplicable.toFixed(2)}
+                  </span>
+                  <span className="text-[9px] font-body font-black px-1.5 py-0.5 rounded-full text-white"
+                        style={{ background: 'linear-gradient(135deg, #16a34a, #059669)' }}>
+                    −{Math.round((1 - precioAplicable / precioBase) * 100)}%
+                  </span>
+                </div>
+                <span className="text-[10px] text-ink-400 line-through font-body font-medium">
                   {SIMBOLO_MONEDA}{precioBase.toFixed(2)}
-                </span>
-                <span className="font-body font-black text-[13px] sm:text-sm" style={{ color: '#16a34a' }}>
-                  {SIMBOLO_MONEDA}{precioAplicable.toFixed(2)}
                 </span>
               </div>
             ) : (
@@ -142,9 +149,16 @@ function ProductCardInner({
             )}
             {/* Hint mayoreo — siempre visible si el producto tiene tiers */}
             {mayoreoMinTier && !agotado && (
-              <p className="text-[10px] font-body font-semibold mt-0.5" style={{ color: '#16a34a' }}>
-                desde {SIMBOLO_MONEDA}{mayoreoMinTier.precio.toFixed(2)} × {mayoreoMinTier.min}+
-              </p>
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-[10px]" aria-hidden="true">🏷️</span>
+                <span className="text-[10px] font-body font-bold"
+                      style={{ color: '#16a34a' }}>
+                  {SIMBOLO_MONEDA}{mayoreoMinTier.precio.toFixed(2)} c/u
+                </span>
+                <span className="text-[9px] font-body font-semibold text-ink-400">
+                  comprando {mayoreoMinTier.min}+
+                </span>
+              </div>
             )}
           </div>
         </div>
