@@ -138,7 +138,7 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
               <div
                 className="aspect-square sm:aspect-[4/3] md:aspect-auto md:min-h-[400px] md:h-full
                            overflow-hidden flex items-center justify-center p-6 sm:p-8 relative"
-                style={{ background: 'linear-gradient(145deg, #fef3ff, #f0e4ff, #fdf2f8)' }}
+                style={{ background: 'var(--surface-card)' }}
               >
                 <img
                   src={producto.imagen_url}
