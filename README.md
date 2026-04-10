@@ -53,14 +53,14 @@ catalogo-pwa/
     │
     ├── hooks/
     │   ├── useAuth.js             ← sesión de Supabase Auth (login/logout)
-    │   ├── useCarrito.js          ← carrito con persistencia en localStorage + total dinámico mayoreo
+    │   ├── useCarrito.js          ← carrito con persistencia en localStorage + total dinámico mayoreo + sincronización RT de stock
     │   ├── useConfirm.js          ← hook para modal de confirmación (promesa)
     │   ├── useDebounce.js         ← debounce genérico (default 300 ms) para inputs de búsqueda
     │   ├── useInfiniteScroll.js   ← IntersectionObserver para carga progresiva
     │   ├── usePedido.js           ← insert y búsqueda de pedidos (guarda precio aplicado por línea)
     │   ├── usePedidosAdmin.js     ← estado completo del panel de pedidos (fetch, realtime, filtros, acciones)
     │   ├── useProductForm.js      ← hook compartido crear/editar producto (estado, validación, payload, imagen)
-    │   ├── useProductos.js        ← fetch de productos desde Supabase
+    │   ├── useProductos.js        ← fetch + suscripción Realtime de productos desde Supabase
     │   ├── useAnuncio.js          ← hook público para leer anuncio activo desde configuracion
     │   └── usePWA.js              ← prompt de instalación PWA
     │
@@ -137,12 +137,15 @@ Ejecuta el script unificado en **Supabase → SQL Editor**:
 
 ### 4. Habilitar Realtime
 
-En **Supabase → Database → Replication** activa el toggle de la tabla `pedidos`.  
+En **Supabase → Database → Replication** activa el toggle de las tablas `pedidos` y `productos`.  
 O con SQL:
 
 ```sql
 ALTER PUBLICATION supabase_realtime ADD TABLE public.pedidos;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.productos;
 ```
+
+> **`productos`** es necesario para que los clientes vean cambios de stock y disponibilidad al instante cuando el admin modifica el catálogo.
 
 ### 5. Crear el usuario administrador
 
@@ -238,6 +241,7 @@ export const categorias = [
 - **Modo Claro y Oscuro (Dark Mode)** — alternable desde el header para todas las vistas
 - **Filtros optimizados para gran escala** — listas de categorías con buscador interno (*inline*) para catálogos extensos (+50)
 - **Modal de Detalle Inteligente** — *bottom-sheet* en móvil y *side-by-side* optimizado en desktop
+- **Sincronización Realtime de productos** — cambios de stock, precio o disponibilidad hechos desde el panel admin se reflejan al instante en el catálogo sin recargar (vía `postgres_changes` INSERT/UPDATE/DELETE)
 - Productos dinámicos desde Supabase con skeleton de carga y pantalla de error con reintento
 - **Infinite scroll** nativo con `IntersectionObserver` — carga 12 productos iniciales y agrega 12 más al llegar al final
 - **Lazy loading** de imágenes con atributo `loading="lazy"`
@@ -255,6 +259,8 @@ export const categorias = [
 - **Honeypot anti-bot** — campo invisible que detecta bots y descarta pedidos spam silenciosamente
 - **Rate limit por sesión** — máximo 5 pedidos cada 30 minutos por sesión del navegador
 - **Validación de stock en carrito** — el drawer respeta el stock máximo y no permite agregar más unidades de las disponibles
+- **Detección de agotados en tiempo real** — si el admin desactiva un producto o reduce el stock a 0 mientras el cliente tiene items en el carrito, aparece un badge "Agotado" rojo, se bloquean los botones +/- y se impide confirmar el pedido hasta retirar los items agotados
+- **Ajuste automático de cantidad** — si el admin reduce el stock por debajo de la cantidad en carrito, el carrito ajusta automáticamente al máximo disponible
 - **Formato automático de nombre** — capitaliza la primera letra de cada palabra respetando acentos (`León`, `Pérez`)
 - **Limpieza de teléfono** — elimina espacios del autocompletado del celular antes de enviar
 - **Precios escalonados por mayoreo** — cálculo automático por cantidad en carrito con `obtenerPrecioAplicable(...)`
