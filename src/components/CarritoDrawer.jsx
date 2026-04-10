@@ -446,6 +446,8 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                   {/* Nombre */}
                   <div>
                     <input
+                      id="cliente-nombre"
+                      name="cliente_nombre"
                       type="text"
                       value={nombre}
                       onChange={(e) => setNombre(capitalizarNombre(e.target.value))}
@@ -461,6 +463,8 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                   {/* Teléfono */}
                   <div>
                     <input
+                      id="cliente-telefono"
+                      name="cliente_telefono"
                       type="tel"
                       value={telefono}
                       onChange={(e) => setTelefono(e.target.value.replace(/[^\d]/g, ''))}
@@ -497,6 +501,8 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                   {tipoEntrega === 'envio' && (
                     <div className="animate-fade-in">
                       <textarea
+                        id="cliente-direccion"
+                        name="cliente_direccion"
                         value={direccion}
                         onChange={(e) => setDireccion(e.target.value)}
                         placeholder="📍 Calle, número, colonia, referencias..."
