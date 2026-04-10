@@ -21,6 +21,7 @@
     "lighthouse": "^13.1.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "vite-plugin-html": "^3.2.2"
   }
 }

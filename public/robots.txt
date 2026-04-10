@@ -1,5 +1,6 @@
 # Full Party Uruapan — Catálogo Digital PWA
 User-agent: *
 Allow: /
+Disallow: /#/admin
 
 Sitemap: https://full-party-store.vercel.app/sitemap.xml
