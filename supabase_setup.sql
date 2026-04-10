@@ -160,6 +160,7 @@ ON CONFLICT DO NOTHING;
 -- al instante cuando el admin modifica productos desde el panel.
 ALTER PUBLICATION supabase_realtime ADD TABLE public.productos;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.pedidos;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.configuracion;
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 6. PASO MANUAL FINAL (Para el panel de Supabase)

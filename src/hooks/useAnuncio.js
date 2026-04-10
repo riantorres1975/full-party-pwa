@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
 /**
- * useAnuncio — Fetches the public announcement from `configuracion` table.
+ * useAnuncio — Fetches the public announcement from `configuracion` table
+ * and stays in sync via Supabase Realtime.
  * Returns { mensaje, activo, loading }.
  * Only shown when `activo === true` and `mensaje` is non-empty.
  */
@@ -28,6 +29,25 @@ export function useAnuncio() {
       });
 
     return () => { cancelled = true; };
+  }, []);
+
+  // ── Realtime: actualizar anuncio cuando el admin lo modifique ──
+  useEffect(() => {
+    const channel = supabase
+      .channel('anuncio-rt')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'configuracion', filter: 'clave=eq.anuncio' },
+        ({ new: row }) => {
+          if (row?.valor) {
+            const v = row.valor;
+            setAnuncio({ mensaje: v.mensaje || '', activo: !!v.activo });
+          } else {
+            setAnuncio({ mensaje: '', activo: false });
+          }
+        })
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
   }, []);
 
   return { ...anuncio, loading };
