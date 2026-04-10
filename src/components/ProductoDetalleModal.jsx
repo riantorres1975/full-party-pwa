@@ -229,7 +229,7 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
 
                 {/* Descripción */}
                 {producto.descripcion && (
-                  <p className="text-[13px] sm:text-sm font-body leading-relaxed mt-3"
+                  <p className="text-[13px] sm:text-sm font-body leading-relaxed mt-3 line-clamp-4"
                      style={{ color: 'var(--text-secondary)' }}>
                     {producto.descripcion}
                   </p>
