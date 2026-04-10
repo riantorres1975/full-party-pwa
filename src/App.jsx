@@ -288,9 +288,9 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                       onReducir={reducirItem}
                     />
                   )}
-                </div>
 
-                <RedesSociales />
+                  <RedesSociales />
+                </div>
               </section>
             </div>
           </div>
