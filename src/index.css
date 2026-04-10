@@ -111,6 +111,10 @@
   0%, 100% { box-shadow: 0 2px 8px rgba(249,115,22,0.3); }
   50%      { box-shadow: 0 4px 20px rgba(249,115,22,0.55); }
 }
+@keyframes cardNuevoGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(255,61,172,0.25), 0 0 0 1px rgba(168,85,247,0.15); }
+  50%      { box-shadow: 0 0 18px rgba(168,85,247,0.4), 0 0 0 1px rgba(255,61,172,0.3); }
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    ADMIN DESIGN TOKENS — CSS Custom Properties

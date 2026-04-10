@@ -40,16 +40,18 @@ function ProductCardInner({
 
   // First 4 images are above-the-fold on most screens
   const isPriority = index < 4;
+  const esNuevo = producto.es_nuevo === true && !agotado;
 
   return (
     <article
-      className="product-card rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-300"
+      className="product-card rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-300 flex flex-col h-full"
       style={{
         background: 'var(--surface-card)',
-        border: '1px solid var(--border-soft)',
+        border: esNuevo ? '1.5px solid rgba(168,85,247,0.35)' : '1px solid var(--border-soft)',
         boxShadow: enCarrito && !agotado
           ? '0 4px 20px rgba(168, 85, 247, 0.18)'
-          : '0 1px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(168,85,247,0.04)',
+          : undefined,
+        animation: esNuevo ? 'cardNuevoGlow 3s ease-in-out infinite' : undefined,
         opacity: agotado ? 0.65 : 1,
       }}
     >
@@ -59,7 +61,7 @@ function ProductCardInner({
         tabIndex={0}
         onClick={() => onAbrirDetalle?.(producto)}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onAbrirDetalle?.(producto); } }}
-        className="w-full text-left cursor-pointer"
+        className="w-full text-left cursor-pointer flex-1 flex flex-col"
         aria-label={`Ver detalle de ${producto.nombre}`}
       >
         {/* Imagen optimizada */}
@@ -104,15 +106,15 @@ function ProductCardInner({
           {/* Badge nuevo */}
           {producto.es_nuevo === true && !agotado && (
             <div className="absolute top-2 left-2 text-[9px] font-body font-black uppercase tracking-wider
-                            px-2 py-0.5 rounded-full text-white"
-                 style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}>
+                            px-2 py-0.5 rounded-full text-white animate-pulse"
+                 style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)', animationDuration: '2.5s' }}>
               Nuevo
             </div>
           )}
         </div>
 
         {/* Info */}
-        <div className="px-2 pt-2 pb-1.5 sm:px-3 sm:pt-3 sm:pb-2">
+        <div className="px-2 pt-2 pb-1.5 sm:px-3 sm:pt-3 sm:pb-2 flex-1 flex flex-col">
           <h2 className="font-display text-[12px] sm:text-[13px] leading-snug text-ink-900 line-clamp-2">
             {producto.nombre}
           </h2>
@@ -123,7 +125,7 @@ function ProductCardInner({
           )}
 
           {/* Precio */}
-          <div className="mt-1.5">
+          <div className="mt-auto pt-1.5">
             {hayDescuento && enCarrito ? (
               <div className="flex items-baseline gap-1.5">
                 <span className="text-[11px] text-ink-400 line-through font-body font-bold">
