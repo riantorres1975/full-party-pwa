@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { X } from 'lucide-react';
+import { X, ShoppingCart, Tag, Ruler, Sparkles } from 'lucide-react';
 import { SIMBOLO_MONEDA } from '../data/productos';
+import { obtenerPrecioAplicable } from '../utils/precios';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
-export default function ProductoDetalleModal({ producto, onCerrar, onAgregar }) {
+export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, cantidad = 0 }) {
   const [cerrando, setCerrando] = useState(false);
   const closeTimerRef = useRef(null);
   const dialogRef = useRef(null);
@@ -47,6 +48,30 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar }) 
   const agotado = producto.activo === false;
   const marca = typeof producto.marca === 'string' ? producto.marca.trim() : '';
   const tamano = typeof producto.tamano === 'string' ? producto.tamano.trim() : '';
+  const categoria = typeof producto.categoria === 'string' ? producto.categoria.trim() : '';
+  const precioBase = Number(producto.precio) || 0;
+  const enCarrito = cantidad > 0;
+  const precioAplicable = obtenerPrecioAplicable(producto, cantidad || 1);
+  const hayDescuento = enCarrito && precioAplicable < precioBase;
+  const esNuevo = producto.es_nuevo === true && !agotado;
+
+  // Escalas de mayoreo
+  const escalasMayoreo = (() => {
+    let escalas = producto.precios_mayoreo;
+    if (typeof escalas === 'string') {
+      try { escalas = JSON.parse(escalas); } catch { escalas = []; }
+    }
+    if (!Array.isArray(escalas) || escalas.length === 0) return [];
+    return escalas
+      .map(e => ({ min: Number(e?.cantidad_minima) || 0, precio: Number(e?.precio) }))
+      .filter(e => e.min > 0 && Number.isFinite(e.precio) && e.precio < precioBase)
+      .sort((a, b) => a.min - b.min);
+  })();
+
+  const stockBajo = !agotado &&
+    producto.stock_ilimitado === false &&
+    (producto.stock_actual || 0) > 0 &&
+    (producto.stock_actual || 0) <= 5;
 
   return (
     <div className="fixed inset-0 z-[70]">
@@ -109,74 +134,197 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar }) 
           {/* Layout: stacked en mobile, side-by-side en md+ */}
           <div className="md:flex md:items-stretch max-h-[94vh] sm:max-h-[88vh]">
             {/* Imagen */}
-            <div
-              className="w-full md:w-1/2 aspect-square sm:aspect-[4/3] md:aspect-auto md:min-h-[360px]
-                         overflow-hidden flex items-center justify-center flex-shrink-0 p-6 sm:p-8"
-              style={{ backgroundColor: '#ffffff' }}
-            >
-              <img
-                src={producto.imagen_url}
-                alt={producto.nombre}
-                className="w-full h-full object-contain transition-transform duration-500 sm:hover:scale-[1.05]"
-                onError={(e) => {
-                  e.target.src = `https://placehold.co/900x900/f3e8ff/a855f7?text=${encodeURIComponent(producto.nombre)}`;
-                }}
-              />
+            <div className="relative w-full md:w-1/2 flex-shrink-0">
+              <div
+                className="aspect-square sm:aspect-[4/3] md:aspect-auto md:min-h-[400px] md:h-full
+                           overflow-hidden flex items-center justify-center p-6 sm:p-8 relative"
+                style={{ background: 'linear-gradient(145deg, #fef3ff, #f0e4ff, #fdf2f8)' }}
+              >
+                <img
+                  src={producto.imagen_url}
+                  alt={producto.nombre}
+                  className="w-full h-full object-contain transition-transform duration-500 sm:hover:scale-[1.05] drop-shadow-lg"
+                  onError={(e) => {
+                    e.target.src = `https://placehold.co/900x900/f3e8ff/a855f7?text=${encodeURIComponent(producto.nombre)}`;
+                  }}
+                />
+
+                {/* Badges flotantes sobre la imagen */}
+                <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                  {esNuevo && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-body font-black uppercase tracking-wider
+                                     px-2.5 py-1 rounded-full text-white shadow-md"
+                          style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}>
+                      <Sparkles size={10} /> Nuevo
+                    </span>
+                  )}
+                  {agotado && (
+                    <span className="text-[10px] font-body font-black uppercase tracking-wider
+                                     px-2.5 py-1 rounded-full text-white bg-ink-800/80 backdrop-blur-sm shadow-md">
+                      😔 Agotado
+                    </span>
+                  )}
+                  {stockBajo && (
+                    <span className="text-[10px] font-body font-black
+                                     px-2.5 py-1 rounded-full text-white shadow-md"
+                          style={{ background: 'linear-gradient(135deg, #f97316, #dc2626)' }}>
+                      ¡Últimos {producto.stock_actual}!
+                    </span>
+                  )}
+                </div>
+
+                {enCarrito && !agotado && (
+                  <div className="absolute top-3 right-3 min-w-[28px] h-7
+                                  flex items-center justify-center px-2 rounded-full
+                                  text-[12px] font-body font-black
+                                  bg-white text-ink-900 shadow-lg"
+                       style={{ boxShadow: '0 2px 12px rgba(168,85,247,0.3)' }}>
+                    {cantidad}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Contenido */}
             <div className="md:w-1/2 md:flex md:flex-col">
-              <div className="px-5 pt-4 pb-5 space-y-3 overflow-y-auto flex-1
-                              md:pt-5 md:px-6 md:pb-6 md:space-y-4">
-                {/* Nombre y precio */}
-                <div className="flex items-start justify-between gap-3 md:flex-col md:gap-1">
-                  <h3 className="font-display text-lg sm:text-xl md:text-2xl leading-tight text-ink-900">
-                    {producto.nombre}
-                  </h3>
-                  <span className="font-body font-black text-lg sm:text-xl md:text-2xl text-fiesta-magenta whitespace-nowrap shrink-0">
-                    {SIMBOLO_MONEDA}{Number(producto.precio || 0).toFixed(2)}
+              <div className="px-5 pt-4 pb-5 overflow-y-auto flex-1
+                              md:pt-6 md:px-6 md:pb-6 flex flex-col">
+
+                {/* Categoría chip */}
+                {categoria && (
+                  <span className="self-start text-[10px] font-body font-bold uppercase tracking-wider
+                                   px-2 py-0.5 rounded-md mb-2"
+                        style={{ background: 'var(--border-soft)', color: 'var(--text-secondary)' }}>
+                    {categoria}
                   </span>
+                )}
+
+                {/* Nombre */}
+                <h3 className="font-display text-xl sm:text-2xl md:text-[26px] leading-tight text-ink-900">
+                  {producto.nombre}
+                </h3>
+
+                {/* Precio */}
+                <div className="mt-2.5">
+                  {hayDescuento ? (
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-body font-black text-2xl sm:text-[28px]"
+                            style={{ color: '#16a34a' }}>
+                        {SIMBOLO_MONEDA}{precioAplicable.toFixed(2)}
+                      </span>
+                      <span className="text-sm text-ink-400 line-through font-body font-bold">
+                        {SIMBOLO_MONEDA}{precioBase.toFixed(2)}
+                      </span>
+                      <span className="text-[10px] font-body font-black px-2 py-0.5 rounded-full text-white"
+                            style={{ background: 'linear-gradient(135deg, #16a34a, #059669)' }}>
+                        −{Math.round((1 - precioAplicable / precioBase) * 100)}%
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="font-body font-black text-2xl sm:text-[28px] text-ink-900">
+                      {SIMBOLO_MONEDA}{precioBase.toFixed(2)}
+                    </span>
+                  )}
                 </div>
 
                 {/* Descripción */}
                 {producto.descripcion && (
-                  <p className="text-sm font-body text-ink-500 leading-relaxed">{producto.descripcion}</p>
+                  <p className="text-[13px] sm:text-sm font-body leading-relaxed mt-3"
+                     style={{ color: 'var(--text-secondary)' }}>
+                    {producto.descripcion}
+                  </p>
                 )}
 
                 {/* Badges de marca y tamaño */}
                 {(marca || tamano) && (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 mt-3">
                     {marca && (
-                      <span className="text-xs font-body font-black px-3 py-1.5 rounded-xl bg-purple-50 text-purple-700 border border-purple-100">
-                        {marca}
+                      <span className="inline-flex items-center gap-1 text-[11px] font-body font-bold
+                                       px-2.5 py-1 rounded-lg"
+                            style={{
+                              background: 'rgba(168,85,247,0.08)',
+                              color: '#7c3aed',
+                              border: '1px solid rgba(168,85,247,0.15)',
+                            }}>
+                        <Tag size={11} /> {marca}
                       </span>
                     )}
                     {tamano && (
-                      <span className="text-xs font-body font-black px-3 py-1.5 rounded-xl bg-cyan-50 text-cyan-700 border border-cyan-100">
-                        {tamano}
+                      <span className="inline-flex items-center gap-1 text-[11px] font-body font-bold
+                                       px-2.5 py-1 rounded-lg"
+                            style={{
+                              background: 'rgba(6,182,212,0.08)',
+                              color: '#0891b2',
+                              border: '1px solid rgba(6,182,212,0.15)',
+                            }}>
+                        <Ruler size={11} /> {tamano}
                       </span>
                     )}
                   </div>
                 )}
 
-                {/* Espaciador flexible en desktop */}
-                <div className="hidden md:block flex-1" />
+                {/* Tabla de precios mayoreo */}
+                {escalasMayoreo.length > 0 && !agotado && (
+                  <div className="mt-4 rounded-xl overflow-hidden"
+                       style={{ border: '1px solid var(--border-soft)' }}>
+                    <div className="px-3 py-2 flex items-center gap-1.5"
+                         style={{ background: 'rgba(22,163,74,0.06)' }}>
+                      <span className="text-[11px]" aria-hidden="true">🏷️</span>
+                      <span className="text-[11px] font-body font-black" style={{ color: '#16a34a' }}>
+                        Precios por mayoreo
+                      </span>
+                    </div>
+                    <div className="divide-y" style={{ borderColor: 'var(--border-soft)' }}>
+                      {escalasMayoreo.map((e) => {
+                        const ahorro = Math.round((1 - e.precio / precioBase) * 100);
+                        return (
+                          <div key={e.min} className="flex items-center justify-between px-3 py-2"
+                               style={{ background: 'var(--surface-card)' }}>
+                            <span className="text-[12px] font-body font-semibold text-ink-600">
+                              {e.min}+ unidades
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[13px] font-body font-black" style={{ color: '#16a34a' }}>
+                                {SIMBOLO_MONEDA}{e.precio.toFixed(2)}
+                              </span>
+                              <span className="text-[9px] font-body font-bold px-1.5 py-0.5 rounded-full"
+                                    style={{ background: 'rgba(22,163,74,0.1)', color: '#16a34a' }}>
+                                −{ahorro}%
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Espaciador flexible */}
+                <div className="flex-1 min-h-3" />
 
                 {/* Botón agregar */}
                 <button
                   type="button"
                   onClick={() => onAgregar?.(producto)}
                   disabled={agotado}
-                  className="w-full mt-1 py-3.5 rounded-2xl font-body font-black text-base text-white
-                             transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full mt-3 py-3.5 rounded-2xl font-body font-black text-[15px] text-white
+                             transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed
+                             flex items-center justify-center gap-2"
                   style={{
                     background: agotado
                       ? 'linear-gradient(135deg, #c4b5fd, #a78bfa)'
                       : 'linear-gradient(135deg, #ff3dac, #a855f7)',
-                    boxShadow: agotado ? 'none' : '0 6px 24px #ff3dac4a',
+                    boxShadow: agotado ? 'none' : '0 6px 24px rgba(255,61,172,0.3)',
                   }}
                 >
-                  {agotado ? 'No disponible' : '+ Agregar al carrito'}
+                  {agotado ? (
+                    'No disponible'
+                  ) : (
+                    <>
+                      <ShoppingCart size={16} strokeWidth={2.5} />
+                      {enCarrito ? 'Agregar otro' : 'Agregar al carrito'}
+                    </>
+                  )}
                 </button>
               </div>
             </div>
