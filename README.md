@@ -45,7 +45,8 @@ catalogo-pwa/
     │
     ├── lib/
     │   ├── supabase.js            ← cliente singleton de Supabase
-    │   └── supabaseGuard.js       ← guardedQuery + throwIfSessionError (sesión expirada → signOut + redirect)
+    │   ├── supabaseGuard.js       ← guardedQuery + throwIfSessionError (sesión expirada → signOut + redirect)
+    │   └── configAdmin.js         ← getConfig / setConfig para tabla configuracion (anuncios, ajustes)
     │
     ├── data/
     │   └── productos.js           ← ✏️ configuración del negocio + listas de filtros
@@ -60,6 +61,7 @@ catalogo-pwa/
     │   ├── usePedidosAdmin.js     ← estado completo del panel de pedidos (fetch, realtime, filtros, acciones)
     │   ├── useProductForm.js      ← hook compartido crear/editar producto (estado, validación, payload, imagen)
     │   ├── useProductos.js        ← fetch de productos desde Supabase
+    │   ├── useAnuncio.js          ← hook público para leer anuncio activo desde configuracion
     │   └── usePWA.js              ← prompt de instalación PWA
     │
     ├── utils/
@@ -197,6 +199,7 @@ export const categorias = [
 | `stock_minimo` | NUMERIC | — | Activa la alerta visual de *Stock Bajo* |
 | `precios_mayoreo` | JSONB | — | Escalas por volumen: `[{ etiqueta, cantidad_minima, precio }]` |
 | `familia_mayoreo` | TEXT | — | Campo legado opcional (compatibilidad histórica) |
+| `es_nuevo` | BOOLEAN | — | Badge "NUEVO" en las tarjetas del catálogo |
 | `created_at` | TIMESTAMPTZ | auto | |
 
 ### Tabla `pedidos`
@@ -260,6 +263,8 @@ export const categorias = [
 - **Botón deshabilitado** mientras el pedido se guarda en Supabase (spinner de carga)
 
 ### Sistema de pedidos y rastreo
+
+- **Banner de anuncio animado** — el admin puede escribir un mensaje corto desde el catálogo y activarlo/desactivarlo; aparece como barra llamativa con gradiente shimmer (naranja→rosa→morado), animación slide-down, glow pulsante y emoji con bounce. El cliente puede cerrarlo por sesión
 
 - Al confirmar, el pedido se registra en Supabase antes de abrir WhatsApp
 - **Folio único** generado por función SQL (`FP-XXXX`) incluido en el mensaje
@@ -333,6 +338,12 @@ export const categorias = [
 - **Tabs tipo segmented control** — estilo pill en lugar de underline tabs
 - **Toggle unificado** — componente `Toggle` reutilizable con soporte `role="switch"`, aria-checked y focus-visible
 - **Eliminación de productos** con modal de confirmación estilizado (no nativo del navegador)
+- **Filtro "Nuevos"** — pill verde que filtra productos marcados como `es_nuevo = true`, junto a Todos y Stock Bajo
+- **Stock aditivo** — al editar un producto, el campo de stock muestra la cantidad actual como solo lectura y un campo separado "Agregar al stock (+)" que suma a lo existente en lugar de reemplazarlo
+- **Gestión de categorías** — botón "Categorías" en la toolbar abre un modal con lista completa, renombrar inline y eliminar con confirmación
+- **Gestión de marcas** — botón "Marcas" (azul) para renombrar o eliminar marcas en cascada sobre todos los productos
+- **Gestión de tamaños** — botón "Tamaños" (verde) con la misma funcionalidad de rename/delete
+- **Editor de anuncio** — botón "Anuncio" (ámbar) en la toolbar despliega un editor inline con textarea (máx 200 chars), toggle activo/inactivo y guardado directo a la tabla `configuracion`
 
 #### Mensajes de notificación por estado
 
@@ -348,7 +359,9 @@ export const categorias = [
 - Instalable en Android e iOS desde el navegador (botón "Agregar a pantalla de inicio")
 - Service Worker con estrategia **Network First** — usa cache como fallback sin conexión
 - Funciona offline mostrando los últimos datos cacheados
-- Banner de **"Nueva versión disponible"** para actualizar sin desinstalar la app
+- **Auto-update transparente** — el SW ya no cachea `index.html` (siempre pide al servidor); al detectar una nueva versión, se activa automáticamente sin intervención del usuario
+- **Detección de chunks faltantes** — si tras un deploy los JS viejos ya no existen, el SW envía `FORCE_RELOAD` a todas las pestañas abiertas para que recarguen
+- **Polling cada 5 minutos** — chequea actualizaciones del SW periódicamente en segundo plano
 
 ---
 
@@ -361,6 +374,15 @@ export const categorias = [
 | `/#/admin/catalogo` | Gestión de catálogo | Requiere sesión activa de Supabase Auth |
 
 > **RBAC opcional:** si defines `VITE_ADMIN_EMAILS` en tu `.env`, solo esas cuentas pueden acceder al panel aunque estén autenticadas. Si la variable está vacía o ausente, cualquier cuenta autenticada tiene acceso (comportamiento clásico).
+
+### Tabla `configuracion`
+
+| Campo | Tipo | Notas |
+|---|---|---|
+| `clave` | TEXT | PK — identificador único (ej: `anuncio`) |
+| `valor` | JSONB | Valor almacenado como objeto JSON |
+
+> Lectura pública. Solo admins pueden insertar/actualizar. Se usa para el sistema de anuncios y futuros ajustes de la tienda.
 
 Enrutamiento por **hash** (`window.location.hash`) sin react-router — compatible con cualquier hosting estático sin configuración adicional.
 
