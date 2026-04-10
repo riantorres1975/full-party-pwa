@@ -21,6 +21,21 @@ export function usePWA() {
     const handler = (e) => {
       e.preventDefault();
       setInstallPrompt(e);
+
+      // Mostrar el prompt de instalación automáticamente tras un breve retraso
+      const dismissed = sessionStorage.getItem('pwa-prompt-dismissed');
+      if (!dismissed) {
+        setTimeout(async () => {
+          try {
+            const { outcome } = await e.prompt();
+            if (outcome === 'accepted') {
+              setInstallPrompt(null);
+            } else {
+              sessionStorage.setItem('pwa-prompt-dismissed', '1');
+            }
+          } catch { /* el prompt ya fue usado */ }
+        }, 1500);
+      }
     };
 
     window.addEventListener('beforeinstallprompt', handler);
