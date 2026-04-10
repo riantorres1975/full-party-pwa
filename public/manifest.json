@@ -28,5 +28,27 @@
     }
   ],
   "categories": ["shopping", "food"],
-  "screenshots": []
+  "screenshots": [
+    {
+      "src": "/screenshots/catalogo-mobile.webp",
+      "sizes": "390x844",
+      "type": "image/webp",
+      "form_factor": "narrow",
+      "label": "Catálogo de productos con categorías y filtros"
+    },
+    {
+      "src": "/screenshots/carrito-mobile.webp",
+      "sizes": "390x844",
+      "type": "image/webp",
+      "form_factor": "narrow",
+      "label": "Productos en el carrito con barra flotante"
+    },
+    {
+      "src": "/screenshots/detalle-mobile.webp",
+      "sizes": "390x844",
+      "type": "image/webp",
+      "form_factor": "narrow",
+      "label": "Detalle de producto con precios por mayoreo"
+    }
+  ]
 }
