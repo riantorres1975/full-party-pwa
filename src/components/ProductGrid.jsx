@@ -85,6 +85,7 @@ export default function ProductGrid({ productos, getCantidad, onAgregar, onReduc
 
       <ProductoDetalleModal
         producto={productoDetalle}
+        cantidad={productoDetalle ? getCantidad(productoDetalle.id) : 0}
         onCerrar={() => setProductoDetalle(null)}
         onAgregar={(producto) => {
           onAgregar(producto);
