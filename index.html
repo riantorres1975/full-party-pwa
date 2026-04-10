@@ -4,7 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0a0a0a" />
-    <meta name="description" content="Catálogo Digital — Encuentra y ordena tus productos favoritos en Full Party" />
+    <meta name="description" content="Catálogo digital de globos, decoración y artículos de fiesta en Uruapan. Ordena por WhatsApp y rastrea tu pedido en tiempo real. Envío local y recolección en tienda." />
+    <meta name="keywords" content="globos, artículos de fiesta, decoración, Uruapan, piñatas, letras led, Full Party" />
+    <meta name="author" content="<%- NOMBRE_NEGOCIO %>" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="<%- NOMBRE_NEGOCIO %> — Globos, Decoración y Fiestas" />
+    <meta property="og:description" content="Catálogo digital de globos, decoración y artículos de fiesta en Uruapan. Ordena por WhatsApp y rastrea tu pedido en tiempo real." />
+    <meta property="og:image" content="<%- SITE_URL %>/portada-whatsapp.jpg" />
+    <meta property="og:url" content="<%- SITE_URL %>/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="<%- NOMBRE_NEGOCIO %>" />
+    <meta property="og:locale" content="es_MX" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="<%- NOMBRE_NEGOCIO %> — Globos, Decoración y Fiestas" />
+    <meta name="twitter:description" content="Catálogo digital de globos, decoración y artículos de fiesta en Uruapan. Ordena por WhatsApp y rastrea tu pedido en tiempo real." />
+    <meta name="twitter:image" content="<%- SITE_URL %>/portada-whatsapp.jpg" />
+
+    <!-- Canonical -->
+    <link rel="canonical" href="<%- SITE_URL %>/" />
 
     <!-- Preconnect: Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -18,22 +38,37 @@
     </noscript>
     <!-- Preconnect: placeholder images fallback -->
     <link rel="dns-prefetch" href="https://placehold.co" />
-    
-    <meta property="og:title" content="Full Party Uruapan | Catálogo Digital" />
-    <meta property="og:description" content="Haz tus pedidos de globos y artículos de fiesta fácilmente. ¡Rastrea tu envío en tiempo real!" />
-    <meta property="og:image" content="https://full-party-store.vercel.app/portada-whatsapp.jpg" />
-    <meta property="og:url" content="https://full-party-store.vercel.app/" />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
 
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Full PartyApp" />
+    <meta name="apple-mobile-web-app-title" content="<%- NOMBRE_NEGOCIO %>" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     
-    <title>Full Party Uruapan - Catálogo Digital</title>
+    <title><%- NOMBRE_NEGOCIO %> - Catálogo Digital</title>
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Store",
+      "name": "<%- NOMBRE_NEGOCIO %>",
+      "description": "Catálogo digital de globos, decoración y artículos de fiesta en Uruapan. Ordena por WhatsApp y rastrea tu pedido en tiempo real.",
+      "url": "<%- SITE_URL %>",
+      "image": "<%- SITE_URL %>/portada-whatsapp.jpg",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Uruapan",
+        "addressRegion": "Michoacán",
+        "addressCountry": "MX"
+      },
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Artículos de fiesta y decoración"
+      }
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
