@@ -307,15 +307,16 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
                   </div>
                 )}
 
-                {/* Espaciador flexible */}
-                <div className="flex-1 min-h-3" />
+              </div>
 
-                {/* Botón agregar */}
+              {/* Botón agregar — fuera del scroll, siempre visible */}
+              <div className="px-5 pb-5 pt-3 md:px-6 md:pb-6 flex-shrink-0"
+                   style={{ borderTop: '1px solid var(--border-soft)' }}>
                 <button
                   type="button"
                   onClick={() => onAgregar?.(producto)}
                   disabled={agotado}
-                  className="w-full mt-3 py-3.5 rounded-2xl font-body font-black text-[15px] text-white
+                  className="w-full py-3.5 rounded-2xl font-body font-black text-[15px] text-white
                              transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed
                              flex items-center justify-center gap-2"
                   style={{
