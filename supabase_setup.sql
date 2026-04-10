@@ -154,6 +154,14 @@ VALUES
 ON CONFLICT DO NOTHING;
 
 -- ───────────────────────────────────────────────────────────────────────────
+-- 5.5 REALTIME — Habilitar cambios en tiempo real para productos y pedidos
+-- ───────────────────────────────────────────────────────────────────────────
+-- Esto permite que los clientes vean cambios de stock / disponibilidad
+-- al instante cuando el admin modifica productos desde el panel.
+ALTER PUBLICATION supabase_realtime ADD TABLE public.productos;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.pedidos;
+
+-- ───────────────────────────────────────────────────────────────────────────
 -- 6. PASO MANUAL FINAL (Para el panel de Supabase)
 -- ───────────────────────────────────────────────────────────────────────────
 -- Para darte permisos de Admin y que el panel funcione:
