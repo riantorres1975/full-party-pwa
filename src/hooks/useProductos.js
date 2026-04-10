@@ -34,10 +34,11 @@ export function useProductos() {
       if (cancelado) return;
 
       if (sbError) {
+        console.error('[useProductos]', sbError.code, sbError.message);
         setError(
           sbError.code === 'PGRST301'
-            ? 'No tienes permisos para ver los productos. Revisa las políticas RLS en Supabase.'
-            : `Error al cargar productos: ${sbError.message}`
+            ? 'No tienes permisos para ver los productos.'
+            : 'Error al cargar productos. Intenta de nuevo más tarde.'
         );
         setProductos([]);
       } else {

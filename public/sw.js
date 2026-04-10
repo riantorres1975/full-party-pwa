@@ -74,9 +74,23 @@ self.addEventListener('fetch', (event) => {
   // Esto garantiza que tras un deploy las pestañas reciban el nuevo index.html
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match('/manifest.json')
-        .then(() => new Response('<html><body><script>location.reload()</script></body></html>',
-          { headers: { 'Content-Type': 'text/html' } }))
+      fetch(event.request).catch(() =>
+        caches.match(event.request).then((cached) => {
+          if (cached) return cached;
+          // Offline fallback: página mínima sin inline script (CSP-safe)
+          return new Response(
+            '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">' +
+            '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+            '<title>Sin conexión</title></head><body style="display:flex;align-items:center;' +
+            'justify-content:center;min-height:100vh;font-family:sans-serif;text-align:center;' +
+            'background:#fbf7f3">' +
+            '<div><h1 style="font-size:1.5rem;color:#333">Sin conexión</h1>' +
+            '<p style="color:#666">Revisa tu conexión a internet e intenta de nuevo.</p>' +
+            '<noscript><meta http-equiv="refresh" content="5"></noscript>' +
+            '</div></body></html>',
+            { headers: { 'Content-Type': 'text/html; charset=UTF-8' } }
+          );
+        })
       )
     );
     return;

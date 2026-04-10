@@ -11,9 +11,11 @@ function isSessionError(error) {
   return (
     code === 'PGRST301' ||
     msg.includes('jwt expired') ||
-    msg.includes('jwt') && msg.includes('invalid') ||
+    (msg.includes('jwt') && msg.includes('invalid')) ||
     msg.includes('not authenticated') ||
-    msg.includes('no api key')
+    msg.includes('no api key') ||
+    msg.includes('token is expired') ||
+    msg.includes('invalid claim')
   );
 }
 

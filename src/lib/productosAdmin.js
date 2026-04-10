@@ -42,8 +42,41 @@ function errorColumnaEsNuevoInexistente(error) {
   return code === 'PGRST204' || (msg.includes('es_nuevo') && (msg.includes('column') || msg.includes('schema cache')));
 }
 
+/** Tamaño máximo para imágenes de producto: 5 MB */
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+/** Extensiones y MIME types permitidos */
+const ALLOWED_TYPES = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/avif': 'avif',
+};
+
+/** Magic bytes de formatos de imagen válidos */
+const IMAGE_SIGNATURES = [
+  [0xFF, 0xD8, 0xFF],                   // JPEG
+  [0x89, 0x50, 0x4E, 0x47],             // PNG
+  [0x47, 0x49, 0x46],                   // GIF
+  [0x52, 0x49, 0x46, 0x46],             // WebP (RIFF container)
+];
+
+/**
+ * Valida que los primeros bytes del archivo correspondan a un formato de imagen real.
+ * Previene subir archivos maliciosos renombrados con extensión de imagen.
+ */
+async function validateImageSignature(file) {
+  const buffer = await file.slice(0, 12).arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  return IMAGE_SIGNATURES.some(sig =>
+    sig.every((byte, i) => bytes[i] === byte)
+  );
+}
+
 /**
  * Sube un archivo al bucket de imágenes y devuelve la URL pública.
+ * Valida: tipo, tamaño, extensión y magic bytes del archivo.
  * Requiere bucket `productos-imagenes` y políticas de Storage para usuarios autenticados.
  */
 export async function subirImagenProducto(file) {
@@ -51,22 +84,38 @@ export async function subirImagenProducto(file) {
     throw new Error('Selecciona un archivo de imagen válido.');
   }
 
-  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-  const safeExt = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'].includes(ext) ? ext : 'jpg';
-  const path = `${randomId()}.${safeExt}`;
+  // Validar tamaño
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error(`La imagen excede el límite de 5 MB (${(file.size / 1024 / 1024).toFixed(1)} MB).`);
+  }
+
+  // Validar MIME type
+  const ext = ALLOWED_TYPES[file.type];
+  if (!ext) {
+    throw new Error('Formato de imagen no permitido. Usa JPG, PNG, GIF, WebP o AVIF.');
+  }
+
+  // Validar magic bytes (previene archivos renombrados)
+  const validSignature = await validateImageSignature(file);
+  if (!validSignature) {
+    throw new Error('El archivo no parece ser una imagen válida.');
+  }
+
+  const path = `${randomId()}.${ext}`;
   const { error: upErr } = await supabase.storage
     .from(BUCKET_IMAGENES_PRODUCTOS)
     .upload(path, file, {
       cacheControl: '3600',
       upsert: false,
-      contentType: file.type || `image/${safeExt === 'jpg' ? 'jpeg' : safeExt}`,
+      contentType: file.type,
     });
 
   if (upErr) {
+    console.error('[subirImagen]', upErr.message);
     throw new Error(
       upErr.message.includes('Bucket not found') || upErr.message.includes('not found')
-        ? 'El bucket de imágenes no está configurado en Supabase. Usa una URL externa o ejecuta supabase_storage_productos.sql'
-        : `No se pudo subir la imagen: ${upErr.message}`
+        ? 'El bucket de imágenes no está configurado en Supabase.'
+        : 'No se pudo subir la imagen. Intenta de nuevo.'
     );
   }
 
@@ -149,7 +198,8 @@ export async function insertarProducto({
   await throwIfSessionError(error);
 
   if (error) {
-    throw new Error(error.message || 'No se pudo guardar el producto.');
+    console.error('[insertarProducto]', error.code, error.message);
+    throw new Error('No se pudo guardar el producto. Intenta de nuevo.');
   }
 
   return data;
@@ -226,7 +276,8 @@ export async function actualizarProducto(id, {
   await throwIfSessionError(error);
 
   if (error) {
-    throw new Error(error.message || 'No se pudo actualizar el producto.');
+    console.error('[actualizarProducto]', error.code, error.message);
+    throw new Error('No se pudo actualizar el producto. Intenta de nuevo.');
   }
 
   return data;
@@ -280,7 +331,8 @@ export async function actualizarDisponibilidadProducto(id, activo) {
   await throwIfSessionError(error);
 
   if (error) {
-    throw new Error(error.message || 'No se pudo actualizar la disponibilidad.');
+    console.error('[actualizarDisponibilidad]', error.code, error.message);
+    throw new Error('No se pudo actualizar la disponibilidad.');
   }
 
   return data;
@@ -293,6 +345,7 @@ export async function eliminarProducto(id) {
   await throwIfSessionError(error);
 
   if (error) {
-    throw new Error(error.message || 'No se pudo eliminar el producto.');
+    console.error('[eliminarProducto]', error.code, error.message);
+    throw new Error('No se pudo eliminar el producto.');
   }
 }
