@@ -107,12 +107,14 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
           </div>
 
           <div>
-            <label className="block text-xs font-body font-black text-ink-600 mb-1.5 pl-1">
-              Descripción
+            <label className="flex items-center justify-between text-xs font-body font-black text-ink-600 mb-1.5 pl-1">
+              <span>Descripción</span>
+              <span className="text-[10px] font-medium opacity-60">{descripcion.length}/150</span>
             </label>
             <textarea
               value={descripcion}
               onChange={e => setDescripcion(e.target.value)}
+              maxLength={150}
               rows={3}
               className={`${inputBase} resize-y min-h-[88px]`}
             />

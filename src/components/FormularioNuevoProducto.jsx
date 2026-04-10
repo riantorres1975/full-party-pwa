@@ -220,12 +220,13 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                 <div className="col-span-full">
                   <label htmlFor="fp-desc" className="flex items-center justify-between text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">
                     <span>Descripción</span>
-                    <span className="normal-case opacity-70">Opcional</span>
+                    <span className="normal-case opacity-70">{descripcion.length}/150</span>
                   </label>
                   <textarea
                     id="fp-desc"
                     value={descripcion}
                     onChange={e => setDescripcion(e.target.value)}
+                    maxLength={150}
                     placeholder="Detalles sobre las medidas, usos..."
                     rows={2}
                     className="w-full bg-ink-50 border border-transparent rounded-lg px-3 py-2 text-sm font-medium text-ink-900 focus:bg-white focus:border-ink-400 focus:outline-none focus:ring-1 focus:ring-ink-200 transition-all resize-none shadow-sm"
