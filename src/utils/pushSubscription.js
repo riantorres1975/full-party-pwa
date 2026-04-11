@@ -38,10 +38,12 @@ export async function subscribeToPush(folio, telefono) {
       await existing.unsubscribe();
     }
 
+    console.log('[Push] Subscribing with VAPID key:', VAPID_PUBLIC_KEY?.slice(0, 20) + '...');
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
     });
+    console.log('[Push] Browser subscription created:', subscription.endpoint);
 
     const sub = subscription.toJSON();
 
@@ -53,22 +55,23 @@ export async function subscribeToPush(folio, telefono) {
       keys_auth: sub.keys.auth,
     };
 
-    // Try insert first; if endpoint already exists, ignore the duplicate error
+    console.log('[Push] Saving to DB, folio:', folio);
     const { error } = await supabase.from('push_subscriptions').insert(row);
 
     if (error) {
-      // 23505 = unique_violation — endpoint already saved, that's fine
       if (error.code === '23505') {
         console.info('[Push] Subscription already saved for this endpoint');
       } else {
-        console.warn('[Push] Error saving subscription:', error.message);
+        console.error('[Push] Error saving subscription:', error.code, error.message, error);
         return { ok: false, reason: 'db_error' };
       }
+    } else {
+      console.log('[Push] Subscription saved successfully!');
     }
 
     return { ok: true };
   } catch (err) {
-    console.warn('[Push] Subscription failed:', err);
+    console.error('[Push] Subscription failed:', err.name, err.message, err);
     return { ok: false, reason: 'error' };
   }
 }
