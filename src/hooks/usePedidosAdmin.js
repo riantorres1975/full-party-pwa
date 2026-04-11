@@ -159,8 +159,15 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
     const { error: err } = await guardedQuery((client) =>
       client.from('pedidos').update({ estado: nuevoEstado, notificado_estado: null }).eq('id', pedidoId)
     );
-    if (err) toast.error('Error al actualizar: ' + err.message);
-    else setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, estado: nuevoEstado, notificado_estado: null } : p));
+    if (err) {
+      toast.error('Error al actualizar: ' + err.message);
+    } else {
+      setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, estado: nuevoEstado, notificado_estado: null } : p));
+      // Send push notification to customer
+      supabase.functions.invoke('send-push-notification', {
+        body: { folio: pedido.folio, estado: nuevoEstado, cliente_nombre: pedido.cliente_nombre },
+      }).catch(e => console.warn('[Push] Edge Function error:', e));
+    }
     setActualizando(null);
   }, [toast, pedidos]);
 
@@ -202,6 +209,10 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
       setPedidos(prev => prev.map(p => p.id === pedido.id ? { ...p, estado: 'Cancelado', notificado_estado: null } : p));
       toast.success(`Pedido ${pedido.folio} cancelado`);
       notificarCliente({ ...pedido, estado: 'Cancelado' });
+      // Send push notification to customer
+      supabase.functions.invoke('send-push-notification', {
+        body: { folio: pedido.folio, estado: 'Cancelado', cliente_nombre: pedido.cliente_nombre },
+      }).catch(e => console.warn('[Push] Edge Function error:', e));
       await supabase.from('pedidos').update({ notificado_estado: 'Cancelado' }).eq('id', pedido.id);
       setPedidos(prev => prev.map(p => p.id === pedido.id ? { ...p, notificado_estado: 'Cancelado' } : p));
     }
