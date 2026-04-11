@@ -186,8 +186,8 @@ body.theme-dark {
   }
 }
 
-/* Decoración de confetti fijo en el fondo */
-body::before {
+/* Decoración de confetti fijo en el fondo (solo catálogo público) */
+body.catalogo::before {
   content: '🎉 🎈 ⭐ 🎊 🌟 🎀 🎁 🥳 🎶 🎉 🎈 ⭐ 🎊 🌟';
   position: fixed;
   top: -10px;
