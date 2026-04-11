@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { MessageCircle, ChevronDown, Package, LayoutGrid, ClipboardList, Search, RefreshCw, LogOut, ShoppingBag, Clock, CheckCircle2, XCircle, Phone, Truck, Store, MapPin } from 'lucide-react';
+import { MessageCircle, ChevronDown, Package, LayoutGrid, ClipboardList, Search, RefreshCw, LogOut, ShoppingBag, Clock, CheckCircle2, XCircle, Phone, Truck, Store, MapPin, Bell } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { SIMBOLO_MONEDA } from '../data/productos';
 import { notificarCliente } from '../utils/whatsapp';
@@ -42,7 +42,7 @@ function normalizarArticulos(lista, modoPicking) {
     } else if (typeof i.encontrado === 'boolean') {
       cantidadSurtida = i.encontrado ? cantidadPedida : 0;
     } else {
-      // En picking nuevo, empiezan sin marcar (0)
+      // For new picking sessions, items start unselected (0)
       cantidadSurtida = modoPicking ? 0 : cantidadPedida;
     }
     return {
@@ -71,7 +71,7 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChang
   const precioMostrar = modoPicking && marcado ? precioSurtido : precioAplicado;
   const hayDescuento = precioMostrar < precioBase;
   const cambioPrecioMayoreo = modoPicking && marcado && precioSurtido !== precioAplicado;
-  // En picking usa cantidadSurtida si marcado; post-picking usa cantidad_surtida si fue procesado
+  // In picking mode use fulfilled quantity when selected; post-picking uses persisted cantidad_surtida
   const cantidadParaSubtotal = modoPicking
     ? (marcado ? cantidadSurtida : cantidadPedida)
     : (typeof item.cantidad_surtida === 'number' ? cantidadSurtida : cantidadPedida);
@@ -208,7 +208,7 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChang
         )}
       </div>
     </div>
-    {/* Controles +/− debajo, solo cuando marcado y cantidad > 1 */}
+    {/* +/- controls below, only when selected and quantity > 1 */}
     {modoPicking && marcado && cantidadPedida > 1 && (
       <div className={`flex items-center gap-2 ${esDesktop ? 'ml-9 mt-1 mb-1' : 'ml-10 mt-1 mb-2'}`}>
         <span className={`font-body font-bold text-admin-muted ${esDesktop ? 'text-xs' : 'text-[11px]'}`}>{t('admin.orders.fulfilledShort')}:</span>
@@ -326,7 +326,7 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, onT
           .eq('id', art.id);
       }));
 
-      // Marcar productos con 0 surtido como agotados
+      // Mark products with zero fulfilled units as out of stock
       const sinSurtir = articulosSurtidos.filter(a => (a.cantidad_surtida || 0) === 0 && a.id);
       await Promise.all(sinSurtir.map(async (art) => {
         await supabase
@@ -338,7 +338,7 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, onT
       console.warn('[Picking] Falla parcial al actualizar inventario', err);
     }
 
-    // 2. Actualizar el pedido con precios recalculados
+    // 2) Update order with recalculated prices
     const articulosFinales = articulosSurtidos.map(a => ({
       ...a,
       precio: Number(a.precio_surtido ?? a.precio) || 0,
@@ -563,7 +563,7 @@ function TarjetaPedidoCompacta({ pedido, seleccionado, onClick }) {
   );
 }
 
-// ── Tarjeta de un pedido ─────────────────────────────────────────────────────
+// Single order card
 function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onNotificar, onPickingListo, onCancelar, esDesktop }) {
   const { t, lang } = useLanguage();
   const meta = ESTADO_META[pedido.estado] ?? ESTADO_META['Por Surtir'];
@@ -681,7 +681,7 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
 
       {/* Botones de acción: notificar + cancelar */}
       <div className={`flex items-center gap-2 ${esDesktop ? 'justify-end' : 'flex-col'}`}>
-        {/* Botón cancelar pedido */}
+        {/* Cancel order button */}
         {pedido.estado !== 'Cancelado' && (
           <button
             onClick={() => onCancelar(pedido)}
@@ -698,7 +698,7 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
           </button>
         )}
 
-        {/* Indicador de pedido cancelado */}
+        {/* Cancelled order indicator */}
         {pedido.estado === 'Cancelado' && (
           <div className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-body font-bold
                           ${esDesktop ? '' : 'w-full order-2'}`}
@@ -771,12 +771,29 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
     fetchPedidos, pedidosFiltrados, contadores,
     pedidoSeleccionado,
     cambiarEstado, cancelarPedido, notificar,
+    notificationPermission, requestNotificationPermission,
   } = usePedidosAdmin({ toast, confirmCancelar });
+
+  const notificationStatusLabel =
+    notificationPermission === 'granted'
+      ? t('admin.notifications.enabled')
+      : notificationPermission === 'denied'
+        ? t('admin.notifications.blocked')
+        : notificationPermission === 'unsupported'
+          ? t('admin.notifications.unsupported')
+          : t('admin.notifications.enable');
+
+  const handleEnableNotifications = useCallback(async () => {
+    const permission = await requestNotificationPermission();
+    if (permission === 'granted') toast.success(t('admin.notifications.enabled'));
+    else if (permission === 'denied') toast.warning(t('admin.notifications.blocked'));
+    else if (permission === 'unsupported') toast.warning(t('admin.notifications.unsupported'));
+  }, [requestNotificationPermission, toast, t]);
 
   // Sincronizar debounce → hook
   useEffect(() => { setBusqueda(busquedaDebounced); }, [busquedaDebounced, setBusqueda]);
 
-  // Wrapper: al cambiar estado, mover el filtro al nuevo estado
+  // Wrapper: after status change, move active filter to new status
   const cambiarEstadoYFiltrar = useCallback(async (pedidoId, nuevoEstado) => {
     await cambiarEstado(pedidoId, nuevoEstado);
     setFiltroEstado(nuevoEstado);
@@ -822,6 +839,15 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
                 disabled={vistaAdmin !== 'pedidos'}
               >
                 <RefreshCw size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={handleEnableNotifications}
+                className="inline-flex items-center justify-center p-2 rounded-lg text-admin-muted bg-admin-elevated hover:bg-admin-input border border-admin-border transition-colors"
+                title={notificationStatusLabel}
+                aria-label={notificationStatusLabel}
+              >
+                <Bell size={16} />
               </button>
               <ThemeToggle isDarkMode={temaOscuro} onToggle={onToggleTema} variant="admin" />
               <button
@@ -896,6 +922,14 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
             >
               <RefreshCw size={14} />
               {t('admin.reloadData')}
+            </button>
+            <button
+              type="button"
+              onClick={handleEnableNotifications}
+              className="flex w-full items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-body font-bold text-admin-text-secondary bg-admin-elevated hover:bg-admin-input border border-admin-border transition-colors"
+            >
+              <Bell size={14} />
+              {notificationStatusLabel}
             </button>
             <button
               type="button"

@@ -17,19 +17,19 @@ import RedesSociales      from './components/RedesSociales';
 import SidebarFiltrosDesktop from './components/SidebarFiltrosDesktop';
 
 export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
-  // ── Datos desde Supabase ───────────────────────────────────────────────────
+  // Data from Supabase
   const { productos, loading, error, refetch } = useProductos();
   const { mensaje: anuncioMsg, activo: anuncioActivo } = useAnuncio();
-  const [anuncioCerrado, setAnuncioCerrado] = useState(false);
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
-  // ── UI state ───────────────────────────────────────────────────────────────
-  const [busqueda,        setBusqueda]        = useState('');
-  const [carritoAbierto,  setCarritoAbierto]  = useState(false);
-  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
-  const [rastreoAbierto,  setRastreoAbierto]  = useState(false);
-  const [mostrarIntro, setMostrarIntro] = useState(false);
+  // UI state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [areFiltersOpen, setAreFiltersOpen] = useState(false);
+  const [isTrackingOpen, setIsTrackingOpen] = useState(false);
+  const [showIntro, setShowIntro] = useState(false);
 
-  const [filtros, setFiltros] = useState({
+  const [activeFilters, setActiveFilters] = useState({
     categorias: [],
     marcas:     [],
     tamanios:   [],
@@ -47,7 +47,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     if (stockError) toast.warning(stockError);
   }, [stockError]);
 
-  // ── Sincronizar carrito cuando productos cambian en tiempo real ─────────
+  // Keep cart in sync when products update in realtime
   useEffect(() => {
     if (productos.length > 0) sincronizarStock(productos);
   }, [productos, sincronizarStock]);
@@ -56,18 +56,18 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     const yaVioIntro = sessionStorage.getItem('fp_intro_v1') === '1';
     if (yaVioIntro) return;
 
-    setMostrarIntro(true);
+    setShowIntro(true);
     const t = setTimeout(() => {
-      setMostrarIntro(false);
+      setShowIntro(false);
       sessionStorage.setItem('fp_intro_v1', '1');
     }, 1850);
 
     return () => clearTimeout(t);
   }, []);
 
-  // ── Lógica de filtros ──────────────────────────────────────────────────────
-  const toggleFiltro = (dimension, valor) => {
-    setFiltros(prev => {
+  // Filter logic
+  const toggleFilter = (dimension, valor) => {
+    setActiveFilters(prev => {
       const actual = prev[dimension];
       return {
         ...prev,
@@ -78,65 +78,65 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     });
   };
 
-  const limpiarFiltros = () =>
-    setFiltros({ categorias: [], marcas: [], tamanios: [] });
+  const clearFilters = () =>
+    setActiveFilters({ categorias: [], marcas: [], tamanios: [] });
 
-  const productosFiltrados = useMemo(() => {
-    const filtrados = productos.filter(p => {
-      const texto = busqueda.toLowerCase();
-      const coincideTexto = !busqueda ||
-        p.nombre.toLowerCase().includes(texto) ||
-        p.descripcion?.toLowerCase().includes(texto) ||
-        p.marca?.toLowerCase().includes(texto)  ||
-        p.tamano?.toLowerCase().includes(texto);
+  const filteredProducts = useMemo(() => {
+    const filtered = productos.filter(p => {
+      const query = searchQuery.toLowerCase();
+      const matchesText = !searchQuery ||
+        p.nombre.toLowerCase().includes(query) ||
+        p.descripcion?.toLowerCase().includes(query) ||
+        p.marca?.toLowerCase().includes(query)  ||
+        p.tamano?.toLowerCase().includes(query);
 
-      const coincideCategoria =
-        filtros.categorias.length === 0 || filtros.categorias.includes(p.categoria);
-      const coincideMarca =
-        filtros.marcas.length === 0 || (p.marca && filtros.marcas.includes(p.marca));
-      const coincideTamano =
-        filtros.tamanios.length === 0 || (p.tamano && filtros.tamanios.includes(p.tamano));
+      const matchesCategory =
+        activeFilters.categorias.length === 0 || activeFilters.categorias.includes(p.categoria);
+      const matchesBrand =
+        activeFilters.marcas.length === 0 || (p.marca && activeFilters.marcas.includes(p.marca));
+      const matchesSize =
+        activeFilters.tamanios.length === 0 || (p.tamano && activeFilters.tamanios.includes(p.tamano));
 
-      return coincideTexto && coincideCategoria && coincideMarca && coincideTamano;
+      return matchesText && matchesCategory && matchesBrand && matchesSize;
     });
 
-    return [...filtrados].sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       const aNuevo = a.es_nuevo === true ? 1 : 0;
       const bNuevo = b.es_nuevo === true ? 1 : 0;
       if (aNuevo !== bNuevo) return bNuevo - aNuevo;
       return String(a.nombre || '').localeCompare(String(b.nombre || ''));
     });
-  }, [productos, busqueda, filtros]);
+  }, [productos, searchQuery, activeFilters]);
 
   // Build ordered category pill list from known config (only show if products exist with that category)
-  const pillasCategorias = useMemo(() => {
+  const categoryPills = useMemo(() => {
     const usadas = new Set(productos.map(p => p.categoria).filter(Boolean));
     return CATEGORIAS_CONFIG.filter(c => usadas.has(c.id));
   }, [productos]);
 
-  const categoriaActivaSola =
-    filtros.categorias.length === 1 ? filtros.categorias[0] : null;
+  const singleActiveCategory =
+    activeFilters.categorias.length === 1 ? activeFilters.categorias[0] : null;
 
-  const seleccionarCategoriaPill = (catId) => {
+  const selectCategoryPill = (catId) => {
     if (catId === null) {
-      setFiltros(prev => ({ ...prev, categorias: [] }));
+      setActiveFilters(prev => ({ ...prev, categorias: [] }));
     } else {
-      setFiltros(prev => ({ ...prev, categorias: [catId] }));
+      setActiveFilters(prev => ({ ...prev, categorias: [catId] }));
     }
   };
 
-  const totalFiltrosActivos =
-    filtros.categorias.length + filtros.marcas.length + filtros.tamanios.length;
+  const activeFilterCount =
+    activeFilters.categorias.length + activeFilters.marcas.length + activeFilters.tamanios.length;
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-  // Vista de rastreo — pantalla completa
-  if (rastreoAbierto) {
-    return <RastreoPedido onCerrar={() => setRastreoAbierto(false)} />;
+  // Render
+  // Full-screen tracking view
+  if (isTrackingOpen) {
+    return <RastreoPedido onCerrar={() => setIsTrackingOpen(false)} />;
   }
 
   return (
     <div className={`min-h-screen lg:h-screen lg:overflow-hidden transition-colors duration-300 ${temaOscuro ? 'bg-[#0f1124]' : 'bg-cream'}`}>
-      {mostrarIntro && (
+      {showIntro && (
         <div className="fp-intro-overlay">
           <div className="fp-intro-glow" />
           <div className="fp-intro-card">
@@ -157,8 +157,8 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
         >
           <Header
             cantidadTotal={cantidadTotal}
-            onAbrirCarrito={() => setCarritoAbierto(true)}
-            onRastreoClick={() => setRastreoAbierto(true)}
+            onAbrirCarrito={() => setIsCartOpen(true)}
+            onRastreoClick={() => setIsTrackingOpen(true)}
             temaOscuro={temaOscuro}
             onToggleTema={onToggleTema}
             isAdmin={isAdmin}
@@ -166,37 +166,37 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
           <div className="pt-1">
             <BuscadorFiltros
-              busqueda={busqueda}
-              setBusqueda={setBusqueda}
-              filtros={filtros}
-              toggleFiltro={toggleFiltro}
-              totalFiltrosActivos={totalFiltrosActivos}
-              onAbrirFiltros={() => setFiltrosAbiertos(true)}
+              busqueda={searchQuery}
+              setBusqueda={setSearchQuery}
+              filtros={activeFilters}
+              toggleFiltro={toggleFilter}
+              totalFiltrosActivos={activeFilterCount}
+              onAbrirFiltros={() => setAreFiltersOpen(true)}
             />
           </div>
 
-          {/* Pills de categorías — quick-access, solo mobile (sidebar lo cubre en desktop) */}
-          {pillasCategorias.length > 0 && !loading && (
+          {/* Category pills: quick access on mobile only */}
+          {categoryPills.length > 0 && !loading && (
             <div className="lg:hidden overflow-x-auto hide-scrollbar pb-2 pt-1.5">
               <div className="flex gap-2 px-4">
                 <button
-                  onClick={() => seleccionarCategoriaPill(null)}
+                    onClick={() => selectCategoryPill(null)}
                   className="flex-shrink-0 text-[11px] font-body font-black px-3 py-1.5 rounded-full
                              transition-all duration-200 active:scale-95 whitespace-nowrap"
-                  style={filtros.categorias.length === 0
+                  style={activeFilters.categorias.length === 0
                     ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)', color: 'white', boxShadow: '0 2px 8px #ff3dac44' }
                     : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-soft)' }
                   }
                 >
                   {t('common.all')}
                 </button>
-                {pillasCategorias.map(cat => (
+                {categoryPills.map(cat => (
                   <button
                     key={cat.id}
-                    onClick={() => seleccionarCategoriaPill(cat.id)}
+                    onClick={() => selectCategoryPill(cat.id)}
                     className="flex-shrink-0 text-[11px] font-body font-black px-3 py-1.5 rounded-full
                                transition-all duration-200 active:scale-95 whitespace-nowrap"
-                    style={categoriaActivaSola === cat.id
+                    style={singleActiveCategory === cat.id
                       ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)', color: 'white', boxShadow: '0 2px 8px #ff3dac44' }
                       : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-soft)' }
                     }
@@ -209,8 +209,8 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
           )}
         </header>
 
-        {/* ── Anuncio / Banner para clientes ── */}
-        {anuncioActivo && anuncioMsg && !anuncioCerrado && (
+        {/* Customer announcement banner */}
+        {anuncioActivo && anuncioMsg && !isBannerDismissed && (
           <div
             className="relative overflow-hidden text-center font-body font-black"
             style={{
@@ -226,7 +226,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
               <span className="text-sm leading-snug">{anuncioMsg}</span>
             </div>
             <button
-              onClick={() => setAnuncioCerrado(true)}
+              onClick={() => setIsBannerDismissed(true)}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center
                          rounded-full bg-white/20 text-white/80 hover:bg-white/30 hover:text-white
                          text-xs font-bold transition-all duration-200 active:scale-90"
@@ -241,14 +241,14 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
           <div className="max-w-[1600px] mx-auto w-full px-3 lg:px-6 h-full">
             <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(0,1fr)] lg:gap-6 xl:gap-8 lg:items-start lg:h-full">
               <SidebarFiltrosDesktop
-                filtros={filtros}
-                toggleFiltro={toggleFiltro}
-                limpiarFiltros={limpiarFiltros}
-                totalFiltrosActivos={totalFiltrosActivos}
+                filtros={activeFilters}
+                toggleFiltro={toggleFilter}
+                limpiarFiltros={clearFilters}
+                totalFiltrosActivos={activeFilterCount}
               />
 
               <section className="lg:h-full lg:flex lg:flex-col min-h-0">
-                {/* Strip de confianza */}
+                 {/* Trust strip */}
                 <div className="px-3 lg:px-0 pt-2 pb-1">
                   <div className="flex items-center justify-start lg:justify-center gap-3 lg:gap-5 text-[10px] lg:text-xs font-body font-bold overflow-x-auto hide-scrollbar"
                        style={{ color: 'var(--text-secondary)' }}>
@@ -256,7 +256,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     <span className="whitespace-nowrap">{t('trust.payOnDelivery')}</span>
                     <span className="whitespace-nowrap">{t('trust.whatsapp')}</span>
                     <button
-                      onClick={() => setRastreoAbierto(true)}
+                      onClick={() => setIsTrackingOpen(true)}
                       className="whitespace-nowrap ml-auto lg:hidden flex items-center gap-1 transition-colors"
                       style={{ color: 'var(--color-fiesta-purple, #a855f7)' }}
                     >
@@ -289,7 +289,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
                   {!loading && !error && (
                     <ProductGrid
-                      productos={productosFiltrados}
+                      productos={filteredProducts}
                       getCantidad={getCantidad}
                       onAgregar={agregarItem}
                       onReducir={reducirItem}
@@ -306,15 +306,15 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
         <FloatingCartButton
           cantidadTotal={cantidadTotal}
           total={total}
-          onAbrir={() => setCarritoAbierto(true)}
+          onAbrir={() => setIsCartOpen(true)}
         />
       </div>
 
       <CarritoDrawer
         items={items}
         total={total}
-        isOpen={carritoAbierto}
-        onCerrar={() => setCarritoAbierto(false)}
+        isOpen={isCartOpen}
+        onCerrar={() => setIsCartOpen(false)}
         onAgregar={agregarItem}
         onReducir={reducirItem}
         onEliminar={eliminarItem}
@@ -323,12 +323,12 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
       />
 
       <ModalFiltros
-        isOpen={filtrosAbiertos}
-        onCerrar={() => setFiltrosAbiertos(false)}
-        filtros={filtros}
-        toggleFiltro={toggleFiltro}
-        limpiarFiltros={limpiarFiltros}
-        totalResultados={productosFiltrados.length}
+        isOpen={areFiltersOpen}
+        onCerrar={() => setAreFiltersOpen(false)}
+        filtros={activeFilters}
+        toggleFiltro={toggleFilter}
+        limpiarFiltros={clearFilters}
+        totalResultados={filteredProducts.length}
       />
     </div>
   );

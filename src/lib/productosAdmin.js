@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import { guardedQuery, throwIfSessionError } from './supabaseGuard';
 
-/** Bucket público para fotos de producto (crear en Supabase + políticas; ver supabase_storage_productos.sql) */
+/** Public bucket for product images (create in Supabase + policies; see supabase_storage_productos.sql) */
 export const BUCKET_IMAGENES_PRODUCTOS = 'productos-imagenes';
 
 /**
@@ -42,7 +42,7 @@ function errorColumnaEsNuevoInexistente(error) {
   return code === 'PGRST204' || (msg.includes('es_nuevo') && (msg.includes('column') || msg.includes('schema cache')));
 }
 
-/** Tamaño máximo para imágenes de producto: 5 MB */
+/** Maximum product image size: 5 MB */
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 /** Extensiones y MIME types permitidos */

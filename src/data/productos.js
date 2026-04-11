@@ -59,7 +59,7 @@ export const tamanios = [];
 // ─────────────────────────────────────────────────────────────────────────────
 // PRODUCTOS
 // Campos: id, nombre, precio, descripcion, imagen_url,
-//         categoria, marca (opcional), tamano (opcional)
+//         category, brand (optional), size (optional)
 // ─────────────────────────────────────────────────────────────────────────────
 export const productos = [
   {

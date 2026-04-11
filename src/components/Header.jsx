@@ -113,7 +113,7 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
             </a>
           )}
 
-          {/* Rastreo de pedido */}
+          {/* Order tracking */}
           {onRastreoClick && (
             <button
               onClick={onRastreoClick}
@@ -217,7 +217,7 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
             )}
           </div>
 
-          {/* Botón carrito */}
+          {/* Cart button */}
           <div className="relative overflow-visible">
             <button
               onClick={onAbrirCarrito}
