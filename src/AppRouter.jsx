@@ -37,6 +37,12 @@ export default function AppRouter() {
   const { isDarkMode, toggleTheme } = useTheme();
   const esRutaAdmin = hash.startsWith('#/admin');
 
+  // Confetti de fondo solo en el catálogo público
+  useEffect(() => {
+    document.body.classList.toggle('catalogo', !esRutaAdmin);
+    return () => document.body.classList.remove('catalogo');
+  }, [esRutaAdmin]);
+
   // Spinner mientras Supabase verifica la sesión
   if (cargandoSesion) {
     return (
