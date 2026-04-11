@@ -157,6 +157,20 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+// ── Push notifications (Web Push API) ─────────────────────────────────────
+self.addEventListener('push', (event) => {
+  const data = event.data?.json() || {};
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'Full Party', {
+      body: data.body || '',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      data: { url: data.url || '/' },
+      vibrate: [200, 120, 200],
+    })
+  );
+});
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const targetUrl = event.notification?.data?.url || '/#/admin';

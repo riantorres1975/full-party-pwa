@@ -6,6 +6,7 @@ import { SIMBOLO_MONEDA, DIRECCION_TIENDA, HORARIO_TIENDA, MAPS_URL_TIENDA } fro
 import { usePedido } from '../hooks/usePedido';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useLanguage } from '../hooks/useLanguage';
+import { isPushSupported, subscribeToPush } from '../utils/pushSubscription';
 
 // Session rate limit (max orders per time window)
 const MAX_ORDERS_PER_SESSION = 5;
@@ -48,6 +49,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
   const [errors, setErrors] = useState({});
   const [honeypot,  setHoneypot]  = useState('');
   const [pendingOrder, setPendingOrder] = useState(null);
+  const [pushState, setPushState] = useState('idle'); // idle | subscribing | subscribed | denied | unsupported
   const panelRef = useRef(null);
   useFocusTrap(panelRef, isOpen);
 
@@ -64,7 +66,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
 
   useEffect(() => {
     if (!isOpen) {
-      const t = setTimeout(() => setPendingOrder(null), 600);
+      const t = setTimeout(() => { setPendingOrder(null); setPushState('idle'); }, 600);
       return () => clearTimeout(t);
     }
   }, [isOpen]);
@@ -257,6 +259,35 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                   </button>
                 </div>
               )}
+              {/* Push notification prompt */}
+              {isPushSupported() && pushState !== 'subscribed' && pushState !== 'denied' && pushState !== 'unsupported' && pendingOrder.folio && (
+                <div className="w-full rounded-2xl p-4 text-center animate-fade-in"
+                     style={{ background: 'linear-gradient(135deg, #fef3c7, #fde68a)', border: '2px solid #fbbf2444' }}>
+                  <p className="text-2xl mb-1" aria-hidden="true">🔔</p>
+                  <p className="font-body font-black text-sm text-amber-900">{t('push.promptTitle')}</p>
+                  <p className="font-body text-xs text-amber-700 mt-0.5 mb-3">{t('push.promptDesc')}</p>
+                  <button
+                    onClick={async () => {
+                      setPushState('subscribing');
+                      const result = await subscribeToPush(pendingOrder.folio, cleanedPhone);
+                      setPushState(result.ok ? 'subscribed' : result.reason === 'denied' ? 'denied' : 'unsupported');
+                    }}
+                    disabled={pushState === 'subscribing'}
+                    className="px-5 py-2 rounded-xl text-white font-body font-black text-sm
+                               transition-all active:scale-95 disabled:opacity-60"
+                    style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', boxShadow: '0 4px 12px #f59e0b44' }}
+                  >
+                    {pushState === 'subscribing' ? t('push.subscribing') : t('push.enable')}
+                  </button>
+                </div>
+              )}
+              {pushState === 'subscribed' && (
+                <div className="w-full rounded-2xl p-3 text-center animate-fade-in"
+                     style={{ background: '#dcfce7', border: '2px solid #22c55e33' }}>
+                  <p className="font-body font-black text-sm text-green-800">✅ {t('push.subscribed')}</p>
+                </div>
+              )}
+
               <div className="w-full rounded-2xl p-4 space-y-2"
                    style={{ background: 'var(--surface-section-gradient)', border: '2px solid var(--border-default)' }}>
                 <div className="flex justify-between text-sm">

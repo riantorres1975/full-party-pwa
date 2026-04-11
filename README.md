@@ -13,9 +13,10 @@ Catálogo digital para tienda de artículos de fiesta, construido como Progressi
 | React | 18.3 | UI y manejo de estado |
 | Vite | 7.3 | Bundler y dev server |
 | Tailwind CSS | 3.4 | Estilos utilitarios |
-| Supabase JS | 2.98 | Base de datos, Auth y Realtime |
+| Supabase JS | 2.98 | Base de datos, Auth, Realtime y Edge Functions |
 | lucide-react | latest | Íconos SVG |
 | PWA nativa | — | Service Worker + manifest.json |
+| Web Push API | — | Notificaciones push al cliente por cambio de estado |
 
 ---
 
@@ -37,6 +38,11 @@ catalogo-pwa/
 │
 ├── supabase_setup.sql             ← Script único de BD (Tablas, RLS, Políticas de Admin)
 ├── supabase_rate_limit.sql        ← Rate limiting server-side + validación en BD
+│
+├── supabase/
+│   └── functions/
+│       └── send-push-notification/
+│           └── index.ts           ← Edge Function — envía Web Push al cliente al cambiar estado
 ├── vercel.json                    ← Headers de seguridad (CSP, HSTS, X-Frame-Options)
 │
 ├── .github/
@@ -74,7 +80,8 @@ catalogo-pwa/
     ├── utils/
     │   ├── precios.js             ← calcula precio aplicable por mayoreo
     │   ├── validarTelefono.js     ← validación de teléfonos mexicanos (ladas IFT)
-    │   └── whatsapp.js            ← genera URL de WhatsApp con precio aplicado por artículo
+    │   ├── whatsapp.js            ← genera URL de WhatsApp con precio aplicado por artículo
+    │   └── pushSubscription.js    ← suscripción a Web Push (PushManager + guardado en Supabase)
     │
     ├── __tests__/
     │   └── seguridad.test.mjs     ← suite de pruebas de seguridad (52 tests)
@@ -133,6 +140,10 @@ VITE_WHATSAPP_NUMBER="521XXXXXXXXXX"
 VITE_NOMBRE_NEGOCIO="Tu Negocio"
 # Opcional: lista blanca de emails admin (RBAC). Si se omite, cualquier cuenta autenticada puede entrar.
 VITE_ADMIN_EMAILS="admin@tudominio.com,otro@tudominio.com"
+
+# Push Notifications (Web Push VAPID)
+# Genera con: npx web-push generate-vapid-keys
+VITE_VAPID_PUBLIC_KEY="BxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxXX"
 ```
 
 Las credenciales están en **Supabase Dashboard → Settings → API**.
@@ -142,7 +153,7 @@ Las credenciales están en **Supabase Dashboard → Settings → API**.
 Ejecuta los scripts en **Supabase → SQL Editor**:
 
 ```text
-1. supabase_setup.sql       → Tablas, índices y políticas RLS.
+1. supabase_setup.sql       → Tablas, índices y políticas RLS (incluye push_subscriptions).
 2. supabase_rate_limit.sql  → Rate limiting server-side + validaciones en BD (opcional pero recomendado).
 ```
 
@@ -160,11 +171,36 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.productos;
 
 > **`productos`** es necesario para que los clientes vean cambios de stock y disponibilidad al instante cuando el admin modifica el catálogo.
 
-### 5. Crear el usuario administrador
+### 5. Configurar notificaciones push (opcional)
+
+Para que los clientes reciban alertas automáticas al cambiar el estado de su pedido:
+
+**a) Generar claves VAPID:**
+```bash
+npx web-push generate-vapid-keys
+```
+
+**b) Agregar la clave pública a `.env`:**
+```env
+VITE_VAPID_PUBLIC_KEY="BxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxXX"
+```
+
+**c) Desplegar la Edge Function:**
+```bash
+npx supabase login
+npx supabase link --project-ref TU_PROJECT_REF
+npx supabase secrets set VAPID_PUBLIC_KEY="..." VAPID_PRIVATE_KEY="..." VAPID_SUBJECT="mailto:tu@email.com"
+npx supabase functions deploy send-push-notification
+```
+
+> La clave privada va **solo** en los secrets de Supabase, nunca en el cliente.  
+> Compatible con Android Chrome. iOS Safari 16.4+ con soporte limitado.
+
+### 6. Crear el usuario administrador
 
 En **Supabase → Authentication → Users → Add user**, crea el usuario con email y contraseña que usarás para entrar al panel de admin.
 
-### 6. Arrancar el servidor
+### 7. Arrancar el servidor
 
 ```bash
 npm run dev
@@ -234,6 +270,20 @@ export const categorias = [
 | `notificado_estado` | TEXT | Estado en que se notificó al cliente por última vez — compartido entre sesiones vía Realtime |
 | `created_at` | TIMESTAMPTZ | Auto |
 | `updated_at` | TIMESTAMPTZ | Auto via trigger |
+
+### Tabla `push_subscriptions`
+
+| Campo | Tipo | Notas |
+|---|---|---|
+| `id` | UUID | PK auto |
+| `folio` | TEXT | Referencia al pedido |
+| `cliente_telefono` | TEXT | Opcional, para referencia |
+| `endpoint` | TEXT UNIQUE | URL del servidor de push del navegador |
+| `keys_p256dh` | TEXT | Clave pública de cifrado del cliente |
+| `keys_auth` | TEXT | Secreto de autenticación del cliente |
+| `created_at` | TIMESTAMPTZ | Auto |
+
+> RLS: anon puede INSERT (suscribirse). Solo admins pueden SELECT/DELETE. La Edge Function usa `service_role` para leer y eliminar suscripciones expiradas.
 
 #### Estados del pedido
 
@@ -383,6 +433,25 @@ export const categorias = [
 - **Detección de chunks faltantes** — si tras un deploy los JS viejos ya no existen, el SW envía `FORCE_RELOAD` a todas las pestañas abiertas para que recarguen
 - **Polling cada 5 minutos** — chequea actualizaciones del SW periódicamente en segundo plano
 
+### Notificaciones Push al cliente (Web Push)
+
+- El cliente puede activar notificaciones push al confirmar su pedido
+- El prompt aparece en la pantalla de confirmación con el folio — solo si el navegador lo soporta y no ha respondido antes
+- Al aceptar, la suscripción se guarda en la tabla `push_subscriptions` vinculada al folio
+- Cuando el admin cambia el estado del pedido, se invoca la Edge Function `send-push-notification` automáticamente
+- La notificación llega al dispositivo del cliente aunque la app esté cerrada
+- Al tocar la notificación, el cliente es llevado directamente a la página de rastreo
+
+#### Mensajes push por estado
+
+| Estado | Título | Cuerpo |
+|---|---|---|
+| Armando Pedido | Preparando tu pedido | Hola {nombre}, ya estamos preparando tu pedido {folio} |
+| Listo para Entrega | Tu pedido está listo | Hola {nombre}, tu pedido {folio} ya está listo para entrega |
+| Cancelado | Pedido cancelado | Hola {nombre}, tu pedido {folio} ha sido cancelado |
+
+> Compatibilidad: Android Chrome y navegadores Chromium. iOS Safari 16.4+ con soporte limitado.
+
 ---
 
 ## 🗺️ Rutas
@@ -419,6 +488,12 @@ Sube la carpeta `/dist` a **Vercel** y agrega las variables de entorno (`VITE_SU
 El archivo `vercel.json` incluido configura automáticamente los headers de seguridad (CSP, HSTS, X-Frame-Options, etc.).
 
 > En Netlify agrega un archivo `public/_redirects` con el contenido `/* /index.html 200` para que la navegación funcione correctamente al recargar.
+
+Además del build del frontend, asegúrate de tener la Edge Function desplegada:
+
+```bash
+npx supabase functions deploy send-push-notification
+```
 
 ---
 

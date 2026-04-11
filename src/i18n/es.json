@@ -304,5 +304,11 @@
   "announcements.closeAriaLabel": "Cerrar anuncio",
 
   "lang.toggle": "EN",
-  "lang.label": "Cambiar a inglés"
+  "lang.label": "Cambiar a inglés",
+
+  "push.promptTitle": "¿Recibir notificaciones?",
+  "push.promptDesc": "Te avisamos cuando tu pedido cambie de estado",
+  "push.enable": "🔔 Activar notificaciones",
+  "push.subscribing": "Activando...",
+  "push.subscribed": "Notificaciones activadas"
 }

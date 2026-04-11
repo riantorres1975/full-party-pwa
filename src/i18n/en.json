@@ -304,5 +304,11 @@
   "announcements.closeAriaLabel": "Close announcement",
 
   "lang.toggle": "ES",
-  "lang.label": "Switch to Spanish"
+  "lang.label": "Switch to Spanish",
+
+  "push.promptTitle": "Get notifications?",
+  "push.promptDesc": "We'll notify you when your order status changes",
+  "push.enable": "🔔 Enable notifications",
+  "push.subscribing": "Enabling...",
+  "push.subscribed": "Notifications enabled"
 }
