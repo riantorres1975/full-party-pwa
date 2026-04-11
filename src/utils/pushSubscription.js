@@ -31,6 +31,13 @@ export async function subscribeToPush(folio, telefono) {
 
   try {
     const registration = await navigator.serviceWorker.ready;
+
+    // Unsubscribe any existing subscription (needed when VAPID keys change)
+    const existing = await registration.pushManager.getSubscription();
+    if (existing) {
+      await existing.unsubscribe();
+    }
+
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
