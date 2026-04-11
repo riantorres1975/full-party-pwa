@@ -270,6 +270,7 @@
   "admin.notifications.enable": "Activar notificaciones",
   "admin.notifications.enabled": "Notificaciones activas",
   "admin.notifications.blocked": "Notificaciones bloqueadas",
+  "admin.notifications.insecure": "Notificaciones requieren HTTPS o PWA instalada",
   "admin.notifications.unsupported": "Notificaciones no soportadas",
   "admin.logout.title": "¿Cerrar sesión?",
   "admin.logout.message": "Serás redirigido al inicio.",

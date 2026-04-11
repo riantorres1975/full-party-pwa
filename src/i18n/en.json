@@ -270,6 +270,7 @@
   "admin.notifications.enable": "Enable notifications",
   "admin.notifications.enabled": "Notifications enabled",
   "admin.notifications.blocked": "Notifications blocked",
+  "admin.notifications.insecure": "Notifications require HTTPS or installed PWA",
   "admin.notifications.unsupported": "Notifications unsupported",
   "admin.logout.title": "Sign out?",
   "admin.logout.message": "You will be redirected to the home page.",
