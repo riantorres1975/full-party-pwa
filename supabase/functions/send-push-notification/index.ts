@@ -65,10 +65,22 @@ function base64UrlEncode(buffer: ArrayBuffer): string {
 }
 
 async function importVapidKey(rawB64: string): Promise<CryptoKey> {
-  const pkcs8 = base64UrlDecode(rawB64);
+  // Decode the uncompressed public key (65 bytes: 0x04 || x || y)
+  const pubBytes = base64UrlDecode(VAPID_PUBLIC_KEY);
+  const x = pubBytes.slice(1, 33);
+  const y = pubBytes.slice(33, 65);
+
+  const jwk = {
+    kty: "EC",
+    crv: "P-256",
+    d: rawB64,
+    x: base64UrlEncode(x.buffer),
+    y: base64UrlEncode(y.buffer),
+  };
+
   return crypto.subtle.importKey(
-    "pkcs8",
-    pkcs8,
+    "jwk",
+    jwk,
     { name: "ECDSA", namedCurve: "P-256" },
     false,
     ["sign"]
@@ -224,7 +236,7 @@ async function sendPushToEndpoint(
   auth: string,
   payload: object,
   vapidPrivateKey: CryptoKey
-): Promise<{ success: boolean; gone: boolean }> {
+): Promise<{ success: boolean; gone: boolean; error?: string; status?: number }> {
   try {
     const payloadBytes = new TextEncoder().encode(JSON.stringify(payload));
     const { encrypted } = await encryptPayload(p256dh, auth, payloadBytes);
@@ -245,13 +257,19 @@ async function sendPushToEndpoint(
     });
 
     if (response.status === 410 || response.status === 404) {
-      return { success: false, gone: true };
+      return { success: false, gone: true, status: response.status };
     }
 
-    return { success: response.status >= 200 && response.status < 300, gone: false };
+    if (response.status < 200 || response.status >= 300) {
+      const body = await response.text().catch(() => "");
+      console.error(`[Push] Endpoint returned ${response.status}: ${body}`);
+      return { success: false, gone: false, status: response.status, error: body };
+    }
+
+    return { success: true, gone: false, status: response.status };
   } catch (err) {
     console.error("[Push] Send failed:", err);
-    return { success: false, gone: false };
+    return { success: false, gone: false, error: String(err) };
   }
 }
 
@@ -314,6 +332,7 @@ Deno.serve(async (req) => {
 
     let sent = 0;
     const expired: string[] = [];
+    const errors: string[] = [];
 
     await Promise.all(
       subscriptions.map(async (sub) => {
@@ -326,6 +345,7 @@ Deno.serve(async (req) => {
         );
         if (result.success) sent++;
         if (result.gone) expired.push(sub.id);
+        if (result.error) errors.push(`status=${result.status}: ${result.error}`);
       })
     );
 
@@ -335,7 +355,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ sent, expired: expired.length, total: subscriptions.length }),
+      JSON.stringify({ sent, expired: expired.length, total: subscriptions.length, errors }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
