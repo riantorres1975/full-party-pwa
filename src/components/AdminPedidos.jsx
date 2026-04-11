@@ -771,7 +771,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
     fetchPedidos, pedidosFiltrados, contadores,
     pedidoSeleccionado,
     cambiarEstado, cancelarPedido, notificar,
-    notificationPermission, requestNotificationPermission,
+    notificationPermission, requestNotificationPermission, testNotification,
   } = usePedidosAdmin({ toast, confirmCancelar });
 
   const notificationStatusLabel =
@@ -779,16 +779,22 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
       ? t('admin.notifications.enabled')
       : notificationPermission === 'denied'
         ? t('admin.notifications.blocked')
+        : notificationPermission === 'insecure'
+          ? t('admin.notifications.insecure')
         : notificationPermission === 'unsupported'
           ? t('admin.notifications.unsupported')
           : t('admin.notifications.enable');
 
   const handleEnableNotifications = useCallback(async () => {
     const permission = await requestNotificationPermission();
-    if (permission === 'granted') toast.success(t('admin.notifications.enabled'));
+    if (permission === 'granted') {
+      await testNotification();
+      toast.success(t('admin.notifications.enabled'));
+    }
     else if (permission === 'denied') toast.warning(t('admin.notifications.blocked'));
+    else if (permission === 'insecure') toast.warning(t('admin.notifications.insecure'));
     else if (permission === 'unsupported') toast.warning(t('admin.notifications.unsupported'));
-  }, [requestNotificationPermission, toast, t]);
+  }, [requestNotificationPermission, testNotification, toast, t]);
 
   // Sincronizar debounce → hook
   useEffect(() => { setBusqueda(busquedaDebounced); }, [busquedaDebounced, setBusqueda]);

@@ -23,6 +23,7 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
   const [pedidoSeleccionadoId, setPedidoSeleccionadoId] = useState(null);
   const [notificationPermission, setNotificationPermission] = useState(() => {
     if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported';
+    if (!window.isSecureContext) return 'insecure';
     return Notification.permission;
   });
 
@@ -31,20 +32,27 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
       setNotificationPermission('unsupported');
       return 'unsupported';
     }
+    if (!window.isSecureContext) {
+      setNotificationPermission('insecure');
+      return 'insecure';
+    }
     const permission = await Notification.requestPermission();
     setNotificationPermission(permission);
     return permission;
   }, []);
 
-  const showNewOrderNotification = useCallback(async (order) => {
+  const showNewOrderNotification = useCallback(async (order, isTest = false) => {
     if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (!window.isSecureContext) return;
     if (Notification.permission !== 'granted') return;
 
-    const title = 'Nuevo pedido recibido';
-    const body = `${order.folio || 'Sin folio'} · ${order.cliente_nombre || 'Cliente'} · $${Number(order.total || 0).toFixed(2)}`;
+    const title = isTest ? 'Notificacion de prueba' : 'Nuevo pedido recibido';
+    const body = isTest
+      ? 'Las notificaciones del panel admin estan funcionando.'
+      : `${order.folio || 'Sin folio'} · ${order.cliente_nombre || 'Cliente'} · $${Number(order.total || 0).toFixed(2)}`;
 
     try {
-      const registration = await navigator.serviceWorker?.getRegistration?.();
+      const registration = await navigator.serviceWorker?.ready;
       if (registration?.showNotification) {
         await registration.showNotification(title, {
           body,
@@ -52,6 +60,7 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
           badge: '/icons/icon-192.png',
           tag: `order-${order.id}`,
           data: { url: '/#/admin' },
+          vibrate: [200, 120, 200],
         });
         return;
       }
@@ -61,6 +70,10 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
       console.warn('[Notifications] Could not display notification', err);
     }
   }, []);
+
+  const testNotification = useCallback(async () => {
+    await showNewOrderNotification({ id: 'test', folio: 'FP-TEST', cliente_nombre: 'Admin', total: 0 }, true);
+  }, [showNewOrderNotification]);
 
   // ── Fetch ──────────────────────────────────────────────────────
   const fetchPedidos = useCallback(async () => {
@@ -215,6 +228,6 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
     fetchPedidos, pedidosFiltrados, contadores,
     pedidoSeleccionado,
     cambiarEstado, cancelarPedido, notificar,
-    notificationPermission, requestNotificationPermission,
+    notificationPermission, requestNotificationPermission, testNotification,
   };
 }
