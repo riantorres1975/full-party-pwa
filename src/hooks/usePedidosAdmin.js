@@ -166,7 +166,10 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
       // Send push notification to customer
       supabase.functions.invoke('send-push-notification', {
         body: { folio: pedido.folio, estado: nuevoEstado, cliente_nombre: pedido.cliente_nombre },
-      }).catch(e => console.warn('[Push] Edge Function error:', e));
+      }).then(({ data, error }) => {
+        if (error) console.error('[Push] Edge Function error:', error);
+        else console.log('[Push] Edge Function response:', data);
+      }).catch(e => console.warn('[Push] Edge Function network error:', e));
     }
     setActualizando(null);
   }, [toast, pedidos]);
