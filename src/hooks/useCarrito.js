@@ -50,7 +50,7 @@ export function useCarrito() {
     }
   }, [items]);
 
-  // ── Mutaciones del carrito ─────────────────────────────────────────────────
+  // Cart mutations
 
   const agregarItem = useCallback((producto) => {
     setStockError(null);
@@ -117,7 +117,7 @@ export function useCarrito() {
   // Alias semántico para compatibilidad con props existentes
   const limpiarCarrito = vaciarCarrito;
 
-  // ── Sincronizar carrito con datos de productos en vivo (Realtime) ────────
+  // Sync cart with live product data (Realtime)
   const sincronizarStock = useCallback((productosActuales) => {
     if (!productosActuales || productosActuales.length === 0) return;
     const mapaProductos = new Map(productosActuales.map(p => [p.id, p]));
@@ -126,7 +126,7 @@ export function useCarrito() {
       let cambio = false;
       const nuevos = prev.map(item => {
         const real = mapaProductos.get(item.id);
-        if (!real) return item; // producto eliminado — se queda hasta que el user lo quite
+        if (!real) return item; // deleted product stays until user removes it
 
         const updates = {};
 
@@ -144,7 +144,7 @@ export function useCarrito() {
         if (real.stock_ilimitado === false && item.cantidad > stockReal && stockReal > 0) {
           updates.cantidad = stockReal;
         }
-        // Si está inactivo o stock llegó a 0 (y no es ilimitado) — no eliminamos, marcamos
+        // If inactive or stock reached 0 (and not unlimited), keep item and flag it
         if (real.activo === false || (real.stock_ilimitado === false && stockReal === 0)) {
           updates.activo = real.activo;
         }

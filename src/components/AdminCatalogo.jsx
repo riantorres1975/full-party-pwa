@@ -501,7 +501,7 @@ export default function AdminCatalogo() {
 
   return (
     <div className="min-w-0">
-      {/* Toolbar fija: buscador + botones + filtros */}
+      {/* Sticky toolbar: search + actions + filters */}
       <div className="sticky top-[57px] lg:top-0 z-20 flex flex-col gap-3 bg-admin-bg pt-3 pb-3 -mx-3 px-3 sm:-mx-4 sm:px-4 lg:-mx-8 lg:px-8 border-b border-admin-border-soft">
         <div className="flex gap-2 items-center shrink-0">
           <div className="relative flex-1 min-w-0">
@@ -819,7 +819,7 @@ export default function AdminCatalogo() {
               </div>
             )}
 
-            {/* Modal gestión de marcas */}
+            {/* Brand management modal */}
             {showMarcaMgr && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={e => { if (e.target === e.currentTarget) { setShowMarcaMgr(false); setMarcaEditando(null); } }}>
                 <div className="bg-admin-card border border-admin-border rounded-2xl w-full max-w-sm shadow-2xl flex flex-col max-h-[80vh]">
@@ -1066,7 +1066,7 @@ export default function AdminCatalogo() {
               </div>
             )}
 
-            {/* Botón cargar más */}
+            {/* Load more button */}
             {!cargando && hayMas && (
               <div className="flex justify-center pt-4 pb-8">
                 <button

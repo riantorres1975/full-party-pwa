@@ -36,7 +36,7 @@ if ('serviceWorker' in navigator) {
           });
         });
 
-        // Cuando el nuevo SW toma control, recargar para usar los assets nuevos
+        // When the new SW takes control, reload to use fresh assets
         navigator.serviceWorker.addEventListener('controllerchange', () => {
           window.location.reload();
         });

@@ -21,7 +21,7 @@ export function useInfiniteScroll(totalItems) {
   totalRef.current = totalItems;
   const hayMas = visibleCount < totalItems;
 
-  // Resetear al inicio cuando cambia el dataset (filtros / búsqueda)
+  // Reset to first page when dataset changes (filters/search)
   const reset = useCallback(() => {
     setVisibleCount(INITIAL_COUNT);
     setCargando(false);

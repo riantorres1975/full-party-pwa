@@ -7,19 +7,19 @@ import { usePedido } from '../hooks/usePedido';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useLanguage } from '../hooks/useLanguage';
 
-// ── Rate limit por sesión (máx. pedidos por ventana de tiempo) ───────────────
-const MAX_PEDIDOS_POR_SESION = 5;
-const VENTANA_MS = 30 * 60 * 1000; // 30 minutos
+// Session rate limit (max orders per time window)
+const MAX_ORDERS_PER_SESSION = 5;
+const WINDOW_MS = 30 * 60 * 1000; // 30 minutes
 
 function checkRateLimit() {
   try {
     const raw = sessionStorage.getItem('fp_order_ts');
     const timestamps = raw ? JSON.parse(raw) : [];
     const ahora = Date.now();
-    const recientes = timestamps.filter(t => ahora - t < VENTANA_MS);
-    if (recientes.length >= MAX_PEDIDOS_POR_SESION) return false;
-    recientes.push(ahora);
-    sessionStorage.setItem('fp_order_ts', JSON.stringify(recientes));
+    const recentOrders = timestamps.filter(t => ahora - t < WINDOW_MS);
+    if (recentOrders.length >= MAX_ORDERS_PER_SESSION) return false;
+    recentOrders.push(ahora);
+    sessionStorage.setItem('fp_order_ts', JSON.stringify(recentOrders));
     return true;
   } catch { return true; }
 }
@@ -41,13 +41,13 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
   const { guardarPedido, guardando } = usePedido();
   const { t } = useLanguage();
 
-  const [tipoEntrega, setTipoEntrega] = useState('tienda');
-  const [nombre,    setNombre]    = useState('');
-  const [telefono,  setTelefono]  = useState('');
-  const [direccion, setDireccion] = useState('');
-  const [errores,   setErrores]   = useState({});
+  const [deliveryType, setDeliveryType] = useState('tienda');
+  const [customerName, setCustomerName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [errors, setErrors] = useState({});
   const [honeypot,  setHoneypot]  = useState('');
-  const [pedidoGuardado, setPedidoGuardado] = useState(null);
+  const [pendingOrder, setPendingOrder] = useState(null);
   const panelRef = useRef(null);
   useFocusTrap(panelRef, isOpen);
 
@@ -60,107 +60,107 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
     return () => document.documentElement.classList.remove('overflow-hidden');
   }, [isOpen]);
 
-  useEffect(() => { setErrores({}); }, [tipoEntrega]);
+  useEffect(() => { setErrors({}); }, [deliveryType]);
 
   useEffect(() => {
     if (!isOpen) {
-      const t = setTimeout(() => setPedidoGuardado(null), 600);
+      const t = setTimeout(() => setPendingOrder(null), 600);
       return () => clearTimeout(t);
     }
   }, [isOpen]);
 
-  const capitalizarNombre = (str) =>
+  const capitalizeName = (str) =>
     str.replace(/(^|[\s\-])(\S)/gu, (_, sep, letra) => sep + letra.toUpperCase());
 
-  const telefonoLimpio = telefono.replace(/\D/g, '');
-  const resultadoTel = validarTelefonoMX(telefonoLimpio);
-  const telefonoValido = resultadoTel.valido;
+  const cleanedPhone = phone.replace(/\D/g, '');
+  const phoneValidation = validarTelefonoMX(cleanedPhone);
+  const isPhoneValid = phoneValidation.valido;
 
-  const hayAgotados = items.some(item => {
+  const hasOutOfStockItems = items.some(item => {
     const real = productos.find(p => p.id === item.id);
     if (!real) return false;
     return real.activo === false || (real.stock_ilimitado === false && (real.stock_actual || 0) === 0);
   });
 
-  const formularioListo = nombre.trim().length > 0 && telefonoValido &&
-    (tipoEntrega === 'tienda' || direccion.trim().length > 0) && !hayAgotados;
+  const isFormReady = customerName.trim().length > 0 && isPhoneValid &&
+    (deliveryType === 'tienda' || address.trim().length > 0) && !hasOutOfStockItems;
 
-  const totalCalculado = items.reduce((acc, item) => {
+  const calculatedTotal = items.reduce((acc, item) => {
     const precioAplicable = obtenerPrecioAplicable(item, item.cantidad);
     return acc + (precioAplicable * item.cantidad);
   }, 0);
 
-  const validar = () => {
+  const validateForm = () => {
     const e = {};
-    const nombreLimpio = nombre.trim();
-    if (!nombreLimpio) e.nombre = t('form.nameRequired');
-    else if (nombreLimpio.length > 100) e.nombre = t('form.nameTooLong');
-    if (!telefonoValido)   e.telefono = resultadoTel.error || t('form.phoneInvalid');
-    if (tipoEntrega === 'envio') {
-      const dirLimpia = direccion.trim();
-      if (!dirLimpia) e.direccion = t('form.addressRequired');
-      else if (dirLimpia.length > 300) e.direccion = t('form.addressTooLong');
+    const cleanName = customerName.trim();
+    if (!cleanName) e.nombre = t('form.nameRequired');
+    else if (cleanName.length > 100) e.nombre = t('form.nameTooLong');
+    if (!isPhoneValid)   e.telefono = phoneValidation.error || t('form.phoneInvalid');
+    if (deliveryType === 'envio') {
+      const cleanAddress = address.trim();
+      if (!cleanAddress) e.direccion = t('form.addressRequired');
+      else if (cleanAddress.length > 300) e.direccion = t('form.addressTooLong');
     }
     if (items.length === 0) e.nombre = t('form.cartEmpty');
     if (items.length > 50) e.nombre = t('form.tooManyItems');
-    setErrores(e);
+    setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handleConfirmar = async () => {
-    if (pedidoGuardado) return;
-    if (!validar()) return;
+  const handleConfirm = async () => {
+    if (pendingOrder) return;
+    if (!validateForm()) return;
 
     if (honeypot) return;
 
     if (!checkRateLimit()) {
-      setErrores({ nombre: t('form.tooManyOrders') });
+      setErrors({ nombre: t('form.tooManyOrders') });
       return;
     }
 
-    const itemsConPrecioAplicado = items.map(item => ({
+    const itemsWithAppliedPrice = items.map(item => ({
       ...item,
       precio_base: Number(item.precio) || 0,
       precio: obtenerPrecioAplicable(item, item.cantidad),
     }));
 
-    setPedidoGuardado({
+    setPendingOrder({
       folio: null,
       url: null,
-      itemsSnapshot: itemsConPrecioAplicado,
-      total: totalCalculado,
-      tipoEntrega,
-      nombre: nombre.trim(),
-      telefono: telefonoLimpio,
-      direccion,
+      itemsSnapshot: itemsWithAppliedPrice,
+      total: calculatedTotal,
+      tipoEntrega: deliveryType,
+      nombre: customerName.trim(),
+      telefono: cleanedPhone,
+      direccion: address,
     });
   };
 
-  const handleAbrirWhatsApp = async () => {
-    if (!pedidoGuardado) return;
+  const handleOpenWhatsApp = async () => {
+    if (!pendingOrder) return;
 
-    const { itemsSnapshot, total, tipoEntrega: tipo, nombre: nom, telefono: tel, direccion: dir } = pedidoGuardado;
+    const { itemsSnapshot, total, tipoEntrega: type, nombre: name, telefono: phoneNumber, direccion: customerAddress } = pendingOrder;
 
-    // 1. Guardar pedido en Supabase
+    // 1) Persist order in Supabase
     const { folio, error } = await guardarPedido({
-      nombre: nom, telefono: tel, tipoEntrega: tipo, direccion: dir, total, items: itemsSnapshot,
+      nombre: name, telefono: phoneNumber, tipoEntrega: type, direccion: customerAddress, total, items: itemsSnapshot,
     });
 
     if (error) console.warn('[Pedido] No se pudo guardar en Supabase:', error);
 
-    // 2. Generar URL de WhatsApp con el folio
+    // 2) Build WhatsApp URL with order reference
     const url = generarMensajeWhatsApp(itemsSnapshot, total, {
-      tipo, nombre: nom, telefono: tel, direccion: dir, folio,
+      tipo: type, nombre: name, telefono: phoneNumber, direccion: customerAddress, folio,
     });
 
-    // 3. Abrir WhatsApp
+    // 3) Open WhatsApp
     window.open(url, '_blank', 'noopener,noreferrer');
 
-    // 4. Limpiar
+    // 4) Reset local state
     onLimpiar();
-    setNombre(''); setTelefono(''); setDireccion('');
-    setTipoEntrega('tienda');
-    setPedidoGuardado(null);
+    setCustomerName(''); setPhone(''); setAddress('');
+    setDeliveryType('tienda');
+    setPendingOrder(null);
   };
 
   return (
@@ -205,7 +205,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
             )}
           </div>
           <div className="flex items-center gap-2">
-            {items.length > 0 && !pedidoGuardado && (
+            {items.length > 0 && !pendingOrder && (
               <button
                 onClick={onLimpiar}
                 className="p-2 rounded-full bg-ink-100 hover:bg-red-50 text-ink-400
@@ -231,8 +231,8 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
         {/* Scroll area */}
         <div className="flex-1 overflow-y-auto">
 
-          {/* ── Pantalla de confirmación post-checkout ── */}
-          {pedidoGuardado ? (
+          {/* Post-checkout confirmation screen */}
+          {pendingOrder ? (
             <div className="flex flex-col items-center px-5 py-6 gap-4 animate-fade-in">
               <div className="w-20 h-20 rounded-full flex items-center justify-center text-white text-4xl font-black animate-scale-in"
                    style={{ background: 'linear-gradient(135deg, #25D366, #1db954)', boxShadow: '0 8px 24px #25D36655' }}>
@@ -242,14 +242,14 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                 <p className="font-display text-xl text-ink-900">{t('cart.orderReady')}</p>
                 <p className="text-sm text-ink-400 font-body mt-1">{t('cart.orderReadySub')}</p>
               </div>
-              {pedidoGuardado.folio && (
+              {pendingOrder.folio && (
                 <div className="w-full rounded-2xl p-4 text-center"
                      style={{ background: 'var(--surface-card)', border: '2px solid var(--border-default)' }}>
                   <p className="text-xs font-body text-ink-400 font-semibold mb-1">{t('cart.orderNumber')}</p>
-                  <p className="font-display text-2xl text-ink-900 tracking-wider">{pedidoGuardado.folio}</p>
+                  <p className="font-display text-2xl text-ink-900 tracking-wider">{pendingOrder.folio}</p>
                   <p className="text-xs text-ink-400 font-body mt-1 mb-2">{t('cart.saveToTrack')}</p>
                   <button
-                    onClick={() => navigator.clipboard?.writeText(pedidoGuardado.folio).catch(() => {})}
+                    onClick={() => navigator.clipboard?.writeText(pendingOrder.folio).catch(() => {})}
                     className="text-xs font-body font-black px-3 py-1 rounded-full border transition-all hover:opacity-80"
                     style={{ color: '#a855f7', borderColor: '#a855f720', background: 'var(--surface-elevated, var(--surface-card))' }}
                   >
@@ -262,20 +262,20 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                 <div className="flex justify-between text-sm">
                   <span className="font-body text-ink-500">{t('cart.productsLabel')}</span>
                   <span className="font-body font-black text-ink-800">
-                    {pedidoGuardado.itemsSnapshot.length} {pedidoGuardado.itemsSnapshot.length === 1 ? t('cart.item') : t('cart.items')}
+                    {pendingOrder.itemsSnapshot.length} {pendingOrder.itemsSnapshot.length === 1 ? t('cart.item') : t('cart.items')}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-body text-ink-500">{t('cart.deliveryLabel')}</span>
                   <span className="font-body font-black text-ink-800">
-                    {pedidoGuardado.tipoEntrega === 'tienda' ? t('cart.pickupStore') : t('cart.deliveryHome')}
+                    {pendingOrder.tipoEntrega === 'tienda' ? t('cart.pickupStore') : t('cart.deliveryHome')}
                   </span>
                 </div>
                 <div className="flex justify-between items-center pt-1 border-t border-ink-100">
                   <span className="font-body text-ink-500 text-sm">{t('common.total')}</span>
                   <span className="font-body font-black text-lg"
                         style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                    {SIMBOLO_MONEDA}{pedidoGuardado.total.toFixed(2)}
+                    {SIMBOLO_MONEDA}{pendingOrder.total.toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -283,7 +283,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
           ) : (
           <>
 
-          {/* Lista de items */}
+          {/* Cart items list */}
           <div className="px-5 py-3">
             {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -389,7 +389,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
             )}
           </div>
 
-          {/* ── Sección de entrega (solo visible si hay items) ── */}
+          {/* Delivery section (visible only when cart has items) */}
           {items.length > 0 && (
             <div className="px-5 pb-3">
               <div className="rounded-2xl p-4 space-y-3 entrega-section"
@@ -404,10 +404,10 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                   ].map(({ val, emoji, label }) => (
                     <button
                       key={val}
-                      onClick={() => setTipoEntrega(val)}
+                      onClick={() => setDeliveryType(val)}
                       className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl font-body font-bold text-xs
                                  transition-all duration-200 active:scale-95 border-2 whitespace-pre-line text-center"
-                      style={tipoEntrega === val
+                      style={deliveryType === val
                         ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)', color: 'white',
                             border: '2px solid transparent', boxShadow: '0 4px 14px #ff3dac44' }
                         : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '2px solid var(--border-default)' }
@@ -419,7 +419,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                   ))}
                 </div>
 
-                {tipoEntrega === 'tienda' && DIRECCION_TIENDA && (
+                {deliveryType === 'tienda' && DIRECCION_TIENDA && (
                   <div className="animate-fade-in rounded-xl px-3 py-2.5 text-xs font-body space-y-0.5"
                        style={{ background: 'var(--surface-card)', border: '1px solid var(--border-soft)' }}>
                     <p className="font-black" style={{ color: 'var(--text-primary)' }}>📍 {DIRECCION_TIENDA}</p>
@@ -439,14 +439,14 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                       id="cliente-nombre"
                       name="cliente_nombre"
                       type="text"
-                      value={nombre}
-                      onChange={(e) => setNombre(capitalizarNombre(e.target.value))}
+                      value={customerName}
+                      onChange={(e) => setCustomerName(capitalizeName(e.target.value))}
                       placeholder={t('form.namePlaceholder')}
                       className={INPUT_CLASS}
-                      style={errores.nombre ? { ...inputDynStyle, borderColor: '#ff3dac' } : inputDynStyle}
+                      style={errors.nombre ? { ...inputDynStyle, borderColor: '#ff3dac' } : inputDynStyle}
                     />
-                    {errores.nombre && (
-                      <p className="text-[11px] text-fiesta-magenta font-body font-bold mt-1 pl-1">{errores.nombre}</p>
+                    {errors.nombre && (
+                      <p className="text-[11px] text-fiesta-magenta font-body font-bold mt-1 pl-1">{errors.nombre}</p>
                     )}
                   </div>
 
@@ -455,24 +455,24 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                       id="cliente-telefono"
                       name="cliente_telefono"
                       type="tel"
-                      value={telefono}
-                      onChange={(e) => setTelefono(e.target.value.replace(/[^\d]/g, ''))}
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/[^\d]/g, ''))}
                       placeholder={t('form.phonePlaceholder')}
                       maxLength={10}
                       className={INPUT_CLASS}
-                      style={errores.telefono ? { ...inputDynStyle, borderColor: '#ff3dac' } : telefonoValido ? { ...inputDynStyle, borderColor: '#25D366' } : inputDynStyle}
+                      style={errors.telefono ? { ...inputDynStyle, borderColor: '#ff3dac' } : isPhoneValid ? { ...inputDynStyle, borderColor: '#25D366' } : inputDynStyle}
                     />
                     <p className={`text-[11px] font-body font-bold mt-1 pl-1 transition-colors
-                                  ${errores.telefono ? 'text-fiesta-magenta' : telefonoValido ? 'text-green-500' : 'text-ink-300'}`}>
-                      {errores.telefono
-                        ? errores.telefono
-                        : telefonoValido
+                                  ${errors.telefono ? 'text-fiesta-magenta' : isPhoneValid ? 'text-green-500' : 'text-ink-300'}`}>
+                      {errors.telefono
+                        ? errors.telefono
+                        : isPhoneValid
                           ? t('form.phoneValid')
-                          : t('form.phoneDigits', { count: telefonoLimpio.length })}
+                          : t('form.phoneDigits', { count: cleanedPhone.length })}
                     </p>
                   </div>
 
-                  {/* Honeypot */}
+                  {/* Honeypot anti-bot field */}
                   <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden', pointerEvents: 'none' }}>
                     <label htmlFor="website">Website</label>
                     <input
@@ -486,20 +486,20 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                     />
                   </div>
 
-                  {tipoEntrega === 'envio' && (
+                  {deliveryType === 'envio' && (
                     <div className="animate-fade-in">
                       <textarea
                         id="cliente-direccion"
                         name="cliente_direccion"
-                        value={direccion}
-                        onChange={(e) => setDireccion(e.target.value)}
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
                         placeholder={t('form.addressPlaceholder')}
                         rows={2}
                         className={INPUT_CLASS + ' resize-none'}
-                        style={errores.direccion ? { ...inputDynStyle, borderColor: '#ff3dac' } : inputDynStyle}
+                        style={errors.direccion ? { ...inputDynStyle, borderColor: '#ff3dac' } : inputDynStyle}
                       />
-                      {errores.direccion && (
-                        <p className="text-[11px] text-fiesta-magenta font-body font-bold mt-1 pl-1">{errores.direccion}</p>
+                      {errors.direccion && (
+                        <p className="text-[11px] text-fiesta-magenta font-body font-bold mt-1 pl-1">{errors.direccion}</p>
                       )}
                     </div>
                   )}
@@ -511,13 +511,13 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
           )}
         </div>
 
-        {/* Footer fijo — total + botón */}
-        {(items.length > 0 || pedidoGuardado) && (
+        {/* Fixed footer: total + primary action */}
+        {(items.length > 0 || pendingOrder) && (
           <div className="px-5 pt-3 pb-4 border-t-2 border-ink-100 flex-shrink-0 space-y-3">
-            {pedidoGuardado ? (
+            {pendingOrder ? (
               <>
                 <button
-                  onClick={handleAbrirWhatsApp}
+                  onClick={handleOpenWhatsApp}
                   disabled={guardando}
                   className="w-full flex items-center justify-center gap-2.5 text-white
                              font-body font-black text-base py-4 rounded-2xl
@@ -534,7 +534,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                   {guardando ? t('cart.savingOrder') : t('cart.sendOrder')}
                 </button>
                 <button
-                  onClick={() => setPedidoGuardado(null)}
+                    onClick={() => setPendingOrder(null)}
                   className="w-full text-center text-xs font-body font-semibold py-1"
                   style={{ color: 'var(--text-secondary)' }}
                 >
@@ -548,24 +548,24 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                   <span className="font-body text-xl font-black"
                         style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
                                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                    {SIMBOLO_MONEDA}{totalCalculado.toFixed(2)}
+                    {SIMBOLO_MONEDA}{calculatedTotal.toFixed(2)}
                   </span>
                 </div>
 
-                {hayAgotados && (
+                {hasOutOfStockItems && (
                   <p className="text-xs font-body font-bold text-red-500 text-center py-1">
                     {t('cart.outOfStockWarning')}
                   </p>
                 )}
 
                 <button
-                  onClick={handleConfirmar}
-                  disabled={!formularioListo}
+                  onClick={handleConfirm}
+                  disabled={!isFormReady}
                   className="w-full flex items-center justify-center gap-2.5 text-white
                              font-body font-black text-base py-4 rounded-2xl
                              transition-all duration-300 active:scale-[0.98]
                              disabled:cursor-not-allowed"
-                  style={formularioListo
+                  style={isFormReady
                     ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
                         boxShadow: '0 4px 20px #ff3dac44' }
                     : { background: 'linear-gradient(135deg, #d4a0c8, #b49ad4)',

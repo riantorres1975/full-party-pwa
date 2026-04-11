@@ -58,7 +58,7 @@ export function useProductos() {
     return () => { cancelado = true; };
   }, [tick]);
 
-  // ── Suscripción Realtime — escucha INSERT / UPDATE / DELETE en productos ──
+  // Realtime subscription for product INSERT / UPDATE / DELETE
   useEffect(() => {
     const channel = supabase
       .channel('productos-rt')

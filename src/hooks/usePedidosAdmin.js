@@ -21,6 +21,46 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
   const [busqueda, setBusqueda] = useState('');
   const [notificando, setNotificando] = useState(null);
   const [pedidoSeleccionadoId, setPedidoSeleccionadoId] = useState(null);
+  const [notificationPermission, setNotificationPermission] = useState(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported';
+    return Notification.permission;
+  });
+
+  const requestNotificationPermission = useCallback(async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      setNotificationPermission('unsupported');
+      return 'unsupported';
+    }
+    const permission = await Notification.requestPermission();
+    setNotificationPermission(permission);
+    return permission;
+  }, []);
+
+  const showNewOrderNotification = useCallback(async (order) => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+
+    const title = 'Nuevo pedido recibido';
+    const body = `${order.folio || 'Sin folio'} · ${order.cliente_nombre || 'Cliente'} · $${Number(order.total || 0).toFixed(2)}`;
+
+    try {
+      const registration = await navigator.serviceWorker?.getRegistration?.();
+      if (registration?.showNotification) {
+        await registration.showNotification(title, {
+          body,
+          icon: '/icons/icon-192.png',
+          badge: '/icons/icon-192.png',
+          tag: `order-${order.id}`,
+          data: { url: '/#/admin' },
+        });
+        return;
+      }
+      // Fallback when service worker is unavailable
+      new Notification(title, { body, icon: '/icons/icon-192.png', tag: `order-${order.id}` });
+    } catch (err) {
+      console.warn('[Notifications] Could not display notification', err);
+    }
+  }, []);
 
   // ── Fetch ──────────────────────────────────────────────────────
   const fetchPedidos = useCallback(async () => {
@@ -44,7 +84,10 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
     const channel = supabase
       .channel('pedidos-admin-rt')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pedidos' },
-        ({ new: nuevo }) => setPedidos(prev => [nuevo, ...prev]))
+        ({ new: nuevo }) => {
+          setPedidos(prev => (prev.some(p => p.id === nuevo.id) ? prev : [nuevo, ...prev]));
+          showNewOrderNotification(nuevo);
+        })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pedidos' },
         ({ new: actualizado }) => setPedidos(prev => prev.map(p => p.id === actualizado.id ? actualizado : p)))
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'pedidos' },
@@ -55,7 +98,7 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
         }
       });
     return () => supabase.removeChannel(channel);
-  }, []);
+  }, [showNewOrderNotification]);
 
   // ── Filtrado (memoizado) ──────────────────────────────────────
   const pedidosFiltrados = useMemo(() => {
@@ -108,7 +151,7 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
     setActualizando(null);
   }, [toast, pedidos]);
 
-  // ── Cancelar pedido ────────────────────────────────────────────
+  // Cancel order
   const cancelarPedido = useCallback(async (pedido) => {
     const ok = await confirmCancelar({
       title: 'Cancelar pedido',
@@ -172,5 +215,6 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
     fetchPedidos, pedidosFiltrados, contadores,
     pedidoSeleccionado,
     cambiarEstado, cancelarPedido, notificar,
+    notificationPermission, requestNotificationPermission,
   };
 }
