@@ -88,8 +88,17 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
     }
   }, [pedidosFiltrados, pedidoSeleccionadoId]);
 
-  // ── Cambiar estado ─────────────────────────────────────────────
+  // ── Cambiar estado (solo avance secuencial) ────────────────────
   const cambiarEstado = useCallback(async (pedidoId, nuevoEstado) => {
+    const pedido = pedidos.find(p => p.id === pedidoId);
+    if (pedido) {
+      const idxActual = ESTADOS.indexOf(pedido.estado);
+      const idxNuevo  = ESTADOS.indexOf(nuevoEstado);
+      if (idxNuevo !== idxActual + 1) {
+        toast.error('Solo puedes avanzar al siguiente estado');
+        return;
+      }
+    }
     setActualizando(pedidoId);
     const { error: err } = await guardedQuery((client) =>
       client.from('pedidos').update({ estado: nuevoEstado, notificado_estado: null }).eq('id', pedidoId)
@@ -97,7 +106,7 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
     if (err) toast.error('Error al actualizar: ' + err.message);
     else setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, estado: nuevoEstado, notificado_estado: null } : p));
     setActualizando(null);
-  }, [toast]);
+  }, [toast, pedidos]);
 
   // ── Cancelar pedido ────────────────────────────────────────────
   const cancelarPedido = useCallback(async (pedido) => {

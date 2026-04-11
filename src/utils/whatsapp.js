@@ -101,23 +101,35 @@ export function notificarCliente(pedido, articulosSurtidos = null) {
   let mensaje = '';
 
   if (estado === 'Listo para Entrega' && articulosSurtidos) {
-    const encontrados = articulosSurtidos.filter(a => a.encontrado);
-    const faltantes   = articulosSurtidos.filter(a => !a.encontrado);
-    const nuevoTotal  = encontrados.reduce((s, a) => s + a.precio * a.cantidad, 0);
+    const surtidos = articulosSurtidos.filter(a => (Number(a.cantidad_surtida) || 0) > 0);
+    const sinStock = articulosSurtidos.filter(a => (Number(a.cantidad_surtida) || 0) === 0);
+    const parciales = surtidos.filter(a => (Number(a.cantidad_surtida) || 0) < Number(a.cantidad));
+    const nuevoTotal = surtidos.reduce((s, a) => s + (Number(a.precio) || 0) * (Number(a.cantidad_surtida) || 0), 0);
 
-    const listaEncontrados = encontrados
-      .map(a => `  ${EMOJI.check} ${a.cantidad}x ${a.nombre} - ${SIMBOLO_MONEDA}${(a.precio * a.cantidad).toFixed(2)}`)
+    const listaSurtidos = surtidos
+      .map(a => {
+        const cs = Number(a.cantidad_surtida) || 0;
+        const cp = Number(a.cantidad) || 0;
+        const sub = (Number(a.precio) || 0) * cs;
+        const cantTexto = cs < cp ? `${cs}x (pediste ${cp})` : `${cs}x`;
+        return `  ${EMOJI.check} ${cantTexto} ${a.nombre} - ${SIMBOLO_MONEDA}${sub.toFixed(2)}`;
+      })
       .join('\n');
 
-    const listaFaltantes = faltantes.length > 0
-      ? `\n${EMOJI.alerta} *Lamentablemente no tuvimos en existencia:*\n` +
-        faltantes.map(a => `  ${EMOJI.cruz} ${a.nombre}`).join('\n') + '\n'
-      : '';
+    let infoFaltantes = '';
+    if (sinStock.length > 0) {
+      infoFaltantes += `\n${EMOJI.alerta} *Lamentablemente no tuvimos en existencia:*\n` +
+        sinStock.map(a => `  ${EMOJI.cruz} ${a.nombre}`).join('\n') + '\n';
+    }
+    if (parciales.length > 0) {
+      infoFaltantes += `\n${EMOJI.alerta} *Cantidad ajustada por inventario:*\n` +
+        parciales.map(a => `  ${EMOJI.cruz} ${a.nombre}: pediste ${a.cantidad}, surtimos ${a.cantidad_surtida}`).join('\n') + '\n';
+    }
 
     mensaje =
       `¡Hola ${nombre}! Tu pedido *${folio}* ya está listo y empacado. ${EMOJI.caja}\n\n` +
-      `*Artículos incluidos:*\n${listaEncontrados}\n` +
-      listaFaltantes +
+      `*Artículos incluidos:*\n${listaSurtidos}\n` +
+      infoFaltantes +
       `\n${EMOJI.dinero} *Tu total a pagar es: ${SIMBOLO_MONEDA}${nuevoTotal.toFixed(2)}*\n\n` +
       `¡Nos vemos pronto! ${EMOJI.fiesta}`;
 
