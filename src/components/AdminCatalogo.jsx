@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Package, Pencil, Trash2, Search, AlertTriangle, Plus, X, Tag, Check, Bookmark, Ruler, Megaphone } from 'lucide-react';
+import { Package, Pencil, Trash2, Search, AlertTriangle, Plus, X, Tag, Check, Bookmark, Ruler, Megaphone, Download, Upload } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { guardedQuery } from '../lib/supabaseGuard';
 import {
@@ -124,6 +124,186 @@ export default function AdminCatalogo() {
       setAnuncioActivo(!!v.activo);
     });
   }, []);
+
+  // ── Importar / Exportar ──
+  const [importando, setImportando] = useState(false);
+  const [exportando, setExportando] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+
+  const CAMPOS_EXPORTABLES = [
+    'nombre', 'descripcion', 'precio', 'categoria', 'marca', 'tamano',
+    'imagen_url', 'activo', 'stock_ilimitado', 'stock_actual', 'stock_minimo',
+    'es_nuevo', 'precios_mayoreo', 'familia_mayoreo',
+  ];
+
+  // ── CSV helpers ──
+  function escapeCsv(val) {
+    if (val == null) return '';
+    const str = typeof val === 'object' ? JSON.stringify(val) : String(val);
+    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes(';')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  }
+
+  function parseCsvLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuotes) {
+        if (ch === '"' && line[i + 1] === '"') { current += '"'; i++; }
+        else if (ch === '"') { inQuotes = false; }
+        else { current += ch; }
+      } else {
+        if (ch === '"') { inQuotes = true; }
+        else if (ch === ',') { result.push(current); current = ''; }
+        else { current += ch; }
+      }
+    }
+    result.push(current);
+    return result;
+  }
+
+  function parseCsv(text) {
+    const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.trim());
+    if (lines.length < 2) throw new Error('El CSV debe tener al menos un encabezado y una fila de datos.');
+    const headers = parseCsvLine(lines[0]).map(h => h.trim().toLowerCase());
+    return lines.slice(1).map(line => {
+      const vals = parseCsvLine(line);
+      const obj = {};
+      headers.forEach((h, i) => {
+        const v = vals[i]?.trim() ?? '';
+        if (v !== '') obj[h] = v;
+      });
+      return obj;
+    });
+  }
+
+  function convertCsvRow(raw) {
+    const row = {};
+    CAMPOS_EXPORTABLES.forEach(k => { if (raw[k] !== undefined) row[k] = raw[k]; });
+    // Convertir tipos
+    if (row.precio != null) row.precio = Number(row.precio);
+    if (row.stock_actual != null) row.stock_actual = Number(row.stock_actual);
+    if (row.stock_minimo != null) row.stock_minimo = Number(row.stock_minimo);
+    ['activo', 'stock_ilimitado', 'es_nuevo'].forEach(k => {
+      if (row[k] != null) {
+        const v = String(row[k]).toLowerCase();
+        row[k] = v === 'true' || v === '1' || v === 'si' || v === 'sí';
+      }
+    });
+    // precios_mayoreo puede venir como JSON string
+    if (typeof row.precios_mayoreo === 'string') {
+      try { row.precios_mayoreo = JSON.parse(row.precios_mayoreo); } catch { delete row.precios_mayoreo; }
+    }
+    return row;
+  }
+
+  // ── Exportar ──
+  async function fetchAllProductos() {
+    const { data, error } = await guardedQuery((client) =>
+      client.from('productos').select('*').order('nombre', { ascending: true })
+    );
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(p => {
+      const obj = {};
+      CAMPOS_EXPORTABLES.forEach(k => { if (p[k] !== undefined) obj[k] = p[k]; });
+      return obj;
+    });
+  }
+
+  function descargarArchivo(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleExportar(formato) {
+    setShowExportMenu(false);
+    setExportando(true);
+    try {
+      const exportData = await fetchAllProductos();
+      const fecha = new Date().toISOString().slice(0, 10);
+
+      if (formato === 'csv') {
+        const header = CAMPOS_EXPORTABLES.join(',');
+        const rows = exportData.map(p =>
+          CAMPOS_EXPORTABLES.map(k => escapeCsv(p[k])).join(',')
+        );
+        // BOM for Excel UTF-8 recognition
+        const bom = '\uFEFF';
+        const blob = new Blob([bom + header + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8' });
+        descargarArchivo(blob, `productos_${fecha}.csv`);
+      } else {
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        descargarArchivo(blob, `productos_${fecha}.json`);
+      }
+
+      toast.success(`${exportData.length} artículos exportados (${formato.toUpperCase()})`);
+    } catch (err) {
+      toast.error(err.message || 'Error al exportar');
+    } finally {
+      setExportando(false);
+    }
+  }
+
+  // ── Importar ──
+  async function handleImportar(file) {
+    if (!file) return;
+    setImportando(true);
+    try {
+      const text = await file.text();
+      const esCsv = file.name.toLowerCase().endsWith('.csv');
+      let datos;
+
+      if (esCsv) {
+        const rawRows = parseCsv(text);
+        datos = rawRows.map(convertCsvRow);
+      } else {
+        try { datos = JSON.parse(text); } catch { throw new Error('El archivo no es un JSON válido.'); }
+        if (!Array.isArray(datos)) throw new Error('El JSON debe contener un arreglo de productos.');
+      }
+
+      if (datos.length === 0) throw new Error('El archivo está vacío.');
+
+      // Validar campos mínimos
+      const invalidos = datos.filter(p => !p.nombre?.trim() || p.precio == null);
+      if (invalidos.length > 0) throw new Error(`Hay ${invalidos.length} producto(s) sin nombre o precio.`);
+
+      // Limpiar y preparar rows
+      const rows = datos.map(p => {
+        const row = {};
+        CAMPOS_EXPORTABLES.forEach(k => { if (p[k] !== undefined) row[k] = p[k]; });
+        row.nombre = String(row.nombre).trim();
+        row.precio = Number(row.precio);
+        if (Number.isNaN(row.precio) || row.precio < 0) row.precio = 0;
+        if (row.activo === undefined) row.activo = true;
+        return row;
+      });
+
+      // Insertar en lotes de 50
+      const BATCH = 50;
+      let insertados = 0;
+      for (let i = 0; i < rows.length; i += BATCH) {
+        const lote = rows.slice(i, i + BATCH);
+        const { error } = await supabase.from('productos').insert(lote);
+        if (error) throw new Error(`Error en lote ${Math.floor(i / BATCH) + 1}: ${error.message}`);
+        insertados += lote.length;
+      }
+
+      toast.success(`${insertados} artículos importados`);
+      fetchProductos();
+    } catch (err) {
+      toast.error(err.message || 'Error al importar');
+    } finally {
+      setImportando(false);
+    }
+  }
 
   const productosEnAlerta = useMemo(() => {
     return productos.filter(p => p.stock_ilimitado === false && p.stock_actual <= (p.stock_minimo || 5));
@@ -347,6 +527,64 @@ export default function AdminCatalogo() {
             <Plus size={18} strokeWidth={3} />
             <span className="hidden sm:inline">Nuevo Artículo</span>
           </button>
+
+          {/* Exportar con menú de formato */}
+          <div className="relative flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowExportMenu(prev => !prev)}
+              disabled={exportando || productos.length === 0}
+              className="inline-flex items-center gap-1.5 px-3 py-3 rounded-2xl text-sm font-body font-black
+                         border-2 border-admin-border text-admin-text hover:border-fiesta-magenta hover:text-fiesta-magenta
+                         transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+              title="Exportar catálogo"
+            >
+              <Download size={18} strokeWidth={2.5} className={exportando ? 'animate-bounce' : ''} />
+              <span className="hidden sm:inline">{exportando ? 'Exportando…' : 'Exportar'}</span>
+            </button>
+            {showExportMenu && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={() => setShowExportMenu(false)} />
+                <div className="absolute right-0 top-full mt-1 z-40 bg-admin-card border-2 border-admin-border rounded-xl shadow-lg overflow-hidden min-w-[160px]">
+                  <button
+                    type="button"
+                    onClick={() => handleExportar('csv')}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-body font-bold text-admin-text hover:bg-admin-hover transition-colors"
+                  >
+                    <span className="w-5 text-center text-xs font-black text-green-600">CSV</span>
+                    Excel / CSV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleExportar('json')}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-body font-bold text-admin-text hover:bg-admin-hover transition-colors"
+                  >
+                    <span className="w-5 text-center text-xs font-black text-blue-600">{ '{}' }</span>
+                    JSON
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Importar (JSON o CSV) */}
+          <label
+            className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-3 rounded-2xl text-sm font-body font-black
+                       border-2 border-admin-border text-admin-text hover:border-fiesta-cyan hover:text-fiesta-cyan
+                       transition-all duration-200 active:scale-95 cursor-pointer
+                       ${importando ? 'opacity-40 pointer-events-none' : ''}`}
+            title="Importar artículos (JSON o CSV)"
+          >
+            <Upload size={18} strokeWidth={2.5} className={importando ? 'animate-bounce' : ''} />
+            <span className="hidden sm:inline">{importando ? 'Importando…' : 'Importar'}</span>
+            <input
+              type="file"
+              accept=".json,.csv"
+              className="hidden"
+              disabled={importando}
+              onChange={(e) => { handleImportar(e.target.files?.[0]); e.target.value = ''; }}
+            />
+          </label>
         </div>
 
         <div className="flex gap-2 overflow-x-auto hide-scrollbar items-center pb-1">
