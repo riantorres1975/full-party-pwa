@@ -4,6 +4,7 @@ import { useCarrito }        from './hooks/useCarrito';
 import { useToast }          from './components/ui/ToastProvider';
 import { categorias as CATEGORIAS_CONFIG } from './data/productos';
 import { useAnuncio }         from './hooks/useAnuncio';
+import { useLanguage }        from './hooks/useLanguage';
 import Header             from './components/Header';
 import BuscadorFiltros    from './components/BuscadorFiltros';
 import ModalFiltros       from './components/ModalFiltros';
@@ -40,6 +41,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   } = useCarrito();
 
   const toast = useToast();
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (stockError) toast.warning(stockError);
@@ -139,8 +141,8 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
           <div className="fp-intro-glow" />
           <div className="fp-intro-card">
             <img src="/icons/icon-512.png" alt="Full Party" className="fp-intro-logo" />
-            <h2 className="fp-intro-title">Full PartyApp</h2>
-            <p className="fp-intro-subtitle">Catalogo digital para tu fiesta</p>
+            <h2 className="fp-intro-title">{t('intro.title')}</h2>
+            <p className="fp-intro-subtitle">{t('intro.subtitle')}</p>
           </div>
         </div>
       )}
@@ -186,7 +188,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-soft)' }
                   }
                 >
-                  Todos
+                  {t('common.all')}
                 </button>
                 {pillasCategorias.map(cat => (
                   <button
@@ -228,7 +230,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
               className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center
                          rounded-full bg-white/20 text-white/80 hover:bg-white/30 hover:text-white
                          text-xs font-bold transition-all duration-200 active:scale-90"
-              aria-label="Cerrar anuncio"
+              aria-label={t('announcements.closeAriaLabel')}
             >
               ✕
             </button>
@@ -250,15 +252,15 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                 <div className="px-3 lg:px-0 pt-2 pb-1">
                   <div className="flex items-center justify-start lg:justify-center gap-3 lg:gap-5 text-[10px] lg:text-xs font-body font-bold overflow-x-auto hide-scrollbar"
                        style={{ color: 'var(--text-secondary)' }}>
-                    <span className="whitespace-nowrap">✓ Envío en Uruapan</span>
-                    <span className="whitespace-nowrap">✓ Pago al recibir</span>
-                    <span className="whitespace-nowrap">✓ Atención por WhatsApp</span>
+                    <span className="whitespace-nowrap">{t('trust.shipping')}</span>
+                    <span className="whitespace-nowrap">{t('trust.payOnDelivery')}</span>
+                    <span className="whitespace-nowrap">{t('trust.whatsapp')}</span>
                     <button
                       onClick={() => setRastreoAbierto(true)}
                       className="whitespace-nowrap ml-auto lg:hidden flex items-center gap-1 transition-colors"
                       style={{ color: 'var(--color-fiesta-purple, #a855f7)' }}
                     >
-                      📦 Rastrear pedido
+                      {t('trust.trackOrder')}
                     </button>
                   </div>
                 </div>
@@ -271,7 +273,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                       <div className="text-5xl animate-float">😵</div>
                       <div className="bg-white rounded-3xl p-6 max-w-sm w-full"
                            style={{ border: '2px solid var(--border-default)', boxShadow: '0 4px 20px #ff3dac15' }}>
-                        <p className="font-display text-lg text-ink-800 mb-1">Ups, algo salió mal</p>
+                        <p className="font-display text-lg text-ink-800 mb-1">{t('error.title')}</p>
                         <p className="text-xs font-body text-ink-400 mb-4 leading-relaxed">{error}</p>
                         <button
                           onClick={refetch}
@@ -279,7 +281,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                                      transition-all duration-200 active:scale-95"
                           style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)', boxShadow: '0 4px 14px #ff3dac44' }}
                         >
-                          🔄 Reintentar
+                          {t('error.retry')}
                         </button>
                       </div>
                     </div>

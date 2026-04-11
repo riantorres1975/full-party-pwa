@@ -4,6 +4,7 @@ import LoginAdmin  from './components/LoginAdmin';
 import { useAuth } from './hooks/useAuth';
 import { useTheme } from './hooks/useTheme';
 import { ToastProvider } from './components/ui/ToastProvider';
+import { LanguageProvider, useLanguage } from './hooks/useLanguage';
 
 const AdminPedidos = lazy(() => import('./components/AdminPedidos'));
 
@@ -12,11 +13,6 @@ const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || '')
   .map(e => e.trim().toLowerCase())
   .filter(Boolean);
 
-/**
- * AppRouter — enrutamiento por hash sin react-router.
- * /        → catálogo público
- * /#/admin → panel de admin (protegido)
- */
 function useHashRoute() {
   const [hash, setHash] = useState(window.location.hash);
   useEffect(() => {
@@ -43,6 +39,27 @@ export default function AppRouter() {
     return () => document.body.classList.remove('catalogo');
   }, [esRutaAdmin]);
 
+  return (
+    <LanguageProvider>
+      <AppRouterInner
+        cargandoSesion={cargandoSesion}
+        esRutaAdmin={esRutaAdmin}
+        session={session}
+        user={user}
+        loading={loading}
+        error={error}
+        signIn={signIn}
+        signOut={signOut}
+        isDarkMode={isDarkMode}
+        toggleTheme={toggleTheme}
+      />
+    </LanguageProvider>
+  );
+}
+
+function AppRouterInner({ cargandoSesion, esRutaAdmin, session, user, loading, error, signIn, signOut, isDarkMode, toggleTheme }) {
+  const { t } = useLanguage();
+
   // Spinner mientras Supabase verifica la sesión
   if (cargandoSesion) {
     return (
@@ -50,7 +67,7 @@ export default function AppRouter() {
            style={{ background: 'linear-gradient(135deg, #1a0733, #3d1a6e)' }}>
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 rounded-full border-[3px] border-purple-700 border-t-purple-300 animate-spin" />
-          <p className="text-sm font-body text-purple-400">Verificando sesión...</p>
+          <p className="text-sm font-body text-purple-400">{t('login.verifyingSession')}</p>
         </div>
       </div>
     );
@@ -58,7 +75,6 @@ export default function AppRouter() {
 
   // Ruta de admin
   if (esRutaAdmin) {
-    // No autenticado → Login
     if (!session) {
       return (
         <ToastProvider>
@@ -66,20 +82,18 @@ export default function AppRouter() {
         </ToastProvider>
       );
     }
-    // RBAC — si VITE_ADMIN_EMAILS está definido, verificar pertenencia
     const emailUsuario = user?.email?.toLowerCase() || '';
     if (ADMIN_EMAILS.length > 0 && !ADMIN_EMAILS.includes(emailUsuario)) {
       return (
         <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1a0733, #3d1a6e)' }}>
           <div className="text-center space-y-3 p-8">
-            <p className="text-lg font-bold text-red-400">Acceso denegado</p>
-            <p className="text-sm text-purple-300">Tu cuenta no tiene permisos de administrador.</p>
-            <button onClick={async () => { await signOut(); window.location.hash = ''; }} className="text-sm underline text-purple-400 hover:text-purple-200 transition-colors">Cerrar sesión</button>
+            <p className="text-lg font-bold text-red-400">{t('login.accessDenied')}</p>
+            <p className="text-sm text-purple-300">{t('login.noPermission')}</p>
+            <button onClick={async () => { await signOut(); window.location.hash = ''; }} className="text-sm underline text-purple-400 hover:text-purple-200 transition-colors">{t('login.signOut')}</button>
           </div>
         </div>
       );
     }
-    // Autenticado → Dashboard
     return (
       <ToastProvider>
         <Suspense fallback={
@@ -88,20 +102,20 @@ export default function AppRouter() {
           </div>
         }>
           <AdminPedidos
-          user={user}
-          temaOscuro={isDarkMode}
-          onToggleTema={toggleTheme}
-          onSignOut={async () => {
-            await signOut();
-            window.location.hash = '';
-          }}
-        />
+            user={user}
+            temaOscuro={isDarkMode}
+            onToggleTema={toggleTheme}
+            onSignOut={async () => {
+              await signOut();
+              window.location.hash = '';
+            }}
+          />
         </Suspense>
       </ToastProvider>
     );
   }
 
-  // Ruta pública → catálogo normal
+  // Ruta pública
   return (
     <ToastProvider>
       <App temaOscuro={isDarkMode} onToggleTema={toggleTheme} isAdmin={!!session} />

@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, ShieldCheck } from 'lucide-react';
+import { useLanguage } from '../hooks/useLanguage';
 
 export default function LoginAdmin({ onLogin, loading, error }) {
+  const { t } = useLanguage();
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -63,7 +65,7 @@ export default function LoginAdmin({ onLogin, loading, error }) {
           <h1 className="font-display text-2xl text-white mb-1 tracking-wide">Full Party</h1>
           <div className="flex items-center gap-1.5 mt-2">
             <ShieldCheck size={13} className="text-purple-400" />
-            <p className="text-xs font-body text-purple-400">Panel de administración</p>
+            <p className="text-xs font-body text-purple-400">{t('login.adminPanel')}</p>
           </div>
         </div>
 
@@ -74,7 +76,7 @@ export default function LoginAdmin({ onLogin, loading, error }) {
           {/* Email */}
           <div>
             <label className="block text-xs font-body font-bold text-purple-300/80 mb-2 pl-0.5 tracking-wide uppercase">
-              Correo electrónico
+              {t('login.email')}
             </label>
             <div className="relative">
               <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400/70" />
@@ -94,7 +96,7 @@ export default function LoginAdmin({ onLogin, loading, error }) {
           {/* Password */}
           <div>
             <label className="block text-xs font-body font-bold text-purple-300/80 mb-2 pl-0.5 tracking-wide uppercase">
-              Contraseña
+              {t('login.password')}
             </label>
             <div className="relative">
               <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400/70" />
@@ -112,7 +114,7 @@ export default function LoginAdmin({ onLogin, loading, error }) {
                 onClick={() => setShowPass(v => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400/60
                            hover:text-purple-300 transition-colors p-1 rounded-lg"
-                aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                aria-label={showPass ? t('login.hidePassword') : t('login.showPassword')}
               >
                 {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
@@ -148,9 +150,9 @@ export default function LoginAdmin({ onLogin, loading, error }) {
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                Entrando...
+                {t('login.loggingIn')}
               </span>
-            ) : 'Entrar al panel'}
+            ) : t('login.submit')}
           </button>
         </form>
 
@@ -161,7 +163,7 @@ export default function LoginAdmin({ onLogin, loading, error }) {
             className="text-xs font-body text-purple-400/70 hover:text-purple-300
                        transition-colors underline underline-offset-2"
           >
-            ← Volver al catálogo
+            {t('login.backToCatalog')}
           </a>
         </p>
       </div>

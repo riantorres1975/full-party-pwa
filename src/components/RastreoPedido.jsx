@@ -1,39 +1,44 @@
 import { useState } from 'react';
 import { usePedido } from '../hooks/usePedido';
 import { SIMBOLO_MONEDA } from '../data/productos';
+import { useLanguage } from '../hooks/useLanguage';
 
 // ── Definición de pasos del stepper ─────────────────────────────────────────
-const PASOS = [
-  {
-    estado:    'Por Surtir',
-    emoji:     '🛍️',
-    label:     'Por Surtir',
-    sublabel:  'Pedido recibido',
-    color:     '#ef4444',
-    colorLight:'#fee2e2',
-  },
-  {
-    estado:    'Armando Pedido',
-    emoji:     '🎀',
-    label:     'Armando Pedido',
-    sublabel:  'Preparando tu pedido',
-    color:     '#eab308',
-    colorLight:'#fef9c3',
-  },
-  {
-    estado:    'Listo para Entrega',
-    emoji:     '🎉',
-    label:     'Listo para Entrega',
-    sublabel:  '¡Listo para la fiesta!',
-    color:     '#22c55e',
-    colorLight:'#dcfce7',
-  },
-];
-
-const ORDEN = PASOS.map(p => p.estado);
+function usePasos() {
+  const { t } = useLanguage();
+  return [
+    {
+      estado:    'Por Surtir',
+      emoji:     '🛍️',
+      label:     t('tracking.status.pending'),
+      sublabel:  t('tracking.status.pendingSub'),
+      color:     '#ef4444',
+      colorLight:'#fee2e2',
+    },
+    {
+      estado:    'Armando Pedido',
+      emoji:     '🎀',
+      label:     t('tracking.status.preparing'),
+      sublabel:  t('tracking.status.preparingSub'),
+      color:     '#eab308',
+      colorLight:'#fef9c3',
+    },
+    {
+      estado:    'Listo para Entrega',
+      emoji:     '🎉',
+      label:     t('tracking.status.ready'),
+      sublabel:  t('tracking.status.readySub'),
+      color:     '#22c55e',
+      colorLight:'#dcfce7',
+    },
+  ];
+}
 
 function Stepper({ estadoActual }) {
-  // Si está cancelado, mostrar indicador especial en lugar del stepper
+  const { t } = useLanguage();
+  const PASOS = usePasos();
+  const ORDEN = PASOS.map(p => p.estado);
+
   if (estadoActual === 'Cancelado') {
     return (
       <div className="w-full px-2 pt-2 pb-4 flex flex-col items-center gap-2">
@@ -42,10 +47,10 @@ function Stepper({ estadoActual }) {
           <span aria-hidden="true">❌</span>
         </div>
         <p className="font-body font-black text-sm text-center" style={{ color: '#6b7280' }}>
-          Pedido Cancelado
+          {t('tracking.cancelled')}
         </p>
         <p className="font-body text-[11px] text-center text-ink-400">
-          Este pedido ha sido cancelado
+          {t('tracking.cancelledDesc')}
         </p>
       </div>
     );
@@ -56,11 +61,7 @@ function Stepper({ estadoActual }) {
   return (
     <div className="w-full px-2 pt-2 pb-4">
       <div className="relative flex items-start justify-between">
-
-        {/* Línea de fondo (gris) */}
         <div className="absolute top-5 left-0 right-0 h-1 bg-ink-100 rounded-full mx-[10%]" />
-
-        {/* Línea de progreso (coloreada) */}
         <div
           className="absolute top-5 left-0 h-1 rounded-full mx-[10%] transition-all duration-700"
           style={{
@@ -71,14 +72,12 @@ function Stepper({ estadoActual }) {
           }}
         />
 
-        {/* Nodos */}
         {PASOS.map((paso, i) => {
           const completado = i <= indexActual;
           const activo     = i === indexActual;
 
           return (
             <div key={paso.estado} className="relative flex flex-col items-center z-10" style={{ width: '33%' }}>
-              {/* Círculo */}
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-lg
                            transition-all duration-500 border-2"
@@ -92,7 +91,6 @@ function Stepper({ estadoActual }) {
                 {completado ? <span aria-hidden="true">{paso.emoji}</span> : <span className="text-ink-300 text-xs font-black">{i + 1}</span>}
               </div>
 
-              {/* Texto */}
               <p className="mt-2 font-body font-black text-[11px] text-center leading-tight transition-colors"
                  style={{ color: activo ? paso.color : completado ? '#6b35b8' : '#b388e8' }}>
                 {paso.label}
@@ -112,6 +110,8 @@ function Stepper({ estadoActual }) {
 
 function TarjetaPedido({ pedido }) {
   const [expandido, setExpandido] = useState(false);
+  const { t } = useLanguage();
+  const PASOS = usePasos();
   const esCancelado = pedido.estado === 'Cancelado';
   const pasoActual = esCancelado
     ? { color: '#6b7280', colorLight: '#f3f4f6', emoji: '❌', estado: 'Cancelado' }
@@ -125,7 +125,6 @@ function TarjetaPedido({ pedido }) {
          style={{ border: `2px solid ${pasoActual.colorLight}`,
                   boxShadow: `0 4px 20px ${pasoActual.color}15` }}>
 
-      {/* Header tarjeta */}
       <div className="px-4 pt-4 pb-2">
         <div className="flex items-start justify-between mb-1">
           <div>
@@ -139,16 +138,14 @@ function TarjetaPedido({ pedido }) {
         </div>
         <p className="text-sm font-body font-bold text-ink-700">{pedido.cliente_nombre}</p>
         <p className="text-xs font-body text-ink-400">
-          {pedido.tipo_entrega === 'envio' ? <><span aria-hidden="true">🚚</span> Envío a domicilio</> : <><span aria-hidden="true">🏪</span> Recoger en tienda</>}
+          {pedido.tipo_entrega === 'envio' ? <><span aria-hidden="true">🚚</span> {t('tracking.shippingHome')}</> : <><span aria-hidden="true">🏪</span> {t('tracking.pickupStore')}</>}
         </p>
       </div>
 
-      {/* Stepper */}
       <div className="px-4 py-2 border-t border-ink-100">
         <Stepper estadoActual={pedido.estado} />
       </div>
 
-      {/* Total + toggle detalles */}
       <div className="px-4 pb-4 flex items-center justify-between border-t border-ink-100 pt-3">
         <span className="font-body font-black text-base"
               style={{ color: pasoActual.color }}>
@@ -159,12 +156,11 @@ function TarjetaPedido({ pedido }) {
             onClick={() => setExpandido(v => !v)}
             className="text-xs font-body font-bold text-ink-400 hover:text-ink-700
                        underline underline-offset-2 transition-colors">
-            {expandido ? 'Ocultar productos ▲' : `Ver ${pedido.detalles_json.length} productos ▼`}
+            {expandido ? t('tracking.hideProducts') : t('tracking.viewProducts', { count: pedido.detalles_json.length })}
           </button>
         )}
       </div>
 
-      {/* Lista de productos (colapsable) */}
       {expandido && (
         <div className="px-4 pb-4 space-y-2 border-t border-ink-100 pt-3 animate-fade-in">
           {pedido.detalles_json.map((item, i) => {
@@ -205,10 +201,11 @@ function TarjetaPedido({ pedido }) {
 // ── Componente principal ─────────────────────────────────────────────────────
 export default function RastreoPedido({ onCerrar }) {
   const [query,    setQuery]   = useState('');
-  const [pedidos,  setPedidos] = useState(null); // null = no buscado aún
+  const [pedidos,  setPedidos] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [enCooldown, setEnCooldown] = useState(false);
   const { buscarPedido, buscando } = usePedido();
+  const { t } = useLanguage();
 
   const handleBuscar = async () => {
     const q = query.trim();
@@ -219,7 +216,7 @@ export default function RastreoPedido({ onCerrar }) {
 
     setErrorMsg('');
     const { pedidos: resultado, error } = await buscarPedido(q);
-    if (error) { setErrorMsg('Error al buscar. Intenta de nuevo.'); return; }
+    if (error) { setErrorMsg(t('tracking.searchError')); return; }
     setPedidos(resultado);
   };
 
@@ -229,11 +226,10 @@ export default function RastreoPedido({ onCerrar }) {
     <div className="min-h-screen flex flex-col items-center" style={{ background: 'var(--surface-primary)' }}>
       <div className="w-full max-w-xl flex flex-col min-h-screen">
 
-      {/* Header */}
       <div className="flex-shrink-0 px-5 pt-6 pb-4">
         <div className="flex items-center gap-3 mb-1">
           {onCerrar && (
-            <button onClick={onCerrar} aria-label="Cerrar modal"
+            <button onClick={onCerrar} aria-label={t('common.close')}
               className="p-2 rounded-full bg-ink-100 hover:bg-ink-200 text-ink-500 transition-colors">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
@@ -241,13 +237,12 @@ export default function RastreoPedido({ onCerrar }) {
             </button>
           )}
           <div>
-            <h1 className="font-display text-2xl text-ink-900"><span aria-hidden="true">📦</span> Rastrear Pedido</h1>
-            <p className="text-xs font-body text-ink-400 mt-0.5">Ingresa tu folio o número de teléfono</p>
+            <h1 className="font-display text-2xl text-ink-900">{t('tracking.title')}</h1>
+            <p className="text-xs font-body text-ink-400 mt-0.5">{t('tracking.subtitle')}</p>
           </div>
         </div>
       </div>
 
-      {/* Buscador */}
       <div className="flex-shrink-0 px-5 pb-4">
         <div className="flex gap-2">
           <input
@@ -255,7 +250,7 @@ export default function RastreoPedido({ onCerrar }) {
             value={query}
             onChange={e => { setQuery(e.target.value); setPedidos(null); setErrorMsg(''); }}
             onKeyDown={handleKeyDown}
-            placeholder="FP-1234 o tu teléfono (10 dígitos)"
+            placeholder={t('tracking.placeholder')}
             className="flex-1 bg-white rounded-2xl px-4 py-3 text-sm font-body font-semibold
                        text-ink-900 placeholder:text-ink-300 outline-none
                        border-2 border-ink-200 focus:border-fiesta-magenta transition-colors"
@@ -272,7 +267,7 @@ export default function RastreoPedido({ onCerrar }) {
             {buscando
               ? <div className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
               : <span aria-hidden="true">🔍</span>}
-            {enCooldown ? 'Espera...' : 'Buscar'}
+            {enCooldown ? t('tracking.wait') : t('common.search')}
           </button>
         </div>
         {errorMsg && (
@@ -280,32 +275,27 @@ export default function RastreoPedido({ onCerrar }) {
         )}
       </div>
 
-      {/* Resultados */}
       <div className="flex-1 overflow-y-auto px-5 pb-8 space-y-4">
-
-        {/* Estado inicial */}
         {pedidos === null && !buscando && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="text-5xl mb-3 animate-float" aria-hidden="true">🎁</div>
-            <p className="font-display text-lg text-ink-500">¿Dónde está tu pedido?</p>
+            <p className="font-display text-lg text-ink-500">{t('tracking.initialTitle')}</p>
             <p className="text-xs font-body text-ink-400 mt-1 max-w-xs">
-              Usa el folio que recibiste por WhatsApp o tu número de teléfono
+              {t('tracking.initialHint')}
             </p>
           </div>
         )}
 
-        {/* Sin resultados */}
         {pedidos !== null && pedidos.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="text-5xl mb-3" aria-hidden="true">😔</div>
-            <p className="font-display text-lg text-ink-500">No encontramos pedidos</p>
+            <p className="font-display text-lg text-ink-500">{t('tracking.noResults')}</p>
             <p className="text-xs font-body text-ink-400 mt-1">
-              Verifica el folio o teléfono e intenta de nuevo
+              {t('tracking.noResultsHint')}
             </p>
           </div>
         )}
 
-        {/* Tarjetas de pedidos */}
         {pedidos?.map(pedido => (
           <TarjetaPedido key={pedido.folio} pedido={pedido} />
         ))}

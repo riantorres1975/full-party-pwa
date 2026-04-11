@@ -1,23 +1,25 @@
 import { useState } from 'react';
 import { ClipboardList, LayoutGrid, LogOut } from 'lucide-react';
+import { useLanguage } from '../../hooks/useLanguage';
 import ConfirmModal from './ConfirmModal';
-
-const TABS = [
-  { key: 'pedidos', label: 'Pedidos', icon: ClipboardList },
-  { key: 'catalogo', label: 'Catálogo', icon: LayoutGrid },
-  { key: 'salir', label: 'Salir', icon: LogOut },
-];
 
 export default function BottomNav({ active, onChange, badge = 0, onSignOut }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const { t } = useLanguage();
+
+  const TABS = [
+    { key: 'pedidos', label: t('admin.nav.orders'), icon: ClipboardList },
+    { key: 'catalogo', label: t('admin.nav.catalog'), icon: LayoutGrid },
+    { key: 'salir', label: t('admin.nav.logout'), icon: LogOut },
+  ];
 
   return (
     <>
     <ConfirmModal
       open={confirmOpen}
-      title="¿Cerrar sesión?"
-      message="Serás redirigido al inicio."
-      confirmLabel="Cerrar sesión"
+      title={t('admin.logout.title')}
+      message={t('admin.logout.message')}
+      confirmLabel={t('admin.logout.confirm')}
       variant="warning"
       onConfirm={() => { setConfirmOpen(false); onSignOut?.(); }}
       onCancel={() => setConfirmOpen(false)}
@@ -49,13 +51,11 @@ export default function BottomNav({ active, onChange, badge = 0, onSignOut }) {
             >
               <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
               <span className="text-[10px] font-body font-bold">{label}</span>
-              {/* Badge */}
               {key === 'pedidos' && badge > 0 && (
                 <span className="absolute top-1.5 left-1/2 ml-1 bg-red-500 text-white text-[9px] font-black min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center leading-none">
                   {badge > 99 ? '99+' : badge}
                 </span>
               )}
-              {/* Active indicator */}
               {isActive && (
                 <span className="absolute bottom-0 w-8 h-0.5 rounded-full bg-fiesta-magenta" />
               )}

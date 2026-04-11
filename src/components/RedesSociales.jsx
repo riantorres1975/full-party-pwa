@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Facebook } from 'lucide-react';
+import { useLanguage } from '../hooks/useLanguage';
 
-// Icono TikTok SVG — mismas proporciones que Lucide (24x24 viewBox)
 function TikTokIcon({ size = 24 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -37,12 +37,13 @@ const REDES = [
 
 function BtnRed({ red }) {
   const [hovered, setHovered] = useState(false);
+  const { t } = useLanguage();
   return (
     <a
       href={red.href}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={`Visítanos en ${red.label}`}
+      aria-label={t('social.visitUs', { name: red.label })}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onFocus={()    => setHovered(true)}
@@ -66,10 +67,11 @@ function BtnRed({ red }) {
 }
 
 export default function RedesSociales() {
+  const { t } = useLanguage();
   return (
     <div className="flex flex-col items-center gap-3 py-6 px-4">
       <p className="text-[11px] font-body font-black text-ink-300 tracking-[0.2em] uppercase">
-        Síguenos
+        {t('common.followUs')}
       </p>
       <div className="flex items-center gap-3 flex-wrap justify-center">
         {REDES.map(red => <BtnRed key={red.id} red={red} />)}

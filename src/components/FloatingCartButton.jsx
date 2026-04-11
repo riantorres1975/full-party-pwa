@@ -1,6 +1,8 @@
 import { SIMBOLO_MONEDA } from '../data/productos';
+import { useLanguage } from '../hooks/useLanguage';
 
 export default function FloatingCartButton({ cantidadTotal, total, onAbrir }) {
+  const { t } = useLanguage();
   if (cantidadTotal === 0) return null;
 
   return (
@@ -14,7 +16,7 @@ export default function FloatingCartButton({ cantidadTotal, total, onAbrir }) {
           background: 'linear-gradient(135deg, #ff3dac, #a855f7, #6b35b8)',
           boxShadow: '0 8px 30px #ff3dac55, 0 4px 15px #a855f744',
         }}
-        aria-label="Ver carrito"
+        aria-label={t('cart.viewCartAriaLabel')}
       >
         <div className="flex items-center gap-3">
           <span className="min-w-[28px] h-7 px-1.5 flex items-center justify-center
@@ -22,7 +24,7 @@ export default function FloatingCartButton({ cantidadTotal, total, onAbrir }) {
                            bg-[#ffe55c] text-[#4b1d7a]">
             {cantidadTotal > 99 ? '99+' : cantidadTotal}
           </span>
-          <span className="font-body font-black text-sm">🛒 Ver mi pedido</span>
+          <span className="font-body font-black text-sm">{t('cart.viewCart')}</span>
         </div>
         <span className="font-body font-black text-base">
           {SIMBOLO_MONEDA}{total.toFixed(2)}

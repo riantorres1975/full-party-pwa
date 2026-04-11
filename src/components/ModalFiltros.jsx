@@ -1,10 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { categorias, marcas, tamanios } from '../data/productos';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import { useLanguage } from '../hooks/useLanguage';
 
-/**
- * Mini buscador dentro de una sección de filtros
- */
 function BuscadorSeccion({ value, onChange, placeholder }) {
   return (
     <div className="relative mb-2">
@@ -30,9 +28,6 @@ function BuscadorSeccion({ value, onChange, placeholder }) {
   );
 }
 
-/**
- * Sección colapsable con búsqueda y scroll interno
- */
 function Seccion({ titulo, emoji, children, defaultOpen = true, count, searchable = false, searchPlaceholder }) {
   const [abierto, setAbierto] = useState(defaultOpen);
   const [busqueda, setBusqueda] = useState('');
@@ -84,9 +79,6 @@ function Seccion({ titulo, emoji, children, defaultOpen = true, count, searchabl
   );
 }
 
-/**
- * Pill seleccionable — estilo compacto tipo chip (para marcas/tamaños)
- */
 function PillOpcion({ label, activo, onClick }) {
   return (
     <button
@@ -111,9 +103,6 @@ function PillOpcion({ label, activo, onClick }) {
   );
 }
 
-/**
- * Fila seleccionable tipo lista — para categorías
- */
 function FilaOpcion({ label, activo, onClick }) {
   return (
     <button
@@ -128,7 +117,6 @@ function FilaOpcion({ label, activo, onClick }) {
             style={{ color: activo ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
         {label}
       </span>
-      {/* Checkbox indicator */}
       <span
         className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all
                    ${activo ? 'text-white' : ''}`}
@@ -147,9 +135,6 @@ function FilaOpcion({ label, activo, onClick }) {
   );
 }
 
-/**
- * ModalFiltros — Bottom sheet con secciones buscables y scroll interno.
- */
 export default function ModalFiltros({
   isOpen, onCerrar,
   filtros, toggleFiltro, limpiarFiltros,
@@ -157,6 +142,7 @@ export default function ModalFiltros({
 }) {
   const panelRef = useRef(null);
   useFocusTrap(panelRef, isOpen);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (isOpen) document.documentElement.classList.add('overflow-hidden');
@@ -169,7 +155,6 @@ export default function ModalFiltros({
 
   return (
     <>
-      {/* Overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 z-50 animate-fade-in"
@@ -178,11 +163,10 @@ export default function ModalFiltros({
         />
       )}
 
-      {/* Panel */}
       <div
         ref={panelRef}
         role="dialog"
-        aria-label="Filtros"
+        aria-label={t('common.filters')}
         aria-modal="true"
         className={`
           fixed inset-x-0 bottom-0 z-50 rounded-t-3xl shadow-2xl
@@ -194,26 +178,26 @@ export default function ModalFiltros({
         style={{ background: 'var(--surface-primary)', border: '1px solid var(--border-soft)',
                  maxHeight: '88vh' }}
       >
-        {/* Handle */}
         <div className="flex justify-center pt-2.5 pb-1 flex-shrink-0 sm:hidden">
           <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border-default)' }} />
         </div>
 
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b flex-shrink-0"
              style={{ borderColor: 'var(--border-soft)' }}>
           <div>
-            <h2 className="font-display text-lg text-ink-900">Filtros</h2>
+            <h2 className="font-display text-lg text-ink-900">{t('common.filters')}</h2>
             {totalActivos > 0 && (
               <p className="text-[11px] text-ink-400 font-body font-semibold">
-                {totalActivos} filtro{totalActivos > 1 ? 's' : ''} activo{totalActivos > 1 ? 's' : ''}
+                {totalActivos > 1
+                  ? t('filters.activeCountPlural', { count: totalActivos })
+                  : t('filters.activeCount', { count: totalActivos })}
               </p>
             )}
           </div>
           <button
             onClick={onCerrar}
             className="p-2 rounded-xl hover:bg-ink-100 text-ink-400 transition-colors"
-            aria-label="Cerrar filtros"
+            aria-label={t('common.close')}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
@@ -221,13 +205,10 @@ export default function ModalFiltros({
           </button>
         </div>
 
-        {/* Secciones — scrollable */}
         <div className="flex-1 overflow-y-auto">
-
-          {/* Categorías — lista buscable */}
-          <Seccion titulo="Categoría" emoji="📁" defaultOpen={true}
+          <Seccion titulo={t('filters.category')} emoji="📁" defaultOpen={true}
                    count={filtros.categorias.length}
-                   searchable={true} searchPlaceholder="Buscar categoría...">
+                   searchable={true} searchPlaceholder={t('filters.searchCategory')}>
             {(busqueda) => {
               const filtradas = categorias.filter(cat =>
                 cat.label.toLowerCase().includes(busqueda.toLowerCase())
@@ -242,17 +223,16 @@ export default function ModalFiltros({
                       onClick={() => toggleFiltro('categorias', cat.id)}
                     />
                   )) : (
-                    <p className="text-xs text-ink-300 font-body py-2 px-3">Sin coincidencias</p>
+                    <p className="text-xs text-ink-300 font-body py-2 px-3">{t('search.noMatches')}</p>
                   )}
                 </div>
               );
             }}
           </Seccion>
 
-          {/* Marcas — buscable */}
-          <Seccion titulo="Marca" emoji="🏷️" defaultOpen={true}
+          <Seccion titulo={t('filters.brand')} emoji="🏷️" defaultOpen={true}
                    count={filtros.marcas.length}
-                   searchable={true} searchPlaceholder="Buscar marca...">
+                   searchable={true} searchPlaceholder={t('filters.searchBrand')}>
             {(busqueda) => {
               const filtradas = marcas.filter(m =>
                 m.toLowerCase().includes(busqueda.toLowerCase())
@@ -267,15 +247,14 @@ export default function ModalFiltros({
                       onClick={() => toggleFiltro('marcas', marca)}
                     />
                   )) : (
-                    <p className="text-xs text-ink-300 font-body py-2">Sin coincidencias</p>
+                    <p className="text-xs text-ink-300 font-body py-2">{t('search.noMatches')}</p>
                   )}
                 </div>
               );
             }}
           </Seccion>
 
-          {/* Tamaños */}
-          <Seccion titulo="Tamaño" emoji="📐" defaultOpen={false}
+          <Seccion titulo={t('filters.size')} emoji="📐" defaultOpen={false}
                    count={filtros.tamanios.length}>
             <div className="flex flex-wrap gap-1.5">
               {tamanios.map(tam => (
@@ -288,13 +267,10 @@ export default function ModalFiltros({
               ))}
             </div>
           </Seccion>
-
         </div>
 
-        {/* Footer fijo — botones de acción */}
         <div className="px-5 pt-3 pb-4 border-t flex gap-2 flex-shrink-0"
              style={{ borderColor: 'var(--border-soft)' }}>
-          {/* Limpiar */}
           <button
             onClick={limpiarFiltros}
             disabled={totalActivos === 0}
@@ -304,10 +280,9 @@ export default function ModalFiltros({
             style={{ color: 'var(--text-muted)', background: 'var(--surface-card)',
                      border: '1px solid var(--border-soft)' }}
           >
-            Limpiar
+            {t('common.clean')}
           </button>
 
-          {/* Mostrar resultados */}
           <button
             onClick={onCerrar}
             className="flex-1 py-3 rounded-xl font-body font-black text-sm text-white
@@ -315,7 +290,9 @@ export default function ModalFiltros({
             style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
                      boxShadow: '0 4px 16px #ff3dac44' }}
           >
-            Mostrar {totalResultados} resultado{totalResultados !== 1 ? 's' : ''}
+            {totalResultados !== 1
+              ? t('filters.showResultsPlural', { count: totalResultados })
+              : t('filters.showResults', { count: totalResultados })}
           </button>
         </div>
       </div>

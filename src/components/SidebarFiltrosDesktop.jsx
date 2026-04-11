@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { categorias, marcas, tamanios } from '../data/productos';
+import { useLanguage } from '../hooks/useLanguage';
 
-/**
- * Mini buscador inline
- */
 function BuscadorSeccion({ value, onChange, placeholder }) {
   return (
     <div className="relative mb-2.5">
@@ -133,6 +131,8 @@ function SeccionFiltro({ titulo, abiertaInicial = true, children, count, searcha
 }
 
 export default function SidebarFiltrosDesktop({ filtros, toggleFiltro, limpiarFiltros, totalFiltrosActivos }) {
+  const { t } = useLanguage();
+
   return (
     <aside className="hidden lg:block sidebar-filtros-desktop">
       <div
@@ -141,7 +141,7 @@ export default function SidebarFiltrosDesktop({ filtros, toggleFiltro, limpiarFi
                  boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}
       >
         <div className="flex items-center justify-between gap-2">
-          <h3 className="font-display text-lg text-ink-900">Filtros</h3>
+          <h3 className="font-display text-lg text-ink-900">{t('common.filters')}</h3>
           <button
             onClick={limpiarFiltros}
             disabled={totalFiltrosActivos === 0}
@@ -150,14 +150,13 @@ export default function SidebarFiltrosDesktop({ filtros, toggleFiltro, limpiarFi
             style={{ color: 'var(--text-muted)', background: 'var(--surface-card)',
                      border: '1px solid var(--border-soft)' }}
           >
-            Limpiar
+            {t('common.clean')}
           </button>
         </div>
 
-        {/* Categorías — buscable */}
-        <SeccionFiltro titulo="📁 Categoría" abiertaInicial={true}
+        <SeccionFiltro titulo={`📁 ${t('filters.category')}`} abiertaInicial={true}
                        count={filtros.categorias.length}
-                       searchable={true} searchPlaceholder="Buscar categoría...">
+                       searchable={true} searchPlaceholder={t('filters.searchCategory')}>
           {(busqueda) => {
             const filtradas = categorias.filter(cat =>
               cat.label.toLowerCase().includes(busqueda.toLowerCase())
@@ -172,17 +171,16 @@ export default function SidebarFiltrosDesktop({ filtros, toggleFiltro, limpiarFi
                     onClick={() => toggleFiltro('categorias', cat.id)}
                   />
                 )) : (
-                  <p className="text-[11px] text-ink-300 font-body py-1 px-2">Sin coincidencias</p>
+                  <p className="text-[11px] text-ink-300 font-body py-1 px-2">{t('search.noMatches')}</p>
                 )}
               </div>
             );
           }}
         </SeccionFiltro>
 
-        {/* Marcas — buscable */}
-        <SeccionFiltro titulo="🏷️ Marca" abiertaInicial={true}
+        <SeccionFiltro titulo={`🏷️ ${t('filters.brand')}`} abiertaInicial={true}
                        count={filtros.marcas.length}
-                       searchable={true} searchPlaceholder="Buscar marca...">
+                       searchable={true} searchPlaceholder={t('filters.searchBrand')}>
           {(busqueda) => {
             const filtradas = marcas.filter(m =>
               m.toLowerCase().includes(busqueda.toLowerCase())
@@ -197,15 +195,14 @@ export default function SidebarFiltrosDesktop({ filtros, toggleFiltro, limpiarFi
                     onClick={() => toggleFiltro('marcas', marca)}
                   />
                 )) : (
-                  <p className="text-[11px] text-ink-300 font-body py-1">Sin coincidencias</p>
+                  <p className="text-[11px] text-ink-300 font-body py-1">{t('search.noMatches')}</p>
                 )}
               </div>
             );
           }}
         </SeccionFiltro>
 
-        {/* Tamaños */}
-        <SeccionFiltro titulo="📐 Tamaño" abiertaInicial={false}
+        <SeccionFiltro titulo={`📐 ${t('filters.size')}`} abiertaInicial={false}
                        count={filtros.tamanios.length}>
            <div className="grid grid-cols-2 2xl:grid-cols-3 gap-1.5">
              {tamanios.map(tamano => (

@@ -60,6 +60,7 @@ catalogo-pwa/
     ├── hooks/
     │   ├── useAuth.js             ← sesión de Supabase Auth (login/logout)
     │   ├── useCarrito.js          ← carrito con persistencia en localStorage + total dinámico mayoreo + sincronización RT de stock
+    │   ├── useLanguage.jsx        ← i18n ES/EN con persistencia en localStorage
     │   ├── useConfirm.js          ← hook para modal de confirmación (promesa)
     │   ├── useDebounce.js         ← debounce genérico (default 300 ms) para inputs de búsqueda
     │   ├── useInfiniteScroll.js   ← IntersectionObserver para carga progresiva
@@ -78,8 +79,13 @@ catalogo-pwa/
     ├── __tests__/
     │   └── seguridad.test.mjs     ← suite de pruebas de seguridad (52 tests)
     │
+    ├── i18n/
+    │   ├── es.json                ← diccionario de traducciones en español
+    │   └── en.json                ← diccionario de traducciones en inglés
+    │
     └── components/
         ├── Header.jsx             ← logo + botón de carrito con badge
+        ├── LanguageToggle.jsx     ← botón de cambio de idioma ES/EN
         ├── BuscadorFiltros.jsx    ← buscador de texto + pills de filtros activos
         ├── ModalFiltros.jsx       ← bottom sheet con filtros por categoría/marca/tamaño
         ├── ProductGrid.jsx        ← grid con infinite scroll y centinela
@@ -294,6 +300,7 @@ export const categorias = [
 - **Bottom navigation mobile** — 3 tabs (Pedidos con badge, Catálogo, Cuenta) con indicador activo, safe-area compatible
 - **Counter cards con estado** — accent bar lateral por color de estado, iconos circulares, número prominente, dot pulsante "live" en Por Surtir
 - **Navegación interna por hash** entre `/#/admin` (Pedidos) y `/#/admin/catalogo` (Catálogo)
+- **Panel bilingüe (ES/EN)** — traducción de navegación, pedidos, picking, catálogo, modales de crear/editar y gestores de categorías/marcas/tamaños
 - **Buscador** por folio, nombre de cliente o teléfono
 - **Cambio de estado** — dropdown custom en mobile, botones en desktop, con actualización optimista
 - **Sistema de feedback** — toasts (success/error/info/warning) con auto-dismiss y progress bar, modal de confirmación estilizado (reemplaza window.alert/confirm), skeleton loaders

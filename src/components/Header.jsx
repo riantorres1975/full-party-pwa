@@ -1,12 +1,17 @@
-import { Package, LayoutGrid } from 'lucide-react';
+import { Package, LayoutGrid, MoreHorizontal } from 'lucide-react';
 import { NOMBRE_NEGOCIO } from '../data/productos';
 import { usePWA } from '../hooks/usePWA';
+import { useLanguage } from '../hooks/useLanguage';
 import ThemeToggle from './ThemeToggle';
-import { useState } from 'react';
+import LanguageToggle from './LanguageToggle';
+import { useEffect, useRef, useState } from 'react';
 
 export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onToggleTema, onRastreoClick, isAdmin = false }) {
   const { installPrompt, mostrarGuiaIOS, instalarApp } = usePWA();
   const [showIOSGuide, setShowIOSGuide] = useState(false);
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const menuRef = useRef(null);
+  const { t, lang, setLang } = useLanguage();
 
   const mostrarBotonInstalar = !!installPrompt || mostrarGuiaIOS;
 
@@ -21,6 +26,21 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
       setTimeout(() => setShowIOSGuide(false), 5000);
     }
   }
+
+  useEffect(() => {
+    if (!menuAbierto) return;
+    const onPointerDown = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuAbierto(false);
+      }
+    };
+    window.addEventListener('mousedown', onPointerDown);
+    window.addEventListener('touchstart', onPointerDown, { passive: true });
+    return () => {
+      window.removeEventListener('mousedown', onPointerDown);
+      window.removeEventListener('touchstart', onPointerDown);
+    };
+  }, [menuAbierto]);
 
   return (
     <div className="safe-top">
@@ -46,50 +66,50 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
             </svg>
           </span>
           <div className="min-w-0">
-            <h1 className="font-display text-xl sm:text-2xl leading-tight whitespace-nowrap"
+            <h1 className="font-display text-lg sm:text-2xl leading-tight"
                 style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7, #00d4ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               {NOMBRE_NEGOCIO}
             </h1>
             <p className="text-[10px] font-body font-bold tracking-widest uppercase text-ink-400">
-              Globos · Decoración · Fiestas
+              {t('header.subtitle')}
             </p>
           </div>
         </div>
 
         {/* Acciones */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {mostrarBotonInstalar && (
             <button
               onClick={manejarInstalar}
-              className="flex items-center gap-1.5 text-xs font-body font-bold
+              className="hidden sm:flex items-center gap-1.5 text-xs font-body font-bold
                          text-fiesta-purple bg-ink-100 px-2 sm:px-3 py-1.5 rounded-full
                          border-2 border-ink-200 transition-all duration-200 hover:bg-ink-200 active:scale-95"
-              aria-label="Instalar app"
+              aria-label={t('header.installAriaLabel')}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
                   d="M12 18.5l-6-6m6 6l6-6m-6 6V3" />
               </svg>
-              <span className="hidden sm:inline">Instalar</span>
+              <span className="hidden sm:inline">{t('header.install')}</span>
             </button>
           )}
 
-          {/* Acceso rápido al admin — solo visible si hay sesión activa */}
+          {/* Acceso rápido al admin */}
           {isAdmin && (
             <a
               href="#/admin"
-              className="flex items-center gap-1.5 text-xs font-body font-bold px-2.5 py-1.5 rounded-full
+              className="hidden sm:flex items-center gap-1.5 text-xs font-body font-bold px-2.5 py-1.5 rounded-full
                          border-2 transition-all duration-200 active:scale-95"
               style={{
                 color: temaOscuro ? '#c4b5fd' : '#52278f',
                 borderColor: temaOscuro ? '#363b64' : '#e0c4f8',
                 background: temaOscuro ? 'rgba(42,15,80,0.5)' : '#f3e8ff',
               }}
-              aria-label="Ir al panel de administración"
-              title="Panel admin"
+              aria-label={t('header.adminAriaLabel')}
+              title={t('header.admin')}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Admin</span>
+              <span className="hidden sm:inline">{t('header.admin')}</span>
             </a>
           )}
 
@@ -97,22 +117,105 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
           {onRastreoClick && (
             <button
               onClick={onRastreoClick}
-              className="flex items-center gap-1 p-2 rounded-full transition-all duration-200 active:scale-90"
+              className="hidden sm:flex items-center gap-1 p-2 rounded-full transition-all duration-200 active:scale-90"
               style={{ color: 'var(--text-secondary)' }}
-              aria-label="Rastrear mi pedido"
-              title="Rastrear pedido"
+              aria-label={t('header.trackAriaLabel')}
+              title={t('header.track')}
             >
               <Package className="w-5 h-5" />
-              <span className="hidden sm:inline text-xs font-body font-bold">Rastrear</span>
+              <span className="hidden sm:inline text-xs font-body font-bold">{t('header.track')}</span>
             </button>
           )}
 
-          {/* Theme toggle — visible en todas las pantallas */}
-          <ThemeToggle
-            isDarkMode={temaOscuro}
-            onToggle={onToggleTema}
-            variant={temaOscuro ? 'catalogDark' : 'catalog'}
-          />
+          {/* Language toggle */}
+          <div className="hidden sm:block">
+            <LanguageToggle />
+          </div>
+
+          {/* Theme toggle */}
+          <div className="hidden sm:block">
+            <ThemeToggle
+              isDarkMode={temaOscuro}
+              onToggle={onToggleTema}
+              variant={temaOscuro ? 'catalogDark' : 'catalog'}
+            />
+          </div>
+
+          {/* Menú móvil de acciones secundarias */}
+          <div className="relative sm:hidden" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setMenuAbierto(v => !v)}
+              className="w-10 h-10 rounded-full flex items-center justify-center border transition-all duration-200 active:scale-95"
+              style={{
+                borderColor: 'var(--border-soft)',
+                background: 'var(--surface-card)',
+                color: 'var(--text-secondary)',
+              }}
+              aria-label="Más acciones"
+              title="Más"
+            >
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
+
+            {menuAbierto && (
+              <div
+                className="absolute right-0 mt-2 w-44 rounded-xl p-1.5 z-[70] border shadow-xl animate-fade-in"
+                style={{ background: 'var(--surface-primary)', borderColor: 'var(--border-soft)' }}
+              >
+                {mostrarBotonInstalar && (
+                  <button
+                    type="button"
+                    onClick={() => { manejarInstalar(); setMenuAbierto(false); }}
+                    className="w-full text-left px-3 py-2 rounded-lg text-xs font-body font-bold transition-colors hover:bg-ink-100"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {t('header.install')}
+                  </button>
+                )}
+
+                {isAdmin && (
+                  <a
+                    href="#/admin"
+                    onClick={() => setMenuAbierto(false)}
+                    className="block w-full text-left px-3 py-2 rounded-lg text-xs font-body font-bold transition-colors hover:bg-ink-100"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {t('header.admin')}
+                  </a>
+                )}
+
+                {onRastreoClick && (
+                  <button
+                    type="button"
+                    onClick={() => { onRastreoClick(); setMenuAbierto(false); }}
+                    className="w-full text-left px-3 py-2 rounded-lg text-xs font-body font-bold transition-colors hover:bg-ink-100"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {t('header.track')}
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => { onToggleTema?.(); setMenuAbierto(false); }}
+                  className="w-full text-left px-3 py-2 rounded-lg text-xs font-body font-bold transition-colors hover:bg-ink-100"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {temaOscuro ? 'Tema claro' : 'Tema oscuro'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setLang(lang === 'es' ? 'en' : 'es'); setMenuAbierto(false); }}
+                  className="w-full text-left px-3 py-2 rounded-lg text-xs font-body font-bold transition-colors hover:bg-ink-100"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {lang === 'es' ? 'Language: EN' : 'Idioma: ES'}
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Botón carrito */}
           <div className="relative overflow-visible">
@@ -120,7 +223,7 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
               onClick={onAbrirCarrito}
               className="relative p-2.5 rounded-full text-white transition-all duration-200 active:scale-90"
               style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}
-              aria-label={`Carrito con ${cantidadTotal} productos`}
+              aria-label={t('header.cartAriaLabel', { count: cantidadTotal })}
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -142,9 +245,9 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
       {showIOSGuide && (
         <div className="mx-4 mt-1 mb-0 px-3 py-2 rounded-xl text-xs font-body font-bold text-center animate-fade-in"
              style={{ background: 'var(--surface-muted)', color: 'var(--text-secondary)' }}
-             role="status">
-          Abre <strong>Compartir</strong> y selecciona <strong>"Agregar a pantalla de inicio"</strong>
-        </div>
+             role="status"
+             dangerouslySetInnerHTML={{ __html: t('header.iosGuide') }}
+        />
       )}
     </div>
   );

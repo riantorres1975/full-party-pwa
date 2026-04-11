@@ -27,6 +27,7 @@ import ConfirmModal from './ui/ConfirmModal';
 import { useToast } from './ui/ToastProvider';
 import { useConfirm } from '../hooks/useConfirm';
 import { useDebounce } from '../hooks/useDebounce';
+import { useLanguage } from '../hooks/useLanguage';
 
 function MiniaturaProducto({ url, nombre }) {
   const [fallo, setFallo] = useState(false);
@@ -49,6 +50,7 @@ function MiniaturaProducto({ url, nombre }) {
 
 export default function AdminCatalogo() {
   const toast = useToast();
+  const { t } = useLanguage();
   const { isOpen: confirmOpen, config: confirmConfig, confirm: confirmDialog, onConfirm, onCancel } = useConfirm();
   const [creando, setCreando] = useState(false);
   const [productos, setProductos] = useState([]);
@@ -511,7 +513,7 @@ export default function AdminCatalogo() {
               type="search"
               value={busquedaInput}
               onChange={e => setBusquedaInput(e.target.value)}
-              placeholder="Buscar por nombre, marca, tamaño o categoría…"
+              placeholder={t('admin.catalog.searchPlaceholder')}
               className="w-full bg-admin-card rounded-2xl pl-12 pr-4 py-3 text-sm font-body font-semibold
                          text-admin-text placeholder:text-admin-inactive outline-none border-2 border-admin-border
                          focus:border-fiesta-magenta transition-colors"
@@ -525,7 +527,7 @@ export default function AdminCatalogo() {
             style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)', boxShadow: '0 4px 14px #ff3dac33' }}
           >
             <Plus size={18} strokeWidth={3} />
-            <span className="hidden sm:inline">Nuevo Artículo</span>
+            <span className="hidden sm:inline">{t('admin.catalog.newItem')}</span>
           </button>
 
           {/* Exportar con menú de formato */}
@@ -537,10 +539,10 @@ export default function AdminCatalogo() {
               className="inline-flex items-center gap-1.5 px-3 py-3 rounded-2xl text-sm font-body font-black
                          border-2 border-admin-border text-admin-text hover:border-fiesta-magenta hover:text-fiesta-magenta
                          transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
-              title="Exportar catálogo"
+              title={t('admin.catalog.export')}
             >
               <Download size={18} strokeWidth={2.5} className={exportando ? 'animate-bounce' : ''} />
-              <span className="hidden sm:inline">{exportando ? 'Exportando…' : 'Exportar'}</span>
+              <span className="hidden sm:inline">{exportando ? t('admin.catalog.exporting') : t('admin.catalog.export')}</span>
             </button>
             {showExportMenu && (
               <>
@@ -573,10 +575,10 @@ export default function AdminCatalogo() {
                        border-2 border-admin-border text-admin-text hover:border-fiesta-cyan hover:text-fiesta-cyan
                        transition-all duration-200 active:scale-95 cursor-pointer
                        ${importando ? 'opacity-40 pointer-events-none' : ''}`}
-            title="Importar artículos (JSON o CSV)"
+            title={t('admin.catalog.importHint')}
           >
             <Upload size={18} strokeWidth={2.5} className={importando ? 'animate-bounce' : ''} />
-            <span className="hidden sm:inline">{importando ? 'Importando…' : 'Importar'}</span>
+            <span className="hidden sm:inline">{importando ? t('admin.catalog.importing') : t('admin.catalog.import')}</span>
             <input
               type="file"
               accept=".json,.csv"
@@ -596,7 +598,7 @@ export default function AdminCatalogo() {
               ? { background: '#6b35b8', color: 'white', borderColor: '#6b35b8' }
               : { background: '#f3f4f6', color: '#6b7280', borderColor: '#e5e7eb' }}
           >
-            Todos
+            {t('common.all')}
           </button>
 
           <button
@@ -608,7 +610,7 @@ export default function AdminCatalogo() {
               : { background: 'white', color: '#dc2626', borderColor: '#fecaca' }}
           >
             <span className="w-2 h-2 rounded-full bg-red-500" />
-            Stock Bajo ({productosEnAlerta.length})
+            {t('admin.catalog.lowStock', { count: productosEnAlerta.length })}
           </button>
 
           <button
@@ -620,7 +622,7 @@ export default function AdminCatalogo() {
               : { background: 'white', color: '#16a34a', borderColor: '#bbf7d0' }}
           >
             <span className="w-2 h-2 rounded-full bg-green-500" />
-            Nuevos ({productosNuevos.length})
+            {t('admin.catalog.newItems', { count: productosNuevos.length })}
           </button>
 
           <span className="w-px h-5 bg-admin-border shrink-0" />
@@ -631,10 +633,10 @@ export default function AdminCatalogo() {
             className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
                        border-2 transition-all duration-200 active:scale-95"
             style={{ borderColor: '#c084fc', color: '#7c3aed', background: '#faf5ff' }}
-            title="Gestionar categorías"
+            title={t('admin.catalog.manageCategories')}
           >
             <Tag size={14} />
-            Categorías
+            {t('filters.category')}
           </button>
           <button
             type="button"
@@ -642,10 +644,10 @@ export default function AdminCatalogo() {
             className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
                        border-2 transition-all duration-200 active:scale-95"
             style={{ borderColor: '#93c5fd', color: '#2563eb', background: '#eff6ff' }}
-            title="Gestionar marcas"
+            title={t('admin.catalog.manageBrands')}
           >
             <Bookmark size={14} />
-            Marcas
+            {t('filters.brand')}
           </button>
           <button
             type="button"
@@ -653,10 +655,10 @@ export default function AdminCatalogo() {
             className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
                        border-2 transition-all duration-200 active:scale-95"
             style={{ borderColor: '#86efac', color: '#16a34a', background: '#f0fdf4' }}
-            title="Gestionar tamaños"
+            title={t('admin.catalog.manageSizes')}
           >
             <Ruler size={14} />
-            Tamaños
+            {t('filters.size')}
           </button>
           <button
             type="button"
@@ -666,10 +668,10 @@ export default function AdminCatalogo() {
             style={anuncioActivo
               ? { borderColor: '#f59e0b', color: '#92400e', background: '#fffbeb' }
               : { borderColor: '#d1d5db', color: '#6b7280', background: '#f9fafb' }}
-            title="Anuncio para clientes"
+            title={t('admin.catalog.customerBanner')}
           >
             <Megaphone size={14} />
-            Anuncio
+            {t('admin.catalog.banner')}
             {anuncioActivo && <span className="w-2 h-2 rounded-full bg-amber-500" />}
           </button>
         </div>
@@ -680,11 +682,11 @@ export default function AdminCatalogo() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Megaphone size={16} className="text-amber-500" />
-                <span className="text-xs font-body font-black text-admin-text">Anuncio para clientes</span>
+                <span className="text-xs font-body font-black text-admin-text">{t('admin.catalog.customerBanner')}</span>
               </div>
               <label className="flex items-center gap-2 cursor-pointer">
                 <span className="text-[11px] font-body font-bold text-admin-muted">
-                  {anuncioActivo ? 'Activo' : 'Inactivo'}
+                  {anuncioActivo ? t('admin.catalog.active') : t('admin.catalog.inactive')}
                 </span>
                 <Toggle
                   checked={anuncioActivo}
@@ -694,9 +696,9 @@ export default function AdminCatalogo() {
                     setAnuncioGuardando(true);
                     try {
                       await setConfig('anuncio', { mensaje: anuncioMsg, activo: nuevoVal });
-                      toast.success(nuevoVal ? 'Anuncio activado' : 'Anuncio desactivado');
+                      toast.success(nuevoVal ? t('admin.catalog.bannerEnabled') : t('admin.catalog.bannerDisabled'));
                     } catch (err) {
-                      toast.error(err.message || 'Error al guardar');
+                      toast.error(err.message || t('admin.catalog.saveError'));
                       setAnuncioActivo(!nuevoVal);
                     } finally {
                       setAnuncioGuardando(false);
@@ -710,7 +712,7 @@ export default function AdminCatalogo() {
               onChange={e => setAnuncioMsg(e.target.value)}
               maxLength={200}
               rows={2}
-              placeholder="Escribe un mensaje corto para tus clientes…"
+              placeholder={t('admin.catalog.bannerPlaceholder')}
               className="w-full bg-admin-bg rounded-xl px-3 py-2 text-sm font-body text-admin-text placeholder:text-admin-inactive
                          outline-none border border-admin-border focus:border-fiesta-magenta transition-colors resize-none"
             />
@@ -723,9 +725,9 @@ export default function AdminCatalogo() {
                   setAnuncioGuardando(true);
                   try {
                     await setConfig('anuncio', { mensaje: anuncioMsg.trim(), activo: anuncioActivo });
-                    toast.success('Anuncio guardado');
+                    toast.success(t('admin.catalog.bannerSaved'));
                   } catch (err) {
-                    toast.error(err.message || 'Error al guardar');
+                    toast.error(err.message || t('admin.catalog.saveError'));
                   } finally {
                     setAnuncioGuardando(false);
                   }
@@ -735,7 +737,7 @@ export default function AdminCatalogo() {
                 style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
               >
                 <Check size={14} />
-                {anuncioGuardando ? 'Guardando…' : 'Guardar mensaje'}
+                {anuncioGuardando ? t('admin.catalog.saving') : t('admin.catalog.saveMessage')}
               </button>
             </div>
           </div>
@@ -748,15 +750,15 @@ export default function AdminCatalogo() {
                   <div className="flex items-center justify-between px-5 py-4 border-b border-admin-border shrink-0">
                     <div className="flex items-center gap-2">
                       <Tag size={18} className="text-purple-500" />
-                      <h2 className="text-base font-body font-black text-admin-text">Gestionar Categorías</h2>
+                      <h2 className="text-base font-body font-black text-admin-text">{t('admin.catalog.manageCategories')}</h2>
                     </div>
-                    <button onClick={() => { setShowCatMgr(false); setCatEditando(null); setCatNuevoNombre(''); }} className="text-admin-muted hover:text-admin-text transition-colors" aria-label="Cerrar">
+                    <button onClick={() => { setShowCatMgr(false); setCatEditando(null); setCatNuevoNombre(''); }} className="text-admin-muted hover:text-admin-text transition-colors" aria-label={t('common.close')}>
                       <X size={20} />
                     </button>
                   </div>
                   <div className="overflow-y-auto px-4 py-3 space-y-2 flex-1">
                     {todasCategorias.length === 0 && (
-                      <p className="text-sm text-admin-muted text-center py-6">No hay categorías todavía</p>
+                      <p className="text-sm text-admin-muted text-center py-6">{t('admin.catalog.noCategoriesYet')}</p>
                     )}
                     {todasCategorias.map(cat => (
                       <div key={cat} className="flex items-center gap-2 bg-admin-elevated rounded-xl px-3 py-2 border border-admin-border">
@@ -792,7 +794,7 @@ export default function AdminCatalogo() {
                         ) : (
                           <>
                             <span className="flex-1 text-sm font-body font-bold text-admin-text truncate">{cat}</span>
-                            <span className="text-xs text-admin-muted shrink-0">{productos.filter(p => p.categoria === cat).length} prod.</span>
+                            <span className="text-xs text-admin-muted shrink-0">{productos.filter(p => p.categoria === cat).length} {t('admin.catalog.productsShort')}</span>
                             <button
                               onClick={() => { setCatEditando(cat); setCatNuevoNombre(cat); }}
                               className="shrink-0 text-admin-muted hover:text-purple-500 transition-colors"
@@ -824,15 +826,15 @@ export default function AdminCatalogo() {
                   <div className="flex items-center justify-between px-5 py-4 border-b border-admin-border shrink-0">
                     <div className="flex items-center gap-2">
                       <Bookmark size={18} className="text-blue-500" />
-                      <h2 className="text-base font-body font-black text-admin-text">Gestionar Marcas</h2>
+                      <h2 className="text-base font-body font-black text-admin-text">{t('admin.catalog.manageBrands')}</h2>
                     </div>
-                    <button onClick={() => { setShowMarcaMgr(false); setMarcaEditando(null); setMarcaNuevoNombre(''); }} className="text-admin-muted hover:text-admin-text transition-colors" aria-label="Cerrar">
+                    <button onClick={() => { setShowMarcaMgr(false); setMarcaEditando(null); setMarcaNuevoNombre(''); }} className="text-admin-muted hover:text-admin-text transition-colors" aria-label={t('common.close')}>
                       <X size={20} />
                     </button>
                   </div>
                   <div className="overflow-y-auto px-4 py-3 space-y-2 flex-1">
                     {todasMarcas.length === 0 && (
-                      <p className="text-sm text-admin-muted text-center py-6">No hay marcas todavía</p>
+                      <p className="text-sm text-admin-muted text-center py-6">{t('admin.catalog.noBrandsYet')}</p>
                     )}
                     {todasMarcas.map(m => (
                       <div key={m} className="flex items-center gap-2 bg-admin-elevated rounded-xl px-3 py-2 border border-admin-border">
@@ -859,7 +861,7 @@ export default function AdminCatalogo() {
                         ) : (
                           <>
                             <span className="flex-1 text-sm font-body font-bold text-admin-text truncate">{m}</span>
-                            <span className="text-xs text-admin-muted shrink-0">{productos.filter(p => p.marca === m).length} prod.</span>
+                            <span className="text-xs text-admin-muted shrink-0">{productos.filter(p => p.marca === m).length} {t('admin.catalog.productsShort')}</span>
                             <button onClick={() => { setMarcaEditando(m); setMarcaNuevoNombre(m); }} className="shrink-0 text-admin-muted hover:text-blue-500 transition-colors" aria-label={`Renombrar ${m}`}>
                               <Pencil size={15} />
                             </button>
@@ -882,19 +884,19 @@ export default function AdminCatalogo() {
                   <div className="flex items-center justify-between px-5 py-4 border-b border-admin-border shrink-0">
                     <div className="flex items-center gap-2">
                       <Ruler size={18} className="text-green-500" />
-                      <h2 className="text-base font-body font-black text-admin-text">Gestionar Tamaños</h2>
+                      <h2 className="text-base font-body font-black text-admin-text">{t('admin.catalog.manageSizes')}</h2>
                     </div>
-                    <button onClick={() => { setShowTamanoMgr(false); setTamanoEditando(null); setTamanoNuevoNombre(''); }} className="text-admin-muted hover:text-admin-text transition-colors" aria-label="Cerrar">
+                    <button onClick={() => { setShowTamanoMgr(false); setTamanoEditando(null); setTamanoNuevoNombre(''); }} className="text-admin-muted hover:text-admin-text transition-colors" aria-label={t('common.close')}>
                       <X size={20} />
                     </button>
                   </div>
                   <div className="overflow-y-auto px-4 py-3 space-y-2 flex-1">
                     {todosTamanos.length === 0 && (
-                      <p className="text-sm text-admin-muted text-center py-6">No hay tamaños todavía</p>
+                      <p className="text-sm text-admin-muted text-center py-6">{t('admin.catalog.noSizesYet')}</p>
                     )}
-                    {todosTamanos.map(t => (
-                      <div key={t} className="flex items-center gap-2 bg-admin-elevated rounded-xl px-3 py-2 border border-admin-border">
-                        {tamanoEditando === t ? (
+                    {todosTamanos.map(tamanoItem => (
+                      <div key={tamanoItem} className="flex items-center gap-2 bg-admin-elevated rounded-xl px-3 py-2 border border-admin-border">
+                        {tamanoEditando === tamanoItem ? (
                           <>
                             <input
                               autoFocus
@@ -902,12 +904,12 @@ export default function AdminCatalogo() {
                               value={tamanoNuevoNombre}
                               onChange={e => setTamanoNuevoNombre(e.target.value)}
                               onKeyDown={e => {
-                                if (e.key === 'Enter') handleRenameTamano(t);
+                                if (e.key === 'Enter') handleRenameTamano(tamanoItem);
                                 if (e.key === 'Escape') { setTamanoEditando(null); setTamanoNuevoNombre(''); }
                               }}
                               className="flex-1 bg-admin-card border border-admin-border rounded-lg px-2 py-1 text-sm font-body text-admin-text outline-none focus:border-green-400"
                             />
-                            <button onClick={() => handleRenameTamano(t)} disabled={tamanoGuardando === t} className="shrink-0 text-emerald-600 hover:text-emerald-500 disabled:opacity-40 transition-colors" aria-label="Confirmar">
+                            <button onClick={() => handleRenameTamano(tamanoItem)} disabled={tamanoGuardando === tamanoItem} className="shrink-0 text-emerald-600 hover:text-emerald-500 disabled:opacity-40 transition-colors" aria-label="Confirmar">
                               <Check size={18} />
                             </button>
                             <button onClick={() => { setTamanoEditando(null); setTamanoNuevoNombre(''); }} className="shrink-0 text-admin-muted hover:text-admin-text transition-colors" aria-label="Cancelar">
@@ -916,12 +918,12 @@ export default function AdminCatalogo() {
                           </>
                         ) : (
                           <>
-                            <span className="flex-1 text-sm font-body font-bold text-admin-text truncate">{t}</span>
-                            <span className="text-xs text-admin-muted shrink-0">{productos.filter(p => p.tamano === t).length} prod.</span>
-                            <button onClick={() => { setTamanoEditando(t); setTamanoNuevoNombre(t); }} className="shrink-0 text-admin-muted hover:text-green-500 transition-colors" aria-label={`Renombrar ${t}`}>
+                            <span className="flex-1 text-sm font-body font-bold text-admin-text truncate">{tamanoItem}</span>
+                            <span className="text-xs text-admin-muted shrink-0">{productos.filter(p => p.tamano === tamanoItem).length} {t('admin.catalog.productsShort')}</span>
+                            <button onClick={() => { setTamanoEditando(tamanoItem); setTamanoNuevoNombre(tamanoItem); }} className="shrink-0 text-admin-muted hover:text-green-500 transition-colors" aria-label={`Renombrar ${tamanoItem}`}>
                               <Pencil size={15} />
                             </button>
-                            <button onClick={() => handleEliminarTamano(t)} disabled={tamanoGuardando === t} className="shrink-0 text-admin-muted hover:text-red-500 disabled:opacity-40 transition-colors" aria-label={`Eliminar ${t}`}>
+                            <button onClick={() => handleEliminarTamano(tamanoItem)} disabled={tamanoGuardando === tamanoItem} className="shrink-0 text-admin-muted hover:text-red-500 disabled:opacity-40 transition-colors" aria-label={`Eliminar ${tamanoItem}`}>
                               <Trash2 size={15} />
                             </button>
                           </>
@@ -941,7 +943,7 @@ export default function AdminCatalogo() {
             {cargando && (
               <div className="flex items-center justify-center py-16 gap-3">
                 <div className="w-6 h-6 rounded-full border-[3px] border-admin-border border-t-fiesta-magenta animate-spin" />
-                <span className="text-sm font-body font-bold text-admin-muted">Cargando inventario…</span>
+                <span className="text-sm font-body font-bold text-admin-muted">{t('admin.catalog.loadingInventory')}</span>
               </div>
             )}
 
@@ -953,7 +955,7 @@ export default function AdminCatalogo() {
                   onClick={fetchProductos}
                   className="mt-3 text-xs font-body font-black text-admin-muted underline"
                 >
-                  Reintentar
+                  {t('error.retry')}
                 </button>
               </div>
             )}
@@ -962,7 +964,7 @@ export default function AdminCatalogo() {
               <div className="text-center py-14 bg-admin-card rounded-2xl border-2 border-admin-border">
                 <p className="text-3xl mb-2">📭</p>
                 <p className="font-body font-bold text-admin-muted">
-                  {busqueda ? 'Ningún producto coincide con la búsqueda.' : 'Sin productos aún.'}
+                  {busqueda ? t('admin.catalog.noSearchMatches') : t('admin.catalog.empty')}
                 </p>
               </div>
             )}
@@ -990,15 +992,15 @@ export default function AdminCatalogo() {
                         </p>
                         <p className="text-[11px] font-body text-admin-muted mt-1 line-clamp-1">
                           {p.marca ? (
-                            <span>Marca: {p.marca}</span>
+                            <span>{t('filters.brand')}: {p.marca}</span>
                           ) : (
-                            <span className="text-ink-300">Sin marca</span>
+                            <span className="text-ink-300">{t('admin.catalog.noBrand')}</span>
                           )}
                           <span className="mx-1.5 text-ink-200">·</span>
                           {p.tamano ? (
-                            <span>Tamaño: {p.tamano}</span>
+                            <span>{t('filters.size')}: {p.tamano}</span>
                           ) : (
-                            <span className="text-ink-300">Sin tamaño</span>
+                            <span className="text-ink-300">{t('admin.catalog.noSize')}</span>
                           )}
                         </p>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -1008,17 +1010,17 @@ export default function AdminCatalogo() {
                           </p>
                           {p.stock_ilimitado !== false ? (
                             <span className="inline-flex items-center w-fit gap-0.5 text-[10px] font-body font-bold text-ink-500 bg-ink-50 px-1.5 py-0.5 rounded border border-ink-100">
-                              <span className="text-[12px] leading-none mb-[1px]">∞</span> Ilimitado
+                              <span className="text-[12px] leading-none mb-[1px]">∞</span> {t('admin.catalog.unlimited')}
                             </span>
                           ) : (
                             Number(p.stock_actual) <= Number(p.stock_minimo) ? (
                               <span className="inline-flex items-center w-fit gap-1 text-[10px] font-body font-bold text-red-700 bg-red-50 px-1.5 py-0.5 rounded border border-red-200">
                                 <AlertTriangle size={10} strokeWidth={2.5} />
-                                {p.stock_actual} Bajo
+                                {p.stock_actual} {t('admin.catalog.low')}
                               </span>
                             ) : (
                               <span className="inline-flex items-center w-fit gap-1 text-[10px] font-body font-bold text-ink-600 bg-ink-50 px-1.5 py-0.5 rounded border border-ink-200">
-                                {p.stock_actual} en stock
+                                {t('admin.catalog.inStock', { count: p.stock_actual })}
                               </span>
                             )
                           )}
@@ -1029,7 +1031,7 @@ export default function AdminCatalogo() {
                     <div className="flex flex-col gap-3 mt-auto pt-4 border-t border-admin-border">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-body font-bold text-admin-text-secondary">
-                          {p.activo !== false ? 'Activo' : 'Oculto'}
+                          {p.activo !== false ? t('admin.catalog.active') : t('admin.catalog.hidden')}
                         </span>
                         <Toggle
                           checked={p.activo !== false}
@@ -1045,7 +1047,7 @@ export default function AdminCatalogo() {
                                      text-admin-text-secondary bg-admin-card border border-admin-border transition-colors hover:bg-admin-elevated hover:text-admin-text active:scale-95"
                         >
                           <Pencil size={14} />
-                          Editar
+                          {t('admin.catalog.edit')}
                         </button>
                         <button
                           type="button"
@@ -1055,7 +1057,7 @@ export default function AdminCatalogo() {
                                      text-rose-600 bg-admin-card transition-colors hover:bg-rose-50 hover:text-rose-700 active:scale-95 disabled:opacity-50"
                         >
                           <Trash2 size={14} />
-                          {eliminandoId === p.id ? '…' : 'Borrar'}
+                          {eliminandoId === p.id ? '…' : t('admin.catalog.delete')}
                         </button>
                       </div>
                     </div>
@@ -1073,7 +1075,7 @@ export default function AdminCatalogo() {
                   className="px-6 py-2.5 rounded-xl text-sm font-body font-bold text-admin-text-secondary
                              bg-admin-elevated hover:bg-admin-input border border-admin-border transition-colors"
                 >
-                  Cargar más productos
+                  {t('admin.catalog.loadMore')}
                 </button>
               </div>
             )}
