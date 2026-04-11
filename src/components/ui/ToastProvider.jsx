@@ -11,10 +11,10 @@ const ICONS = {
 };
 
 const COLORS = {
-  success: { bg: 'bg-green-50 dark:bg-green-900/30', border: 'border-green-200 dark:border-green-700', icon: 'text-green-600 dark:text-green-400', bar: 'bg-green-500' },
-  error:   { bg: 'bg-red-50 dark:bg-red-900/30', border: 'border-red-200 dark:border-red-700', icon: 'text-red-600 dark:text-red-400', bar: 'bg-red-500' },
-  info:    { bg: 'bg-blue-50 dark:bg-blue-900/30', border: 'border-blue-200 dark:border-blue-700', icon: 'text-blue-600 dark:text-blue-400', bar: 'bg-blue-500' },
-  warning: { bg: 'bg-amber-50 dark:bg-amber-900/30', border: 'border-amber-200 dark:border-amber-700', icon: 'text-amber-600 dark:text-amber-400', bar: 'bg-amber-500' },
+  success: { bg: 'bg-green-100 dark:bg-green-900/80', border: 'border-green-300 dark:border-green-700', icon: 'text-green-600 dark:text-green-400', bar: 'bg-green-500' },
+  error:   { bg: 'bg-red-100 dark:bg-red-900/80', border: 'border-red-300 dark:border-red-700', icon: 'text-red-600 dark:text-red-400', bar: 'bg-red-500' },
+  info:    { bg: 'bg-blue-100 dark:bg-blue-900/80', border: 'border-blue-300 dark:border-blue-700', icon: 'text-blue-600 dark:text-blue-400', bar: 'bg-blue-500' },
+  warning: { bg: 'bg-amber-100 dark:bg-amber-900/80', border: 'border-amber-300 dark:border-amber-700', icon: 'text-amber-600 dark:text-amber-400', bar: 'bg-amber-500' },
 };
 
 const MAX_TOASTS = 3;
@@ -28,7 +28,7 @@ function Toast({ toast, onDismiss }) {
   return (
     <div
       role="alert"
-      className={`pointer-events-auto flex items-start gap-3 w-full max-w-sm border rounded-xl p-4 shadow-elevated
+      className={`pointer-events-auto flex items-start gap-3 w-full max-w-sm border rounded-xl p-4 shadow-lg
                   ${c.bg} ${c.border}
                   animate-[slideUpToast_300ms_ease-out] data-[removing=true]:animate-[toastOut_200ms_ease-in_forwards]`}
       data-removing={toast._removing || undefined}
