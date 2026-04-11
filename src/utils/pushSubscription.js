@@ -24,17 +24,10 @@ export function isPushSupported() {
 }
 
 export async function subscribeToPush(folio, telefono) {
-  // DEBUG: temporary alerts to diagnose mobile issues
-  if (!isPushSupported()) {
-    alert('[Push DEBUG] Not supported. VAPID key: ' + (VAPID_PUBLIC_KEY ? 'SET' : 'MISSING'));
-    return { ok: false, reason: 'unsupported' };
-  }
+  if (!isPushSupported()) return { ok: false, reason: 'unsupported' };
 
   const permission = await Notification.requestPermission();
-  if (permission !== 'granted') {
-    alert('[Push DEBUG] Permission denied: ' + permission);
-    return { ok: false, reason: 'denied' };
-  }
+  if (permission !== 'granted') return { ok: false, reason: 'denied' };
 
   try {
     const registration = await navigator.serviceWorker.ready;
@@ -43,15 +36,12 @@ export async function subscribeToPush(folio, telefono) {
     const existing = await registration.pushManager.getSubscription();
     if (existing) {
       await existing.unsubscribe();
-      alert('[Push DEBUG] Old subscription removed');
     }
 
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
     });
-
-    alert('[Push DEBUG] Subscribed! Endpoint: ' + subscription.endpoint.slice(0, 60) + '...');
 
     const sub = subscription.toJSON();
 
@@ -67,18 +57,16 @@ export async function subscribeToPush(folio, telefono) {
 
     if (error) {
       if (error.code === '23505') {
-        alert('[Push DEBUG] Already saved (duplicate)');
+        console.info('[Push] Subscription already saved for this endpoint');
       } else {
-        alert('[Push DEBUG] DB Error: ' + error.code + ' ' + error.message);
+        console.warn('[Push] Error saving subscription:', error.message);
         return { ok: false, reason: 'db_error' };
       }
-    } else {
-      alert('[Push DEBUG] Saved to DB! Folio: ' + folio);
     }
 
     return { ok: true };
   } catch (err) {
-    alert('[Push DEBUG] FAILED: ' + err.name + ': ' + err.message);
+    console.warn('[Push] Subscription failed:', err);
     return { ok: false, reason: 'error' };
   }
 }
