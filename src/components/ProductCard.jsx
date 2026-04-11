@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { SIMBOLO_MONEDA } from '../data/productos';
 import { obtenerPrecioAplicable } from '../utils/precios';
+import { useLanguage } from '../hooks/useLanguage';
 import OptimizedImage from './OptimizedImage';
 
 function ProductCardInner({
@@ -11,6 +12,7 @@ function ProductCardInner({
   onAbrirDetalle,
   index = 0,
 }) {
+  const { t } = useLanguage();
   const enCarrito  = cantidad > 0;
   const agotado    = producto.activo === false;
   const maxStockAlcanzado = producto.stock_ilimitado === false && cantidad >= (producto.stock_actual || 0);
@@ -18,13 +20,11 @@ function ProductCardInner({
   const precioAplicable = obtenerPrecioAplicable(producto, cantidad || 1);
   const hayDescuento = precioAplicable < precioBase;
 
-  // Badge "Últimos X" cuando stock es bajo
   const stockBajo = !agotado &&
     producto.stock_ilimitado === false &&
     (producto.stock_actual || 0) > 0 &&
     (producto.stock_actual || 0) <= 5;
 
-  // Hint de precio mayoreo (tier mínimo)
   const mayoreoMinTier = (() => {
     let escalas = producto.precios_mayoreo;
     if (typeof escalas === 'string') {
@@ -38,7 +38,6 @@ function ProductCardInner({
     return validas[0] || null;
   })();
 
-  // First 4 images are above-the-fold on most screens
   const isPriority = index < 4;
   const esNuevo = producto.es_nuevo === true && !agotado;
 
@@ -55,16 +54,14 @@ function ProductCardInner({
         opacity: agotado ? 0.65 : 1,
       }}
     >
-      {/* Clickable area for detail — not a <button> to avoid nesting issues */}
       <div
         role="button"
         tabIndex={0}
         onClick={() => onAbrirDetalle?.(producto)}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onAbrirDetalle?.(producto); } }}
         className="w-full text-left cursor-pointer flex-1 flex flex-col"
-        aria-label={`Ver detalle de ${producto.nombre}`}
+        aria-label={t('product.viewDetail', { name: producto.nombre })}
       >
-        {/* Imagen optimizada */}
         <div className="relative">
           <OptimizedImage
             src={producto.imagen_url}
@@ -74,26 +71,23 @@ function ProductCardInner({
             style={{ filter: agotado ? 'grayscale(60%)' : 'none' }}
           />
 
-          {/* Badge agotado */}
           {agotado && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/20">
               <span className="bg-ink-900/80 text-white text-[11px] font-body font-black
                                px-3 py-1.5 rounded-full backdrop-blur-sm tracking-wide">
-                <span aria-hidden="true">😔</span> Agotado
+                {t('product.soldOut')}
               </span>
             </div>
           )}
 
-          {/* Badge stock bajo */}
           {stockBajo && (
             <div className="absolute bottom-2 left-2 text-[9px] font-body font-black
                             px-2 py-0.5 rounded-full text-white"
                  style={{ background: 'linear-gradient(135deg, #f97316, #dc2626)' }}>
-              Últimos {producto.stock_actual}
+              {t('product.lastItems', { count: producto.stock_actual })}
             </div>
           )}
 
-          {/* Badge de cantidad en carrito */}
           {enCarrito && !agotado && (
             <div className="absolute top-2 right-2 text-[11px] font-body font-black min-w-[24px] h-6
                             flex items-center justify-center px-1.5 rounded-full animate-scale-in
@@ -103,17 +97,15 @@ function ProductCardInner({
             </div>
           )}
 
-          {/* Badge nuevo */}
           {producto.es_nuevo === true && !agotado && (
             <div className="absolute top-2 left-2 text-[9px] font-body font-black uppercase tracking-wider
                             px-2 py-0.5 rounded-full text-white animate-pulse"
                  style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)', animationDuration: '2.5s' }}>
-              Nuevo
+              {t('common.new')}
             </div>
           )}
         </div>
 
-        {/* Info */}
         <div className="px-2 pt-2 pb-1.5 sm:px-3 sm:pt-3 sm:pb-2 flex-1 flex flex-col">
           <h2 className="font-display text-[12px] sm:text-[13px] leading-snug text-ink-900 line-clamp-2">
             {producto.nombre}
@@ -124,7 +116,6 @@ function ProductCardInner({
             </p>
           )}
 
-          {/* Precio */}
           <div className="mt-auto pt-1.5">
             {hayDescuento && enCarrito ? (
               <div className="flex flex-col gap-0.5">
@@ -147,16 +138,15 @@ function ProductCardInner({
                 {SIMBOLO_MONEDA}{precioBase.toFixed(2)}
               </span>
             )}
-            {/* Hint mayoreo — siempre visible si el producto tiene tiers */}
             {mayoreoMinTier && !agotado && (
               <div className="flex items-center gap-1 mt-1">
                 <span className="text-[10px]" aria-hidden="true">🏷️</span>
                 <span className="text-[10px] font-body font-bold"
                       style={{ color: '#16a34a' }}>
-                  {SIMBOLO_MONEDA}{mayoreoMinTier.precio.toFixed(2)} c/u
+                  {SIMBOLO_MONEDA}{mayoreoMinTier.precio.toFixed(2)} {t('product.eachUnit')}
                 </span>
                 <span className="text-[9px] font-body font-semibold text-ink-400">
-                  comprando {mayoreoMinTier.min}+
+                  {t('product.buying', { min: mayoreoMinTier.min })}
                 </span>
               </div>
             )}
@@ -165,12 +155,11 @@ function ProductCardInner({
       </div>
 
       <div className="px-2 pb-2 sm:px-3 sm:pb-3">
-        {/* Controles */}
         {agotado ? (
           <div className="w-full py-1.5 px-3 rounded-xl text-center
                           text-[11px] font-body font-black text-ink-400
                           bg-ink-100">
-            No disponible
+            {t('common.notAvailable')}
           </div>
         ) : enCarrito ? (
           <div className="flex items-center justify-between w-full">
@@ -179,7 +168,7 @@ function ProductCardInner({
               className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl
                          bg-ink-100 text-ink-600
                          transition-all duration-150 active:scale-90 hover:bg-ink-200"
-              aria-label={`Quitar uno de ${producto.nombre}`}
+              aria-label={t('product.removeOne', { name: producto.nombre })}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" />
@@ -197,7 +186,7 @@ function ProductCardInner({
                          transition-all duration-150
                          ${maxStockAlcanzado ? 'opacity-50 cursor-not-allowed' : 'active:scale-90'}`}
               style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}
-              aria-label={`Agregar uno más de ${producto.nombre}`}
+              aria-label={t('product.addOne', { name: producto.nombre })}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
@@ -215,9 +204,9 @@ function ProductCardInner({
               background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
               boxShadow: maxStockAlcanzado ? 'none' : '0 2px 10px rgba(168,85,247,0.25)',
             }}
-            aria-label={`Agregar ${producto.nombre} al carrito`}
+            aria-label={t('product.addAriaLabel', { name: producto.nombre })}
           >
-            {maxStockAlcanzado ? 'Límite máximo' : '+ Agregar'}
+            {maxStockAlcanzado ? t('product.maxLimit') : t('product.add')}
           </button>
         )}
       </div>

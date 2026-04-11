@@ -17,6 +17,7 @@ import {
   MARCA_NUEVA_ID,
   TAMANO_NUEVO_ID,
 } from '../hooks/useProductForm';
+import { useLanguage } from '../hooks/useLanguage';
 
 const inputBase =
   'w-full bg-white rounded-2xl px-4 py-3 text-sm font-body font-semibold ' +
@@ -24,6 +25,7 @@ const inputBase =
   'focus:border-fiesta-magenta transition-colors';
 
 export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
+  const { t } = useLanguage();
   const {
     nombre, setNombre, descripcion, setDescripcion, precio, setPrecio,
     categoria, setCategoria, categoriaNueva, setCategoriaNueva,
@@ -55,7 +57,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
 
       onGuardado?.();
     } catch (err) {
-      setError(err.message || 'Error al guardar');
+      setError(err.message || t('admin.catalog.saveError'));
     } finally {
       setEnviando(false);
     }
@@ -75,7 +77,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
       >
         <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-ink-100 bg-white rounded-t-2xl sm:rounded-t-3xl pt-[max(env(safe-area-inset-top),0.75rem)]">
           <h2 id="modal-editar-titulo" className="font-display text-base text-ink-900 pl-1">
-            Editar artículo
+            {t('admin.edit.title')}
           </h2>
           <button
             type="button"
@@ -90,7 +92,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
         <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 pb-[max(env(safe-area-inset-bottom),1.25rem)]">
           <div>
             <label className="block text-xs font-body font-black text-ink-600 mb-1.5 pl-1">
-              Nombre del producto
+              {t('admin.form.productName')}
             </label>
             <input
               type="text"
@@ -108,7 +110,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
 
           <div>
             <label className="flex items-center justify-between text-xs font-body font-black text-ink-600 mb-1.5 pl-1">
-              <span>Descripción</span>
+              <span>{t('admin.form.description')}</span>
               <span className="text-[10px] font-medium opacity-60">{descripcion.length}/150</span>
             </label>
             <textarea
@@ -123,7 +125,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-body font-black text-ink-600 mb-1.5 pl-1">
-                Precio ({SIMBOLO_MONEDA})
+                {t('admin.edit.price', { symbol: SIMBOLO_MONEDA })}
               </label>
               <input
                 type="number"
@@ -145,7 +147,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
                 htmlFor="modal-fp-cat"
                 className="block text-xs font-body font-black text-ink-600 mb-1.5 pl-1"
               >
-                Categoría
+                {t('filters.category')}
               </label>
               <SelectCategoria
                 id="modal-fp-cat"
@@ -153,7 +155,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
                 onChange={setCategoria}
                 lista={[
                   ...categorias,
-                  { id: CATEGORIA_NUEVA_ID, label: '+ Agregar nueva...' },
+                  { id: CATEGORIA_NUEVA_ID, label: t('admin.form.addNewOption') },
                 ]}
                 opcionExtra={
                   producto.categoria &&
@@ -167,7 +169,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
                   type="text"
                   value={categoriaNueva}
                   onChange={e => setCategoriaNueva(e.target.value)}
-                  placeholder="Nombre de la nueva categoría"
+                  placeholder={t('admin.edit.newCategoryName')}
                   className={`${inputBase} mt-1.5`}
                   maxLength={80}
                   autoFocus
@@ -179,16 +181,16 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-body font-black text-ink-600 mb-1.5 pl-1">
-                Marca <span className="font-normal text-ink-400">(opcional)</span>
+                {t('filters.brand')} <span className="font-normal text-ink-400">({t('admin.edit.optional')})</span>
               </label>
               <SelectCategoria
                 id="modal-fp-marca"
                 value={marca}
                 onChange={setMarca}
                 lista={[
-                  { id: '', label: 'Sin marca' },
+                  { id: '', label: t('admin.catalog.noBrand') },
                   ...marcas.map(m => ({ id: m, label: m })),
-                  { id: MARCA_NUEVA_ID, label: '+ Agregar nueva...' },
+                  { id: MARCA_NUEVA_ID, label: t('admin.form.addNewOption') },
                 ]}
                 opcionExtra={
                   producto.marca && !marcas.some(m => m === producto.marca)
@@ -202,7 +204,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
                   value={marcaNueva}
                   onChange={e => setMarcaNueva(e.target.value)}
                   maxLength={120}
-                  placeholder="Nombre de la nueva marca"
+                  placeholder={t('admin.edit.newBrandName')}
                   className={`${inputBase} mt-1.5`}
                   autoFocus
                 />
@@ -210,16 +212,16 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
             </div>
             <div>
               <label className="block text-xs font-body font-black text-ink-600 mb-1.5 pl-1">
-                Tamaño <span className="font-normal text-ink-400">(opcional)</span>
+                {t('filters.size')} <span className="font-normal text-ink-400">({t('admin.edit.optional')})</span>
               </label>
               <SelectCategoria
                 id="modal-fp-tamano"
                 value={tamano}
                 onChange={setTamano}
                 lista={[
-                  { id: '', label: 'Sin tamaño' },
+                  { id: '', label: t('admin.catalog.noSize') },
                   ...tamanios.map(t => ({ id: t, label: t })),
-                  { id: TAMANO_NUEVO_ID, label: '+ Agregar nueva...' },
+                  { id: TAMANO_NUEVO_ID, label: t('admin.form.addNewOption') },
                 ]}
                 opcionExtra={
                   producto.tamano && !tamanios.some(t => t === producto.tamano)
@@ -233,7 +235,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
                   value={tamanoNuevo}
                   onChange={e => setTamanoNuevo(e.target.value)}
                   maxLength={120}
-                  placeholder="Nombre del nuevo tamaño"
+                  placeholder={t('admin.edit.newSizeName')}
                   className={`${inputBase} mt-1.5`}
                   autoFocus
                 />
@@ -253,7 +255,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
                            focus:ring-2 focus:ring-fiesta-magenta focus:ring-offset-1 shrink-0"
               />
               <div>
-                <p className="text-sm font-body font-black text-ink-800">Disponible en tienda</p>
+                <p className="text-sm font-body font-black text-ink-800">{t('admin.edit.availableInStore')}</p>
               </div>
             </label>
           </div>
@@ -268,8 +270,8 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
                            focus:ring-2 focus:ring-fiesta-magenta focus:ring-offset-1 shrink-0"
               />
               <div>
-                <p className="text-sm font-body font-black text-ink-800">Marcar como Nuevo</p>
-                <p className="text-[11px] font-body text-ink-400 mt-0.5">Aparece al inicio del catálogo con badge "Nuevo".</p>
+                <p className="text-sm font-body font-black text-ink-800">{t('admin.edit.markAsNew')}</p>
+                <p className="text-[11px] font-body text-ink-400 mt-0.5">{t('admin.edit.newHelp')}</p>
               </div>
             </label>
           </div>
@@ -279,12 +281,12 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
           >
             <p className="text-xs font-body font-black text-ink-700 mb-3 flex items-center gap-2">
               <ImagePlus size={16} className="text-fiesta-magenta" />
-              Imagen del producto
+              {t('admin.edit.productImage')}
             </p>
             <div className="space-y-3">
               <div>
                 <label className="flex items-center gap-1.5 text-[11px] font-body font-bold text-ink-500 mb-1">
-                  <Link2 size={12} /> Enlace (URL)
+                  <Link2 size={12} /> {t('admin.edit.urlLabel')}
                 </label>
                 <input
                   type="url"
@@ -336,20 +338,20 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
                 onChange={e => setStockIlimitado(e.target.checked)}
                 className="w-5 h-5 rounded-md border-2 border-ink-300 text-emerald-600 focus:ring-2 focus:ring-fiesta-magenta focus:ring-offset-1 shrink-0"
               />
-              <span className="text-sm font-body font-black text-ink-800 leading-none mt-0.5">Stock Ilimitado</span>
+              <span className="text-sm font-body font-black text-ink-800 leading-none mt-0.5">{t('admin.edit.unlimitedStock')}</span>
             </label>
             
             {!stockIlimitado && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 animate-fade-in">
                 <div className="w-full">
-                  <label className="block text-xs font-body font-black text-ink-600 mb-1 pl-1">Stock actual</label>
+                  <label className="block text-xs font-body font-black text-ink-600 mb-1 pl-1">{t('admin.form.currentStock')}</label>
                   <div className={`${inputBase} flex items-center gap-2 opacity-70 cursor-default select-none`}>
                     <span className="font-black">{stockActual || '0'}</span>
-                    <span className="text-ink-400 font-normal">unidades</span>
+                    <span className="text-ink-400 font-normal">{t('admin.edit.units')}</span>
                   </div>
                 </div>
                 <div className="w-full">
-                  <label className="block text-xs font-body font-black text-ink-600 mb-1 pl-1">Agregar al stock (+)</label>
+                  <label className="block text-xs font-body font-black text-ink-600 mb-1 pl-1">{t('admin.edit.addToStock')}</label>
                   <input
                     type="number"
                     min="0"
@@ -360,7 +362,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
                   />
                 </div>
                 <div className="w-full">
-                  <label className="block text-xs font-body font-black text-ink-600 mb-1 pl-1">Avisar cuando queden menos de...</label>
+                  <label className="block text-xs font-body font-black text-ink-600 mb-1 pl-1">{t('admin.edit.warnBelow')}</label>
                   <input
                     type="number"
                     min="0"
@@ -377,8 +379,8 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
           <div className="bg-admin-elevated border border-admin-border rounded-xl p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-body font-black text-ink-800">Precios por mayoreo</p>
-                <p className="text-xs font-body text-ink-500">Activa para usar escalas por cantidad.</p>
+                <p className="text-sm font-body font-black text-ink-800">{t('product.wholesalePrices')}</p>
+                <p className="text-xs font-body text-ink-500">{t('admin.edit.wholesaleHelp')}</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer shrink-0">
                 <input
@@ -416,7 +418,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
               className="flex-1 py-3 rounded-2xl font-body font-black text-sm text-ink-600
                          border-2 border-ink-200 hover:bg-ink-50 transition-colors"
             >
-              Cancelar
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -429,7 +431,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
               }}
             >
               {enviando ? <Loader2 size={18} className="animate-spin" /> : null}
-              {enviando ? 'Guardando…' : 'Guardar cambios'}
+              {enviando ? t('admin.catalog.saving') : t('admin.edit.saveChanges')}
             </button>
           </div>
         </form>

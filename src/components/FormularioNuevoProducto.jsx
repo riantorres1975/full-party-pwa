@@ -18,10 +18,12 @@ import {
   MARCA_NUEVA_ID,
   TAMANO_NUEVO_ID,
 } from '../hooks/useProductForm';
+import { useLanguage } from '../hooks/useLanguage';
 
 
 
 export default function FormularioNuevoProducto({ onProductoCreado, isModal = false }) {
+  const { t } = useLanguage();
   const form = useProductForm(null);
   const {
     nombre, setNombre, descripcion, setDescripcion, precio, setPrecio,
@@ -56,7 +58,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
       reset();
       onProductoCreado?.();
     } catch (err) {
-      setError(err.message || 'Error al guardar');
+      setError(err.message || t('admin.catalog.saveError'));
     } finally {
       setEnviando(false);
     }
@@ -69,8 +71,8 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
         
         {/* HEADER */}
         <div className="mb-6 border-b border-ink-100 pb-5">
-          <h2 className="text-xl sm:text-2xl font-black text-ink-900 tracking-tight">Nuevo Artículo</h2>
-          <p className="text-xs sm:text-sm font-medium text-ink-500 mt-1">Completa los datos del producto para agregarlo al catálogo.</p>
+          <h2 className="text-xl sm:text-2xl font-black text-ink-900 tracking-tight">{t('admin.catalog.newItem')}</h2>
+          <p className="text-xs sm:text-sm font-medium text-ink-500 mt-1">{t('admin.form.subtitle')}</p>
         </div>
 
         {/* BODY */}
@@ -114,8 +116,8 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                     <div className="p-3 bg-white rounded-full shadow-sm mb-3 group-hover:scale-105 transition-all text-ink-500">
                       <UploadCloud size={24} />
                     </div>
-                    <p className="text-xs font-bold text-ink-700 mb-0.5">Subir imagen</p>
-                    <p className="text-[10px] font-medium text-ink-400">Clic o arrastrar</p>
+                      <p className="text-xs font-bold text-ink-700 mb-0.5">{t('admin.form.uploadImage')}</p>
+                      <p className="text-[10px] font-medium text-ink-400">{t('admin.form.clickOrDrag')}</p>
                   </>
                 )}
               </div>
@@ -130,7 +132,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
               
               <div className="bg-ink-50 rounded-xl p-3 border border-transparent">
                 <label htmlFor="fp-url" className="flex items-center gap-1 text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1.5">
-                  <Link2 size={12} /> URL externa
+                  <Link2 size={12} /> {t('admin.form.externalUrl')}
                 </label>
                 <input
                   id="fp-url"
@@ -149,16 +151,16 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
               {/* Toggles */}
               <div className="bg-ink-50 rounded-xl p-3 border border-transparent flex items-center justify-between w-full gap-3">
                 <div className="flex-1">
-                  <h3 className="text-xs font-bold text-ink-900 leading-tight">Disponible</h3>
-                  <p className="text-[10px] font-medium text-ink-500">Venta activa</p>
+                  <h3 className="text-xs font-bold text-ink-900 leading-tight">{t('admin.catalog.active')}</h3>
+                  <p className="text-[10px] font-medium text-ink-500">{t('admin.form.activeSale')}</p>
                 </div>
                 <Toggle id="toggle-visibilidad" checked={disponible} onChange={() => setDisponible(v => !v)} />
               </div>
 
               <div className="bg-ink-50 rounded-xl p-3 border border-transparent flex items-center justify-between w-full gap-3">
                 <div className="flex-1">
-                  <h3 className="text-xs font-bold text-ink-900 leading-tight">Etiqueta Novedad</h3>
-                  <p className="text-[10px] font-medium text-ink-500">Primero en tienda</p>
+                  <h3 className="text-xs font-bold text-ink-900 leading-tight">{t('admin.form.newTag')}</h3>
+                  <p className="text-[10px] font-medium text-ink-500">{t('admin.form.firstInStore')}</p>
                 </div>
                 <Toggle id="toggle-nuevo" checked={esNuevo} onChange={() => setEsNuevo(v => !v)} />
               </div>
@@ -173,7 +175,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                 {/* Fila 1 */}
                 <div className="col-span-full md:col-span-4">
                   <label htmlFor="fp-nombre" className="block text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">
-                    Nombre del producto *
+                    {t('admin.form.productName')} *
                   </label>
                   <input
                     id="fp-nombre"
@@ -193,7 +195,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
 
                 <div className="col-span-full md:col-span-2">
                   <label htmlFor="fp-precio" className="block text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">
-                    Precio Menudeo *
+                    {t('admin.form.retailPrice')} *
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 font-bold text-sm">{SIMBOLO_MONEDA}</span>
@@ -219,7 +221,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                 {/* Fila 2 */}
                 <div className="col-span-full">
                   <label htmlFor="fp-desc" className="flex items-center justify-between text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">
-                    <span>Descripción</span>
+                    <span>{t('admin.form.description')}</span>
                     <span className="normal-case opacity-70">{descripcion.length}/150</span>
                   </label>
                   <textarea
@@ -236,7 +238,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                 {/* Fila 3 compartida */}
                 <div className="col-span-full md:col-span-2">
                   <label htmlFor="fp-cat" className="block text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">
-                    Categoría *
+                    {t('filters.category')} *
                   </label>
                   <SelectCategoria
                     id="fp-cat"
@@ -247,7 +249,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                     }}
                     lista={[
                       ...categorias,
-                      { id: CATEGORIA_NUEVA_ID, label: '+ Agregar nueva...' },
+                       { id: CATEGORIA_NUEVA_ID, label: t('admin.form.addNewOption') },
                     ]}
                   />
                   {categoria === CATEGORIA_NUEVA_ID && (
@@ -265,7 +267,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
 
                 <div className="col-span-full md:col-span-2">
                   <label htmlFor="fp-marca" className="block text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">
-                    Marca
+                    {t('filters.brand')}
                   </label>
                   <SelectCategoria
                     id="fp-marca"
@@ -275,9 +277,9 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                       if (value !== MARCA_NUEVA_ID) setMarcaNueva('');
                     }}
                     lista={[
-                      { id: '', label: 'Sin marca' },
+                       { id: '', label: t('admin.catalog.noBrand') },
                       ...marcas.map(m => ({ id: m, label: m })),
-                      { id: MARCA_NUEVA_ID, label: '+ Agregar nueva...' },
+                       { id: MARCA_NUEVA_ID, label: t('admin.form.addNewOption') },
                     ]}
                   />
                   {marca === MARCA_NUEVA_ID && (
@@ -294,7 +296,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
 
                 <div className="col-span-full md:col-span-2">
                   <label htmlFor="fp-tamano" className="block text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">
-                    Tamaño
+                    {t('filters.size')}
                   </label>
                   <SelectCategoria
                     id="fp-tamano"
@@ -304,9 +306,9 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                       if (value !== TAMANO_NUEVO_ID) setTamanoNuevo('');
                     }}
                     lista={[
-                      { id: '', label: 'Sin tamaño' },
+                       { id: '', label: t('admin.catalog.noSize') },
                       ...tamanios.map(t => ({ id: t, label: t })),
-                      { id: TAMANO_NUEVO_ID, label: '+ Agregar nueva...' },
+                       { id: TAMANO_NUEVO_ID, label: t('admin.form.addNewOption') },
                     ]}
                   />
                   {tamano === TAMANO_NUEVO_ID && (
@@ -325,11 +327,11 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                 <div className="col-span-full bg-ink-50 rounded-xl p-4 border border-ink-100 mt-2">
                   <div className="flex items-center justify-between w-full gap-4">
                     <div className="flex-1">
-                      <h4 className="text-sm font-bold text-gray-800 leading-tight">Control de Inventario</h4>
-                      <p className="text-xs font-medium text-gray-500">Si se activa, el producto no se agotará.</p>
+                      <h4 className="text-sm font-bold text-gray-800 leading-tight">{t('admin.form.inventoryControl')}</h4>
+                      <p className="text-xs font-medium text-gray-500">{t('admin.form.inventoryHelp')}</p>
                     </div>
                     <div className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-gray-100 shrink-0">
-                      <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">Ilimitado</span>
+                      <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">{t('admin.catalog.unlimited')}</span>
                       <Toggle id="toggle-stock" checked={stockIlimitado} onChange={() => setStockIlimitado(v => !v)} />
                     </div>
                   </div>
@@ -337,7 +339,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                   {!stockIlimitado && (
                     <div className="grid grid-cols-2 gap-4 mt-6 pt-5 border-t border-gray-200 animate-fade-in">
                       <div className="flex flex-col justify-end h-full gap-2">
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Stock Actual</label>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">{t('admin.form.currentStock')}</label>
                         <input
                           type="number"
                           min="0"
@@ -348,7 +350,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                         />
                       </div>
                       <div className="flex flex-col justify-end h-full gap-2">
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Avisar cuando haya</label>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">{t('admin.form.warnAt')}</label>
                         <input
                           type="number"
                           min="0"
@@ -365,9 +367,9 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                 <div className="col-span-full bg-gray-50 rounded-2xl p-5 border border-gray-100">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <h4 className="text-sm font-bold text-gray-900">Precios por mayoreo</h4>
+                      <h4 className="text-sm font-bold text-gray-900">{t('product.wholesalePrices')}</h4>
                       <p className="text-xs font-medium text-gray-500">
-                        Activa solo si manejarás escalas por cantidad.
+                        {t('admin.form.wholesaleHelp')}
                       </p>
                     </div>
                     <Toggle
@@ -407,7 +409,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                   )}
                   {exito && (
                     <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100 shadow-sm">
-                      <CheckCircle2 size={16} /> Producto creado
+                      <CheckCircle2 size={16} /> {t('admin.form.productCreated')}
                     </span>
                   )}
                 </div>
@@ -419,7 +421,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                   className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-500 text-white font-bold rounded-full px-8 py-3 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
                 >
                   {enviando && <Loader2 size={18} className="animate-spin" />}
-                  {enviando ? 'Guardando...' : 'Guardar Producto'}
+                  {enviando ? t('admin.catalog.saving') : t('admin.form.saveProduct')}
                 </button>
               </div>
               

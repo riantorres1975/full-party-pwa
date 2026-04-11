@@ -1,21 +1,19 @@
 import { categorias, marcas, tamanios } from '../data/productos';
+import { useLanguage } from '../hooks/useLanguage';
 
-// Mapeo dimension → label legible para las pills activas
 const LABELS = {
   categorias: Object.fromEntries(categorias.map(c => [c.id, c.label])),
   marcas:     Object.fromEntries(marcas.map(m   => [m,    m])),
   tamanios:   Object.fromEntries(tamanios.map(t => [t,    t])),
 };
 
-/**
- * BuscadorFiltros — Barra de búsqueda + botón de filtros (solo móvil) + pills de filtros activos.
- */
 export default function BuscadorFiltros({
   busqueda, setBusqueda,
   filtros, toggleFiltro,
   totalFiltrosActivos, onAbrirFiltros,
 }) {
-  // Construir lista plana de filtros activos para las pills
+  const { t } = useLanguage();
+
   const pillsActivas = [
     ...filtros.categorias.map(v => ({ dim: 'categorias', val: v, label: LABELS.categorias[v] ?? v })),
     ...filtros.marcas.map(v     => ({ dim: 'marcas',     val: v, label: v })),
@@ -25,9 +23,7 @@ export default function BuscadorFiltros({
   return (
     <div className="px-4 lg:px-10 pt-3 pb-2 space-y-2 max-w-[1500px] mx-auto">
 
-      {/* ── Fila: input + botón filtros ─────────────────────────────────── */}
       <div className="flex gap-2">
-        {/* Input búsqueda */}
         <div className="relative flex-1">
           <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none">
             <svg className="w-4 h-4 text-ink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -39,7 +35,7 @@ export default function BuscadorFiltros({
             type="text"
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
-            placeholder="Buscar productos..."
+            placeholder={t('search.placeholder')}
             className="w-full rounded-xl pl-10 pr-9 py-2.5 lg:py-2
                        text-sm font-body font-semibold
                        placeholder:text-ink-300 outline-none transition-all duration-200"
@@ -64,7 +60,6 @@ export default function BuscadorFiltros({
           )}
         </div>
 
-        {/* Botón filtros — solo en móvil */}
         <button
           onClick={onAbrirFiltros}
           className="relative flex-shrink-0 w-11 h-11 flex items-center justify-center lg:hidden
@@ -74,7 +69,7 @@ export default function BuscadorFiltros({
                 border: '1px solid transparent', boxShadow: '0 2px 10px #ff3dac44' }
             : { border: '1px solid var(--border-soft)', background: 'var(--surface-card)' }
           }
-          aria-label="Abrir filtros"
+          aria-label={t('search.openFilters')}
         >
           <svg
             className="w-4.5 h-4.5"
@@ -88,7 +83,6 @@ export default function BuscadorFiltros({
             <circle cx="10" cy="19" r="2" fill="currentColor" stroke="none" />
           </svg>
 
-          {/* Badge de cantidad de filtros */}
           {totalFiltrosActivos > 0 && (
             <span className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center
                              text-[9px] font-body font-black bg-fiesta-yellow text-ink-900
@@ -99,7 +93,6 @@ export default function BuscadorFiltros({
         </button>
       </div>
 
-      {/* ── Pills de filtros activos (solo móvil) ─────────────────────── */}
       {pillsActivas.length > 0 && (
         <div className="flex overflow-x-auto hide-scrollbar gap-1.5 pb-1 w-full lg:hidden">
           {pillsActivas.map(({ dim, val, label }) => (
