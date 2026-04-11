@@ -24,10 +24,17 @@ export function isPushSupported() {
 }
 
 export async function subscribeToPush(folio, telefono) {
-  if (!isPushSupported()) return { ok: false, reason: 'unsupported' };
+  // DEBUG: temporary alerts to diagnose mobile issues
+  if (!isPushSupported()) {
+    alert('[Push DEBUG] Not supported. VAPID key: ' + (VAPID_PUBLIC_KEY ? 'SET' : 'MISSING'));
+    return { ok: false, reason: 'unsupported' };
+  }
 
   const permission = await Notification.requestPermission();
-  if (permission !== 'granted') return { ok: false, reason: 'denied' };
+  if (permission !== 'granted') {
+    alert('[Push DEBUG] Permission denied: ' + permission);
+    return { ok: false, reason: 'denied' };
+  }
 
   try {
     const registration = await navigator.serviceWorker.ready;
@@ -36,14 +43,15 @@ export async function subscribeToPush(folio, telefono) {
     const existing = await registration.pushManager.getSubscription();
     if (existing) {
       await existing.unsubscribe();
+      alert('[Push DEBUG] Old subscription removed');
     }
 
-    console.log('[Push] Subscribing with VAPID key:', VAPID_PUBLIC_KEY?.slice(0, 20) + '...');
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
     });
-    console.log('[Push] Browser subscription created:', subscription.endpoint);
+
+    alert('[Push DEBUG] Subscribed! Endpoint: ' + subscription.endpoint.slice(0, 60) + '...');
 
     const sub = subscription.toJSON();
 
@@ -55,23 +63,22 @@ export async function subscribeToPush(folio, telefono) {
       keys_auth: sub.keys.auth,
     };
 
-    console.log('[Push] Saving to DB, folio:', folio);
     const { error } = await supabase.from('push_subscriptions').insert(row);
 
     if (error) {
       if (error.code === '23505') {
-        console.info('[Push] Subscription already saved for this endpoint');
+        alert('[Push DEBUG] Already saved (duplicate)');
       } else {
-        console.error('[Push] Error saving subscription:', error.code, error.message, error);
+        alert('[Push DEBUG] DB Error: ' + error.code + ' ' + error.message);
         return { ok: false, reason: 'db_error' };
       }
     } else {
-      console.log('[Push] Subscription saved successfully!');
+      alert('[Push DEBUG] Saved to DB! Folio: ' + folio);
     }
 
     return { ok: true };
   } catch (err) {
-    console.error('[Push] Subscription failed:', err.name, err.message, err);
+    alert('[Push DEBUG] FAILED: ' + err.name + ': ' + err.message);
     return { ok: false, reason: 'error' };
   }
 }
