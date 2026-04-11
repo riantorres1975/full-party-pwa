@@ -255,27 +255,34 @@ async function sendPushToEndpoint(
   }
 }
 
+// ── CORS headers (needed on every response, not just OPTIONS) ────────────
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, content-type, x-client-info, apikey",
+};
+
 // ── Main handler ──────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "authorization, content-type, x-client-info, apikey",
-      },
-    });
+    return new Response(null, { headers: corsHeaders });
   }
 
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405 });
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
     const { folio, estado, cliente_nombre } = await req.json();
 
     if (!folio || !estado) {
-      return new Response(JSON.stringify({ error: "folio and estado required" }), { status: 400 });
+      return new Response(JSON.stringify({ error: "folio and estado required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -288,11 +295,17 @@ Deno.serve(async (req) => {
 
     if (fetchErr) {
       console.error("[Push] DB fetch error:", fetchErr.message);
-      return new Response(JSON.stringify({ error: "DB error" }), { status: 500 });
+      return new Response(JSON.stringify({ error: "DB error" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     if (!subscriptions || subscriptions.length === 0) {
-      return new Response(JSON.stringify({ sent: 0, message: "No subscriptions" }), { status: 200 });
+      return new Response(JSON.stringify({ sent: 0, message: "No subscriptions" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const vapidPrivateKey = await importVapidKey(VAPID_PRIVATE_KEY);
@@ -323,10 +336,16 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ sent, expired: expired.length, total: subscriptions.length }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   } catch (err) {
     console.error("[Push] Unhandled error:", err);
-    return new Response(JSON.stringify({ error: "Internal error" }), { status: 500 });
+    return new Response(JSON.stringify({ error: "Internal error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

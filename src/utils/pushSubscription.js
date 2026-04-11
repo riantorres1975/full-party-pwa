@@ -38,20 +38,25 @@ export async function subscribeToPush(folio, telefono) {
 
     const sub = subscription.toJSON();
 
-    const { error } = await supabase.from('push_subscriptions').upsert(
-      {
-        folio,
-        cliente_telefono: telefono || null,
-        endpoint: sub.endpoint,
-        keys_p256dh: sub.keys.p256dh,
-        keys_auth: sub.keys.auth,
-      },
-      { onConflict: 'endpoint' }
-    );
+    const row = {
+      folio,
+      cliente_telefono: telefono || null,
+      endpoint: sub.endpoint,
+      keys_p256dh: sub.keys.p256dh,
+      keys_auth: sub.keys.auth,
+    };
+
+    // Try insert first; if endpoint already exists, ignore the duplicate error
+    const { error } = await supabase.from('push_subscriptions').insert(row);
 
     if (error) {
-      console.warn('[Push] Error saving subscription:', error.message);
-      return { ok: false, reason: 'db_error' };
+      // 23505 = unique_violation — endpoint already saved, that's fine
+      if (error.code === '23505') {
+        console.info('[Push] Subscription already saved for this endpoint');
+      } else {
+        console.warn('[Push] Error saving subscription:', error.message);
+        return { ok: false, reason: 'db_error' };
+      }
     }
 
     return { ok: true };
