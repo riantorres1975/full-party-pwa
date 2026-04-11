@@ -108,6 +108,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
   };
 
   const handleConfirmar = async () => {
+    if (pedidoGuardado) return;
     if (!validar()) return;
 
     if (honeypot) return;
