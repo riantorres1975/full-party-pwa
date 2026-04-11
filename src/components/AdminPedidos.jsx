@@ -3,6 +3,7 @@ import { MessageCircle, ChevronDown, Package, LayoutGrid, ClipboardList, Search,
 import { supabase } from '../lib/supabase';
 import { SIMBOLO_MONEDA } from '../data/productos';
 import { notificarCliente } from '../utils/whatsapp';
+import { obtenerPrecioAplicable } from '../utils/precios';
 import ThemeToggle from './ThemeToggle';
 import { useToast } from './ui/ToastProvider';
 import { SkeletonPedido } from './ui/Skeleton';
@@ -24,66 +25,91 @@ const ESTADO_META = {
 
 // ── Helper puro: normalizar artículos para picking ──────────────────────────
 function normalizarArticulos(lista, modoPicking) {
-  return (lista || []).map(i => ({
-    ...i,
-    encontrado:
-      typeof i.encontrado === 'boolean'
-        ? i.encontrado
-        : (modoPicking ? false : undefined),
-  }));
+  return (lista || []).map(i => {
+    const cantidadPedida = Number(i.cantidad) || 1;
+    let cantidadSurtida;
+    if (typeof i.cantidad_surtida === 'number') {
+      cantidadSurtida = i.cantidad_surtida;
+    } else if (typeof i.encontrado === 'boolean') {
+      cantidadSurtida = i.encontrado ? cantidadPedida : 0;
+    } else {
+      // En picking nuevo, empiezan sin marcar (0)
+      cantidadSurtida = modoPicking ? 0 : cantidadPedida;
+    }
+    return {
+      ...i,
+      cantidad_surtida: cantidadSurtida,
+      encontrado: cantidadSurtida > 0,
+    };
+  });
 }
 
 // ── Lista de artículos expandible + Picking dinámico ────────────────────────
-function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
+function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChange, esDesktop }) {
   const [imgError, setImgError] = useState(false);
+  const precioSurtido = Number(item.precio_surtido ?? item.precio) || 0;
   const precioAplicado = Number(item.precio) || 0;
   const precioBase = Number(item.precio_base ?? item.precio_original ?? item.precio) || 0;
-  const hayDescuento = precioAplicado < precioBase;
-  const subtotal = (precioAplicado * item.cantidad).toFixed(2);
-  const ahorroTotal = ((precioBase - precioAplicado) * item.cantidad).toFixed(2);
-  const marcado = encontrado === true;
-  const tachado = !modoPicking && encontrado === false;
+  const cantidadPedida = Number(item.cantidad) || 1;
+  const cantidadSurtida = Number(item.cantidad_surtida ?? item.cantidad) || 0;
+  const marcado = cantidadSurtida > 0;
+  const completo = cantidadSurtida === cantidadPedida;
+  const parcial = cantidadSurtida > 0 && cantidadSurtida < cantidadPedida;
+  const tachado = !modoPicking && cantidadSurtida === 0 && encontrado === false;
   const pendientePicking = modoPicking && !marcado;
   const surtidoPicking = modoPicking && marcado;
+  const precioMostrar = modoPicking && marcado ? precioSurtido : precioAplicado;
+  const hayDescuento = precioMostrar < precioBase;
+  const cambioPrecioMayoreo = modoPicking && marcado && precioSurtido !== precioAplicado;
+  // En picking usa cantidadSurtida si marcado; post-picking usa cantidad_surtida si fue procesado
+  const cantidadParaSubtotal = modoPicking
+    ? (marcado ? cantidadSurtida : cantidadPedida)
+    : (typeof item.cantidad_surtida === 'number' ? cantidadSurtida : cantidadPedida);
+  const subtotal = (precioMostrar * cantidadParaSubtotal).toFixed(2);
+  const ahorroTotal = ((precioBase - precioMostrar) * (modoPicking && marcado ? cantidadSurtida : cantidadPedida)).toFixed(2);
 
   const claseFila = esDesktop
-    ? 'flex items-center gap-2 lg:gap-3 py-1.5 lg:py-2 border-b border-admin-border-soft last:border-0 transition-opacity duration-150'
+    ? 'flex items-center gap-3 py-3 border-b border-admin-border-soft last:border-0 transition-opacity duration-150'
     : 'flex gap-3 py-3 border-b border-admin-border last:border-0 transition-opacity duration-200';
 
   const claseMiniatura = esDesktop
-    ? 'w-9 h-9 lg:w-10 lg:h-10 rounded-lg overflow-hidden flex-shrink-0 bg-admin-elevated border border-admin-border-soft flex items-center justify-center'
+    ? 'w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-admin-elevated border border-admin-border-soft flex items-center justify-center'
     : 'w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-admin-elevated border-2 border-admin-border flex items-center justify-center';
 
   const claseCheckbox = esDesktop
-    ? 'flex-shrink-0 w-5 h-5 lg:w-6 lg:h-6 rounded-md border-2 flex items-center justify-center transition-all duration-150 active:scale-90'
+    ? 'flex-shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-150 active:scale-90'
     : 'flex-shrink-0 self-center w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all duration-150 active:scale-90';
 
   const clasePrecio = esDesktop
-    ? 'text-xs font-body font-bold shrink-0'
+    ? 'text-sm font-body font-bold shrink-0'
     : 'flex-shrink-0 text-right self-center';
 
   return (
+    <>
     <div
       className={`${claseFila} ${
         modoPicking
-          ? `rounded-xl px-2 ${pendientePicking ? 'bg-amber-50 border border-amber-200' : 'bg-emerald-50 border border-emerald-200'}`
+          ? `rounded-xl px-2 ${pendientePicking ? 'bg-amber-50 border border-amber-200' : parcial ? 'bg-yellow-50 border border-yellow-300' : 'bg-emerald-50 border border-emerald-200'}`
           : ''
       }`}
       style={{ opacity: tachado ? 0.45 : 1 }}
     >
       {modoPicking && (
         <button
-          onClick={onToggle}
+          onClick={(e) => {
+            e.stopPropagation();
+            onCantidadChange(marcado ? 0 : cantidadPedida);
+          }}
           className={claseCheckbox}
           style={{
-            background: encontrado ? '#22c55e' : 'white',
-            borderColor: encontrado ? '#22c55e' : '#d1d5db',
-            boxShadow: encontrado ? '0 2px 8px #22c55e44' : 'none',
+            background: marcado ? '#22c55e' : 'white',
+            borderColor: marcado ? '#22c55e' : '#d1d5db',
+            boxShadow: marcado ? '0 2px 8px #22c55e44' : 'none',
           }}
-          aria-label={encontrado ? 'Desmarcar' : 'Marcar como encontrado'}
+          aria-label={marcado ? 'Desmarcar' : 'Marcar como surtido'}
         >
           {marcado && (
-            <svg viewBox="0 0 12 10" fill="none" className="w-2.5 h-2.5 lg:w-3 lg:h-3">
+            <svg viewBox="0 0 12 10" fill="none" className="w-3 h-3">
               <path d="M1 5l3.5 3.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           )}
@@ -100,25 +126,41 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className={`text-xs font-body font-bold leading-snug line-clamp-1 ${tachado ? 'line-through text-admin-inactive' : 'text-admin-text'}`}>
+        <p className={`font-body font-bold leading-snug line-clamp-1 ${esDesktop ? 'text-sm' : 'text-xs'} ${tachado ? 'line-through text-admin-inactive' : 'text-admin-text'}`}>
           {item.nombre}
         </p>
         {modoPicking && (
           <span
-            className={`inline-flex mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-body font-black ${
-              pendientePicking ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+            className={`inline-flex mt-0.5 px-2 py-0.5 rounded-full font-body font-black ${esDesktop ? 'text-xs' : 'text-[10px]'} ${
+              pendientePicking ? 'bg-amber-100 text-amber-700'
+              : parcial ? 'bg-amber-100 text-amber-700'
+              : 'bg-emerald-100 text-emerald-700'
             }`}
           >
-            {pendientePicking ? 'Pendiente por surtir' : 'Surtido'}
+            {pendientePicking ? 'Pendiente por surtir'
+             : parcial ? `Parcial: ${cantidadSurtida} de ${cantidadPedida}`
+             : 'Surtido'}
+          </span>
+        )}
+        {!modoPicking && tachado && (
+          <span className={`inline-flex mt-0.5 px-2 py-0.5 rounded-full font-body font-black ${esDesktop ? 'text-xs' : 'text-[10px]'} bg-red-100 text-red-600`}>
+            Sin existencia
+          </span>
+        )}
+        {!modoPicking && parcial && (
+          <span className={`inline-flex mt-0.5 px-2 py-0.5 rounded-full font-body font-black ${esDesktop ? 'text-xs' : 'text-[10px]'} bg-amber-100 text-amber-700`}>
+            Surtido: {cantidadSurtida} de {cantidadPedida}
           </span>
         )}
         {hayDescuento && (
-          <p className="text-[10px] font-body font-bold text-emerald-600 mt-0.5">
+          <p className={`font-body font-bold text-emerald-600 mt-0.5 ${esDesktop ? 'text-xs' : 'text-[10px]'}`}>
             Descuento mayoreo aplicado (-{SIMBOLO_MONEDA}{ahorroTotal})
           </p>
         )}
         {esDesktop && (
-          <p className="text-[10px] font-body text-admin-muted">Cant: {item.cantidad}</p>
+          <p className="text-xs font-body text-admin-muted">
+            Cant: {cantidadSurtida !== cantidadPedida && !modoPicking ? `${cantidadSurtida} de ${cantidadPedida}` : item.cantidad}
+          </p>
         )}
         {!esDesktop && item.tamano && (
           <p className="text-[11px] font-body text-admin-muted mt-0.5">Tamaño: {item.tamano}</p>
@@ -126,7 +168,11 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
         {!esDesktop && item.familia_mayoreo && (
           <p className="text-[11px] font-body text-admin-muted">Mayoreo: {item.familia_mayoreo}</p>
         )}
-        {!esDesktop && <p className="text-[11px] font-body text-admin-muted">Cantidad: {item.cantidad}</p>}
+        {!esDesktop && (
+          <p className="text-[11px] font-body text-admin-muted">
+            Cantidad: {cantidadSurtida !== cantidadPedida && !modoPicking ? `${cantidadSurtida} de ${cantidadPedida}` : item.cantidad}
+          </p>
+        )}
       </div>
 
       <div className={clasePrecio}>
@@ -139,18 +185,55 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, esDesktop }) {
               {SIMBOLO_MONEDA}{precioBase.toFixed(2)} c/u
             </p>
             <p className="text-[10px] font-body font-bold text-emerald-600">
-              {SIMBOLO_MONEDA}{precioAplicado.toFixed(2)} c/u
+              {SIMBOLO_MONEDA}{precioMostrar.toFixed(2)} c/u
             </p>
           </div>
         ) : (
-          !esDesktop && <p className="text-[10px] font-body text-admin-muted">{SIMBOLO_MONEDA}{precioAplicado.toFixed(2)} c/u</p>
+          !esDesktop && <p className="text-[10px] font-body text-admin-muted">{SIMBOLO_MONEDA}{precioMostrar.toFixed(2)} c/u</p>
+        )}
+        {cambioPrecioMayoreo && (
+          <p className="text-[10px] font-body font-bold text-amber-600 mt-0.5">
+            Precio ajustado
+          </p>
         )}
       </div>
     </div>
+    {/* Controles +/− debajo, solo cuando marcado y cantidad > 1 */}
+    {modoPicking && marcado && cantidadPedida > 1 && (
+      <div className={`flex items-center gap-2 ${esDesktop ? 'ml-9 mt-1 mb-1' : 'ml-10 mt-1 mb-2'}`}>
+        <span className={`font-body font-bold text-admin-muted ${esDesktop ? 'text-xs' : 'text-[11px]'}`}>Surtido:</span>
+        <button
+          onClick={(e) => { e.stopPropagation(); onCantidadChange(Math.max(1, cantidadSurtida - 1)); }}
+          disabled={cantidadSurtida <= 1}
+          className="w-7 h-7 rounded-lg border-2 flex items-center justify-center text-sm font-bold transition-all active:scale-90 disabled:opacity-30"
+          style={{ background: 'white', borderColor: '#d1d5db', color: '#374151' }}
+          aria-label="Reducir cantidad surtida"
+        >
+          −
+        </button>
+        <span
+          className="w-6 text-center text-sm font-body font-black tabular-nums"
+          style={{ color: cantidadSurtida < cantidadPedida ? '#eab308' : '#22c55e' }}
+        >
+          {cantidadSurtida}
+        </span>
+        <button
+          onClick={(e) => { e.stopPropagation(); onCantidadChange(Math.min(cantidadPedida, cantidadSurtida + 1)); }}
+          disabled={cantidadSurtida >= cantidadPedida}
+          className="w-7 h-7 rounded-lg border-2 flex items-center justify-center text-sm font-bold transition-all active:scale-90 disabled:opacity-30"
+          style={{ background: 'white', borderColor: '#d1d5db', color: '#374151' }}
+          aria-label="Aumentar cantidad surtida"
+        >
+          +
+        </button>
+        <span className={`font-body text-admin-muted ${esDesktop ? 'text-xs' : 'text-[11px]'}`}>de {cantidadPedida}</span>
+      </div>
+    )}
+    </>
   );
 }
 
-function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, esDesktop }) {
+function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, onTotalChange, esDesktop }) {
   const toast = useToast();
   const modoPicking = estadoPedido === 'Armando Pedido';
 
@@ -163,83 +246,98 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, esD
   }, [items, modoPicking, pedido?.id, pedido?.updated_at, pedido?.estado]);
 
   const nuevoTotal = articulosSurtidos
-    .filter(a => a.encontrado === true)
-    .reduce((s, a) => s + a.precio * a.cantidad, 0);
+    .reduce((s, a) => s + (Number(a.precio_surtido ?? a.precio) || 0) * (Number(a.cantidad_surtida) || 0), 0);
 
   const totalOriginal  = items.reduce((s, a) => s + a.precio * a.cantidad, 0);
-  const hayFaltantes   = articulosSurtidos.some(a => a.encontrado === false);
-  const todosEncontrados = articulosSurtidos.every(a => a.encontrado === true);
+  const hayFaltantes   = articulosSurtidos.some(a => (Number(a.cantidad_surtida) || 0) < Number(a.cantidad));
+  const todosEncontrados = articulosSurtidos.every(a => (Number(a.cantidad_surtida) || 0) === Number(a.cantidad));
 
-  async function toggleArticulo(idx) {
-    const articulo    = articulosSurtidos[idx];
-    const nuevoEstado = !articulo.encontrado;
+  // Propagar total al componente padre
+  useEffect(() => {
+    if (modoPicking && onTotalChange) onTotalChange(nuevoTotal);
+  }, [nuevoTotal, modoPicking, onTotalChange]);
 
-    // Actualizar estado local inmediatamente
+  function cambiarCantidadSurtida(idx, nuevaCantidad) {
     setArticulosSurtidos(prev =>
-      prev.map((a, i) => i === idx ? { ...a, encontrado: nuevoEstado } : a)
+      prev.map((a, i) => {
+        if (i !== idx) return a;
+        // Recalcular precio si tiene mayoreo y la cantidad baja del umbral
+        const precioBase = Number(a.precio_base ?? a.precio) || 0;
+        let precioAplicado = a.precio;
+        if (a.precios_mayoreo) {
+          precioAplicado = obtenerPrecioAplicable(
+            { precio: precioBase, precios_mayoreo: a.precios_mayoreo },
+            nuevaCantidad
+          );
+        }
+        return {
+          ...a,
+          cantidad_surtida: nuevaCantidad,
+          encontrado: nuevaCantidad > 0,
+          precio_surtido: precioAplicado,
+        };
+      })
     );
-
-    // Si se desmarca → marcar producto como agotado en Supabase
-    // Si se vuelve a marcar → restaurar como disponible
-    if (articulo.id) {
-      const { error } = await supabase
-        .from('productos')
-        .update({ activo: nuevoEstado })
-        .eq('id', articulo.id);
-
-      if (error) {
-        console.warn('[Picking] No se pudo actualizar activo del producto:', error.message);
-      }
-    }
   }
 
   async function pasarAListo() {
     setGuardando(true);
 
-    // 1. Descontar el inventario automáticamente
+    // 1. Descontar el inventario automáticamente (solo lo surtido)
     try {
-      const encontrados = articulosSurtidos.filter(a => a.encontrado && a.id);
-      
-      await Promise.all(encontrados.map(async (art) => {
+      const conSurtido = articulosSurtidos.filter(a => (a.cantidad_surtida || 0) > 0 && a.id);
+
+      await Promise.all(conSurtido.map(async (art) => {
         const { data: prodData, error: errFetch } = await supabase
           .from('productos')
           .select('stock_actual, stock_ilimitado')
           .eq('id', art.id)
           .single();
-          
+
         if (errFetch || !prodData || prodData.stock_ilimitado !== false) {
           return;
         }
-        
+
         const stockActual = Number(prodData.stock_actual) || 0;
-        let nuevoStock = stockActual - Number(art.cantidad);
-        
+        let nuevoStock = stockActual - Number(art.cantidad_surtida);
+
         const updatePayload = {
           stock_actual: nuevoStock > 0 ? nuevoStock : 0
         };
 
-        // REGLA DE AUTO-APAGADO: Solo modificar "activo" si el stock se agotó
-        // Si aún hay stock, omitimos enviar "activo" para no sobreescribir su estado manual anterior
         if (nuevoStock <= 0) {
           updatePayload.activo = false;
         }
-        
+
         await supabase
           .from('productos')
           .update(updatePayload)
+          .eq('id', art.id);
+      }));
+
+      // Marcar productos con 0 surtido como agotados
+      const sinSurtir = articulosSurtidos.filter(a => (a.cantidad_surtida || 0) === 0 && a.id);
+      await Promise.all(sinSurtir.map(async (art) => {
+        await supabase
+          .from('productos')
+          .update({ activo: false })
           .eq('id', art.id);
       }));
     } catch (err) {
       console.warn('[Picking] Falla parcial al actualizar inventario', err);
     }
 
-    // 2. Actualizar el pedido
+    // 2. Actualizar el pedido con precios recalculados
+    const articulosFinales = articulosSurtidos.map(a => ({
+      ...a,
+      precio: Number(a.precio_surtido ?? a.precio) || 0,
+    }));
     const { error } = await supabase
       .from('pedidos')
       .update({
         estado:        'Listo para Entrega',
         total:          nuevoTotal,
-        detalles_json:  articulosSurtidos,
+        detalles_json:  articulosFinales,
         notificado_estado: 'Listo para Entrega',
       })
       .eq('id', pedido.id);
@@ -273,20 +371,20 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, esD
       {/* Encabezado acordeón */}
       <button
         onClick={() => setAbierto(v => !v)}
-        className="w-full flex items-center justify-between px-3 py-2.5 transition-colors duration-150"
+        className="w-full flex items-center justify-between px-4 py-3 transition-colors duration-150"
         style={{ background: meta.bg }}
         aria-expanded={abierto}
       >
-        <span className="text-xs font-body font-black flex items-center gap-2" style={{ color: meta.color }}>
+        <span className="text-sm font-body font-black flex items-center gap-2" style={{ color: meta.color }}>
           {modoPicking ? 'Picking — Surtir Pedido' : 'Lista de Artículos'}
-          <span className="px-2 py-0.5 rounded-full text-[10px]"
+          <span className="px-2 py-0.5 rounded-full text-xs"
                 style={{ background: meta.color, color: 'white' }}>
-            {hayFaltantes
-              ? `${articulosSurtidos.filter(a => a.encontrado).length}/${items.length}`
+            {modoPicking
+              ? `${articulosSurtidos.filter(a => (a.cantidad_surtida || 0) === Number(a.cantidad)).length}/${items.length}`
               : items.length}
           </span>
         </span>
-        <ChevronDown size={16} style={{
+        <ChevronDown size={18} style={{
           color: meta.color,
           transform: abierto ? 'rotate(180deg)' : 'rotate(0deg)',
           transition: 'transform 0.25s ease',
@@ -298,45 +396,39 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, esD
         <div className="h-1 bg-admin-elevated">
           <div
             className="h-full bg-green-500 transition-all duration-300 ease-out"
-            style={{ width: `${items.length > 0 ? (articulosSurtidos.filter(a => a.encontrado).length / items.length) * 100 : 0}%` }}
+            style={{ width: `${items.length > 0 ? (articulosSurtidos.reduce((s, a) => s + (Number(a.cantidad_surtida) || 0), 0) / items.reduce((s, a) => s + Number(a.cantidad), 0)) * 100 : 0}%` }}
           />
         </div>
       )}
 
       {/* Contenido */}
       {abierto && (
-        <div className={`bg-admin-card animate-fade-in ${esDesktop ? 'px-2 lg:px-3' : 'px-3'}`}>
+        <div className={`bg-admin-card animate-fade-in ${esDesktop ? 'px-4' : 'px-3'}`}>
           {modoPicking && (
             <div className="flex items-center gap-2 px-1 py-2">
               <p className="text-[11px] font-body font-bold text-amber-600 flex-1">
-                Marca solo lo surtido. Lo que quede sin marcar se tomará como faltante.
+                Ajusta la cantidad surtida de cada artículo. Lo que falte se descontará del total.
               </p>
               <span className="text-xs font-body font-black text-admin-text whitespace-nowrap">
-                {articulosSurtidos.filter(a => a.encontrado).length}/{items.length}
+                {articulosSurtidos.filter(a => (a.cantidad_surtida || 0) === Number(a.cantidad)).length}/{items.length}
               </span>
             </div>
           )}
           <div>
             {/* Sort: pending first, surtidos at bottom in picking mode */}
             {(modoPicking
-              ? [...articulosSurtidos.filter(a => !a.encontrado), ...articulosSurtidos.filter(a => a.encontrado)]
+              ? [...articulosSurtidos.filter(a => (a.cantidad_surtida || 0) === 0), ...articulosSurtidos.filter(a => (a.cantidad_surtida || 0) > 0)]
               : articulosSurtidos
             ).map((item, _i) => {
               const originalIdx = articulosSurtidos.indexOf(item);
               return (
-                <div
-                  key={originalIdx}
-                  onClick={modoPicking ? () => toggleArticulo(originalIdx) : undefined}
-                  className={modoPicking ? 'cursor-pointer' : ''}
-                  role={modoPicking ? 'button' : undefined}
-                  tabIndex={modoPicking ? 0 : undefined}
-                  onKeyDown={modoPicking ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleArticulo(originalIdx); } } : undefined}
-                >
+                <div key={originalIdx}>
                   <ItemArticulo
                     item={item}
                     modoPicking={modoPicking}
                     encontrado={item.encontrado}
-                    onToggle={() => toggleArticulo(originalIdx)}
+                    onToggle={() => {}}
+                    onCantidadChange={(nuevaCantidad) => cambiarCantidadSurtida(originalIdx, nuevaCantidad)}
                     esDesktop={esDesktop}
                   />
                 </div>
@@ -375,8 +467,8 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, esD
               {/* Advertencia faltantes */}
               {hayFaltantes && (
                 <p className="text-[11px] font-body text-amber-600 bg-amber-50 rounded-lg px-2 py-1.5 leading-snug">
-                  <span aria-hidden="true">⚠️</span> {articulosSurtidos.filter(a => !a.encontrado).length} artículo(s) sin existencia
-                  — se descontarán del total y se notificará al cliente.
+                  <span aria-hidden="true">⚠️</span> {articulosSurtidos.filter(a => (a.cantidad_surtida || 0) < Number(a.cantidad)).length} artículo(s) con cantidad reducida
+                  — se ajustará el total y se notificará al cliente.
                 </p>
               )}
 
@@ -468,25 +560,26 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
   });
   const esActualizando = actualizando === pedido.id;
   const yaNotificado = pedido.notificado_estado === pedido.estado;
+  const [totalPicking, setTotalPicking] = useState(null);
 
   const claseHeader = esDesktop
-    ? 'flex items-center justify-between gap-3 pb-3 mb-3 border-b border-admin-border-soft'
+    ? 'flex items-center justify-between gap-3 pb-4 mb-4 border-b border-admin-border-soft'
     : 'flex items-start justify-between gap-2 mb-3';
 
   const claseInfoCliente = esDesktop
-    ? 'pb-2 mb-2 border-b border-admin-border-soft'
+    ? 'space-y-1.5 pb-4 mb-4 border-b border-admin-border-soft'
     : 'space-y-1 mb-3 pb-3 border-b border-admin-border';
 
   const claseTotal = esDesktop
-    ? 'flex items-center justify-end gap-3 pb-3 border-b border-admin-border-soft'
+    ? 'flex items-center justify-between gap-3 pb-4 border-b border-admin-border-soft'
     : 'flex items-center justify-between mb-3';
 
   const claseBotones = esDesktop
-    ? 'flex flex-wrap items-center justify-end gap-2'
+    ? 'flex flex-wrap items-center gap-2'
     : 'flex flex-col gap-1.5';
 
   const claseBotonEstado = esDesktop
-    ? 'py-1.5 px-3 min-w-[142px] rounded-lg text-xs font-body font-bold whitespace-nowrap transition-all duration-200 active:scale-95 disabled:cursor-default'
+    ? 'py-2.5 px-5 rounded-xl text-sm font-body font-bold whitespace-nowrap transition-all duration-200 active:scale-95 disabled:cursor-default'
     : 'py-3.5 px-4 rounded-xl text-sm font-body font-bold w-full transition-all duration-200 active:scale-95 disabled:cursor-default';
 
   return (
@@ -499,25 +592,26 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
       {/* Header */}
       <div className={claseHeader}>
         <div className="flex items-center gap-3">
-          <span className={`font-body font-bold text-admin-text ${esDesktop ? 'text-sm' : 'text-base'}`}>{pedido.folio}</span>
+          <span className={`font-body font-bold text-admin-text ${esDesktop ? 'text-base' : 'text-base'}`}>{pedido.folio}</span>
           {!esDesktop && <p className="text-[11px] font-body text-admin-muted mt-0.5">{fecha}</p>}
+          {esDesktop && <p className="text-xs font-body text-admin-muted">{fecha}</p>}
         </div>
         <span
-          className={`text-xs font-body font-bold px-2.5 py-1 rounded-full flex-shrink-0 flex items-center gap-1.5 ${meta.bgClass} ${meta.colorClass}`}
+          className={`font-body font-bold px-3 py-1.5 rounded-full flex-shrink-0 flex items-center gap-1.5 ${meta.bgClass} ${meta.colorClass} ${esDesktop ? 'text-sm' : 'text-xs'}`}
         >
-          <meta.icon size={14} strokeWidth={2.5} /> {pedido.estado}
+          <meta.icon size={esDesktop ? 16 : 14} strokeWidth={2.5} /> {pedido.estado}
         </span>
       </div>
 
       {/* Info cliente */}
       <div className={claseInfoCliente}>
-        <p className="text-sm font-body font-bold text-admin-text">{pedido.cliente_nombre}</p>
-        <p className="flex items-center gap-1.5 text-xs font-body text-admin-muted"><Phone size={12} /> {pedido.cliente_telefono}</p>
-        <p className="flex items-center gap-1.5 text-xs font-body text-admin-muted">
-          {pedido.tipo_entrega === 'envio' ? <><Truck size={12} /> Envío a domicilio</> : <><Store size={12} /> Recoger en tienda</>}
+        <p className={`font-body font-bold text-admin-text ${esDesktop ? 'text-base' : 'text-sm'}`}>{pedido.cliente_nombre}</p>
+        <p className={`flex items-center gap-1.5 font-body text-admin-muted ${esDesktop ? 'text-sm' : 'text-xs'}`}><Phone size={esDesktop ? 14 : 12} /> {pedido.cliente_telefono}</p>
+        <p className={`flex items-center gap-1.5 font-body text-admin-muted ${esDesktop ? 'text-sm' : 'text-xs'}`}>
+          {pedido.tipo_entrega === 'envio' ? <><Truck size={esDesktop ? 14 : 12} /> Envío a domicilio</> : <><Store size={esDesktop ? 14 : 12} /> Recoger en tienda</>}
         </p>
         {pedido.direccion && (
-          <p className="flex items-center gap-1.5 text-xs font-body text-admin-muted leading-relaxed"><MapPin size={12} className="flex-shrink-0" /> {pedido.direccion}</p>
+          <p className={`flex items-center gap-1.5 font-body text-admin-muted leading-relaxed ${esDesktop ? 'text-sm' : 'text-xs'}`}><MapPin size={esDesktop ? 14 : 12} className="flex-shrink-0" /> {pedido.direccion}</p>
         )}
       </div>
 
@@ -529,15 +623,16 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
           estadoPedido={pedido.estado}
           pedido={pedido}
           onPickingListo={onPickingListo}
+          onTotalChange={setTotalPicking}
           esDesktop={esDesktop}
         />
       )}
 
       {/* Total */}
       <div className={claseTotal}>
-        <span className="text-xs font-body text-admin-muted font-bold">Total</span>
-        <span className={`font-body font-black ${esDesktop ? 'text-lg' : 'text-base'} ${meta.colorClass}`}>
-          {SIMBOLO_MONEDA}{Number(pedido.total).toFixed(2)}
+        <span className={`font-body text-admin-muted font-bold ${esDesktop ? 'text-sm' : 'text-xs'}`}>Total</span>
+        <span className={`font-body font-black ${esDesktop ? 'text-2xl' : 'text-base'} ${meta.colorClass}`}>
+          {SIMBOLO_MONEDA}{(totalPicking !== null && pedido.estado === 'Armando Pedido' ? totalPicking : Number(pedido.total)).toFixed(2)}
         </span>
       </div>
 
@@ -548,50 +643,28 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
             <div className="w-4 h-4 rounded-full border-2 border-ink-200 border-t-ink-600 animate-spin" />
           </div>
         )}
-        {/* Mobile: full-width button stack */}
-        {!esDesktop && (
-          <div className={claseBotones}>
-            {ESTADOS.map(estado => {
-              const m = ESTADO_META[estado];
-              const activo = pedido.estado === estado;
-              return (
-                <button
-                  key={estado}
-                  onClick={() => !activo && onCambiarEstado(pedido.id, estado)}
-                  disabled={activo || esActualizando}
-                  className={claseBotonEstado}
-                  style={activo ? m.activeStyle : m.inactiveStyle}
-                >
-                  <span className="flex items-center gap-2">
-                    <m.icon size={18} strokeWidth={2.5} />
-                    <span>{estado}</span>
-                  </span>
-                  {activo && <CheckCircle2 size={16} className="ml-auto" />}
-                </button>
-              );
-            })}
-          </div>
-        )}
-        {/* Desktop: button grid */}
-        {esDesktop && (
-          <div className={claseBotones}>
-            {ESTADOS.map(estado => {
-              const m       = ESTADO_META[estado];
-              const activo  = pedido.estado === estado;
-              return (
-                <button
-                  key={estado}
-                  onClick={() => !activo && onCambiarEstado(pedido.id, estado)}
-                  disabled={activo || esActualizando}
-                  className={claseBotonEstado}
-                  style={activo ? m.activeStyle : m.inactiveStyle}
-                >
-                  <m.icon size={14} className="inline mr-1" /> {estado}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        {/* Botón de avance al siguiente estado (oculto si picking ya lo maneja) */}
+        {(() => {
+          const idxActual = ESTADOS.indexOf(pedido.estado);
+          const siguiente = ESTADOS[idxActual + 1];
+          if (!siguiente) return null; // ya está en el último estado
+          // "Armando Pedido" → "Listo para Entrega" se maneja desde el botón de picking
+          if (pedido.estado === 'Armando Pedido') return null;
+          const m = ESTADO_META[siguiente];
+          return (
+            <button
+              onClick={() => onCambiarEstado(pedido.id, siguiente)}
+              disabled={esActualizando}
+              className={claseBotonEstado}
+              style={m.activeStyle}
+            >
+              <span className="flex items-center justify-center gap-2">
+                <m.icon size={esDesktop ? 14 : 18} strokeWidth={2.5} />
+                <span>Pasar a: {siguiente}</span>
+              </span>
+            </button>
+          );
+        })()}
       </div>
 
       {/* Botones de acción: notificar + cancelar */}
@@ -604,11 +677,12 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
             title="Cancelar pedido"
             className={`flex items-center justify-center gap-1.5 rounded-xl font-body font-bold
                        transition-all duration-200 active:scale-95 disabled:opacity-50
-                       border border-red-200 text-red-400 hover:bg-red-50 hover:border-red-300 hover:text-red-500
-                       ${esDesktop ? 'py-2 px-3 text-xs' : 'py-2.5 w-full text-xs order-2'}`}
+                       bg-red-500/10 border border-red-400/30 text-red-400
+                       hover:bg-red-500/20 hover:border-red-400/50 hover:text-red-300
+                       ${esDesktop ? 'py-2 px-4 text-xs' : 'py-3 w-full text-sm order-2'}`}
           >
-            <XCircle size={14} />
-            {!esDesktop && 'Cancelar pedido'}
+            <XCircle size={16} />
+            Cancelar pedido
           </button>
         )}
 
@@ -622,24 +696,26 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
           </div>
         )}
 
-        {/* Botón notificar por WhatsApp */}
-        <button
-          onClick={() => !yaNotificado && !notificando && onNotificar(pedido)}
-          disabled={yaNotificado || notificando}
-          className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-body font-black text-white
-                     transition-all duration-200 active:scale-95 disabled:cursor-not-allowed
-                     ${esDesktop ? 'flex-1 max-w-[220px]' : 'w-full order-1'}`}
-          style={yaNotificado
-            ? { background: '#d1fae5', color: '#6ee7b7', boxShadow: 'none' }
-            : { background: 'linear-gradient(135deg, #25D366, #1db954)', boxShadow: '0 3px 12px #25D36633' }
-          }
-        >
-          {notificando
-            ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-            : <MessageCircle size={16} />
-          }
-          {yaNotificado ? '✓ Cliente notificado' : notificando ? 'Enviando...' : 'Notificar al cliente'}
-        </button>
+        {/* Botón notificar por WhatsApp (oculto en "Armando Pedido", el picking notifica automáticamente) */}
+        {pedido.estado !== 'Armando Pedido' && (
+          <button
+            onClick={() => !yaNotificado && !notificando && onNotificar(pedido)}
+            disabled={yaNotificado || notificando}
+            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-body font-black text-white
+                       transition-all duration-200 active:scale-95 disabled:cursor-not-allowed
+                       ${esDesktop ? 'flex-1 max-w-[220px]' : 'w-full order-1'}`}
+            style={yaNotificado
+              ? { background: '#d1fae5', color: '#6ee7b7', boxShadow: 'none' }
+              : { background: 'linear-gradient(135deg, #25D366, #1db954)', boxShadow: '0 3px 12px #25D36633' }
+            }
+          >
+            {notificando
+              ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+              : <MessageCircle size={16} />
+            }
+            {yaNotificado ? '✓ Cliente notificado' : notificando ? 'Enviando...' : 'Notificar al cliente'}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -687,6 +763,12 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
   // Sincronizar debounce → hook
   useEffect(() => { setBusqueda(busquedaDebounced); }, [busquedaDebounced, setBusqueda]);
 
+  // Wrapper: al cambiar estado, mover el filtro al nuevo estado
+  const cambiarEstadoYFiltrar = useCallback(async (pedidoId, nuevoEstado) => {
+    await cambiarEstado(pedidoId, nuevoEstado);
+    setFiltroEstado(nuevoEstado);
+  }, [cambiarEstado, setFiltroEstado]);
+
   return (
     <div className="min-h-screen bg-admin-bg lg:flex lg:h-screen lg:overflow-hidden">
       <ConfirmModal
@@ -701,17 +783,17 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
       </a>
 
       {/* ── Sidebar Nativo (Desktop) / Header (Mobile) ── */}
-      <header className="sticky top-0 z-30 border-b border-admin-border backdrop-blur-md lg:static lg:h-full lg:w-64 lg:flex-shrink-0 lg:flex lg:flex-col lg:border-b-0 lg:border-r" style={{ backgroundColor: 'var(--admin-card)' }}>
+      <header className="sticky top-0 z-30 border-b border-admin-border backdrop-blur-md lg:static lg:h-full lg:w-56 lg:flex-shrink-0 lg:flex lg:flex-col lg:border-b-0 lg:border-r" style={{ backgroundColor: 'var(--admin-card)' }}>
         <div className="px-4 sm:px-6 py-3 sm:py-4 flex flex-col gap-3 lg:gap-0 lg:p-0 lg:flex-1">
           {/* ── Brand Header ── */}
-          <div className="flex items-center justify-between gap-2 min-w-0 lg:flex-col lg:items-start lg:gap-0 lg:p-6 lg:pb-4">
-            <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center justify-between gap-2 min-w-0 lg:flex-col lg:items-start lg:gap-0 lg:p-5 lg:pb-4 lg:overflow-hidden">
+            <div className="flex items-center gap-3 min-w-0 lg:w-full">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-fiesta-magenta to-fiesta-cyan flex items-center justify-center shrink-0 text-white font-display text-sm shadow-card">
                 FP
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <h1 className="font-display text-base sm:text-lg text-admin-text leading-tight">Full Party</h1>
-                <p className="text-[11px] sm:text-xs font-body text-admin-muted truncate mt-0.5" title={user?.email ?? ''}>
+                <p className="text-[10px] sm:text-xs font-body text-admin-muted truncate mt-0.5 max-w-full" title={user?.email ?? ''}>
                   {user?.email}
                 </p>
               </div>
@@ -817,7 +899,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
 
       {/* ── Main Content ── */}
       <main id="admin-main" className="flex-1 min-w-0 lg:h-screen lg:overflow-y-auto">
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-4 lg:p-8 lg:max-w-7xl">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-4 lg:p-5 lg:max-w-[1200px]">
 
         {vistaAdmin === 'catalogo' && (
           <>
@@ -836,8 +918,9 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
         {vistaAdmin === 'pedidos' && (
           <>
             <h2 className="sr-only">Gestión de pedidos</h2>
-        <section className="bg-admin-card rounded-2xl border border-admin-border p-4 sm:p-5 space-y-4 shadow-card">
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <section className="bg-admin-card rounded-2xl border border-admin-border p-4 sm:p-5 lg:p-4 space-y-3 shadow-card">
+          {/* Stats: compactos en desktop, grid en móvil */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 lg:gap-2">
             {[{ key: 'todos', label: 'Total', icon: ClipboardList, color: '#6b35b8', bg: '#f3e8ff' },
               ...ESTADOS_CON_CANCELADO.map(e => ({ key: e, label: e, ...ESTADO_META[e] }))
             ].map(({ key, label, icon: IconComponent, color, bg }) => {
@@ -846,30 +929,30 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
                 <button
                   key={key}
                   onClick={() => setFiltroEstado(key)}
-                  className={`group relative flex items-center gap-3 rounded-2xl p-4 text-left transition-all duration-200 active:scale-[0.98] border overflow-hidden
+                  className={`group relative flex items-center gap-3 lg:gap-2 rounded-2xl lg:rounded-xl p-4 lg:px-3 lg:py-2.5 text-left transition-all duration-200 active:scale-[0.98] border overflow-hidden
                               ${isActive ? 'border-transparent ring-2 ring-offset-2 shadow-card-hover' : 'border-admin-border bg-admin-card hover:border-admin-border-soft text-admin-text shadow-card'}`}
                   style={isActive ? { background: color, ringColor: color, '--tw-ring-color': color } : undefined}
                 >
                   {/* Accent bar */}
-                  {!isActive && <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-full" style={{ background: color }} />}
+                  {!isActive && <div className="absolute left-0 top-0 bottom-0 w-[3px] lg:w-[2px] rounded-full" style={{ background: color }} />}
                   {/* Icon circle */}
                   <div
-                    className="flex-shrink-0 w-10 h-10 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-colors"
+                    className="flex-shrink-0 w-10 h-10 sm:w-8 sm:h-8 lg:w-7 lg:h-7 rounded-full flex items-center justify-center transition-colors"
                     style={{ background: isActive ? 'rgba(255,255,255,0.2)' : bg }}
                   >
-                    <IconComponent size={18} style={{ color: isActive ? '#fff' : color }} />
+                    <IconComponent size={16} style={{ color: isActive ? '#fff' : color }} />
                   </div>
                   <div className="min-w-0">
-                    <p className={`font-body font-black text-2xl sm:text-xl leading-none tabular-nums ${isActive ? 'text-white' : ''}`} role="status">
+                    <p className={`font-body font-black text-2xl sm:text-xl lg:text-lg leading-none tabular-nums ${isActive ? 'text-white' : ''}`} role="status">
                       {contadores[key] ?? 0}
                     </p>
-                    <p className={`text-[10px] sm:text-xs font-body font-bold mt-0.5 truncate ${isActive ? 'text-white/70' : 'text-admin-muted'}`}>
+                    <p className={`text-[10px] sm:text-xs lg:text-[10px] font-body font-bold mt-0.5 truncate ${isActive ? 'text-white/70' : 'text-admin-muted'}`}>
                       {label}
                     </p>
                   </div>
                   {/* Live dot for "Por Surtir" */}
                   {key === 'Por Surtir' && (contadores[key] ?? 0) > 0 && (
-                    <span className={`absolute top-2 right-2 w-2.5 h-2.5 rounded-full animate-[pulseLive_2s_ease-in-out_infinite] border-2 border-white ${isActive ? 'bg-white' : 'bg-red-500'}`} />
+                    <span className={`absolute top-2 right-2 lg:top-1.5 lg:right-1.5 w-2.5 h-2.5 lg:w-2 lg:h-2 rounded-full animate-[pulseLive_2s_ease-in-out_infinite] border-2 lg:border border-white ${isActive ? 'bg-white' : 'bg-red-500'}`} />
                   )}
                 </button>
               );
@@ -883,7 +966,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
               value={busquedaInput}
               onChange={e => setBusquedaInput(e.target.value)}
               placeholder="Buscar por folio, nombre o teléfono..."
-              className="w-full bg-admin-input rounded-2xl pl-9 pr-9 py-3 text-sm font-body font-semibold
+              className="w-full bg-admin-input rounded-2xl lg:rounded-xl pl-9 pr-9 py-3 lg:py-2.5 text-sm font-body font-semibold
                          text-admin-text placeholder:text-admin-inactive outline-none border-2
                          border-admin-border focus:border-fiesta-magenta transition-colors"
             />
@@ -939,22 +1022,23 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
                     <TarjetaPedido
                       key={pedido.id}
                       pedido={pedido}
-                      onCambiarEstado={cambiarEstado}
+                      onCambiarEstado={cambiarEstadoYFiltrar}
                       actualizando={actualizando}
                       notificando={notificando === pedido.id}
                       onNotificar={notificar}
                       onCancelar={cancelarPedido}
-                      onPickingListo={(pedidoActualizado) =>
+                      onPickingListo={(pedidoActualizado) => {
                         setPedidos(prev => prev.map(p =>
                           p.id === pedidoActualizado.id ? pedidoActualizado : p
-                        ))
-                      }
+                        ));
+                        setFiltroEstado('Listo para Entrega');
+                      }}
                       esDesktop={false}
                     />
                   ))}
                 </div>
 
-                <div className="hidden lg:grid lg:grid-cols-[32%_68%] gap-4 h-[calc(100dvh-18rem)] min-h-[560px]">
+                <div className="hidden lg:grid lg:grid-cols-[340px_minmax(0,720px)] gap-4 h-[calc(100dvh-14rem)] min-h-[560px]">
                   <div className="bg-admin-card rounded-2xl border border-admin-border overflow-hidden flex flex-col shadow-card">
                     <div className="px-5 py-4 border-b border-admin-border">
                       <p className="font-body font-semibold text-sm text-admin-text">Pedidos</p>
@@ -993,25 +1077,26 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
                   </div>
 
                   <div className="bg-admin-card rounded-2xl border border-admin-border overflow-hidden flex flex-col shadow-card">
-                    <div className="px-5 py-4 border-b border-admin-border">
-                      <p className="font-body font-semibold text-sm text-admin-text">Detalle del pedido</p>
+                    <div className="px-6 py-4 border-b border-admin-border">
+                      <p className="font-body font-semibold text-base text-admin-text">Detalle del pedido</p>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4">
+                    <div className="flex-1 overflow-y-auto p-6">
                       {pedidoSeleccionado ? (
                         <TarjetaPedido
                           key={pedidoSeleccionado.id}
                           pedido={pedidoSeleccionado}
-                          onCambiarEstado={cambiarEstado}
+                          onCambiarEstado={cambiarEstadoYFiltrar}
                           actualizando={actualizando}
                           notificando={notificando === pedidoSeleccionado.id}
                           onNotificar={notificar}
                           onCancelar={cancelarPedido}
-                          onPickingListo={(pedidoActualizado) =>
+                          onPickingListo={(pedidoActualizado) => {
                             setPedidos(prev => prev.map(p =>
                               p.id === pedidoActualizado.id ? pedidoActualizado : p
-                            ))
-                          }
+                            ));
+                            setFiltroEstado('Listo para Entrega');
+                          }}
                           esDesktop={true}
                         />
                       ) : (

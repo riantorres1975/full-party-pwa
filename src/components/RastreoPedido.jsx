@@ -167,12 +167,35 @@ function TarjetaPedido({ pedido }) {
       {/* Lista de productos (colapsable) */}
       {expandido && (
         <div className="px-4 pb-4 space-y-2 border-t border-ink-100 pt-3 animate-fade-in">
-          {pedido.detalles_json.map((item, i) => (
-            <div key={i} className="flex justify-between text-xs font-body text-ink-700">
-              <span>{item.nombre} <span className="text-ink-400">×{item.cantidad}</span></span>
-              <span className="font-black">{SIMBOLO_MONEDA}{(item.precio * item.cantidad).toFixed(2)}</span>
-            </div>
-          ))}
+          {pedido.detalles_json.map((item, i) => {
+            const cantSurtida = Number(item.cantidad_surtida ?? item.cantidad) || 0;
+            const cantPedida = Number(item.cantidad) || 0;
+            const sinStock = cantSurtida === 0 && item.encontrado === false;
+            const parcial = cantSurtida > 0 && cantSurtida < cantPedida;
+            const subtotal = (Number(item.precio) || 0) * cantSurtida;
+
+            if (sinStock) {
+              return (
+                <div key={i} className="flex justify-between text-xs font-body text-ink-400 line-through">
+                  <span>{item.nombre} <span>×{cantPedida}</span></span>
+                  <span className="font-black">No disponible</span>
+                </div>
+              );
+            }
+
+            return (
+              <div key={i} className="flex justify-between text-xs font-body text-ink-700">
+                <span>
+                  {item.nombre}{' '}
+                  <span className="text-ink-400">
+                    ×{cantSurtida}
+                    {parcial && <span className="text-amber-600"> (pediste {cantPedida})</span>}
+                  </span>
+                </span>
+                <span className="font-black">{SIMBOLO_MONEDA}{subtotal.toFixed(2)}</span>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
