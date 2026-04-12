@@ -77,7 +77,9 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
 
   // ── Fetch ──────────────────────────────────────────────────────
   const fetchPedidos = useCallback(async () => {
-    setLoading(true);
+    // Only show loading skeleton on initial load (no data yet).
+    // Background refreshes (e.g. returning from another tab) keep showing existing data.
+    setPedidos(prev => { if (prev.length === 0) setLoading(true); return prev; });
     setError('');
     const { data, error: err } = await guardedQuery((client) =>
       client
