@@ -6,7 +6,6 @@ import { SIMBOLO_MONEDA, DIRECCION_TIENDA, HORARIO_TIENDA, MAPS_URL_TIENDA } fro
 import { usePedido } from '../hooks/usePedido';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useLanguage } from '../hooks/useLanguage';
-import { isPushSupported, subscribeToPush } from '../utils/pushSubscription';
 
 // Session rate limit (max orders per time window)
 const MAX_ORDERS_PER_SESSION = 5;
@@ -49,7 +48,6 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
   const [errors, setErrors] = useState({});
   const [honeypot,  setHoneypot]  = useState('');
   const [pendingOrder, setPendingOrder] = useState(null);
-  const [pushState, setPushState] = useState('idle'); // idle | subscribing | subscribed | denied | unsupported
   const panelRef = useRef(null);
   useFocusTrap(panelRef, isOpen);
 
@@ -66,7 +64,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
 
   useEffect(() => {
     if (!isOpen) {
-      const t = setTimeout(() => { setPendingOrder(null); setPushState('idle'); }, 600);
+      const t = setTimeout(() => setPendingOrder(null), 600);
       return () => clearTimeout(t);
     }
   }, [isOpen]);
@@ -126,46 +124,39 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
       precio: obtenerPrecioAplicable(item, item.cantidad),
     }));
 
-    const orderData = {
+    setPendingOrder({
       folio: null,
+      url: null,
       itemsSnapshot: itemsWithAppliedPrice,
       total: calculatedTotal,
       tipoEntrega: deliveryType,
       nombre: customerName.trim(),
       telefono: cleanedPhone,
       direccion: address,
-    };
-
-    // Guardar en Supabase antes de mostrar la pantalla de confirmación
-    // para tener el folio disponible y poder suscribir push notifications
-    const { folio, error } = await guardarPedido({
-      nombre: orderData.nombre,
-      telefono: orderData.telefono,
-      tipoEntrega: orderData.tipoEntrega,
-      direccion: orderData.direccion,
-      total: orderData.total,
-      items: itemsWithAppliedPrice,
     });
-
-    if (error) console.warn('[Pedido] No se pudo guardar en Supabase:', error);
-
-    setPendingOrder({ ...orderData, folio: folio || null });
   };
 
   const handleOpenWhatsApp = async () => {
     if (!pendingOrder) return;
 
-    const { itemsSnapshot, total, tipoEntrega: type, nombre: name, telefono: phoneNumber, direccion: customerAddress, folio } = pendingOrder;
+    const { itemsSnapshot, total, tipoEntrega: type, nombre: name, telefono: phoneNumber, direccion: customerAddress } = pendingOrder;
 
-    // Build WhatsApp URL with order reference
+    // 1) Persist order in Supabase
+    const { folio, error } = await guardarPedido({
+      nombre: name, telefono: phoneNumber, tipoEntrega: type, direccion: customerAddress, total, items: itemsSnapshot,
+    });
+
+    if (error) console.warn('[Pedido] No se pudo guardar en Supabase:', error);
+
+    // 2) Build WhatsApp URL with order reference
     const url = generarMensajeWhatsApp(itemsSnapshot, total, {
       tipo: type, nombre: name, telefono: phoneNumber, direccion: customerAddress, folio,
     });
 
-    // Open WhatsApp
+    // 3) Open WhatsApp
     window.open(url, '_blank', 'noopener,noreferrer');
 
-    // Reset local state
+    // 4) Reset local state
     onLimpiar();
     setCustomerName(''); setPhone(''); setAddress('');
     setDeliveryType('tienda');
@@ -266,35 +257,6 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                   </button>
                 </div>
               )}
-              {/* Push notification prompt */}
-              {isPushSupported() && pushState !== 'subscribed' && pushState !== 'denied' && pushState !== 'unsupported' && pendingOrder.folio && (
-                <div className="w-full rounded-2xl p-4 text-center animate-fade-in"
-                     style={{ background: 'linear-gradient(135deg, #fef3c7, #fde68a)', border: '2px solid #fbbf2444' }}>
-                  <p className="text-2xl mb-1" aria-hidden="true">🔔</p>
-                  <p className="font-body font-black text-sm text-amber-900">{t('push.promptTitle')}</p>
-                  <p className="font-body text-xs text-amber-700 mt-0.5 mb-3">{t('push.promptDesc')}</p>
-                  <button
-                    onClick={async () => {
-                      setPushState('subscribing');
-                      const result = await subscribeToPush(pendingOrder.folio, cleanedPhone);
-                      setPushState(result.ok ? 'subscribed' : result.reason === 'denied' ? 'denied' : 'unsupported');
-                    }}
-                    disabled={pushState === 'subscribing'}
-                    className="px-5 py-2 rounded-xl text-white font-body font-black text-sm
-                               transition-all active:scale-95 disabled:opacity-60"
-                    style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', boxShadow: '0 4px 12px #f59e0b44' }}
-                  >
-                    {pushState === 'subscribing' ? t('push.subscribing') : t('push.enable')}
-                  </button>
-                </div>
-              )}
-              {pushState === 'subscribed' && (
-                <div className="w-full rounded-2xl p-3 text-center animate-fade-in"
-                     style={{ background: '#dcfce7', border: '2px solid #22c55e33' }}>
-                  <p className="font-body font-black text-sm text-green-800">✅ {t('push.subscribed')}</p>
-                </div>
-              )}
-
               <div className="w-full rounded-2xl p-4 space-y-2"
                    style={{ background: 'var(--surface-section-gradient)', border: '2px solid var(--border-default)' }}>
                 <div className="flex justify-between text-sm">
@@ -556,15 +518,20 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
               <>
                 <button
                   onClick={handleOpenWhatsApp}
+                  disabled={guardando}
                   className="w-full flex items-center justify-center gap-2.5 text-white
                              font-body font-black text-base py-4 rounded-2xl
-                             transition-all duration-300 active:scale-[0.98]"
-                  style={{ background: 'linear-gradient(135deg, #25D366, #1db954)', boxShadow: '0 4px 20px #25D36655' }}
+                             transition-all duration-300 active:scale-[0.98]
+                             disabled:cursor-not-allowed"
+                  style={!guardando
+                    ? { background: 'linear-gradient(135deg, #25D366, #1db954)', boxShadow: '0 4px 20px #25D36655' }
+                    : { background: 'linear-gradient(135deg, #a8d5b5, #7cb89a)', boxShadow: 'none', opacity: 0.7 }
+                  }
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                   </svg>
-                  {t('cart.sendOrder')}
+                  {guardando ? t('cart.savingOrder') : t('cart.sendOrder')}
                 </button>
                 <button
                     onClick={() => setPendingOrder(null)}
@@ -593,25 +560,22 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
 
                 <button
                   onClick={handleConfirm}
-                  disabled={!isFormReady || guardando}
+                  disabled={!isFormReady}
                   className="w-full flex items-center justify-center gap-2.5 text-white
                              font-body font-black text-base py-4 rounded-2xl
                              transition-all duration-300 active:scale-[0.98]
                              disabled:cursor-not-allowed"
-                  style={isFormReady && !guardando
+                  style={isFormReady
                     ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
                         boxShadow: '0 4px 20px #ff3dac44' }
                     : { background: 'linear-gradient(135deg, #d4a0c8, #b49ad4)',
                         boxShadow: 'none', opacity: 0.6 }
                   }
                 >
-                  {guardando
-                    ? <div className="w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-                    : <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                      </svg>
-                  }
-                  {guardando ? t('cart.savingOrder') : t('cart.confirmOrder')}
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                  </svg>
+                  {t('cart.confirmOrder')}
                 </button>
               </>
             )}
