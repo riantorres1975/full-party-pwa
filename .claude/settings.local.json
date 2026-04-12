@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(powershell.exe:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(where supabase:*)",
+      "Bash(npx which:*)",
+      "Bash(command -v supabase)",
+      "Bash(npx supabase:*)"
     ]
   }
 }
