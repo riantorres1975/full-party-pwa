@@ -3,8 +3,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 export const NUMERO_WHATSAPP   = import.meta.env.VITE_WHATSAPP_NUMBER;
 export const NOMBRE_NEGOCIO    = import.meta.env.VITE_NOMBRE_NEGOCIO;
-export const MONEDA            = import.meta.env.VITE_MONEDA;
-export const SIMBOLO_MONEDA    = import.meta.env.VITE_SIMBOLO_MONEDA;
+// Moneda y símbolo se derivan del código de moneda
+const MONEDAS = { MXN: '$', USD: '$', EUR: '€', GBP: '£', COP: '$', ARS: '$', CLP: '$', PEN: 'S/', BRL: 'R$' };
+export const MONEDA            = import.meta.env.VITE_MONEDA || 'MXN';
+export const SIMBOLO_MONEDA    = MONEDAS[MONEDA] || '$';
 export const DIRECCION_TIENDA  = import.meta.env.VITE_DIRECCION_TIENDA;
 export const HORARIO_TIENDA    = import.meta.env.VITE_HORARIO_TIENDA;
 export const MAPS_URL_TIENDA   = import.meta.env.VITE_MAPS_URL_TIENDA;
