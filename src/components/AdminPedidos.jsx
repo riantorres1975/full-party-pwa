@@ -749,7 +749,8 @@ function useAdminVistaInicial() {
 
   const setVistaYHash = (v) => {
     setVista(v);
-    window.location.hash = v === 'catalogo' ? '#/admin/catalogo' : '#/admin';
+    // replaceState actualiza la URL sin disparar hashchange → evita re-render del router
+    history.replaceState(null, '', v === 'catalogo' ? '#/admin/catalogo' : '#/admin');
   };
 
   return [vista, setVistaYHash];
@@ -954,8 +955,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
       <main id="admin-main" className="flex-1 min-w-0 lg:h-screen lg:overflow-y-auto">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-4 lg:p-5 lg:max-w-[1200px]">
 
-        {vistaAdmin === 'catalogo' && (
-          <>
+        <div style={{ display: vistaAdmin === 'catalogo' ? undefined : 'none' }}>
             <h2 className="sr-only">{t('admin.catalog.title')}</h2>
             <Suspense fallback={
               <div className="flex items-center justify-center py-16 gap-3">
@@ -965,10 +965,9 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
             }>
               <AdminCatalogo />
             </Suspense>
-          </>
-        )}
+        </div>
 
-        {vistaAdmin === 'pedidos' && (
+        <div style={{ display: vistaAdmin === 'pedidos' ? undefined : 'none' }}>
           <>
             <h2 className="sr-only">{t('admin.orders.management')}</h2>
         <section className="bg-admin-card rounded-2xl border border-admin-border p-4 sm:p-5 lg:p-4 space-y-3 shadow-card">
@@ -1168,7 +1167,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
           </>
         )}
           </>
-        )}
+        </div>
       </div>
       {/* Mobile bottom padding for BottomNav */}
       <div className="h-16 lg:hidden" />
