@@ -94,24 +94,44 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
 
   // ── Realtime ───────────────────────────────────────────────────
   useEffect(() => {
-    const channel = supabase
-      .channel('pedidos-admin-rt')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pedidos' },
-        ({ new: nuevo }) => {
-          setPedidos(prev => (prev.some(p => p.id === nuevo.id) ? prev : [nuevo, ...prev]));
-          showNewOrderNotification(nuevo);
-        })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pedidos' },
-        ({ new: actualizado }) => setPedidos(prev => prev.map(p => p.id === actualizado.id ? actualizado : p)))
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'pedidos' },
-        ({ old: eliminado }) => setPedidos(prev => prev.filter(p => p.id !== eliminado.id)))
-      .subscribe((status) => {
-        if (status === 'CHANNEL_ERROR') {
-          console.warn('[Realtime] Error en canal de pedidos — verifica que Replication esté activo en Supabase');
-        }
-      });
-    return () => supabase.removeChannel(channel);
-  }, [showNewOrderNotification]);
+    let channel;
+
+    const suscribir = () => {
+      channel = supabase
+        .channel('pedidos-admin-rt')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pedidos' },
+          ({ new: nuevo }) => {
+            setPedidos(prev => (prev.some(p => p.id === nuevo.id) ? prev : [nuevo, ...prev]));
+            showNewOrderNotification(nuevo);
+          })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pedidos' },
+          ({ new: actualizado }) => setPedidos(prev => prev.map(p => p.id === actualizado.id ? actualizado : p)))
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'pedidos' },
+          ({ old: eliminado }) => setPedidos(prev => prev.filter(p => p.id !== eliminado.id)))
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR') {
+            console.warn('[Realtime] Error en canal de pedidos — verifica que Replication esté activo en Supabase');
+          }
+        });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Reconectar canal y refrescar datos al volver desde segundo plano
+        if (channel) supabase.removeChannel(channel);
+        suscribir();
+        fetchPedidos();
+      }
+    };
+
+    suscribir();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [showNewOrderNotification, fetchPedidos]);
 
   // ── Filtrado (memoizado) ──────────────────────────────────────
   const pedidosFiltrados = useMemo(() => {
