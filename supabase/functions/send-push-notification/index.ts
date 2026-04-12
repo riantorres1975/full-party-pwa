@@ -103,7 +103,11 @@ Deno.serve(async (req) => {
         };
 
         try {
-          await webpush.sendNotification(pushSubscription, payload);
+          await webpush.sendNotification(pushSubscription, payload, {
+            TTL: 86400,
+            urgency: 'high',
+            topic: folio,
+          });
           sent++;
         } catch (err: any) {
           console.error(`[Push] Send failed (${err.statusCode}):`, err.body || err.message);

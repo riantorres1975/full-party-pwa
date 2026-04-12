@@ -1,5 +1,5 @@
 // Service Worker — Catálogo Digital PWA
-const CACHE_NAME = 'catalogo-v7';
+const CACHE_NAME = 'catalogo-v8';
 const IMG_CACHE  = 'catalogo-img-v2';
 const MAX_IMG_CACHE = 150; // max images to keep cached
 
@@ -159,16 +159,27 @@ self.addEventListener('fetch', (event) => {
 
 // ── Push notifications (Web Push API) ─────────────────────────────────────
 self.addEventListener('push', (event) => {
-  const data = event.data?.json() || {};
-  event.waitUntil(
-    self.registration.showNotification(data.title || 'Full Party', {
-      body: data.body || '',
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
-      data: { url: data.url || '/' },
-      vibrate: [200, 120, 200],
-    })
-  );
+  let data = {};
+  try {
+    data = event.data?.json() || {};
+  } catch (e) {
+    // If payload can't be parsed, show generic notification
+    data = { title: 'Full Party', body: 'Tienes una actualización de tu pedido' };
+  }
+
+  const title = data.title || 'Full Party';
+  const options = {
+    body: data.body || '',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    data: { url: data.url || '/' },
+    vibrate: [200, 120, 200],
+    requireInteraction: true,
+    renotify: true,
+    tag: 'order-' + (data.folio || Date.now()),
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener('notificationclick', (event) => {
