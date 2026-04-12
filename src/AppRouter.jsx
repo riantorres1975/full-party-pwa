@@ -1,5 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import App         from './App';
+import LandingPage from './pages/LandingPage';
 import LoginAdmin  from './components/LoginAdmin';
 import { useAuth } from './hooks/useAuth';
 import { useTheme } from './hooks/useTheme';
@@ -31,19 +32,21 @@ export default function AppRouter() {
   const hash = useHashRoute();
   const { session, user, cargandoSesion, loading, error, signIn, signOut } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
-  const esRutaAdmin = hash.startsWith('#/admin');
+  const esRutaAdmin    = hash.startsWith('#/admin');
+  const esRutaCatalogo = hash.startsWith('#/catalogo');
 
-  // Confetti de fondo solo en el catálogo público
+  // Clase 'catalogo' solo en la ruta del catálogo público
   useEffect(() => {
-    document.body.classList.toggle('catalogo', !esRutaAdmin);
+    document.body.classList.toggle('catalogo', esRutaCatalogo);
     return () => document.body.classList.remove('catalogo');
-  }, [esRutaAdmin]);
+  }, [esRutaCatalogo]);
 
   return (
     <LanguageProvider>
       <AppRouterInner
         cargandoSesion={cargandoSesion}
         esRutaAdmin={esRutaAdmin}
+        esRutaCatalogo={esRutaCatalogo}
         session={session}
         user={user}
         loading={loading}
@@ -57,7 +60,7 @@ export default function AppRouter() {
   );
 }
 
-function AppRouterInner({ cargandoSesion, esRutaAdmin, session, user, loading, error, signIn, signOut, isDarkMode, toggleTheme }) {
+function AppRouterInner({ cargandoSesion, esRutaAdmin, esRutaCatalogo, session, user, loading, error, signIn, signOut, isDarkMode, toggleTheme }) {
   const { t } = useLanguage();
 
   // Spinner mientras Supabase verifica la sesión
@@ -115,10 +118,15 @@ function AppRouterInner({ cargandoSesion, esRutaAdmin, session, user, loading, e
     );
   }
 
-  // Ruta pública
-  return (
-    <ToastProvider>
-      <App temaOscuro={isDarkMode} onToggleTema={toggleTheme} isAdmin={!!session} />
-    </ToastProvider>
-  );
+  // Ruta catálogo
+  if (esRutaCatalogo) {
+    return (
+      <ToastProvider>
+        <App temaOscuro={isDarkMode} onToggleTema={toggleTheme} isAdmin={!!session} />
+      </ToastProvider>
+    );
+  }
+
+  // Ruta raíz → Landing Page
+  return <LandingPage />;
 }
