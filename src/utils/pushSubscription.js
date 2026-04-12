@@ -13,6 +13,32 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
+// DEBUG: read push event logs from IndexedDB (written by SW)
+export async function getPushDebugLogs() {
+  return new Promise((resolve) => {
+    const open = indexedDB.open('push-debug', 1);
+    open.onupgradeneeded = () => open.result.createObjectStore('logs', { autoIncrement: true });
+    open.onsuccess = () => {
+      try {
+        const tx = open.result.transaction('logs', 'readonly');
+        const req = tx.objectStore('logs').getAll();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve([]);
+      } catch { resolve([]); }
+    };
+    open.onerror = () => resolve([]);
+  });
+}
+
+// Expose to window for easy mobile debugging
+if (typeof window !== 'undefined') {
+  window._pushDebugLogs = async () => {
+    const logs = await getPushDebugLogs();
+    alert('[Push Debug Logs]\n' + (logs.length ? JSON.stringify(logs, null, 2) : 'No push events received by SW'));
+    return logs;
+  };
+}
+
 export function isPushSupported() {
   return (
     'serviceWorker' in navigator &&
