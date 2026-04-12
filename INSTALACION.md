@@ -81,8 +81,7 @@ VITE_HORARIO_TIENDA=         ← horario de atención (ej: Lun–Sáb 9am–7pm)
 VITE_MAPS_URL_TIENDA=        ← link de Google Maps a tu local
 VITE_SITE_URL=               ← URL donde quedará tu tienda (la sabrás en el Paso 5)
 VITE_ADMIN_EMAILS=           ← email del administrador (el que creaste en Supabase)
-VITE_MONEDA=                 ← código de moneda (ej: MXN)
-VITE_SIMBOLO_MONEDA=         ← símbolo de moneda (ej: $)
+VITE_MONEDA=                 ← código de moneda (MXN, USD, EUR, etc.)
 ```
 
 ---
