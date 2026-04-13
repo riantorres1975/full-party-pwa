@@ -94,7 +94,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
               >
                 {previewSrc ? (
                   <>
-                    <img src={previewSrc} alt="Vista previa" className="w-full h-full object-cover absolute inset-0 rounded-2xl" />
+                    <img src={previewSrc} alt="Vista previa" className="w-full h-full object-contain absolute inset-0 rounded-2xl" />
                     <button 
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setArchivo(null); setImagenUrl(''); }}
