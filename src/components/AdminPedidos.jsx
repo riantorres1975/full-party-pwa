@@ -826,10 +826,10 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
           <div className="flex items-center justify-between gap-2 min-w-0 lg:flex-col lg:items-start lg:gap-0 lg:p-5 lg:pb-4 lg:overflow-hidden">
             <div className="flex items-center gap-3 min-w-0 lg:w-full">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-fiesta-magenta to-fiesta-cyan flex items-center justify-center shrink-0 text-white font-display text-sm shadow-card">
-                FP
+                {(import.meta.env.VITE_NOMBRE_NEGOCIO || 'MT').slice(0, 2).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <h1 className="font-display text-base sm:text-lg text-admin-text leading-tight">Full Party</h1>
+                <h1 className="font-display text-base sm:text-lg text-admin-text leading-tight">{import.meta.env.VITE_NOMBRE_NEGOCIO || 'Mi Tienda'}</h1>
                 <p className="text-[10px] sm:text-xs font-body text-admin-muted truncate mt-0.5 max-w-full" title={user?.email ?? ''}>
                   {user?.email}
                 </p>

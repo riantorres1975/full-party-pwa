@@ -140,7 +140,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
         <div className="fp-intro-overlay">
           <div className="fp-intro-glow" />
           <div className="fp-intro-card">
-            <img src="/icons/icon-512.png" alt="Full Party" className="fp-intro-logo" />
+            <img src="/icons/icon-512.png" alt={import.meta.env.VITE_NOMBRE_NEGOCIO || 'Mi Tienda'} className="fp-intro-logo" />
             <h2 className="fp-intro-title">{t('intro.title')}</h2>
             <p className="fp-intro-subtitle">{t('intro.subtitle')}</p>
           </div>

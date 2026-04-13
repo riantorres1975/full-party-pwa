@@ -14,11 +14,12 @@ function TikTokIcon({ size = 24 }) {
   );
 }
 
+// Configura aquí los enlaces a tus redes sociales
 const REDES = [
   {
     id:          'facebook',
     label:       'Facebook',
-    href:        'https://www.facebook.com/profile.php?id=100068298698109',
+    href:        'https://www.facebook.com/tu-pagina',
     hoverBg:     '#e8f0fe',
     hoverColor:  '#1877f2',
     hoverShadow: '0 4px 16px #1877f233',
@@ -27,7 +28,7 @@ const REDES = [
   {
     id:          'tiktok',
     label:       'TikTok',
-    href:        'https://www.tiktok.com/@fullpartyuruapan',
+    href:        'https://www.tiktok.com/@tu-usuario',
     hoverBg:     '#ebebeb',
     hoverColor:  '#010101',
     hoverShadow: '0 4px 16px #00000025',

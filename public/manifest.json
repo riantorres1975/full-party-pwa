@@ -1,6 +1,6 @@
 {
-  "name": "Full PartyApp",
-  "short_name": "Full PartyApp",
+  "name": "Mi Tienda App",
+  "short_name": "Mi Tienda",
   "description": "Ordena tus productos favoritos desde tu celular",
   "start_url": "/",
   "display": "standalone",

@@ -183,7 +183,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                     value={nombre}
                     onChange={e => setNombre(e.target.value)}
                     onBlur={() => handleBlur('nombre')}
-                    placeholder="Ej. Set de globos..."
+                    placeholder="Ej. Nombre del producto..."
                     required
                     maxLength={200}
                     className={`w-full bg-ink-50 border rounded-lg px-3 py-2 text-sm font-medium text-ink-900 focus:bg-white focus:border-ink-400 focus:outline-none focus:ring-1 focus:ring-ink-200 transition-all shadow-sm ${touched.nombre && fieldErrors.nombre ? 'border-red-400' : 'border-transparent'}`}

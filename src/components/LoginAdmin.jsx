@@ -60,9 +60,9 @@ export default function LoginAdmin({ onLogin, loading, error }) {
             className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg"
             style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}
           >
-            <span className="text-white font-display text-xl tracking-wide">FP</span>
+            <span className="text-white font-display text-xl tracking-wide">AD</span>
           </div>
-          <h1 className="font-display text-2xl text-white mb-1 tracking-wide">Full Party</h1>
+          <h1 className="font-display text-2xl text-white mb-1 tracking-wide">{import.meta.env.VITE_NOMBRE_NEGOCIO || 'Mi Tienda'}</h1>
           <div className="flex items-center gap-1.5 mt-2">
             <ShieldCheck size={13} className="text-purple-400" />
             <p className="text-xs font-body text-purple-400">{t('login.adminPanel')}</p>
