@@ -443,10 +443,10 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                       onChange={(e) => setCustomerName(capitalizeName(e.target.value))}
                       placeholder={t('form.namePlaceholder')}
                       className={INPUT_CLASS}
-                      style={errors.nombre ? { ...inputDynStyle, borderColor: '#2563eb' } : inputDynStyle}
+                      style={errors.nombre ? { ...inputDynStyle, borderColor: '#ef4444' } : inputDynStyle}
                     />
                     {errors.nombre && (
-                      <p className="text-[11px] text-fiesta-magenta font-body font-bold mt-1 pl-1">{errors.nombre}</p>
+                      <p className="text-[11px] text-red-500 font-body font-bold mt-1 pl-1">{errors.nombre}</p>
                     )}
                   </div>
 
@@ -460,10 +460,10 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                       placeholder={t('form.phonePlaceholder')}
                       maxLength={10}
                       className={INPUT_CLASS}
-                      style={errors.telefono ? { ...inputDynStyle, borderColor: '#2563eb' } : isPhoneValid ? { ...inputDynStyle, borderColor: '#25D366' } : inputDynStyle}
+                      style={errors.telefono ? { ...inputDynStyle, borderColor: '#ef4444' } : isPhoneValid ? { ...inputDynStyle, borderColor: '#25D366' } : inputDynStyle}
                     />
                     <p className={`text-[11px] font-body font-bold mt-1 pl-1 transition-colors
-                                  ${errors.telefono ? 'text-fiesta-magenta' : isPhoneValid ? 'text-green-500' : 'text-ink-300'}`}>
+                                  ${errors.telefono ? 'text-red-500' : isPhoneValid ? 'text-green-500' : 'text-ink-300'}`}>
                       {errors.telefono
                         ? errors.telefono
                         : isPhoneValid
@@ -496,10 +496,10 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                         placeholder={t('form.addressPlaceholder')}
                         rows={2}
                         className={INPUT_CLASS + ' resize-none'}
-                        style={errors.direccion ? { ...inputDynStyle, borderColor: '#2563eb' } : inputDynStyle}
+                        style={errors.direccion ? { ...inputDynStyle, borderColor: '#ef4444' } : inputDynStyle}
                       />
                       {errors.direccion && (
-                        <p className="text-[11px] text-fiesta-magenta font-body font-bold mt-1 pl-1">{errors.direccion}</p>
+                        <p className="text-[11px] text-red-500 font-body font-bold mt-1 pl-1">{errors.direccion}</p>
                       )}
                     </div>
                   )}

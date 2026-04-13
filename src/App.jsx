@@ -184,7 +184,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                   className="flex-shrink-0 text-[11px] font-body font-black px-3 py-1.5 rounded-full
                              transition-all duration-200 active:scale-95 whitespace-nowrap"
                   style={activeFilters.categorias.length === 0
-                    ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)', color: 'white', boxShadow: '0 2px 8px #ff3dac44' }
+                    ? { background: 'linear-gradient(135deg, #2563eb, #6366f1)', color: 'white', boxShadow: '0 2px 8px #2563eb33' }
                     : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-soft)' }
                   }
                 >
@@ -197,7 +197,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     className="flex-shrink-0 text-[11px] font-body font-black px-3 py-1.5 rounded-full
                                transition-all duration-200 active:scale-95 whitespace-nowrap"
                     style={singleActiveCategory === cat.id
-                      ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)', color: 'white', boxShadow: '0 2px 8px #ff3dac44' }
+                      ? { background: 'linear-gradient(135deg, #2563eb, #6366f1)', color: 'white', boxShadow: '0 2px 8px #2563eb33' }
                       : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-soft)' }
                     }
                   >
@@ -257,7 +257,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     <button
                       onClick={() => setIsTrackingOpen(true)}
                       className="whitespace-nowrap ml-auto lg:hidden flex items-center gap-1 transition-colors"
-                      style={{ color: 'var(--color-fiesta-purple, #a855f7)' }}
+                      style={{ color: 'var(--text-accent, #2563eb)' }}
                     >
                       {t('trust.trackOrder')}
                     </button>
@@ -271,14 +271,14 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     <div className="flex flex-col items-center justify-center py-20 px-8 text-center gap-4">
                       <div className="text-5xl animate-float">😵</div>
                       <div className="bg-white rounded-3xl p-6 max-w-sm w-full"
-                           style={{ border: '2px solid var(--border-default)', boxShadow: '0 4px 20px #ff3dac15' }}>
+                           style={{ border: '2px solid var(--border-default)', boxShadow: '0 4px 20px #2563eb15' }}>
                         <p className="font-display text-lg text-ink-800 mb-1">{t('error.title')}</p>
                         <p className="text-xs font-body text-ink-400 mb-4 leading-relaxed">{error}</p>
                         <button
                           onClick={refetch}
                           className="w-full py-3 rounded-2xl font-body font-black text-sm text-white
                                      transition-all duration-200 active:scale-95"
-                          style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)', boxShadow: '0 4px 14px #ff3dac44' }}
+                          style={{ background: 'linear-gradient(135deg, #2563eb, #6366f1)', boxShadow: '0 4px 14px #2563eb44' }}
                         >
                           {t('error.retry')}
                         </button>

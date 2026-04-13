@@ -13,7 +13,7 @@ export function generarMensajeWhatsApp(items, total, entrega) {
 
   // 1. Diccionario de emojis con Code Points para evitar errores en Desktop
   const EMOJI = {
-    fiesta: String.fromCodePoint(0x1F389),
+    pedido: String.fromCodePoint(0x1F4CB),
     calendario: String.fromCodePoint(0x1F4C5),
     folio: String.fromCodePoint(0x1F4CB),
     lupa: String.fromCodePoint(0x1F50E),
@@ -32,7 +32,7 @@ export function generarMensajeWhatsApp(items, total, entrega) {
 
   const sep = '-'.repeat(28);
 
-  let mensaje = `${EMOJI.fiesta} *Nuevo Pedido - ${NOMBRE_NEGOCIO}*\n`;
+  let mensaje = `${EMOJI.pedido} *Nuevo Pedido - ${NOMBRE_NEGOCIO}*\n`;
   mensaje += `${EMOJI.calendario} ${fecha}\n`;
 
   // Folio — solo si Supabase lo generó correctamente
@@ -91,11 +91,8 @@ export function notificarCliente(pedido, articulosSurtidos = null) {
     cruz: String.fromCodePoint(0x274C),
     alerta: String.fromCodePoint(0x26A0),
     dinero: String.fromCodePoint(0x1F4B0),
-    fiesta: String.fromCodePoint(0x1F389),
-    bolsa: String.fromCodePoint(0x1F6CD),
-    mono: String.fromCodePoint(0x1F380),
-    globo: String.fromCodePoint(0x1F388),
-    festejo: String.fromCodePoint(0x1F973),
+    ok: String.fromCodePoint(0x1F44D),
+    reloj: String.fromCodePoint(0x23F0),
   };
 
   let mensaje = '';
@@ -131,21 +128,21 @@ export function notificarCliente(pedido, articulosSurtidos = null) {
       `*Artículos incluidos:*\n${listaSurtidos}\n` +
       infoFaltantes +
       `\n${EMOJI.dinero} *Tu total a pagar es: ${SIMBOLO_MONEDA}${nuevoTotal.toFixed(2)}*\n\n` +
-      `¡Nos vemos pronto! ${EMOJI.fiesta}`;
+      `¡Gracias por tu compra! ${EMOJI.ok}`;
 
   } else {
     switch (estado) {
       case 'Por Surtir':
-        mensaje = `¡Hola ${nombre}! ${EMOJI.fiesta} Recibimos tu pedido *${folio}* y ya está en nuestro sistema. En breve comenzamos a prepararlo. ¡Gracias por tu compra! ${EMOJI.bolsa}`;
+        mensaje = `¡Hola ${nombre}! ${EMOJI.check} Recibimos tu pedido *${folio}* y ya está en nuestro sistema. En breve comenzamos a prepararlo. ¡Gracias por tu compra!`;
         break;
       case 'Armando Pedido':
-        mensaje = `¡Hola ${nombre}! ${EMOJI.mono} Te confirmamos que ya estamos preparando tu pedido *${folio}*. En cuanto esté listo te avisamos. ¡Pronto la fiesta! ${EMOJI.globo}`;
+        mensaje = `¡Hola ${nombre}! ${EMOJI.reloj} Tu pedido *${folio}* está siendo preparado. En cuanto esté listo te avisamos.`;
         break;
       case 'Listo para Entrega':
-        mensaje = `¡Buenas noticias ${nombre}! ${EMOJI.fiesta} Tu pedido *${folio}* ya está listo. Puedes pasar a recogerlo o en breve saldrá a domicilio. ¡A celebrar! ${EMOJI.festejo}`;
+        mensaje = `¡Hola ${nombre}! ${EMOJI.caja} Tu pedido *${folio}* ya está listo. Puedes pasar a recogerlo o en breve saldrá a domicilio.`;
         break;
       case 'Cancelado':
-        mensaje = `Hola ${nombre}, lamentamos informarte que tu pedido *${folio}* ha sido cancelado. ${EMOJI.cruz}\n\nSi tienes dudas, no dudes en escribirnos. ¡Esperamos verte pronto! ${EMOJI.globo}`;
+        mensaje = `Hola ${nombre}, lamentamos informarte que tu pedido *${folio}* ha sido cancelado. ${EMOJI.cruz}\n\nSi tienes dudas, no dudes en escribirnos.`;
         break;
       default:
         mensaje = `Hola ${nombre}, hay una actualización en tu pedido *${folio}*. Estado actual: ${estado}.`;

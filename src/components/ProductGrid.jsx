@@ -16,7 +16,7 @@ export default function ProductGrid({ productos, getCantidad, onAgregar, onReduc
   if (productos.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
-        <div className="text-5xl mb-4 animate-float">🎈</div>
+        <div className="text-5xl mb-4 animate-float">🔍</div>
         <h3 className="font-display text-2xl text-ink-500 mb-1">{t('grid.noResults')}</h3>
         <p className="text-sm text-ink-400 font-body">
           {t('grid.noResultsDesc')}
@@ -59,7 +59,7 @@ export default function ProductGrid({ productos, getCantidad, onAgregar, onReduc
 
         {!cargando && !hayMas && productos.length > 12 && (
           <div className="flex flex-col items-center gap-1 py-5">
-            <span className="text-lg">🎉</span>
+            <span className="text-lg">✅</span>
             <p className="text-xs font-body font-bold text-ink-300">
               {t('grid.ofProducts', { shown: productos.length, total: productos.length })}
             </p>

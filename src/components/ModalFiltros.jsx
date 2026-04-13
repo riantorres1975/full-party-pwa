@@ -17,7 +17,7 @@ function BuscadorSeccion({ value, onChange, placeholder }) {
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         className="w-full pl-8 pr-3 py-1.5 text-xs font-body rounded-lg outline-none transition-all
-                   border focus:border-purple-400"
+                   border focus:border-blue-500"
         style={{
           background: 'var(--surface-input)',
           color: 'var(--text-primary)',
@@ -43,7 +43,7 @@ function Seccion({ titulo, emoji, children, defaultOpen = true, count, searchabl
         <span className="flex items-center gap-1.5">
           {emoji} {titulo}
           {count > 0 && (
-            <span className="text-[10px] font-body font-black bg-purple-500 text-white
+            <span className="text-[10px] font-body font-black bg-blue-600 text-white
                              min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
               {count}
             </span>

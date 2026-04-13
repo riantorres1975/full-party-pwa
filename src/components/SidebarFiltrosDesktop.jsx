@@ -16,7 +16,7 @@ function BuscadorSeccion({ value, onChange, placeholder }) {
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         className="w-full pl-9 pr-2.5 py-2 text-xs font-body rounded-xl outline-none transition-all
-                   border focus:border-purple-400"
+                   border focus:border-blue-500"
         style={{
           background: 'var(--surface-input)',
           color: 'var(--text-primary)',
@@ -96,14 +96,14 @@ function SeccionFiltro({ titulo, abiertaInicial = true, children, count, searcha
         <span className="text-sm font-body font-black text-ink-700 flex items-center gap-1.5">
           {titulo}
           {count > 0 && (
-            <span className="text-[9px] font-body font-black bg-purple-500 text-white
+            <span className="text-[9px] font-body font-black bg-blue-600 text-white
                              min-w-[16px] h-4 flex items-center justify-center rounded-full px-1">
               {count}
             </span>
           )}
         </span>
         <svg
-          className="w-4 h-4 text-purple-500 transition-transform duration-200"
+          className="w-4 h-4 text-ink-400 transition-transform duration-200"
           style={{ transform: abierta ? 'rotate(180deg)' : 'rotate(0deg)' }}
           fill="none"
           viewBox="0 0 24 24"

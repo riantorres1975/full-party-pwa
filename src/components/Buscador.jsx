@@ -28,7 +28,7 @@ export default function Buscador({ busqueda, setBusqueda, categoriaActiva, setCa
         {busqueda && (
           <button
             onClick={() => setBusqueda('')}
-            className="absolute inset-y-0 right-3.5 flex items-center text-ink-300 hover:text-fiesta-magenta transition-colors"
+            className="absolute inset-y-0 right-3.5 flex items-center text-ink-300 hover:text-ink-600 transition-colors"
             aria-label="Limpiar búsqueda"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
