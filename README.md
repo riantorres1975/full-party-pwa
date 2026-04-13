@@ -115,10 +115,29 @@ VITE_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 VITE_WHATSAPP_NUMBER=521XXXXXXXXXX
 VITE_NOMBRE_NEGOCIO=Tu Negocio
+VITE_HORARIO_TIENDA=Lun–Sáb 9am–7pm
+VITE_MONEDA=MXN
 VITE_ADMIN_EMAILS=admin@tudominio.com,otro@tudominio.com
+
+# Sucursal 1
+VITE_SUC1_NOMBRE=Nombre de la calle/colonia
+VITE_SUC1_BADGE=Sucursal Principal
+VITE_SUC1_DIRECCION=Tu dirección completa
+VITE_SUC1_MAPS_URL=https://maps.app.goo.gl/...
+VITE_SUC1_FACEBOOK=https://www.facebook.com/...
+
+# Sucursal 2
+VITE_SUC2_NOMBRE=Nombre de la calle/colonia
+VITE_SUC2_BADGE=Sucursal Norte
+VITE_SUC2_DIRECCION=Tu dirección completa
+VITE_SUC2_MAPS_URL=https://maps.app.goo.gl/...
+VITE_SUC2_FACEBOOK=https://www.facebook.com/...
+
+# Redes sociales
+VITE_TIKTOK_URL=https://www.tiktok.com/@tunegocio
 ```
 
-Las credenciales están en **Supabase Dashboard → Settings → API**.
+Las credenciales de Supabase están en **Dashboard → Settings → API**.
 
 `VITE_ADMIN_EMAILS` es opcional — si se omite, cualquier cuenta autenticada puede entrar al admin.
 
@@ -228,6 +247,18 @@ Lectura pública. Solo admins pueden escribir. Se usa para el sistema de anuncio
 
 ## Funcionalidades
 
+### Landing Page
+
+- Hero con animación typewriter que alterna entre sucursales con efecto fiesta (partículas + rebote)
+- Sección de beneficios mayoreo, pasos de compra y categorías destacadas
+- Galería de decoraciones de clientes con animación flotante, zoom e iluminación al hover
+- Carrusel de reseñas reales de Google Maps con navegación automática y manual
+- Tarjetas de sucursales con ilustración SVG, link a Google Maps y botón de Facebook
+- Sección FAQ con acordeón accesible
+- Botones de redes sociales (WhatsApp, Facebook ×2, TikTok) en header y footer
+- Schema.org `LocalBusiness` + `FAQPage` para SEO
+- Lighthouse: **Performance 93 · Accessibility 100 · Best Practices 100 · SEO 100**
+
 ### Catálogo público
 
 - Grid responsivo: 1 columna en móvil, hasta 6 en desktop con sidebar de filtros
@@ -321,7 +352,8 @@ El cliente ingresa su folio o teléfono y ve un stepper animado con el estado ac
 
 | URL | Vista | Acceso |
 |---|---|---|
-| `/` | Catálogo público | Libre |
+| `/` | Landing Page pública | Libre |
+| `/#/catalogo` | Catálogo de productos | Libre |
 | `/#/admin` | Pedidos | Requiere sesión + email en `VITE_ADMIN_EMAILS` |
 | `/#/admin/catalogo` | Catálogo admin | Requiere sesión + email en `VITE_ADMIN_EMAILS` |
 
@@ -347,9 +379,10 @@ Para Netlify agrega `public/_redirects`:
 ## Scripts
 
 ```bash
-npm run dev      # desarrollo → http://localhost:3000
-npm run build    # producción → /dist
-npm run preview  # previsualizar el build
+npm run dev        # desarrollo → http://localhost:3000
+npm run build      # producción → /dist
+npm run preview    # previsualizar el build
+npm run lighthouse # auditoría Lighthouse (requiere build + preview corriendo)
 ```
 
 ---
