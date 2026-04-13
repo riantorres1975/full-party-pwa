@@ -197,7 +197,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     className="flex-shrink-0 text-[11px] font-body font-black px-3 py-1.5 rounded-full
                                transition-all duration-200 active:scale-95 whitespace-nowrap"
                     style={singleActiveCategory === cat.id
-                      ? { background: 'linear-gradient(135deg, #2563eb, #6366f1)', color: 'white', boxShadow: '0 2px 8px #2563eb33' }
+                      ? { background: 'var(--gradient-brand)', color: 'white', boxShadow: 'var(--shadow-brand-soft)' }
                       : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-soft)' }
                     }
                   >
@@ -214,7 +214,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
           <div
             className="relative overflow-hidden text-center font-body font-black"
             style={{
-              background: 'linear-gradient(90deg, #1d4ed8, #2563eb, #4f46e5, #1d4ed8)',
+              background: 'var(--gradient-brand-banner)',
               backgroundSize: '300% 100%',
               animation: 'bannerSlideDown 0.4s ease-out, bannerShimmer 8s linear infinite',
               color: 'white',
@@ -258,7 +258,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     <button
                       onClick={() => setIsTrackingOpen(true)}
                       className="whitespace-nowrap ml-auto lg:hidden flex items-center gap-1 transition-colors"
-                      style={{ color: 'var(--text-accent, #2563eb)' }}
+                      style={{ color: 'var(--text-accent)' }}
                     >
                       {t('trust.trackOrder')}
                     </button>
@@ -272,14 +272,14 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     <div className="flex flex-col items-center justify-center py-20 px-8 text-center gap-4">
                       <div className="text-5xl animate-float">😵</div>
                       <div className="bg-white rounded-3xl p-6 max-w-sm w-full"
-                           style={{ border: '2px solid var(--border-default)', boxShadow: '0 4px 20px #2563eb15' }}>
+                           style={{ border: '2px solid var(--border-default)', boxShadow: 'var(--shadow-brand-soft)' }}>
                         <p className="font-display text-lg text-ink-800 mb-1">{t('error.title')}</p>
                         <p className="text-xs font-body text-ink-400 mb-4 leading-relaxed">{error}</p>
                         <button
                           onClick={refetch}
                           className="w-full py-3 rounded-2xl font-body font-black text-sm text-white
                                      transition-all duration-200 active:scale-95"
-                          style={{ background: 'linear-gradient(135deg, #2563eb, #6366f1)', boxShadow: '0 4px 14px #2563eb44' }}
+                          style={{ background: 'var(--gradient-brand)', boxShadow: 'var(--shadow-brand-soft)' }}
                         >
                           {t('error.retry')}
                         </button>
@@ -312,7 +312,6 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
       <CarritoDrawer
         items={items}
-        total={total}
         isOpen={isCartOpen}
         onCerrar={() => setIsCartOpen(false)}
         onAgregar={agregarItem}

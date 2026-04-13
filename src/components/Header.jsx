@@ -48,8 +48,7 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
         {/* Logo / Nombre */}
         <div className="flex items-center gap-2 min-w-0">
           <div className="min-w-0">
-            <h1 className="font-display text-lg sm:text-2xl leading-tight"
-                style={{ background: 'linear-gradient(135deg, #2563eb, #6366f1, #0ea5e9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <h1 className="font-display text-lg sm:text-2xl leading-tight text-brand-gradient">
               {NOMBRE_NEGOCIO}
             </h1>
             <p className="text-[10px] font-body font-bold tracking-widest uppercase text-ink-400">
@@ -83,9 +82,9 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
               className="hidden sm:flex items-center gap-1.5 text-xs font-body font-bold px-2.5 py-1.5 rounded-full
                          border-2 transition-all duration-200 active:scale-95"
               style={{
-                color: temaOscuro ? '#c4b5fd' : '#52278f',
-                borderColor: temaOscuro ? '#363b64' : '#e0c4f8',
-                background: temaOscuro ? 'rgba(42,15,80,0.5)' : '#f3e8ff',
+                color: 'var(--admin-quick-text)',
+                borderColor: 'var(--admin-quick-border)',
+                background: 'var(--admin-quick-bg)',
               }}
               aria-label={t('header.adminAriaLabel')}
               title={t('header.admin')}

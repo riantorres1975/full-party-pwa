@@ -37,6 +37,25 @@
     --text-secondary: #475569;
     --text-muted: #64748b;
     --text-inactive: #94a3b8;
+    --text-accent: #2563eb;
+    --color-brand: #2563eb;
+    --color-brand-2: #6366f1;
+    --color-brand-soft: rgba(37, 99, 235, 0.13);
+    --color-brand-soft-2: rgba(37, 99, 235, 0.2);
+    --color-success: #25d366;
+    --color-success-2: #1db954;
+    --color-danger: #ef4444;
+    --color-warning: #f97316;
+    --color-warning-2: #dc2626;
+    --gradient-brand: linear-gradient(135deg, #2563eb, #6366f1);
+    --gradient-brand-banner: linear-gradient(90deg, #1d4ed8, #2563eb, #4f46e5, #1d4ed8);
+    --gradient-success: linear-gradient(135deg, #25d366, #1db954);
+    --gradient-warning: linear-gradient(135deg, #f97316, #dc2626);
+    --shadow-brand-soft: 0 4px 20px rgba(37, 99, 235, 0.2);
+    --shadow-success-soft: 0 4px 20px rgba(37, 211, 102, 0.33);
+    --admin-quick-bg: #f3e8ff;
+    --admin-quick-border: #e0c4f8;
+    --admin-quick-text: #52278f;
     background-color: var(--surface-primary);
     background-image:
       radial-gradient(circle at 15% 20%, #2563eb0f 0%, transparent 35%),
@@ -151,13 +170,31 @@ body.theme-dark {
 }
 
 @layer components {
+  .bg-brand-gradient {
+    background: var(--gradient-brand);
+  }
+
+  .bg-success-gradient {
+    background: var(--gradient-success);
+  }
+
+  .bg-warning-gradient {
+    background: var(--gradient-warning);
+  }
+
+  .text-brand-gradient {
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
   .btn-primary {
     @apply font-body font-bold px-6 py-3.5 rounded-full
            transition-all duration-200 active:scale-95
            focus:outline-none focus:ring-2 focus:ring-offset-2;
-    background: linear-gradient(135deg, #2563eb, #6366f1);
+    background: var(--gradient-brand);
     color: white;
-    box-shadow: 0 4px 15px #2563eb44;
+    box-shadow: var(--shadow-brand-soft);
   }
   .btn-primary:hover {
     box-shadow: 0 6px 20px #2563eb66;
@@ -211,6 +248,10 @@ body.theme-dark {
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
   --text-inactive: #475569;
+  --text-accent: #60a5fa;
+  --admin-quick-bg: rgba(42, 15, 80, 0.5);
+  --admin-quick-border: #363b64;
+  --admin-quick-text: #c4b5fd;
   background-color: #0f172a;
   background-image:
     radial-gradient(circle at 15% 20%, #2563eb14 0%, transparent 38%),
