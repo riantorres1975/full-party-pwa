@@ -124,6 +124,8 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
       precio: obtenerPrecioAplicable(item, item.cantidad),
     }));
 
+    const normalizedAddress = deliveryType === 'envio' ? address.trim() : '';
+
     setPendingOrder({
       folio: null,
       url: null,
@@ -132,7 +134,7 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
       tipoEntrega: deliveryType,
       nombre: customerName.trim(),
       telefono: cleanedPhone,
-      direccion: address,
+      direccion: normalizedAddress,
     });
   };
 
@@ -140,17 +142,18 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
     if (!pendingOrder) return;
 
     const { itemsSnapshot, total, tipoEntrega: type, nombre: name, telefono: phoneNumber, direccion: customerAddress } = pendingOrder;
+    const normalizedAddress = type === 'envio' ? customerAddress?.trim() || '' : '';
 
     // 1) Persist order in Supabase
     const { folio, error } = await guardarPedido({
-      nombre: name, telefono: phoneNumber, tipoEntrega: type, direccion: customerAddress, total, items: itemsSnapshot,
+      nombre: name, telefono: phoneNumber, tipoEntrega: type, direccion: normalizedAddress, total, items: itemsSnapshot,
     });
 
     if (error) console.warn('[Pedido] No se pudo guardar en Supabase:', error);
 
     // 2) Build WhatsApp URL with order reference
     const url = generarMensajeWhatsApp(itemsSnapshot, total, {
-      tipo: type, nombre: name, telefono: phoneNumber, direccion: customerAddress, folio,
+      tipo: type, nombre: name, telefono: phoneNumber, direccion: normalizedAddress, folio,
     });
 
     // 3) Open WhatsApp
