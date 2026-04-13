@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lighthouse": "lighthouse http://localhost:4173 --output html --output-path ./lighthouse-report.html --chrome-flags=\"--headless\"",
+    "lighthouse:pwa": "lighthouse http://localhost:4173 --preset=perf --only-categories=performance,accessibility,best-practices,seo,pwa --output html --output-path ./lighthouse-report.html --chrome-flags=\"--headless\"",
+    "axe": "axe http://localhost:4173"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
