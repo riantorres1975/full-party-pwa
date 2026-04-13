@@ -1,163 +1,288 @@
-# Guía de Instalación — Full Party Uruapan PWA
+# 🛒 Guía de Instalación — Catálogo Digital PWA
 
-Esta guía está pensada para que puedas poner en marcha tu catálogo digital aunque no tengas experiencia en programación. Sigue los pasos en orden y tendrás tu tienda funcionando en menos de una hora.
+Bienvenido. Esta guía te lleva de la mano para que tengas tu tienda en línea funcionando aunque **nunca hayas programado nada**. Solo sigue los pasos en orden, como una receta de cocina.
+
+**¿Cuánto tarda?** Aproximadamente **45 minutos** la primera vez.
+
+---
+
+## ¿Qué vas a tener al final?
+
+- Una tienda en línea con tu catálogo de productos 🛍️
+- Tus clientes te mandan pedidos por WhatsApp 📱
+- Un panel para gestionar pedidos e inventario 📋
+- La tienda funciona aunque no haya internet (PWA) 📶
 
 ---
 
 ## Lo que necesitas antes de empezar
 
-Crea una cuenta gratuita en cada uno de estos servicios. No necesitas tarjeta de crédito.
+Crea una cuenta **gratuita** en estos tres servicios. No necesitas tarjeta de crédito.
 
-| Servicio | Para qué sirve | Link |
+| Servicio | Para qué sirve | Cómo entrar |
 |---|---|---|
-| **Node.js** | Ejecutar el proyecto en tu computadora | https://nodejs.org (descarga la versión LTS) |
-| **Supabase** | Base de datos y usuarios | https://supabase.com |
-| **Vercel** | Publicar tu tienda en internet | https://vercel.com |
-| **GitHub** | Guardar y versionar el código | https://github.com |
+| **GitHub** | Guardar el código de tu tienda | [github.com](https://github.com) → Sign up |
+| **Supabase** | La base de datos (donde se guardan productos y pedidos) | [supabase.com](https://supabase.com) → Start your project |
+| **Vercel** | Poner tu tienda en internet con un link | [vercel.com](https://vercel.com) → Sign Up |
+
+También necesitas instalar en tu computadora:
+
+- **Node.js** — descárgalo de [nodejs.org](https://nodejs.org), elige la versión que dice **LTS** y sigue el instalador como cualquier programa.
 
 ---
 
-## Paso 1 — Sube el código a GitHub
+## PASO 1 — Sube el código a GitHub
 
-1. Entra a [github.com](https://github.com) y haz clic en **New repository**.
-2. Ponle el nombre que quieras (ej. `mi-catalogo`), deja el repositorio en **Public** y haz clic en **Create repository**.
-3. Descarga el código de la PWA como ZIP, descomprímelo y sube todos los archivos a ese repositorio usando el botón **Upload files** en GitHub.
+Piensa en GitHub como una USB en la nube donde guardarás el código de tu tienda.
 
-> Si ya sabes usar Git, simplemente haz `git push` de la carpeta del proyecto.
+1. Entra a [github.com](https://github.com) con tu cuenta.
+2. Haz clic en el botón verde **New** (o el ícono **+** arriba a la derecha → **New repository**).
+3. En **Repository name** escribe `mi-catalogo` (o el nombre que quieras).
+4. Deja todo lo demás como está y haz clic en **Create repository**.
+5. En la siguiente pantalla verás un botón que dice **uploading an existing file** — haz clic ahí.
+6. Arrastra **todos los archivos y carpetas** del ZIP que descargaste a esa página y haz clic en **Commit changes**.
+
+✅ **¡Listo! Tu código ya está en la nube.**
 
 ---
 
-## Paso 2 — Crea tu base de datos en Supabase
+## PASO 2 — Crea tu base de datos en Supabase
+
+Supabase es donde se van a guardar tus productos, pedidos y clientes.
 
 ### 2.1 Crear el proyecto
 
 1. Entra a [supabase.com](https://supabase.com) y haz clic en **New Project**.
-2. Ponle el nombre que quieras, elige una contraseña segura para la base de datos y selecciona la región más cercana a ti (ej. `South America (São Paulo)`).
-3. Espera un minuto mientras se crea el proyecto.
+2. Ponle el nombre que quieras a tu proyecto (ej. `mi-tienda`).
+3. Inventa una contraseña segura para la base de datos y guárdala en algún lugar.
+4. En **Region** elige la más cercana a ti (para México: **South America - São Paulo**).
+5. Haz clic en **Create new project** y espera 1-2 minutos mientras se prepara.
 
-### 2.2 Crear las tablas
+### 2.2 Crear las tablas (la estructura de tu tienda)
 
-1. En el menú de la izquierda entra a **SQL Editor**.
-2. Haz clic en **New query**.
-3. Abre el archivo `supabase_setup.sql` que viene con la PWA, copia todo su contenido y pégalo en el editor.
-4. Haz clic en **Run** (el botón verde).
-5. Repite lo mismo con el archivo `supabase_rate_limit.sql`.
+Esto es como armar los estantes donde se acomodarán tus productos y pedidos.
 
-### 2.3 Activar actualizaciones en tiempo real
+1. En el menú de la izquierda haz clic en **SQL Editor**.
+2. Haz clic en **New query** (botón con un símbolo `+`).
+3. Abre el archivo **`supabase_setup.sql`** que viene en el ZIP con cualquier editor de texto (Bloc de Notas funciona).
+4. Selecciona **todo el texto** (Ctrl+A) y cópialo (Ctrl+C).
+5. Pégalo (Ctrl+V) en el editor de Supabase.
+6. Haz clic en el botón verde **Run**.
+7. Abajo deberás ver un mensaje en verde que dice **"Success"**. Si ves algo en rojo, escríbeme.
 
-1. En el menú entra a **Database → Replication**.
-2. Activa las tablas `pedidos` y `productos` en la sección **Source**.
+8. Repite los pasos 2 al 6 pero ahora con el archivo **`supabase_rate_limit.sql`**.
 
-### 2.4 Crear tu usuario administrador
+### 2.3 Crear tu cuenta de administrador
 
-1. Ve a **Authentication → Users → Add user**.
-2. Ingresa el email y contraseña con los que quieres entrar al panel de administración.
-3. Anota ese email — lo usarás en el siguiente paso.
+1. En el menú de la izquierda entra a **Authentication** → **Users**.
+2. Haz clic en **Add user** → **Create new user**.
+3. Escribe el **email** y **contraseña** con los que vas a entrar al panel de tu tienda.
+4. Haz clic en **Create user**.
 
-### 2.5 Copiar tus credenciales
+> ⚠️ Recuerda muy bien ese email y contraseña — los vas a usar para entrar al panel de administración.
 
-1. Ve a **Project Settings → API**.
-2. Copia los valores de:
-   - **Project URL** (algo como `https://xxxxxxxx.supabase.co`)
-   - **anon public key** (empieza con `eyJ...`)
+### 2.4 Copiar tus credenciales de Supabase
 
-Guárdalos, los necesitas en el siguiente paso.
-
----
-
-## Paso 3 — Configura las variables de tu tienda
-
-1. En la carpeta del proyecto busca el archivo `.env.example`.
-2. Crea una copia con el nombre `.env` (sin el `.example`).
-3. Abre ese archivo con cualquier editor de texto (Bloc de notas, Notepad++, VS Code) y rellena cada línea:
-
-```
-VITE_SUPABASE_URL=           ← pega aquí el Project URL de Supabase
-VITE_SUPABASE_ANON_KEY=      ← pega aquí el anon public key
-VITE_WHATSAPP_NUMBER=        ← tu número con lada, sin espacios (ej: 5214521000000)
-VITE_NOMBRE_NEGOCIO=         ← nombre de tu tienda
-VITE_DIRECCION_TIENDA=       ← dirección física
-VITE_HORARIO_TIENDA=         ← horario de atención (ej: Lun–Sáb 9am–7pm)
-VITE_MAPS_URL_TIENDA=        ← link de Google Maps a tu local
-VITE_SITE_URL=               ← URL donde quedará tu tienda (la sabrás en el Paso 5)
-VITE_ADMIN_EMAILS=           ← email del administrador (el que creaste en Supabase)
-VITE_MONEDA=                 ← código de moneda (MXN, USD, EUR, etc.)
-```
+1. En el menú de la izquierda ve a **Project Settings** → **API**.
+2. Copia y guarda en un bloc de notas estos dos valores:
+   - **Project URL** — parece `https://abcdefgh.supabase.co`
+   - **anon public** (bajo "Project API keys") — es un texto largo que empieza con `eyJ...`
 
 ---
 
-## Paso 4 — Prueba en tu computadora (opcional)
+## PASO 3 — Configura los datos de tu tienda
 
-Si quieres ver cómo se ve antes de publicarla:
+Aquí le dices a la app cuál es tu negocio, tu WhatsApp, etc.
 
-1. Abre una terminal (en Windows: busca "Símbolo del sistema" o "PowerShell").
-2. Navega a la carpeta del proyecto con `cd ruta/del/proyecto`.
-3. Ejecuta estos dos comandos, uno por uno:
+1. En la carpeta del proyecto busca el archivo llamado **`.env.example`**.
 
-```bash
-npm install
-npm run dev
+   > 💡 En Windows, los archivos que empiezan con punto a veces están ocultos. Si no lo ves, abre el Explorador de archivos, haz clic en **Vista** y activa **Elementos ocultos**.
+
+2. Haz una **copia** de ese archivo en la misma carpeta y cámbiale el nombre a **`.env`** (borra el `.example`).
+
+3. Abre el archivo `.env` con el Bloc de Notas y rellena cada línea:
+
+```
+VITE_SUPABASE_URL=https://abcdefgh.supabase.co
+         ↑ pega aquí el Project URL que copiaste en el paso 2.4
+
+VITE_SUPABASE_ANON_KEY=eyJ...
+         ↑ pega aquí el anon public key
+
+VITE_WHATSAPP_NUMBER=5214521234567
+         ↑ tu número de WhatsApp con lada del país (México = 52, luego 10 dígitos)
+           Ejemplo: si tu número es 452-123-4567 escribe: 5214521234567
+
+VITE_NOMBRE_NEGOCIO=Mi Tienda
+         ↑ el nombre de tu negocio tal como quieres que aparezca
+
+VITE_DIRECCION_TIENDA=Calle Ejemplo 123, Col. Centro
+         ↑ tu dirección física
+
+VITE_HORARIO_TIENDA=Lun–Sáb 9am–7pm
+         ↑ tu horario de atención
+
+VITE_MAPS_URL_TIENDA=https://maps.google.com/...
+         ↑ el link de Google Maps a tu local (opcional, puedes dejarlo vacío)
+
+VITE_SITE_URL=https://mi-catalogo.vercel.app
+         ↑ la URL de tu tienda (la obtendrás en el Paso 5, por ahora déjala así)
+
+VITE_ADMIN_EMAILS=admin@mitienda.com
+         ↑ el email que usaste para crear el usuario en Supabase
+
+VITE_MONEDA=MXN
+         ↑ código de tu moneda (MXN para pesos mexicanos, USD para dólares)
 ```
 
-4. Abre tu navegador en `http://localhost:3000` — ahí verás tu catálogo.
+4. Guarda el archivo (Ctrl+S).
+
+> ⚠️ **Importante:** No dejes espacios antes ni después del signo `=`. Mal: `VITE_MONEDA = MXN`. Bien: `VITE_MONEDA=MXN`
 
 ---
 
-## Paso 5 — Publica tu tienda en Vercel
+## PASO 4 — Prueba la tienda en tu computadora
 
-1. Entra a [vercel.com](https://vercel.com) y haz clic en **Add New Project**.
-2. Conecta tu cuenta de GitHub y selecciona el repositorio que creaste en el Paso 1.
-3. Vercel detecta automáticamente que es un proyecto Vite — no cambies nada en la configuración de build.
-4. Antes de hacer clic en **Deploy**, agrega las variables de entorno:
+Este paso es para verificar que todo funciona antes de publicarlo. Es opcional pero recomendado.
+
+1. Abre una terminal:
+   - **Windows:** Presiona `Windows + R`, escribe `cmd` y presiona Enter.
+   - **Mac:** Busca "Terminal" en Spotlight (Cmd + Espacio).
+
+2. Escribe este comando para ir a la carpeta de tu proyecto (reemplaza la ruta por donde está tu carpeta):
+   ```
+   cd C:\Users\TuNombre\Desktop\mi-catalogo
+   ```
+
+3. Instala las dependencias (solo la primera vez):
+   ```
+   npm install
+   ```
+   Esto descarga todo lo necesario. Puede tardar 1-2 minutos.
+
+4. Inicia la tienda:
+   ```
+   npm run dev
+   ```
+
+5. Abre tu navegador y ve a **http://localhost:3000** — deberías ver tu tienda. 🎉
+
+Para detener el servidor presiona `Ctrl + C` en la terminal.
+
+---
+
+## PASO 5 — Publica tu tienda en internet (Vercel)
+
+Vercel toma tu código de GitHub y lo convierte en un sitio web accesible para todos.
+
+1. Entra a [vercel.com](https://vercel.com) con tu cuenta.
+2. Haz clic en **Add New…** → **Project**.
+3. En la lista que aparece busca el repositorio `mi-catalogo` que creaste en el Paso 1 y haz clic en **Import**.
+4. Vercel detecta automáticamente que es un proyecto Vite — **no cambies nada** en la sección de configuración de build.
+5. Antes de hacer clic en Deploy, agrega tus variables de entorno:
    - Haz clic en **Environment Variables**.
-   - Agrega cada una de las líneas de tu archivo `.env` (clave y valor).
-5. Haz clic en **Deploy**.
+   - Agrega cada línea de tu archivo `.env`: escribe el nombre (ej. `VITE_SUPABASE_URL`) en el campo **Name** y el valor en **Value**.
+   - Haz clic en **Add** después de cada una.
+6. Cuando hayas agregado todas, haz clic en **Deploy**.
+7. Espera 1-2 minutos. Vercel te dará una URL como: `https://mi-catalogo.vercel.app`
 
-En 1–2 minutos Vercel te dará una URL como `https://mi-catalogo.vercel.app`. Esa es tu tienda en línea.
+**¡Esa URL es tu tienda en línea!** Compártela con tus clientes.
 
-> Copia esa URL y úsala en `VITE_SITE_URL`. Vuelve a Vercel → Settings → Environment Variables para actualizarla y haz un nuevo deploy.
+> 📝 Ahora vuelve al archivo `.env` (y también a las variables en Vercel) y actualiza `VITE_SITE_URL` con esa URL real. En Vercel: **Settings → Environment Variables → edita VITE_SITE_URL** y luego ve a **Deployments → redeploy** para que el cambio tome efecto.
 
 ---
 
-## Paso 6 — Agrégate como administrador en la base de datos
+## PASO 6 — Activa tu cuenta como administrador
 
-Este es el único paso técnico que queda. Solo se hace una vez.
+Este es el único paso "técnico" — solo se hace una vez.
 
-1. En Supabase ve a **Authentication → Users** y haz clic en el usuario que creaste.
-2. Copia el **User UID** (es un código largo, ej. `a1b2c3d4-...`).
-3. Ve a **SQL Editor → New query** y ejecuta esto, reemplazando el UUID con el tuyo:
+1. En Supabase ve a **Authentication** → **Users**.
+2. Haz clic en el usuario que creaste en el Paso 2.3.
+3. Copia el **User UID** — es un código largo que parece: `a1b2c3d4-e5f6-7890-abcd-ef1234567890`
+4. Ve a **SQL Editor** → **New query** y pega esto, **reemplazando** el UUID del ejemplo por el tuyo:
 
 ```sql
-INSERT INTO public.admins (id) VALUES ('pega-aqui-tu-uuid');
+INSERT INTO public.admins (user_id) VALUES ('a1b2c3d4-e5f6-7890-abcd-ef1234567890');
 ```
 
-A partir de aquí puedes entrar al panel de administración en `https://tu-dominio.vercel.app/#/admin`.
+5. Haz clic en **Run**.
+
+A partir de aquí ya puedes entrar al panel de administración.
 
 ---
 
-## Listo — accesos rápidos
+## PASO 7 — Entra al panel de administración
 
-| Qué | Dónde |
+1. Abre tu tienda en el navegador: `https://mi-catalogo.vercel.app`
+2. Haz clic en el ícono de candado 🔒 en la esquina superior derecha.
+3. Ingresa el email y contraseña que creaste en el Paso 2.3.
+4. ¡Ya estás dentro! Desde aquí puedes:
+
+| Sección | Para qué |
 |---|---|
-| Tu tienda | `https://tu-dominio.vercel.app` |
-| Panel de pedidos | `https://tu-dominio.vercel.app/#/admin` |
-| Gestión de catálogo | `https://tu-dominio.vercel.app/#/admin/catalogo` |
+| **Pedidos** | Ver todos los pedidos, cambiarles el estado, notificar clientes |
+| **Catálogo** | Agregar, editar y eliminar productos |
 
 ---
 
-## Personalizar categorías y productos
+## PASO 8 — Agrega tus primeros productos
 
-Todo se gestiona desde el panel de administración — no necesitas tocar código.
+1. En el panel de admin haz clic en **Catálogo**.
+2. Haz clic en **Nuevo producto** (botón azul).
+3. Llena el formulario: nombre, precio, descripción, categoría, imagen.
+4. Haz clic en **Guardar**.
 
-- **Productos**: agrégalos desde `/#/admin/catalogo` con nombre, precio, imagen, stock y precios por mayoreo.
-- **Categorías, marcas y tamaños**: se crean al registrar el primer producto que los use. Desde el panel puedes renombrarlos o eliminarlos en cualquier momento.
+El producto aparecerá al instante en tu tienda pública. ¡No necesitas hacer nada más!
+
+> 💡 **Truco:** puedes importar varios productos a la vez usando el botón **Importar** y un archivo CSV o JSON. El archivo `productos_ejemplo.json` que viene en el ZIP te sirve como referencia del formato.
 
 ---
 
-## Soporte
+## Accesos rápidos
 
-Si algo no funciona, revisa primero:
+Una vez que todo esté listo, estos son los links que más vas a usar:
 
-- Que el archivo `.env` no tenga espacios extra ni comillas en los valores.
-- Que el SQL se haya ejecutado sin errores en Supabase (el editor muestra "Success" en verde).
-- Que las variables de entorno en Vercel coincidan exactamente con las de tu `.env`.
+| Qué | Link |
+|---|---|
+| Tu tienda (clientes) | `https://mi-catalogo.vercel.app` |
+| Panel de administración | `https://mi-catalogo.vercel.app/#/admin` |
+
+---
+
+## ¿Algo no funciona? — Lista de verificación
+
+Antes de pedir ayuda, revisa esto:
+
+- [ ] El archivo `.env` no tiene espacios antes/después del `=`
+- [ ] El SQL se ejecutó sin errores en Supabase (dice "Success" en verde)
+- [ ] Las variables de entorno en Vercel coinciden exactamente con tu `.env`
+- [ ] El UUID que insertaste en la tabla `admins` es el correcto (cópialo otra vez para verificar)
+- [ ] Después de cambiar variables en Vercel, hiciste un nuevo **Redeploy**
+
+### Errores comunes
+
+| Error que ves | Qué significa | Solución |
+|---|---|---|
+| Pantalla en blanco | Las variables de entorno están mal | Verifica que todas existan en Vercel y haz Redeploy |
+| "Invalid API key" | El `ANON_KEY` está incorrecto | Cópialo de nuevo desde Supabase → Settings → API |
+| No puedo entrar al admin | Tu usuario no está en la tabla `admins` | Repite el Paso 6 con el UUID correcto |
+| WhatsApp no abre | El número está mal escrito | Asegúrate de incluir el código de país (52 para México) |
+
+---
+
+## Personalización adicional
+
+### Cambiar los colores
+Los colores de la tienda se definen en el archivo `tailwind.config.js`. Si sabes algo de programación puedes editarlo. Si no, es mejor dejarlos como están.
+
+### Cambiar el logo / ícono de la app
+1. Reemplaza el archivo `public/icon-192.png` con tu logo (192×192 píxeles, fondo transparente).
+2. Reemplaza `public/icon-512.png` con tu logo en 512×512 píxeles.
+3. Sube los cambios a GitHub — Vercel se actualiza solo.
+
+### Cambiar el nombre en la pestaña del navegador
+Edita el archivo `index.html` y cambia el texto entre las etiquetas `<title>` y `</title>`.
+
+---
+
+*¿Dudas o problemas en la instalación? Contacta al desarrollador que te vendió esta plantilla.*
