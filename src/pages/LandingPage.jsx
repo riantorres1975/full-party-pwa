@@ -27,6 +27,12 @@ const C = {
   textHead:  '#2D0D5A',   // Morado muy oscuro — excelente contraste
   textBody:  '#5B3080',   // Morado medio legible
   textMuted: '#7B4FA6',   // Lavanda oscura — WCAG AA sobre fondos claros
+  surfaceLavender: '#F5EEFF',
+  borderSoft: '#EDE0F8',
+  infoBlue: '#0369A1',
+  accentDeep: '#7C3AED',
+  pinkDeep: '#BE185D',
+  shadowLavender: 'rgba(192,132,252,0.1)',
 };
 
 // ════════════════════════════════════════════════════════════
@@ -69,7 +75,7 @@ const trackEvent = (name, params = {}) => {
 const BRANCH_NAMES = [ENV.suc1.nombre, ENV.suc2.nombre];
 
 // Colores de letras inspirados en el logo (cíclicos por posición)
-const LETTER_COLORS = [C.pink, C.purple, C.green, C.orange, C.cyan, C.blue, '#FDE047'];
+const LETTER_COLORS = [C.pink, C.purple, C.green, C.orange, C.cyan, C.blue, C.yellow];
 
 // Emojis para la explosión de confeti al cambiar de sucursal
 const BURST_EMOJIS = ['🎉', '🎊', '✨', '⭐', '🌟', '🎈', '🎀', '🎁'];
@@ -871,7 +877,7 @@ function BrandCard({ nombre, desc, color, emoji }) {
     >
       <div
         className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl transition-all duration-300"
-        style={{ background: hovered ? `${color}18` : '#F5EEFF', border: `2px solid ${hovered ? color : '#E9DEFF'}` }}
+        style={{ background: hovered ? `${color}18` : C.surfaceLavender, border: `2px solid ${hovered ? color : '#E9DEFF'}` }}
       >
         <span style={{ filter: hovered ? 'none' : 'saturate(0.5)' }}>{emoji}</span>
       </div>
@@ -939,7 +945,7 @@ export default function LandingPage() {
         {/* ══ NAV ════════════════════════════════════════ */}
         <nav
           className="sticky top-0 z-50 bg-white border-b"
-          style={{ borderColor: '#EDE0F8', boxShadow: '0 2px 16px rgba(192,132,252,0.1)' }}
+          style={{ borderColor: C.borderSoft, boxShadow: `0 2px 16px ${C.shadowLavender}` }}
           aria-label="Navegación principal"
         >
           <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
@@ -963,7 +969,7 @@ export default function LandingPage() {
                 >
                   {ENV.negocio}
                 </span>
-                <span className="text-[10px] font-black tracking-widest uppercase" style={{ color: '#0369A1' }}>
+                <span className="text-[10px] font-black tracking-widest uppercase" style={{ color: C.infoBlue }}>
                   Uruapan
                 </span>
               </div>
@@ -996,7 +1002,7 @@ export default function LandingPage() {
             {/* Hamburger */}
             <button
               className="md:hidden p-2 rounded-xl"
-              style={{ background: '#F5EEFF', color: C.purple }}
+              style={{ background: C.surfaceLavender, color: C.purple }}
               onClick={() => setMenuOpen(v => !v)}
               aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
               aria-expanded={menuOpen}
@@ -1007,7 +1013,7 @@ export default function LandingPage() {
 
           {/* Menú mobile */}
           {menuOpen && (
-            <div className="md:hidden border-t bg-white px-5 py-4 flex flex-col gap-1" style={{ borderColor: '#EDE0F8' }}>
+            <div className="md:hidden border-t bg-white px-5 py-4 flex flex-col gap-1" style={{ borderColor: C.borderSoft }}>
               {NAV_LINKS.map(l => (
                 <button
                   key={l.label}
@@ -1050,7 +1056,7 @@ export default function LandingPage() {
             <Reveal>
               <span
                 className="inline-flex items-center gap-2 text-xs font-black px-5 py-2 rounded-full mb-8"
-                style={{ background: `${C.pink}18`, color: '#BE185D', border: `1px solid ${C.pink}35` }}
+                style={{ background: `${C.pink}18`, color: C.pinkDeep, border: `1px solid ${C.pink}35` }}
               >
                 <Sparkles size={12} aria-hidden="true" />
                 Distribuidora Mayoreo · Uruapan, Michoacán
@@ -1097,7 +1103,7 @@ export default function LandingPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2.5 px-8 py-5 rounded-2xl font-black text-base bg-white lp-scale-hover"
-                  style={{ color: '#7C3AED', border: `2px solid ${C.purple}30`, boxShadow: '0 2px 12px rgba(192,132,252,0.15)' }}
+                  style={{ color: C.accentDeep, border: `2px solid ${C.purple}30`, boxShadow: `0 2px 12px ${C.shadowLavender}` }}
                   onClick={() => trackEvent('hero_whatsapp_click')}
                 >
                   <WaIcon size={18} /> Escribir al WhatsApp
@@ -1252,7 +1258,7 @@ export default function LandingPage() {
             <Reveal delay={0.2}>
               <div
                 className="rounded-2xl px-6 py-4 flex flex-wrap items-center justify-center gap-4 text-xs font-black"
-                style={{ background: '#F5EEFF', border: `1px solid ${C.purple}18` }}
+                style={{ background: C.surfaceLavender, border: `1px solid ${C.purple}18` }}
               >
                 {[
                   { label: 'Distribuidores Autorizados', color: C.pink   },
@@ -1347,7 +1353,7 @@ export default function LandingPage() {
             <Reveal delay={0.1}>
               <div
                 className="bg-white rounded-3xl px-6 py-2"
-                style={{ boxShadow: '0 2px 20px rgba(192,132,252,0.1)', border: `1px solid ${C.purple}18` }}
+                style={{ boxShadow: `0 2px 20px ${C.shadowLavender}`, border: `1px solid ${C.purple}18` }}
               >
                 {FAQS.map((faq, i) => (
                   <FaqItem key={i} {...faq} />
@@ -1472,7 +1478,7 @@ export default function LandingPage() {
         </main>
 
         {/* ══ FOOTER — 3 columnas ══════════════════════════ */}
-        <footer className="border-t bg-white" style={{ borderColor: '#EDE0F8' }}>
+        <footer className="border-t bg-white" style={{ borderColor: C.borderSoft }}>
           <div className="max-w-5xl mx-auto px-5 pt-10 pb-6 grid grid-cols-1 sm:grid-cols-3 gap-10">
 
             {/* Columna 1: Logo + tagline + WhatsApp */}
@@ -1592,7 +1598,7 @@ export default function LandingPage() {
           {/* Barra inferior */}
           <div
             className="border-t px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs"
-            style={{ borderColor: '#EDE0F8', color: C.textMuted }}
+            style={{ borderColor: C.borderSoft, color: C.textMuted }}
           >
             <span>© {new Date().getFullYear()} {ENV.negocio} · Uruapan, Michoacán · Todos los derechos reservados</span>
             <div className="flex gap-4">
