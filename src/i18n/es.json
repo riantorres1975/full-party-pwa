@@ -122,9 +122,9 @@
   "form.phoneDigits": "{count}/10 dígitos",
   "form.tooManyOrders": "Demasiados pedidos seguidos. Intenta en unos minutos.",
 
-  "tracking.title": "📦 Rastrear Pedido",
+  "tracking.title": "Rastrear Pedido",
   "tracking.subtitle": "Ingresa tu folio o número de teléfono",
-  "tracking.placeholder": "FP-1234 o tu teléfono (10 dígitos)",
+  "tracking.placeholder": "Folio o teléfono (10 dígitos)",
   "tracking.wait": "Espera...",
   "tracking.searchError": "Error al buscar. Intenta de nuevo.",
   "tracking.initialTitle": "¿Dónde está tu pedido?",
@@ -133,8 +133,8 @@
   "tracking.noResultsHint": "Verifica el folio o teléfono e intenta de nuevo",
   "tracking.hideProducts": "Ocultar productos ▲",
   "tracking.viewProducts": "Ver {count} productos ▼",
-  "tracking.shippingHome": "🚚 Envío a domicilio",
-  "tracking.pickupStore": "🏪 Recoger en tienda",
+  "tracking.shippingHome": "Envío a domicilio",
+  "tracking.pickupStore": "Recoger en tienda",
   "tracking.cancelled": "Pedido Cancelado",
   "tracking.cancelledDesc": "Este pedido ha sido cancelado",
 
@@ -143,7 +143,7 @@
   "tracking.status.preparing": "Armando Pedido",
   "tracking.status.preparingSub": "Preparando tu pedido",
   "tracking.status.ready": "Listo para Entrega",
-  "tracking.status.readySub": "¡Listo para la fiesta!",
+  "tracking.status.readySub": "¡Tu pedido está listo!",
 
   "admin.nav.orders": "Pedidos",
   "admin.nav.catalog": "Catálogo",

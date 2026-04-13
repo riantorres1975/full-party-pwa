@@ -214,15 +214,14 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
           <div
             className="relative overflow-hidden text-center font-body font-black"
             style={{
-              background: 'linear-gradient(90deg, #f97316, #ec4899, #a855f7, #f97316)',
+              background: 'linear-gradient(90deg, #1d4ed8, #2563eb, #4f46e5, #1d4ed8)',
               backgroundSize: '300% 100%',
-              animation: 'bannerSlideDown 0.4s ease-out, bannerShimmer 6s linear infinite, bannerPulseGlow 3s ease-in-out infinite',
+              animation: 'bannerSlideDown 0.4s ease-out, bannerShimmer 8s linear infinite',
               color: 'white',
-              textShadow: '0 1px 2px rgba(0,0,0,0.2)',
             }}
           >
             <div className="flex items-center justify-center gap-2 px-10 py-2.5">
-              <span className="text-base animate-bounce" style={{ animationDuration: '2s' }}>📢</span>
+              <span className="text-base" aria-hidden="true">📣</span>
               <span className="text-sm leading-snug">{anuncioMsg}</span>
             </div>
             <button

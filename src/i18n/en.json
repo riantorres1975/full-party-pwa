@@ -122,9 +122,9 @@
   "form.phoneDigits": "{count}/10 digits",
   "form.tooManyOrders": "Too many orders in a row. Try again in a few minutes.",
 
-  "tracking.title": "📦 Track Order",
+  "tracking.title": "Track Order",
   "tracking.subtitle": "Enter your order number or phone number",
-  "tracking.placeholder": "FP-1234 or your phone (10 digits)",
+  "tracking.placeholder": "Order number or phone (10 digits)",
   "tracking.wait": "Wait...",
   "tracking.searchError": "Search error. Try again.",
   "tracking.initialTitle": "Where is your order?",
@@ -133,8 +133,8 @@
   "tracking.noResultsHint": "Check the order number or phone and try again",
   "tracking.hideProducts": "Hide products ▲",
   "tracking.viewProducts": "View {count} products ▼",
-  "tracking.shippingHome": "🚚 Home delivery",
-  "tracking.pickupStore": "🏪 Store pickup",
+  "tracking.shippingHome": "Home delivery",
+  "tracking.pickupStore": "Store pickup",
   "tracking.cancelled": "Order Cancelled",
   "tracking.cancelledDesc": "This order has been cancelled",
 
@@ -143,7 +143,7 @@
   "tracking.status.preparing": "Preparing",
   "tracking.status.preparingSub": "Preparing your order",
   "tracking.status.ready": "Ready for Pickup",
-  "tracking.status.readySub": "Ready for the party!",
+  "tracking.status.readySub": "Your order is ready!",
 
   "admin.nav.orders": "Orders",
   "admin.nav.catalog": "Catalog",

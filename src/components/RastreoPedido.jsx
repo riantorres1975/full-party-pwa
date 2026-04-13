@@ -9,7 +9,7 @@ function usePasos() {
   return [
     {
       estado:    'Por Surtir',
-      emoji:     '🛍️',
+      emoji:     '📋',
       label:     t('tracking.status.pending'),
       sublabel:  t('tracking.status.pendingSub'),
       color:     '#ef4444',
@@ -17,15 +17,15 @@ function usePasos() {
     },
     {
       estado:    'Armando Pedido',
-      emoji:     '🎀',
+      emoji:     '📦',
       label:     t('tracking.status.preparing'),
       sublabel:  t('tracking.status.preparingSub'),
-      color:     '#eab308',
+      color:     '#f59e0b',
       colorLight:'#fef9c3',
     },
     {
       estado:    'Listo para Entrega',
-      emoji:     '🎉',
+      emoji:     '✅',
       label:     t('tracking.status.ready'),
       sublabel:  t('tracking.status.readySub'),
       color:     '#22c55e',
@@ -92,7 +92,7 @@ function Stepper({ estadoActual }) {
               </div>
 
               <p className="mt-2 font-body font-black text-[11px] text-center leading-tight transition-colors"
-                 style={{ color: activo ? paso.color : completado ? '#6b35b8' : '#b388e8' }}>
+                 style={{ color: activo ? paso.color : completado ? '#475569' : '#94a3b8' }}>
                 {paso.label}
               </p>
               {activo && (
@@ -138,7 +138,7 @@ function TarjetaPedido({ pedido }) {
         </div>
         <p className="text-sm font-body font-bold text-ink-700">{pedido.cliente_nombre}</p>
         <p className="text-xs font-body text-ink-400">
-          {pedido.tipo_entrega === 'envio' ? <><span aria-hidden="true">🚚</span> {t('tracking.shippingHome')}</> : <><span aria-hidden="true">🏪</span> {t('tracking.pickupStore')}</>}
+          {pedido.tipo_entrega === 'envio' ? t('tracking.shippingHome') : t('tracking.pickupStore')}
         </p>
       </div>
 
@@ -253,7 +253,7 @@ export default function RastreoPedido({ onCerrar }) {
             placeholder={t('tracking.placeholder')}
             className="flex-1 bg-white rounded-2xl px-4 py-3 text-sm font-body font-semibold
                        text-ink-900 placeholder:text-ink-300 outline-none
-                       border-2 border-ink-200 focus:border-fiesta-magenta transition-colors"
+                       border-2 border-ink-200 focus:border-fiesta-magenta transition-colors focus:[border-color:#2563eb]"
           />
           <button
             onClick={handleBuscar}
@@ -271,14 +271,14 @@ export default function RastreoPedido({ onCerrar }) {
           </button>
         </div>
         {errorMsg && (
-          <p className="text-xs font-body font-bold text-fiesta-magenta mt-2 pl-1">{errorMsg}</p>
+          <p className="text-xs font-body font-bold text-red-500 mt-2 pl-1">{errorMsg}</p>
         )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-8 space-y-4">
         {pedidos === null && !buscando && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="text-5xl mb-3 animate-float" aria-hidden="true">🎁</div>
+            <div className="text-5xl mb-3 animate-float" aria-hidden="true">📦</div>
             <p className="font-display text-lg text-ink-500">{t('tracking.initialTitle')}</p>
             <p className="text-xs font-body text-ink-400 mt-1 max-w-xs">
               {t('tracking.initialHint')}
