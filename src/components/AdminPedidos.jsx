@@ -129,7 +129,7 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChang
       <div className={claseMiniatura}>
         {item.imagen_url && !imgError ? (
           <img src={item.imagen_url} alt={item.nombre} loading="lazy" onError={() => setImgError(true)}
-               className="w-full h-full object-cover" style={{ filter: tachado ? 'grayscale(1)' : 'none' }} />
+               className="w-full h-full object-contain" style={{ filter: tachado ? 'grayscale(1)' : 'none' }} />
         ) : (
           <Package size={esDesktop ? 14 : 20} className="text-purple-300" />
         )}

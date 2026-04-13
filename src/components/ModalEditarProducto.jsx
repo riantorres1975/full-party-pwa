@@ -314,7 +314,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
             {previewSrc && (
               <div className="mt-3 flex justify-center">
                 <div className="w-24 h-24 rounded-xl overflow-hidden border-2 border-ink-100 bg-ink-50">
-                  <img src={previewSrc} alt="" className="w-full h-full object-cover" />
+                  <img src={previewSrc} alt="" className="w-full h-full object-contain" />
                 </div>
               </div>
             )}
