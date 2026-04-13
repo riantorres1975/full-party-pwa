@@ -331,7 +331,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                       <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-ink-50"
                            style={{ border: `2px solid ${c}44`, filter: agotadoRT ? 'grayscale(60%)' : 'none' }}>
                         <img src={item.imagen_url} alt={item.nombre}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                           onError={(e) => { e.target.src = `https://placehold.co/56x56/f3e8ff/a855f7?text=?`; }} />
                       </div>
                       <div className="flex-1 min-w-0">
