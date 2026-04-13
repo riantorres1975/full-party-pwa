@@ -133,6 +133,19 @@ VITE_ADMIN_EMAILS=admin@mitienda.com
 
 VITE_MONEDA=MXN
          ↑ código de tu moneda (MXN para pesos mexicanos, USD para dólares)
+
+VITE_URL_FACEBOOK=https://www.facebook.com/tu-pagina
+         ↑ link a tu página de Facebook (déjalo vacío para que no aparezca el botón)
+
+VITE_URL_INSTAGRAM=https://www.instagram.com/tu-usuario
+         ↑ link a tu perfil de Instagram (déjalo vacío para ocultarlo)
+
+VITE_URL_TIKTOK=https://www.tiktok.com/@tu-usuario
+         ↑ link a tu TikTok (déjalo vacío para ocultarlo)
+
+VITE_URL_WHATSAPP_CHAT=https://wa.me/5214521234567
+         ↑ link directo a tu WhatsApp — formato: https://wa.me/ seguido de tu número con lada
+           Ejemplo: si tu número es 452-123-4567 escribe: https://wa.me/5214521234567
 ```
 
 4. Guarda el archivo (Ctrl+S).
