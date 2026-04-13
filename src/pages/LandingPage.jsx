@@ -36,17 +36,20 @@ const ENV = {
   waNumber: import.meta.env.VITE_WHATSAPP_NUMBER || '521XXXXXXXXXX',
   negocio:  import.meta.env.VITE_NOMBRE_NEGOCIO  || 'Full Party',
   horario:  import.meta.env.VITE_HORARIO_TIENDA  || 'Lun–Sáb 9am–7pm',
+  tiktok:   import.meta.env.VITE_TIKTOK_URL      || null,
   suc1: {
     nombre:   import.meta.env.VITE_SUC1_NOMBRE    || 'Francisco Villa',
     badge:    import.meta.env.VITE_SUC1_BADGE     || 'Sucursal Principal',
     direccion:import.meta.env.VITE_SUC1_DIRECCION || 'Uruapan, Michoacán',
     mapsUrl:  import.meta.env.VITE_SUC1_MAPS_URL  || '#',
+    facebook: import.meta.env.VITE_SUC1_FACEBOOK  || null,
   },
   suc2: {
     nombre:   import.meta.env.VITE_SUC2_NOMBRE    || 'Sol Naciente',
     badge:    import.meta.env.VITE_SUC2_BADGE     || 'Sucursal Norte',
     direccion:import.meta.env.VITE_SUC2_DIRECCION || 'Col. Sol Naciente, Uruapan, Michoacán',
     mapsUrl:  import.meta.env.VITE_SUC2_MAPS_URL  || '#',
+    facebook: import.meta.env.VITE_SUC2_FACEBOOK  || null,
   },
 };
 
@@ -128,43 +131,66 @@ const MARCAS = [
 const RESENAS = [
   {
     id:      1,
-    nombre:  'María González',
-    inicial: 'M',
+    nombre:  'Ernesto Reyes',
+    inicial: 'E',
     color:   C.pink,
-    texto:   'Excelente atención y variedad de productos para mayoreo. Los precios son inmejorables, muy recomendado para eventos y fiestas de todo tipo.',
-    fecha:   'hace 2 semanas',
+    stars:   4,
+    texto:   'Tiene la gran mayoría de lo que buscas. Claro, no siempre van a tener todo lo que quieres pero es una gran sucursal para surtir la gran mayoría para tus fiestas. Los empleados muy atentos y te ayudan a buscar lo que requieres.',
+    fecha:   'hace 8 meses',
   },
   {
     id:      2,
-    nombre:  'Carlos Mendoza',
-    inicial: 'C',
+    nombre:  'Bygoq Ponce',
+    inicial: 'B',
     color:   C.purple,
-    texto:   'Pedí para los 15 años de mi hija y todo llegó perfecto. El proceso de pedido por WhatsApp fue muy sencillo y super rápido. 100% recomendado.',
-    fecha:   'hace 1 mes',
+    stars:   5,
+    texto:   'Rápida atención y buen surtido en artículos de fiesta, precios muy bajos.',
+    fecha:   'hace un año',
   },
   {
     id:      3,
-    nombre:  'Ana Martínez',
-    inicial: 'A',
+    nombre:  'Jessi Garibay Gomez',
+    inicial: 'J',
     color:   C.green,
-    texto:   'Gran surtido de globos y decoraciones. Los arreglos quedaron hermosos. Sin duda el mejor lugar para comprar al mayoreo en Uruapan.',
-    fecha:   'hace 3 semanas',
+    stars:   5,
+    texto:   'Excelente servicio, siempre tienen lo que necesito y sobre todo a muy buen precio. 10/10.',
+    fecha:   'hace 9 meses',
   },
   {
     id:      4,
-    nombre:  'Roberto Torres',
-    inicial: 'R',
+    nombre:  'Yuri Avila',
+    inicial: 'Y',
     color:   C.orange,
-    texto:   'Compro aquí regularmente para mis eventos. La atención es excelente y los productos de muy buena calidad. Siempre hay buen stock.',
-    fecha:   'hace 2 meses',
+    stars:   5,
+    texto:   'Excelente atención y precios muy accesibles. Me trataron muy bien.',
+    fecha:   'hace 10 meses',
   },
   {
     id:      5,
-    nombre:  'Lupita Sánchez',
+    nombre:  'Lopez Mederos',
     inicial: 'L',
     color:   C.cyan,
-    texto:   'Muy buena experiencia, precios muy accesibles al mayoreo. El personal es amable y el surtido impresionante. ¡Volveré pronto!',
-    fecha:   'hace 1 semana',
+    stars:   5,
+    texto:   'Encuentras de todo y a un súper precio, muy recomendable.',
+    fecha:   'hace 7 meses',
+  },
+  {
+    id:      6,
+    nombre:  'Yazmin Lopez',
+    inicial: 'Y',
+    color:   C.blue,
+    stars:   5,
+    texto:   'Todo a buen precio y excelente atención.',
+    fecha:   'hace 10 meses',
+  },
+  {
+    id:      7,
+    nombre:  'Perla Rubi Heredia Alba',
+    inicial: 'P',
+    color:   C.pink,
+    stars:   5,
+    texto:   'Encuentra lo básico para casi cualquier tipo de fiesta, a precios bajos. En los últimos meses han aumentado su variedad en mercancía.',
+    fecha:   'hace 11 meses',
   },
 ];
 
@@ -175,7 +201,10 @@ const SUCURSALES = [
     direccion: ENV.suc1.direccion,
     horario:   ENV.horario,
     mapsUrl:   ENV.suc1.mapsUrl,
+    facebook:  ENV.suc1.facebook,
     color:     C.pink,
+    accent:    C.orange,
+    ilustId:   'suc1',
   },
   {
     nombre:    ENV.suc2.nombre,
@@ -183,7 +212,10 @@ const SUCURSALES = [
     direccion: ENV.suc2.direccion,
     horario:   ENV.horario,
     mapsUrl:   ENV.suc2.mapsUrl,
+    facebook:  ENV.suc2.facebook,
     color:     C.purple,
+    accent:    C.cyan,
+    ilustId:   'suc2',
   },
 ];
 
@@ -211,6 +243,51 @@ const FAQS = [
   {
     pregunta:  '¿Cuál es el pedido mínimo?',
     respuesta: 'No existe un mínimo fijo para hacer un pedido. Sin embargo, los precios mayoreo aplican según la tabla escalonada de cada producto. Puedes combinar categorías.',
+  },
+];
+
+/**
+ * Galería de decoraciones de clientes.
+ * Para agregar fotos reales: pon la URL en el campo `img`.
+ * Ejemplo: img: 'https://tudominio.com/foto-cliente.jpg'
+ * Cuando img es null se muestra un placeholder festivo.
+ */
+/**
+ * ⚠️  Las URLs de Facebook CDN expiran (~7 días).
+ *    Para uso permanente: descarga las fotos y súbelas a
+ *    Supabase Storage o a la carpeta public/ del proyecto,
+ *    luego reemplaza cada `img` con la URL definitiva.
+ */
+const GALERIA = [
+  {
+    id: 1,
+    img: 'https://scontent.fupn1-1.fna.fbcdn.net/v/t39.30808-6/655714227_1556266909838671_515110159478694284_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=111&ccb=1-7&_nc_sid=7b2446&_nc_eui2=AeH8jum2SGexg_ATW9XTVqoHwTtGGgOC4AXBO0YaA4LgBebWTk4kXup9lH8D3FkDLWgf54JZGMskTrX80GUKm1iQ&_nc_ohc=hDlCSLmcOi0Q7kNvwEMBJRq&_nc_oc=AdpBwa2HQYWvIDtKhCxVxdC_uV4SFv2xi5lVrLPNnNb8VccqMrGkzh6M84kyZwDdKcw&_nc_zt=23&_nc_ht=scontent.fupn1-1.fna&_nc_gid=S0eKesvxfnbIx4mtE4pmUQ&_nc_ss=7a3a8&oh=00_Af2IXln3zMnBSsmxTMShvTibcFJknbiR29ZDaUgTsNxZDg&oe=69E24A52',
+    cliente: 'Sofía M.',   evento: 'XV Años',     emoji: '🎀', color: C.pink,   accent: C.purple,
+  },
+  {
+    id: 2,
+    img: 'https://scontent.fupn1-1.fna.fbcdn.net/v/t39.30808-6/650115519_1543308384467857_2964905523130558587_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=108&ccb=1-7&_nc_sid=7b2446&_nc_eui2=AeG9hd3s6JCe-5yrRRq6dFt4kOHc5lY5NMWQ4dzmVjk0xYgnRCA_yovFgy--riLtKWtGYyz-YsKGvkT2HkZdtkJN&_nc_ohc=tZmsddaCdP4Q7kNvwGY6DLE&_nc_oc=AdqDDIRUbt6YCvvj4JMLN4mK1S31FdaXBiaK_WNrA0rCDqwTTsaTdCgH38qNCvQcSm8&_nc_zt=23&_nc_ht=scontent.fupn1-1.fna&_nc_gid=KzcPkP7XXsgNAwN9tcw_-Q&_nc_ss=7a3a8&oh=00_Af2BRhB1tYPDxGlw39hGaWZ-RI3jWTuQmyTIfdn1b-BBdg&oe=69E25729',
+    cliente: 'Lupita R.',  evento: 'Cumpleaños',  emoji: '🎂', color: C.orange, accent: C.yellow,
+  },
+  {
+    id: 3,
+    img: 'https://scontent.fupn1-1.fna.fbcdn.net/v/t39.30808-6/646371072_1536596845139011_9062621644060145380_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=103&ccb=1-7&_nc_sid=7b2446&_nc_eui2=AeEB2CW6sKK9BGsJKnv-wJPFw6L7JFhmMpLDovskWGYyksoM-qBn_LZlWIf87IWYpxktn0FzR408nm5lsz2_CMhj&_nc_ohc=vuNJwRU6I_QQ7kNvwHq-Raq&_nc_oc=Adp0FKgJbuoClnI_-SDTidOXUhgILYUWqJXipQD1w3uAkFyYYqDpPUpRPkPOCNU7PbE&_nc_zt=23&_nc_ht=scontent.fupn1-1.fna&_nc_gid=EvM4PniswelfIudy8P7D3Q&_nc_ss=7a3a8&oh=00_Af2F4-E8hKPp6lPNy6uE-8u1Ow0gfrE4NpK0V5h1UdinXQ&oe=69E22920',
+    cliente: 'Ana G.',     evento: 'Baby Shower', emoji: '🍼', color: C.cyan,   accent: C.blue,
+  },
+  {
+    id: 4,
+    img: 'https://scontent.fupn1-1.fna.fbcdn.net/v/t39.30808-6/643795137_1533680585430637_2974080087927427246_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=104&ccb=1-7&_nc_sid=7b2446&_nc_eui2=AeFKaTOjIzaBGMBvR4ff16QnufUq_oOeJty59Sr-g54m3GnN-_GOOrg0uFmTsKBvGTEJ_RO-HHgt746jivoke3l0&_nc_ohc=jmmmz8-A1BkQ7kNvwHF3-eM&_nc_oc=Adr6KIPNNYXQuyx24XkqDfFKNC6exXR9sXl7d5YIB-EBZqR7HzGex9MbTZwdrthEHh8&_nc_zt=23&_nc_ht=scontent.fupn1-1.fna&_nc_gid=4XCgnGaaPyjCzZps3nF7NA&_nc_ss=7a3a8&oh=00_Af1-ZjSc9sqMU65SZYJe6vZkTm7LJb-7QNTLFfL0kVCSAQ&oe=69E24FE9',
+    cliente: 'Karen V.',   evento: 'Boda',        emoji: '💍', color: C.purple, accent: C.pink,
+  },
+  {
+    id: 5,
+    img: 'https://scontent.fupn1-1.fna.fbcdn.net/v/t39.30808-6/634721196_1524228559709173_2276661410527749540_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=105&ccb=1-7&_nc_sid=7b2446&_nc_eui2=AeHUraMiLrg0h26h9sOV3JJxstMb2GhuHCuy0xvYaG4cKzWL3LBICPxXvy5LowTtf2nzmscNICcuekN-6NvMg7T1&_nc_ohc=9tUWX6p3JvsQ7kNvwEYG0F-&_nc_oc=AdoJ6dsdp0QhT8ryXVFI1lkWZsPq2tsm_LmXZjAXQQzNYIR6FmqYIqr4LT-mJkbUFtQ&_nc_zt=23&_nc_ht=scontent.fupn1-1.fna&_nc_gid=ePLfxrnALTmD7IfzA9CAzA&_nc_ss=7a3a8&oh=00_Af3OlGUMU3iW2smrEjAR4Y7VOgkiIq-wr68vhj87GtTrJA&oe=69E23CE4',
+    cliente: 'Fernanda L.', evento: 'Graduación', emoji: '🎓', color: C.green,  accent: C.cyan,
+  },
+  {
+    id: 6,
+    img: 'https://scontent.fupn1-1.fna.fbcdn.net/v/t39.30808-6/598791752_1467910745340955_8368425489892137364_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=105&ccb=1-7&_nc_sid=7b2446&_nc_eui2=AeE2L3KV6G8A7nfgi0OIYPXO7LZSSKxzE_HstlJIrHMT8btqz-6wXTPKoNmwGVK65UM5VXOlVvLDYmmwAgq3lMy3&_nc_ohc=GmUaaGmOeSoQ7kNvwHVucI8&_nc_oc=AdoNZDGhbcj0JkKKTnLoNUgH1ePaAWcBpXzIqxLqV9FuU7iE0oPdtiNd3aBYMRKi8as&_nc_zt=23&_nc_ht=scontent.fupn1-1.fna&_nc_gid=4pum0MbIAHuaT1cOnEuWmg&_nc_ss=7a3a8&oh=00_Af0-dY1kh_J1yZT9zHhnh__BiMvSGd0_XA1hiuyaBQQ-Ig&oe=69E23460',
+    cliente: 'Tú',         evento: '¡Tu fiesta!', emoji: '🎉', color: C.pink,   accent: C.orange,
   },
 ];
 
@@ -328,7 +405,7 @@ function GradCard({ children, gradient, hoverColor = 'rgba(0,0,0,0.1)', classNam
 /** Estrellas de calificación */
 function StarRating({ count = 5 }) {
   return (
-    <div className="flex gap-0.5" aria-label={`${count} de 5 estrellas`}>
+    <div className="flex gap-0.5" role="img" aria-label={`${count} de 5 estrellas`}>
       {Array.from({ length: count }).map((_, i) => (
         <Star key={i} size={16} fill={C.yellow} stroke="none" aria-hidden="true" />
       ))}
@@ -341,6 +418,24 @@ function WaIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+    </svg>
+  );
+}
+
+/** Ícono SVG de Facebook */
+function FbIcon({ size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+    </svg>
+  );
+}
+
+/** Ícono SVG de TikTok */
+function TikTokIcon({ size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/>
     </svg>
   );
 }
@@ -453,7 +548,7 @@ function BranchTyper() {
         className="flex items-center justify-center text-2xl sm:text-3xl lg:text-4xl mt-2"
         style={{ minHeight: '1.25em' }}
       >
-        <span className="font-display" style={{ color: C.purple }}>Suc.&nbsp;</span>
+        <span className="font-display" style={{ color: C.textBody }}>Suc.&nbsp;</span>
         <ColorLetters text={suffix} />
         <span
           className="cursor-blink inline-block rounded-sm self-center ml-0.5"
@@ -543,7 +638,7 @@ function ReviewsCarousel({ resenas }) {
           <div className="min-w-0">
             <p className="font-black text-sm truncate" style={{ color: C.textHead }}>{r.nombre}</p>
             <div className="flex items-center gap-2 mt-0.5">
-              <StarRating count={5} />
+              <StarRating count={r.stars} />
               <span className="text-xs" style={{ color: C.textMuted }}>{r.fecha}</span>
             </div>
           </div>
@@ -603,10 +698,158 @@ function ReviewsCarousel({ resenas }) {
       {/* Rating global */}
       <div className="flex items-center justify-center gap-2 mt-4">
         <StarRating count={5} />
-        <span className="font-black text-sm" style={{ color: C.textHead }}>5.0</span>
-        <span className="text-xs" style={{ color: C.textMuted }}>· {resenas.length} reseñas verificadas</span>
+        <span className="font-black text-sm" style={{ color: C.textHead }}>4.9</span>
+        <span className="text-xs" style={{ color: C.textMuted }}>· {resenas.length} reseñas en Google Maps</span>
       </div>
     </div>
+  );
+}
+
+/** Tarjeta de galería con flotación, zoom e iluminación en CSS puro */
+function GaleriaCard({ img, cliente, evento, emoji, color, accent, floatDur = 5, floatDelay = 0 }) {
+  return (
+    <div
+      className="lp-galeria-card"
+      style={{
+        aspectRatio:    '4/5',
+        '--gal-shadow': `0 24px 48px ${color}40`,
+      }}
+    >
+      {/* Envoltorio que recibe la animación de flotación */}
+      <div
+        className="lp-galeria-float w-full h-full relative"
+        style={{
+          '--float-dur':   `${floatDur}s`,
+          '--float-delay': `${floatDelay}s`,
+        }}
+      >
+        {img ? (
+          <img
+            src={img}
+            alt={`Decoración de ${cliente} — ${evento}`}
+            loading="lazy"
+          />
+        ) : (
+          /* Placeholder festivo */
+          <div
+            className="w-full h-full flex flex-col items-center justify-center gap-3 select-none"
+            style={{ background: `linear-gradient(145deg, ${color}22, ${accent}18)`, border: `2px dashed ${color}44` }}
+          >
+            <span className="absolute top-3 right-3 text-lg opacity-40" aria-hidden="true">✨</span>
+            <span className="absolute bottom-5 left-3 text-lg opacity-30" aria-hidden="true">🎊</span>
+            <span className="absolute top-7 left-5 text-sm opacity-25"  aria-hidden="true">⭐</span>
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center text-3xl"
+              style={{ background: `${color}20`, border: `2px solid ${color}33` }}
+            >
+              {emoji}
+            </div>
+            <p className="font-display text-xs text-center px-3" style={{ color }}>
+              Comparte tu fiesta
+            </p>
+          </div>
+        )}
+
+        {/* Overlay con nombre y tipo de evento */}
+        <div
+          className="lp-galeria-overlay absolute inset-0 flex flex-col justify-end p-4 z-10"
+          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 58%)' }}
+        >
+          <span
+            className="text-xs font-black px-2.5 py-1 rounded-full self-start mb-1.5"
+            style={{ background: `${color}CC`, color: 'white' }}
+          >
+            {evento}
+          </span>
+          <p className="text-white font-bold text-xs">{cliente}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Ilustración SVG festiva para el encabezado de la tarjeta de sucursal */
+function SucursalIllustration({ color, accent, id }) {
+  const gid = `sg-${id}`;
+  return (
+    <svg
+      viewBox="0 0 300 150"
+      className="w-full h-full"
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id={gid} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stopColor={color}  stopOpacity="0.22" />
+          <stop offset="100%" stopColor={accent} stopOpacity="0.14" />
+        </linearGradient>
+      </defs>
+
+      {/* Fondo */}
+      <rect width="300" height="150" fill={`url(#${gid})`} />
+
+      {/* Cuerda de guirnalda */}
+      <path d="M0,22 Q75,36 150,22 Q225,8 300,22"
+        fill="none" stroke={color} strokeWidth="1.4" opacity="0.4" />
+
+      {/* Banderines triangulares */}
+      {[12,48,84,120,156,192,228,264].map((x, i) => (
+        <polygon
+          key={i}
+          points={`${x},22 ${x+20},22 ${x+10},40`}
+          fill={i % 2 === 0 ? color : accent}
+          opacity="0.55"
+        />
+      ))}
+
+      {/* Globo izquierdo */}
+      <ellipse cx="32" cy="95" rx="18" ry="22" fill={color}  opacity="0.38" />
+      <ellipse cx="26" cy="87" rx="5"  ry="6"  fill="white"  opacity="0.22" />
+      <path d="M32,117 Q30,126 34,130 Q30,132 32,138"
+        stroke={color} strokeWidth="1.3" strokeLinecap="round" fill="none" opacity="0.38" />
+
+      {/* Globo derecho */}
+      <ellipse cx="268" cy="90" rx="18" ry="22" fill={accent} opacity="0.38" />
+      <ellipse cx="262" cy="82" rx="5"  ry="6"  fill="white"  opacity="0.22" />
+      <path d="M268,112 Q266,121 270,125 Q266,127 268,133"
+        stroke={accent} strokeWidth="1.3" strokeLinecap="round" fill="none" opacity="0.38" />
+
+      {/* Confeti — círculos */}
+      {[
+        [65, 55, 5, color, 0.45], [240, 50, 6, accent, 0.4],
+        [50, 115, 4, accent, 0.38], [255, 118, 5, color, 0.4],
+        [190, 48, 3.5, color, 0.5], [110, 130, 4, accent, 0.35],
+      ].map(([x, y, r, c, op], i) => (
+        <circle key={i} cx={x} cy={y} r={r} fill={c} opacity={op} />
+      ))}
+
+      {/* Confeti — rombos */}
+      {[
+        [85, 105, color, 0.38], [215, 112, accent, 0.35],
+        [160, 135, color, 0.3], [280, 60, accent, 0.4],
+        [20, 60, color, 0.35],
+      ].map(([x, y, c, op], i) => (
+        <rect key={i} x={x-5} y={y-5} width="10" height="10"
+          fill={c} opacity={op} transform={`rotate(45,${x},${y})`} />
+      ))}
+
+      {/* Estrellas */}
+      {[[70, 42], [232, 40], [95, 135], [205, 130]].map(([x, y], i) => (
+        <text key={i} x={x} y={y} fontSize="13"
+          fill={i % 2 === 0 ? color : accent} opacity="0.6" textAnchor="middle">★</text>
+      ))}
+
+      {/* Círculo central (fondo del ícono) */}
+      <circle cx="150" cy="90" r="36" fill="white" opacity="0.5" />
+      <circle cx="150" cy="90" r="26" fill="white" opacity="0.45" />
+
+      {/* Pin de mapa estilizado */}
+      <path
+        d="M150,68 C139,68 130,77 130,88 C130,103 150,115 150,115 C150,115 170,103 170,88 C170,77 161,68 150,68 Z"
+        fill={color} opacity="0.85"
+      />
+      <circle cx="150" cy="88" r="7" fill="white" opacity="0.95" />
+    </svg>
   );
 }
 
@@ -720,7 +963,7 @@ export default function LandingPage() {
                 >
                   {ENV.negocio}
                 </span>
-                <span className="text-[10px] font-black tracking-widest uppercase" style={{ color: C.cyan }}>
+                <span className="text-[10px] font-black tracking-widest uppercase" style={{ color: '#0369A1' }}>
                   Uruapan
                 </span>
               </div>
@@ -789,9 +1032,11 @@ export default function LandingPage() {
           )}
         </nav>
 
+        {/* ══ CONTENIDO PRINCIPAL ════════════════════════ */}
+        <main id="main-content">
+
         {/* ══ HERO ═══════════════════════════════════════ */}
         <section
-          id="main-content"
           className="relative px-5 pt-16 pb-28 text-center max-w-4xl mx-auto overflow-visible"
           aria-labelledby="hero-heading"
         >
@@ -805,7 +1050,7 @@ export default function LandingPage() {
             <Reveal>
               <span
                 className="inline-flex items-center gap-2 text-xs font-black px-5 py-2 rounded-full mb-8"
-                style={{ background: `${C.pink}18`, color: C.pink, border: `1px solid ${C.pink}35` }}
+                style={{ background: `${C.pink}18`, color: '#BE185D', border: `1px solid ${C.pink}35` }}
               >
                 <Sparkles size={12} aria-hidden="true" />
                 Distribuidora Mayoreo · Uruapan, Michoacán
@@ -852,7 +1097,7 @@ export default function LandingPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2.5 px-8 py-5 rounded-2xl font-black text-base bg-white lp-scale-hover"
-                  style={{ color: C.purple, border: `2px solid ${C.purple}30`, boxShadow: '0 2px 12px rgba(192,132,252,0.15)' }}
+                  style={{ color: '#7C3AED', border: `2px solid ${C.purple}30`, boxShadow: '0 2px 12px rgba(192,132,252,0.15)' }}
                   onClick={() => trackEvent('hero_whatsapp_click')}
                 >
                   <WaIcon size={18} /> Escribir al WhatsApp
@@ -1039,6 +1284,57 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ══ GALERÍA DE CLIENTES ═════════════════════════ */}
+        <section className="px-5 py-16" style={{ background: C.bgHero }}>
+          <div className="max-w-5xl mx-auto">
+            <Reveal>
+              <SectionTitle
+                title="Así celebran nuestros clientes"
+                subtitle="Decoraciones reales creadas con productos Full Party Uruapan."
+              />
+            </Reveal>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+              {GALERIA.map((item, i) => (
+                <Reveal key={item.id} delay={i * 0.07}>
+                  <GaleriaCard
+                    {...item}
+                    floatDur={4.5 + (i % 3) * 0.6}
+                    floatDelay={i * 0.5}
+                  />
+                </Reveal>
+              ))}
+            </div>
+
+            {/* CTA para que clientes compartan sus fotos */}
+            <Reveal delay={0.2}>
+              <div
+                className="rounded-2xl px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-4"
+                style={{ background: `${C.pink}10`, border: `1.5px dashed ${C.pink}44` }}
+              >
+                <div>
+                  <p className="font-display text-sm" style={{ color: C.textHead }}>
+                    ¿Decoraste con productos Full Party?
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: C.textMuted }}>
+                    Comparte tu foto por WhatsApp y aparece aquí 🎉
+                  </p>
+                </div>
+                <a
+                  href={`https://wa.me/${ENV.waNumber}?text=${encodeURIComponent('¡Hola! Quiero compartir la foto de mi decoración con productos Full Party 🎉')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm text-white lp-scale-hover"
+                  style={{ background: `linear-gradient(135deg, ${C.pink}, ${C.purple})` }}
+                  onClick={() => trackEvent('galeria_compartir_click')}
+                >
+                  <WaIcon size={14} /> Compartir mi foto
+                </a>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
         {/* ══ FAQ ═════════════════════════════════════════ */}
         <section id="faq" className="px-5 py-16" style={{ background: C.bgSteps }}>
           <div className="max-w-3xl mx-auto">
@@ -1066,25 +1362,28 @@ export default function LandingPage() {
           <div className="max-w-5xl mx-auto">
             <Reveal><SectionTitle title="Nuestras Sucursales" subtitle="Visítanos en Uruapan, Michoacán." /></Reveal>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {SUCURSALES.map(({ nombre, direccion, horario, mapsUrl, badge, color }, i) => (
+              {SUCURSALES.map(({ nombre, direccion, horario, mapsUrl, badge, color, accent, ilustId, facebook }, i) => (
                 <Reveal key={nombre} delay={i * 0.1} direction={i === 0 ? 'left' : 'right'}>
                   <GradCard
-                    gradient={`linear-gradient(135deg, ${color}, ${i === 0 ? C.orange : C.cyan})`}
+                    gradient={`linear-gradient(135deg, ${color}, ${accent})`}
                     hoverColor={`${color}22`}
                     className="h-full"
                   >
                     <div>
+                      {/* Encabezado ilustrado */}
                       <div
-                        className="h-28 flex items-center justify-center relative overflow-hidden rounded-t-[14px]"
-                        style={{ background: `linear-gradient(135deg, ${color}14, ${color}08)` }}
+                        className="h-40 relative overflow-hidden rounded-t-[14px]"
                         aria-hidden="true"
                       >
-                        <div className="absolute w-28 h-28 rounded-full" style={{ border: `1px solid ${color}18` }} />
-                        <div className="absolute w-40 h-40 rounded-full" style={{ border: `1px solid ${color}0e` }} />
-                        <MapPin size={34} style={{ color, opacity: 0.75 }} />
+                        <SucursalIllustration color={color} accent={accent} id={ilustId} />
                         <span
-                          className="absolute top-3 left-3 text-xs font-black px-3 py-1 rounded-full"
-                          style={{ background: `${color}18`, color, border: `1px solid ${color}33` }}
+                          className="absolute top-3 left-3 text-xs font-black px-3 py-1 rounded-full z-10"
+                          style={{
+                            background:    `${color}28`,
+                            color,
+                            border:        `1px solid ${color}44`,
+                            backdropFilter:'blur(6px)',
+                          }}
                         >{badge}</span>
                       </div>
                       <div className="p-5 flex flex-col gap-3">
@@ -1105,6 +1404,20 @@ export default function LandingPage() {
                         >
                           <Navigation size={13} aria-hidden="true" /> Ver en Google Maps
                         </a>
+
+                        {/* Redes sociales de la sucursal */}
+                        {facebook && (
+                          <a
+                            href={facebook}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-black lp-scale-hover"
+                            style={{ background: '#1877F214', color: '#1877F2', border: '1px solid #1877F233' }}
+                            onClick={() => trackEvent('facebook_click', { sucursal: nombre })}
+                          >
+                            <FbIcon size={14} /> Facebook
+                          </a>
+                        )}
                       </div>
                     </div>
                   </GradCard>
@@ -1156,6 +1469,8 @@ export default function LandingPage() {
           </div>
         </section>
 
+        </main>
+
         {/* ══ FOOTER — 3 columnas ══════════════════════════ */}
         <footer className="border-t bg-white" style={{ borderColor: '#EDE0F8' }}>
           <div className="max-w-5xl mx-auto px-5 pt-10 pb-6 grid grid-cols-1 sm:grid-cols-3 gap-10">
@@ -1179,21 +1494,64 @@ export default function LandingPage() {
               <p className="text-xs leading-relaxed mb-4" style={{ color: C.textMuted }}>
                 Distribuidora de artículos de fiesta al mayoreo en Uruapan, Michoacán.
               </p>
-              <a
-                href={WA_HREF}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-white lp-scale-hover"
-                style={{ background: 'linear-gradient(135deg, #25d366, #128c7e)' }}
-                onClick={() => trackEvent('footer_whatsapp_click')}
-              >
-                <WaIcon size={12} /> WhatsApp
-              </a>
+              {/* Botones de redes sociales */}
+              <div className="flex flex-wrap gap-2 mt-4">
+                <a
+                  href={WA_HREF}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black text-white lp-scale-hover"
+                  style={{ background: 'linear-gradient(135deg, #25d366, #128c7e)' }}
+                  onClick={() => trackEvent('footer_whatsapp_click')}
+                  aria-label="WhatsApp"
+                >
+                  <WaIcon size={12} /> WhatsApp
+                </a>
+                {ENV.suc1.facebook && (
+                  <a
+                    href={ENV.suc1.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black text-white lp-scale-hover"
+                    style={{ background: '#1251AE' }}
+                    onClick={() => trackEvent('footer_facebook_suc1_click')}
+                    aria-label="Facebook Suc. Francisco Villa"
+                  >
+                    <FbIcon size={12} /> Suc. {ENV.suc1.nombre}
+                  </a>
+                )}
+                {ENV.suc2.facebook && (
+                  <a
+                    href={ENV.suc2.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black text-white lp-scale-hover"
+                    style={{ background: '#1251AE' }}
+                    onClick={() => trackEvent('footer_facebook_suc2_click')}
+                    aria-label="Facebook Suc. Sol Naciente"
+                  >
+                    <FbIcon size={12} /> Suc. {ENV.suc2.nombre}
+                  </a>
+                )}
+                {ENV.tiktok && (
+                  <a
+                    href={ENV.tiktok}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black text-white lp-scale-hover"
+                    style={{ background: '#010101' }}
+                    onClick={() => trackEvent('footer_tiktok_click')}
+                    aria-label="TikTok"
+                  >
+                    <TikTokIcon size={12} /> TikTok
+                  </a>
+                )}
+              </div>
             </div>
 
             {/* Columna 2: Navegación */}
             <div>
-              <h4 className="font-display text-sm mb-4" style={{ color: C.textHead }}>Navegación</h4>
+              <h3 className="font-display text-sm mb-4" style={{ color: C.textHead }}>Navegación</h3>
               <ul className="flex flex-col gap-2">
                 {NAV_LINKS.map(l => (
                   <li key={l.label}>
@@ -1211,7 +1569,7 @@ export default function LandingPage() {
 
             {/* Columna 3: Contacto */}
             <div>
-              <h4 className="font-display text-sm mb-4" style={{ color: C.textHead }}>Contacto</h4>
+              <h3 className="font-display text-sm mb-4" style={{ color: C.textHead }}>Contacto</h3>
               <ul className="flex flex-col gap-3 text-xs" style={{ color: C.textMuted }}>
                 <li className="flex items-start gap-2">
                   <MapPin size={12} className="mt-0.5 flex-shrink-0" style={{ color: C.pink }} aria-hidden="true" />

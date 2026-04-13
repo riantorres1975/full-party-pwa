@@ -159,6 +159,72 @@
   transform: rotate(180deg);
 }
 
+/* ── Galería de decoraciones de clientes ───────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes galFloat {
+    0%, 100% { transform: translateY(0px) rotate(0deg);    }
+    50%       { transform: translateY(-8px) rotate(0.4deg); }
+  }
+  /* Flotación aplicada al hijo interno para no chocar con el hover del padre */
+  .lp-galeria-float {
+    animation: galFloat var(--float-dur, 5s) ease-in-out var(--float-delay, 0s) infinite;
+  }
+  .lp-galeria-card:hover .lp-galeria-float {
+    animation-play-state: paused;
+  }
+}
+
+.lp-galeria-card {
+  position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  transition: transform 0.4s cubic-bezier(0.16,1,0.3,1),
+              box-shadow 0.4s ease;
+}
+.lp-galeria-card:hover {
+  transform: translateY(-10px) scale(1.03);
+  box-shadow: var(--gal-shadow, 0 24px 48px rgba(0,0,0,0.2));
+}
+
+/* Overlay de información: oculto por defecto, visible al hover */
+.lp-galeria-overlay {
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.lp-galeria-card:hover .lp-galeria-overlay {
+  opacity: 1;
+}
+
+/* Zoom de la foto al hover */
+.lp-galeria-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.55s cubic-bezier(0.16,1,0.3,1);
+}
+.lp-galeria-card:hover img { transform: scale(1.1); }
+
+/* Barrido de brillo */
+.lp-galeria-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255,255,255,0.2) 50%,
+    transparent 70%
+  );
+  transform: translateX(-120%);
+  transition: transform 0.65s ease;
+  pointer-events: none;
+  z-index: 5;
+}
+.lp-galeria-card:hover::after { transform: translateX(120%); }
+
 /* ── Prefers-reduced-motion: desactivar todas las animaciones  */
 @media (prefers-reduced-motion: reduce) {
   .btn-pink-pulse,
@@ -174,6 +240,11 @@
   .lp-card,
   .lp-scale-hover,
   .lp-cat-card {
+    transition: none !important;
+  }
+  /* En reduced-motion el overlay se muestra siempre a mitad de opacidad */
+  .lp-galeria-overlay {
+    opacity: 0.6 !important;
     transition: none !important;
   }
 }
