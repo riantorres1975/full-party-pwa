@@ -232,7 +232,7 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
             </button>
             {cantidadTotal > 0 && (
               <span className="absolute -top-2 -right-2 min-w-[22px] h-[22px] flex items-center justify-center
-                               text-[12px] leading-none font-body font-black tabular-nums bg-[#ffe55c] text-[#4b1d7a]
+                               text-[12px] leading-none font-body font-black tabular-nums bg-white text-[#2563eb]
                                rounded-full px-1 animate-cart-bounce border-2 border-[#1b2140] shadow-[0_2px_8px_rgba(0,0,0,0.25)] pointer-events-none">
                 {cantidadTotal > 99 ? '99+' : cantidadTotal}
               </span>

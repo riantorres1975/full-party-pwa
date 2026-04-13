@@ -36,11 +36,11 @@ export default function LoginAdmin({ onLogin, loading, error }) {
       >
         <div
           className="absolute -top-32 -left-32 w-96 h-96 rounded-full opacity-20 blur-3xl"
-          style={{ background: 'radial-gradient(circle, #a855f7, transparent 70%)' }}
+          style={{ background: 'radial-gradient(circle, #6366f1, transparent 70%)' }}
         />
         <div
           className="absolute -bottom-40 -right-20 w-[28rem] h-[28rem] rounded-full opacity-15 blur-3xl"
-          style={{ background: 'radial-gradient(circle, #ff3dac, transparent 70%)' }}
+          style={{ background: 'radial-gradient(circle, #2563eb, transparent 70%)' }}
         />
       </div>
 
@@ -141,7 +141,7 @@ export default function LoginAdmin({ onLogin, loading, error }) {
             style={{
               background: loading || !email || !password
                 ? 'rgba(168,85,247,0.4)'
-                : 'linear-gradient(135deg, #ff3dac, #a855f7)',
+                : 'linear-gradient(135deg, #2563eb, #6366f1)',
               boxShadow: loading || !email || !password
                 ? 'none'
                 : '0 4px 24px rgba(255,61,172,0.35)',

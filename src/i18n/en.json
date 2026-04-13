@@ -18,7 +18,7 @@
   "common.followUs": "Follow us",
   "common.viewOnMaps": "View on Google Maps →",
 
-  "header.subtitle": "Balloons · Décor · Parties",
+  "header.subtitle": "Catalog · Orders · WhatsApp",
   "header.install": "Install",
   "header.track": "Track",
   "header.admin": "Admin",
@@ -28,8 +28,8 @@
   "header.adminAriaLabel": "Go to admin panel",
   "header.trackAriaLabel": "Track my order",
 
-  "intro.title": "Full PartyApp",
-  "intro.subtitle": "Digital catalog for your party",
+  "intro.title": "My Store",
+  "intro.subtitle": "Digital product catalog",
 
   "trust.shipping": "✓ Local delivery",
   "trust.payOnDelivery": "✓ Pay on delivery",

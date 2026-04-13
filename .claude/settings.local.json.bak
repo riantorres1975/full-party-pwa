@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node src/__tests__/seguridad.test.mjs)",
+      "Bash(npx vite:*)",
+      "Bash(npm run:*)",
+      "Bash(wc -l \"C:\\\\Users\\\\Full Party\\\\Desktop\\\\full-party-pwa-main/src/components\"/*.jsx)",
+      "Bash(find \"C:\\\\Users\\\\Full Party\\\\Desktop\\\\full-party-pwa-main/src\" -name \"*.jsx\" -exec wc -l {} +)"
+    ]
+  }
+}

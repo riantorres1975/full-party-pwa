@@ -35,8 +35,8 @@ function PillFiltro({ label, activo, onClick }) {
                   ${activo ? 'text-white shadow-sm' : 'hover:bg-ink-100'}`}
       style={activo
         ? {
-            background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
-            boxShadow: '0 2px 8px #ff3dac33',
+            background: 'linear-gradient(135deg, #2563eb, #6366f1)',
+            boxShadow: '0 2px 8px #2563eb22',
           }
         : {
             background: 'var(--surface-card)',
@@ -68,7 +68,7 @@ function FilaFiltro({ label, activo, onClick }) {
         className={`w-[17px] h-[17px] rounded flex items-center justify-center flex-shrink-0
                    ${activo ? 'text-white' : ''}`}
         style={activo
-          ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }
+          ? { background: 'linear-gradient(135deg, #2563eb, #6366f1)' }
           : { border: '1.5px solid var(--border-default)', background: 'var(--surface-card)' }
         }
       >

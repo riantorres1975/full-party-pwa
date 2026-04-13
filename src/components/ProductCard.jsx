@@ -46,9 +46,9 @@ function ProductCardInner({
       className="product-card rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-300 flex flex-col h-full"
       style={{
         background: 'var(--surface-card)',
-        border: esNuevo ? '1.5px solid rgba(168,85,247,0.35)' : '1px solid var(--border-soft)',
+        border: esNuevo ? '1.5px solid rgba(37,99,235,0.3)' : '1px solid var(--border-soft)',
         boxShadow: enCarrito && !agotado
-          ? '0 4px 20px rgba(168, 85, 247, 0.18)'
+          ? '0 4px 20px rgba(37, 99, 235, 0.15)'
           : undefined,
         animation: esNuevo ? 'cardNuevoGlow 3s ease-in-out infinite' : undefined,
         opacity: agotado ? 0.65 : 1,
@@ -100,7 +100,7 @@ function ProductCardInner({
           {producto.es_nuevo === true && !agotado && (
             <div className="absolute top-2 left-2 text-[9px] font-body font-black uppercase tracking-wider
                             px-2 py-0.5 rounded-full text-white animate-pulse"
-                 style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)', animationDuration: '2.5s' }}>
+                 style={{ background: 'linear-gradient(135deg, #2563eb, #6366f1)', animationDuration: '2.5s' }}>
               {t('common.new')}
             </div>
           )}
@@ -185,7 +185,7 @@ function ProductCardInner({
               className={`w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl text-white
                          transition-all duration-150
                          ${maxStockAlcanzado ? 'opacity-50 cursor-not-allowed' : 'active:scale-90'}`}
-              style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}
+              style={{ background: 'linear-gradient(135deg, #2563eb, #6366f1)' }}
               aria-label={t('product.addOne', { name: producto.nombre })}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -201,8 +201,8 @@ function ProductCardInner({
                        py-1.5 px-2.5 sm:py-2 sm:px-3 rounded-xl transition-all duration-200
                        ${maxStockAlcanzado ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'}`}
             style={{
-              background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
-              boxShadow: maxStockAlcanzado ? 'none' : '0 2px 10px rgba(168,85,247,0.25)',
+              background: 'linear-gradient(135deg, #2563eb, #6366f1)',
+              boxShadow: maxStockAlcanzado ? 'none' : '0 2px 10px rgba(37,99,235,0.2)',
             }}
             aria-label={t('product.addAriaLabel', { name: producto.nombre })}
           >

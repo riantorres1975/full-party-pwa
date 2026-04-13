@@ -426,8 +426,8 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
               className="flex-1 py-3 rounded-2xl font-body font-black text-sm text-white
                          disabled:opacity-60 flex items-center justify-center gap-2"
               style={{
-                background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
-                boxShadow: enviando ? 'none' : '0 4px 16px #ff3dac44',
+                background: 'linear-gradient(135deg, #2563eb, #6366f1)',
+                boxShadow: enviando ? 'none' : '0 4px 16px #2563eb33',
               }}
             >
               {enviando ? <Loader2 size={18} className="animate-spin" /> : null}

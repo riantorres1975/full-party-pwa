@@ -18,7 +18,7 @@
   "common.followUs": "Síguenos",
   "common.viewOnMaps": "Ver en Google Maps →",
 
-  "header.subtitle": "Globos · Decoración · Fiestas",
+  "header.subtitle": "Catálogo · Pedidos · WhatsApp",
   "header.install": "Instalar",
   "header.track": "Rastrear",
   "header.admin": "Admin",
@@ -28,10 +28,10 @@
   "header.adminAriaLabel": "Ir al panel de administración",
   "header.trackAriaLabel": "Rastrear mi pedido",
 
-  "intro.title": "Full PartyApp",
-  "intro.subtitle": "Catalogo digital para tu fiesta",
+  "intro.title": "Mi Tienda",
+  "intro.subtitle": "Catálogo digital de productos",
 
-  "trust.shipping": "✓ Envío en Uruapan",
+  "trust.shipping": "✓ Envío local",
   "trust.payOnDelivery": "✓ Pago al recibir",
   "trust.whatsapp": "✓ Atención por WhatsApp",
   "trust.trackOrder": "📦 Rastrear pedido",

@@ -45,7 +45,7 @@ export default function BuscadorFiltros({
               backgroundColor: 'var(--surface-input)',
               color: 'var(--text-primary)',
             }}
-            onFocus={e => e.target.style.borderColor = '#a855f7'}
+            onFocus={e => e.target.style.borderColor = '#2563eb'}
             onBlur={e  => e.target.style.borderColor = 'var(--border-soft)'}
           />
           {busqueda && (
@@ -65,8 +65,8 @@ export default function BuscadorFiltros({
           className="relative flex-shrink-0 w-11 h-11 flex items-center justify-center lg:hidden
                      rounded-xl transition-all duration-200 active:scale-90"
           style={totalFiltrosActivos > 0
-            ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
-                border: '1px solid transparent', boxShadow: '0 2px 10px #ff3dac44' }
+            ? { background: 'linear-gradient(135deg, #2563eb, #6366f1)',
+                border: '1px solid transparent', boxShadow: '0 2px 10px #2563eb33' }
             : { border: '1px solid var(--border-soft)', background: 'var(--surface-card)' }
           }
           aria-label={t('search.openFilters')}
@@ -102,8 +102,8 @@ export default function BuscadorFiltros({
               className="flex items-center gap-1 text-[11px] font-body font-black
                          text-white px-2.5 py-1 rounded-lg flex-shrink-0
                          transition-all duration-150 active:scale-95"
-              style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
-                       boxShadow: '0 2px 8px #ff3dac33' }}
+              style={{ background: 'linear-gradient(135deg, #2563eb, #6366f1)',
+                       boxShadow: '0 2px 8px #2563eb22' }}
             >
               {label}
               <svg className="w-3 h-3 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">

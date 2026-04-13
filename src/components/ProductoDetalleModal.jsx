@@ -145,7 +145,7 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
                   alt={producto.nombre}
                   className="w-full h-full object-contain transition-transform duration-500 sm:hover:scale-[1.05]"
                   onError={(e) => {
-                    e.target.src = `https://placehold.co/900x900/f3e8ff/a855f7?text=${encodeURIComponent(producto.nombre)}`;
+                    e.target.src = `https://placehold.co/900x900/e2e8f0/64748b?text=${encodeURIComponent(producto.nombre)}`;
                   }}
                 />
               </div>
@@ -160,7 +160,7 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
                     {esNuevo && (
                       <span
                         className="inline-flex items-center gap-1 text-[10px] font-body font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white shadow-sm"
-                        style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}
+                        style={{ background: 'linear-gradient(135deg, #2563eb, #6366f1)' }}
                       >
                         <Sparkles size={10} /> {t('common.new')}
                       </span>
@@ -310,7 +310,7 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
                   style={{
                     background: agotado
                       ? 'linear-gradient(135deg, #c4b5fd, #a78bfa)'
-                      : 'linear-gradient(135deg, #ff3dac, #a855f7)',
+                      : 'linear-gradient(135deg, #2563eb, #6366f1)',
                     boxShadow: agotado ? 'none' : '0 6px 24px rgba(255,61,172,0.3)',
                   }}
                 >

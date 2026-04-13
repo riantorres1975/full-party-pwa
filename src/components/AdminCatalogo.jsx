@@ -524,7 +524,7 @@ export default function AdminCatalogo() {
             onClick={() => setCreando(true)}
             className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-3 rounded-2xl text-sm font-body font-black
                        text-white transition-all duration-200 active:scale-95"
-            style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)', boxShadow: '0 4px 14px #ff3dac33' }}
+            style={{ background: 'linear-gradient(135deg, #2563eb, #6366f1)', boxShadow: '0 4px 14px #2563eb22' }}
           >
             <Plus size={18} strokeWidth={3} />
             <span className="hidden sm:inline">{t('admin.catalog.newItem')}</span>

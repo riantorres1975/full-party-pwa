@@ -261,8 +261,8 @@ export default function RastreoPedido({ onCerrar }) {
             className="px-4 py-3 rounded-2xl text-white font-body font-black text-sm
                        transition-all duration-200 active:scale-95 disabled:opacity-50
                        flex items-center gap-2 flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
-                     boxShadow: '0 4px 14px #ff3dac33' }}
+            style={{ background: 'linear-gradient(135deg, #2563eb, #6366f1)',
+                     boxShadow: '0 4px 14px #2563eb22' }}
           >
             {buscando
               ? <div className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />

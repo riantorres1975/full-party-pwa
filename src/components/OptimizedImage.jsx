@@ -38,7 +38,7 @@ function OptimizedImageInner({
     return () => cancelAnimationFrame(raf);
   }, [src]);
 
-  const fallbackSrc = `https://placehold.co/400x400/f3e8ff/a855f7?text=${encodeURIComponent(fallbackText || alt || '?')}`;
+  const fallbackSrc = `https://placehold.co/400x400/e2e8f0/64748b?text=${encodeURIComponent(fallbackText || alt || '?')}`;
 
   return (
     <div

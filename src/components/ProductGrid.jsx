@@ -47,7 +47,7 @@ export default function ProductGrid({ productos, getCantidad, onAgregar, onReduc
             <div
               className="w-6 h-6 rounded-full border-[3px] border-ink-200"
               style={{
-                borderTopColor: '#ff3dac',
+                borderTopColor: '#2563eb',
                 animation: 'spin 0.7s linear infinite',
               }}
             />

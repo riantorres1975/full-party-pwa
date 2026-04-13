@@ -90,8 +90,8 @@ function PillOpcion({ label, activo, onClick }) {
                    : 'hover:bg-ink-100'
                  }`}
       style={activo
-        ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
-            boxShadow: '0 2px 8px #ff3dac33' }
+        ? { background: 'linear-gradient(135deg, #2563eb, #6366f1)',
+            boxShadow: '0 2px 8px #2563eb22' }
         : { background: 'var(--surface-card)',
             color: 'var(--text-secondary)',
             border: '1px solid var(--border-soft)' }
@@ -121,7 +121,7 @@ function FilaOpcion({ label, activo, onClick }) {
         className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all
                    ${activo ? 'text-white' : ''}`}
         style={activo
-          ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }
+          ? { background: 'linear-gradient(135deg, #2563eb, #6366f1)' }
           : { border: '1.5px solid var(--border-default)', background: 'var(--surface-card)' }
         }
       >
@@ -287,8 +287,8 @@ export default function ModalFiltros({
             onClick={onCerrar}
             className="flex-1 py-3 rounded-xl font-body font-black text-sm text-white
                        transition-all duration-200 active:scale-[0.98]"
-            style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
-                     boxShadow: '0 4px 16px #ff3dac44' }}
+            style={{ background: 'linear-gradient(135deg, #2563eb, #6366f1)',
+                     boxShadow: '0 4px 16px #2563eb33' }}
           >
             {totalResultados !== 1
               ? t('filters.showResultsPlural', { count: totalResultados })

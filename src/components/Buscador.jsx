@@ -21,9 +21,9 @@ export default function Buscador({ busqueda, setBusqueda, categoriaActiva, setCa
                      pl-10 pr-10 py-3 text-sm font-body font-semibold text-ink-900
                      placeholder:text-ink-300 outline-none
                      transition-all duration-200"
-          style={{ border: '2px solid #e0c4f8', boxShadow: '0 2px 12px #a855f720' }}
-          onFocus={e => e.target.style.borderColor = '#ff3dac'}
-          onBlur={e  => e.target.style.borderColor = '#e0c4f8'}
+          style={{ border: '2px solid #cbd5e1', boxShadow: '0 2px 12px #2563eb10' }}
+          onFocus={e => e.target.style.borderColor = '#2563eb'}
+          onBlur={e  => e.target.style.borderColor = '#cbd5e1'}
         />
         {busqueda && (
           <button
@@ -53,7 +53,7 @@ export default function Buscador({ busqueda, setBusqueda, categoriaActiva, setCa
               }
             `}
             style={categoriaActiva === cat.id
-              ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)', boxShadow: '0 3px 12px #ff3dac44' }
+              ? { background: 'linear-gradient(135deg, #2563eb, #6366f1)', boxShadow: '0 3px 12px #2563eb33' }
               : {}
             }
           >

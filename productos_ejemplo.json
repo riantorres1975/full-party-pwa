@@ -1,0 +1,15 @@
+[
+  {
+    "nombre": "Globos Metálicos Dorados 12\"",
+    "descripcion": "Paquete de globos metálicos color dorado, ideales para fiestas elegantes y cumpleaños.",
+    "precio": 45.00,
+    "categoria": "globos-metal",
+    "marca": "Sempertex",
+    "tamano": "12 pulgadas",
+    "activo": true,
+    "stock_ilimitado": false,
+    "stock_actual": 120,
+    "stock_minimo": 10,
+    "es_nuevo": true
+  }
+]
