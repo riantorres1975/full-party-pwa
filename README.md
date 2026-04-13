@@ -1,6 +1,6 @@
-# Catálogo Digital — Full Party Uruapan
+# Catálogo Digital PWA
 
-PWA para tienda de artículos de fiesta. El cliente navega el catálogo, arma su pedido y lo envía por WhatsApp. El admin gestiona pedidos y catálogo desde un panel protegido.
+Plantilla de tienda en línea lista para usar. El cliente navega el catálogo, arma su pedido y lo envía por WhatsApp. El admin gestiona pedidos e inventario desde un panel protegido.
 
 ---
 
@@ -155,15 +155,7 @@ npm run dev
 
 ## Personalización
 
-El nombre del negocio y el teléfono van en `.env`. Las categorías, marcas y tamaños se configuran en `src/data/productos.js`:
-
-```js
-export const categorias = [
-  { id: 'globos',       label: '🎈 Globos'         },
-  { id: 'globos-metal', label: '✨ Globos Metálicos' },
-  { id: 'pinatas',      label: '🪅 Piñatas'         },
-];
-```
+El nombre del negocio y el teléfono van en `.env`. Las categorías, marcas y tamaños se gestionan directamente desde el panel de administración — no es necesario tocar código. Al agregar un producto con una categoría nueva, esta queda registrada automáticamente.
 
 ---
 
@@ -194,7 +186,7 @@ export const categorias = [
 | Campo | Tipo | Notas |
 |---|---|---|
 | `id` | UUID | PK auto |
-| `folio` | TEXT UNIQUE | Generado por SQL: `FP-XXXX` |
+| `folio` | TEXT UNIQUE | Generado por SQL automáticamente |
 | `cliente_nombre` | TEXT | — |
 | `cliente_telefono` | TEXT | 10 dígitos |
 | `tipo_entrega` | TEXT | `tienda` o `envio` |
