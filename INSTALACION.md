@@ -279,13 +279,15 @@ Los colores de la tienda se definen en el archivo `tailwind.config.js`. Si sabes
 
 Necesitas dos versiones de tu logo en formato PNG: una de 192×192 píxeles y otra de 512×512. Si solo tienes tu logo en cualquier tamaño, usa este sitio gratuito para generarlos automáticamente:
 
-**👉 [favicon.io/favicon-converter](https://favicon.io/favicon-converter/)**
+**👉 [realfavicongenerator.net](https://realfavicongenerator.net/)**
 
-1. Entra a esa página y sube tu imagen (JPG, PNG o SVG).
-2. Haz clic en **Download** — te descargará un ZIP con todos los tamaños.
-3. Del ZIP que descargaste, toma los archivos y renómbralos así:
-   - El de 192×192 → `icon-192.png`
-   - El de 512×512 → `icon-512.png`
+1. Entra a esa página y haz clic en **Select your Favicon image** — sube tu logo.
+2. La página te muestra una vista previa de cómo se verá en Android, iOS, Windows, etc. Puedes ajustar el color de fondo si tu logo tiene transparencia.
+3. Baja hasta el final y haz clic en **Generate your Favicons and HTML code**.
+4. Descarga el ZIP con el botón **Favicon package**.
+5. Del ZIP que descargaste, toma los archivos y renómbralos así:
+   - `android-chrome-192x192.png` → `icon-192.png`
+   - `android-chrome-512x512.png` → `icon-512.png`
 4. Reemplaza los archivos en la carpeta `public/` de tu proyecto con los nuevos.
 5. Sube los cambios a GitHub — Vercel se actualiza solo.
 
