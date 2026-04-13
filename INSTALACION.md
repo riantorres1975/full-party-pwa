@@ -276,9 +276,20 @@ Antes de pedir ayuda, revisa esto:
 Los colores de la tienda se definen en el archivo `tailwind.config.js`. Si sabes algo de programación puedes editarlo. Si no, es mejor dejarlos como están.
 
 ### Cambiar el logo / ícono de la app
-1. Reemplaza el archivo `public/icon-192.png` con tu logo (192×192 píxeles, fondo transparente).
-2. Reemplaza `public/icon-512.png` con tu logo en 512×512 píxeles.
-3. Sube los cambios a GitHub — Vercel se actualiza solo.
+
+Necesitas dos versiones de tu logo en formato PNG: una de 192×192 píxeles y otra de 512×512. Si solo tienes tu logo en cualquier tamaño, usa este sitio gratuito para generarlos automáticamente:
+
+**👉 [favicon.io/favicon-converter](https://favicon.io/favicon-converter/)**
+
+1. Entra a esa página y sube tu imagen (JPG, PNG o SVG).
+2. Haz clic en **Download** — te descargará un ZIP con todos los tamaños.
+3. Del ZIP que descargaste, toma los archivos y renómbralos así:
+   - El de 192×192 → `icon-192.png`
+   - El de 512×512 → `icon-512.png`
+4. Reemplaza los archivos en la carpeta `public/` de tu proyecto con los nuevos.
+5. Sube los cambios a GitHub — Vercel se actualiza solo.
+
+> 💡 Si quieres que el ícono se vea bien en todos los dispositivos, usa una imagen cuadrada con fondo de color sólido (no transparente). Los logos con fondo blanco o de color se ven mejor que los de fondo transparente en pantallas de inicio de Android e iOS.
 
 ### Cambiar el nombre en la pestaña del navegador
 Edita el archivo `index.html` y cambia el texto entre las etiquetas `<title>` y `</title>`.
