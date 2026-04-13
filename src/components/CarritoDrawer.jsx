@@ -27,7 +27,7 @@ function checkRateLimit() {
 const INPUT_CLASS = `
   w-full rounded-xl px-3 py-2.5 text-sm font-body font-semibold
   placeholder:text-ink-300 outline-none transition-all duration-200
-  border-2 focus:border-fiesta-magenta
+  border-2 focus:border-blue-500
 `;
 
 const inputDynStyle = {
@@ -294,8 +294,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
             ) : (
               <ul className="space-y-3">
                 {items.map((item, index) => {
-                  const colors = ['#2563eb','#6366f1','#0ea5e9','#f97316','#22c55e','#f59e0b'];
-                  const c = colors[index % colors.length];
+                  const c = '#2563eb';
                   const precioBase = Number(item.precio) || 0;
                   const precioAplicable = obtenerPrecioAplicable(item, item.cantidad);
                   const hayDescuento = precioAplicable < precioBase;
@@ -374,7 +373,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                               disabled={maxStockAlcanzado}
                               className={`w-7 h-7 flex items-center justify-center rounded-full text-white transition-all
                                           ${maxStockAlcanzado ? 'opacity-50 cursor-not-allowed' : 'active:scale-90'}`}
-                              style={{ background: `linear-gradient(135deg, ${c}, #a855f7)` }}>
+                              style={{ background: 'linear-gradient(135deg, #2563eb, #6366f1)' }}>
                               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
                               </svg>
