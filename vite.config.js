@@ -11,8 +11,9 @@ export default defineConfig(({ mode }) => {
       createHtmlPlugin({
         inject: {
           data: {
-            NOMBRE_NEGOCIO: env.VITE_NOMBRE_NEGOCIO || 'Full Party Uruapan',
-            SITE_URL: env.VITE_SITE_URL || 'https://full-party-store.vercel.app',
+            NOMBRE_NEGOCIO:    env.VITE_NOMBRE_NEGOCIO    || 'Full Party Uruapan',
+            SITE_URL:          env.VITE_SITE_URL          || 'https://full-party-store.vercel.app',
+            WHATSAPP_NUMBER:   env.VITE_WHATSAPP_NUMBER   || '521XXXXXXXXXX',
           },
         },
       }),

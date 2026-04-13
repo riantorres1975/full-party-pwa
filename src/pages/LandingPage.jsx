@@ -2,6 +2,7 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import {
   ShoppingBag, MessageCircle, MapPin, Star, Package,
   Sparkles, ArrowRight, Menu, X, Navigation, Clock,
+  ChevronLeft, ChevronRight, ChevronDown,
 } from 'lucide-react';
 import './LandingPage.css';
 
@@ -23,39 +24,58 @@ const C = {
   bgReviews:  '#FFF5F9',
   bgBranches: '#F0FFFE',
   // Texto
-  textHead:   '#2D0D5A',   // Morado muy oscuro — excelente contraste
-  textBody:   '#5B3080',   // Morado medio legible
-  textMuted:  '#9C6BC6',   // Lavanda suave
+  textHead:  '#2D0D5A',   // Morado muy oscuro — excelente contraste
+  textBody:  '#5B3080',   // Morado medio legible
+  textMuted: '#7B4FA6',   // Lavanda oscura — WCAG AA sobre fondos claros
 };
 
 // ════════════════════════════════════════════════════════════
 // 2. CONFIGURACIÓN — env vars y constantes globales
 // ════════════════════════════════════════════════════════════
 const ENV = {
-  waNumber:   import.meta.env.VITE_WHATSAPP_NUMBER  || '521XXXXXXXXXX',
-  negocio:    import.meta.env.VITE_NOMBRE_NEGOCIO   || 'Full Party',
-  direccion:  import.meta.env.VITE_DIRECCION_TIENDA || 'Uruapan, Michoacán',
-  horario:    import.meta.env.VITE_HORARIO_TIENDA   || 'Lun–Sáb 9am–7pm',
-  mapsUrl:    import.meta.env.VITE_MAPS_URL_TIENDA  || '#',
+  waNumber: import.meta.env.VITE_WHATSAPP_NUMBER || '521XXXXXXXXXX',
+  negocio:  import.meta.env.VITE_NOMBRE_NEGOCIO  || 'Full Party',
+  horario:  import.meta.env.VITE_HORARIO_TIENDA  || 'Lun–Sáb 9am–7pm',
+  suc1: {
+    nombre:   import.meta.env.VITE_SUC1_NOMBRE    || 'Francisco Villa',
+    badge:    import.meta.env.VITE_SUC1_BADGE     || 'Sucursal Principal',
+    direccion:import.meta.env.VITE_SUC1_DIRECCION || 'Uruapan, Michoacán',
+    mapsUrl:  import.meta.env.VITE_SUC1_MAPS_URL  || '#',
+  },
+  suc2: {
+    nombre:   import.meta.env.VITE_SUC2_NOMBRE    || 'Sol Naciente',
+    badge:    import.meta.env.VITE_SUC2_BADGE     || 'Sucursal Norte',
+    direccion:import.meta.env.VITE_SUC2_DIRECCION || 'Col. Sol Naciente, Uruapan, Michoacán',
+    mapsUrl:  import.meta.env.VITE_SUC2_MAPS_URL  || '#',
+  },
 };
 
 const WA_HREF  = `https://wa.me/${ENV.waNumber}?text=${encodeURIComponent('Hola, me interesa hacer un pedido por mayoreo 🎉')}`;
 const TYPING   = { typeSpeed: 85, eraseSpeed: 48, holdMs: 2400, pauseMs: 380 };
 const REVIEW_INTERVAL_MS = 5000;
 
+/** GA4: registra un evento si gtag está disponible */
+const trackEvent = (name, params = {}) => {
+  if (typeof window.gtag === 'function') window.gtag('event', name, params);
+};
+
 // ════════════════════════════════════════════════════════════
 // 3. DATOS DE CONTENIDO
 // ════════════════════════════════════════════════════════════
 
-const BRANCH_NAMES = ['Sol Naciente', 'Francisco Villa'];
+const BRANCH_NAMES = [ENV.suc1.nombre, ENV.suc2.nombre];
 
 // Colores de letras inspirados en el logo (cíclicos por posición)
 const LETTER_COLORS = [C.pink, C.purple, C.green, C.orange, C.cyan, C.blue, '#FDE047'];
+
+// Emojis para la explosión de confeti al cambiar de sucursal
+const BURST_EMOJIS = ['🎉', '🎊', '✨', '⭐', '🌟', '🎈', '🎀', '🎁'];
 
 const NAV_LINKS = [
   { label: 'Inicio',     href: 'top',        hash: false },
   { label: 'Catálogo',   href: '#/catalogo', hash: true  },
   { label: 'Sucursales', href: 'sucursales', hash: false },
+  { label: 'FAQ',        href: 'faq',        hash: false },
   { label: 'Reseñas',    href: 'resenas',    hash: false },
   { label: 'Contacto',   href: 'contacto',   hash: false },
 ];
@@ -92,10 +112,10 @@ const CATEGORIAS = [
 ];
 
 const PASOS = [
-  { num: '1', icon: ShoppingBag,   titulo: 'Navega',       desc: 'Explora +500 artículos ordenados por categoría.',     color: C.pink   },
-  { num: '2', icon: Package,       titulo: 'Al carrito',   desc: 'Agrega productos y ve el total mayoreo en vivo.',      color: C.purple },
-  { num: '3', icon: Sparkles,      titulo: 'Revisa',       desc: 'Confirma cantidades y precios escalonados.',           color: C.cyan   },
-  { num: '4', icon: MessageCircle, titulo: 'Por WhatsApp', desc: 'Un toque y tu pedido llega listo a nuestro chat.',    color: C.green  },
+  { num: '1', icon: ShoppingBag,   titulo: 'Navega',       desc: 'Explora +500 artículos ordenados por categoría.',    color: C.pink   },
+  { num: '2', icon: Package,       titulo: 'Al carrito',   desc: 'Agrega productos y ve el total mayoreo en vivo.',     color: C.purple },
+  { num: '3', icon: Sparkles,      titulo: 'Revisa',       desc: 'Confirma cantidades y precios escalonados.',          color: C.cyan   },
+  { num: '4', icon: MessageCircle, titulo: 'Por WhatsApp', desc: 'Un toque y tu pedido llega listo a nuestro chat.',   color: C.green  },
 ];
 
 const MARCAS = [
@@ -107,67 +127,94 @@ const MARCAS = [
 
 const RESENAS = [
   {
-    id:       1,
-    nombre:   'María González',
-    inicial:  'M',
-    color:    C.pink,
-    texto:    'Excelente atención y variedad de productos para mayoreo. Los precios son inmejorables, muy recomendado para eventos y fiestas de todo tipo.',
-    fecha:    'hace 2 semanas',
+    id:      1,
+    nombre:  'María González',
+    inicial: 'M',
+    color:   C.pink,
+    texto:   'Excelente atención y variedad de productos para mayoreo. Los precios son inmejorables, muy recomendado para eventos y fiestas de todo tipo.',
+    fecha:   'hace 2 semanas',
   },
   {
-    id:       2,
-    nombre:   'Carlos Mendoza',
-    inicial:  'C',
-    color:    C.purple,
-    texto:    'Pedí para los 15 años de mi hija y todo llegó perfecto. El proceso de pedido por WhatsApp fue muy sencillo y super rápido. 100% recomendado.',
-    fecha:    'hace 1 mes',
+    id:      2,
+    nombre:  'Carlos Mendoza',
+    inicial: 'C',
+    color:   C.purple,
+    texto:   'Pedí para los 15 años de mi hija y todo llegó perfecto. El proceso de pedido por WhatsApp fue muy sencillo y super rápido. 100% recomendado.',
+    fecha:   'hace 1 mes',
   },
   {
-    id:       3,
-    nombre:   'Ana Martínez',
-    inicial:  'A',
-    color:    C.green,
-    texto:    'Gran surtido de globos y decoraciones. Los arreglos quedaron hermosos. Sin duda el mejor lugar para comprar al mayoreo en Uruapan.',
-    fecha:    'hace 3 semanas',
+    id:      3,
+    nombre:  'Ana Martínez',
+    inicial: 'A',
+    color:   C.green,
+    texto:   'Gran surtido de globos y decoraciones. Los arreglos quedaron hermosos. Sin duda el mejor lugar para comprar al mayoreo en Uruapan.',
+    fecha:   'hace 3 semanas',
   },
   {
-    id:       4,
-    nombre:   'Roberto Torres',
-    inicial:  'R',
-    color:    C.orange,
-    texto:    'Compro aquí regularmente para mis eventos. La atención es excelente y los productos de muy buena calidad. Siempre hay buen stock.',
-    fecha:    'hace 2 meses',
+    id:      4,
+    nombre:  'Roberto Torres',
+    inicial: 'R',
+    color:   C.orange,
+    texto:   'Compro aquí regularmente para mis eventos. La atención es excelente y los productos de muy buena calidad. Siempre hay buen stock.',
+    fecha:   'hace 2 meses',
   },
   {
-    id:       5,
-    nombre:   'Lupita Sánchez',
-    inicial:  'L',
-    color:    C.cyan,
-    texto:    'Muy buena experiencia, precios muy accesibles al mayoreo. El personal es amable y el surtido impresionante. ¡Volveré pronto!',
-    fecha:    'hace 1 semana',
+    id:      5,
+    nombre:  'Lupita Sánchez',
+    inicial: 'L',
+    color:   C.cyan,
+    texto:   'Muy buena experiencia, precios muy accesibles al mayoreo. El personal es amable y el surtido impresionante. ¡Volveré pronto!',
+    fecha:   'hace 1 semana',
   },
 ];
 
 const SUCURSALES = [
   {
-    nombre:   'Centro',
-    direccion: ENV.direccion,
+    nombre:    ENV.suc1.nombre,
+    badge:     ENV.suc1.badge,
+    direccion: ENV.suc1.direccion,
     horario:   ENV.horario,
-    mapsUrl:   ENV.mapsUrl,
-    badge:    'Sucursal Principal',
-    color:    C.pink,
+    mapsUrl:   ENV.suc1.mapsUrl,
+    color:     C.pink,
   },
   {
-    nombre:   'Sol Naciente',
-    direccion: 'Col. Sol Naciente, Uruapan, Michoacán',
+    nombre:    ENV.suc2.nombre,
+    badge:     ENV.suc2.badge,
+    direccion: ENV.suc2.direccion,
     horario:   ENV.horario,
-    mapsUrl:   '#',
-    badge:    'Sucursal Norte',
-    color:    C.purple,
+    mapsUrl:   ENV.suc2.mapsUrl,
+    color:     C.purple,
   },
 ];
 
-// Confeti fijo — fuera del componente para evitar recreaciones
+const FAQS = [
+  {
+    pregunta:  '¿Tienen precios por mayoreo?',
+    respuesta: 'Sí, contamos con tarifas escalonadas por volumen. Entre más piezas compras, mejor precio obtienes. Las tablas de precio mayoreo están visibles en cada producto del catálogo.',
+  },
+  {
+    pregunta:  '¿Cómo puedo hacer un pedido?',
+    respuesta: 'Navega el catálogo digital, agrega lo que necesitas al carrito y envía la orden a nuestro WhatsApp con un solo clic. Sin llamadas, sin formularios complicados.',
+  },
+  {
+    pregunta:  '¿Hacen envíos a domicilio?',
+    respuesta: 'Sí, realizamos envíos dentro de Uruapan y zona metropolitana. También puedes recoger sin costo en cualquiera de nuestras dos sucursales.',
+  },
+  {
+    pregunta:  '¿Cuántas sucursales tienen?',
+    respuesta: 'Contamos con dos sucursales en Uruapan: Centro (sucursal principal) y Sol Naciente (sucursal norte). Ambas manejan el mismo catálogo y precios.',
+  },
+  {
+    pregunta:  '¿Qué marcas manejan?',
+    respuesta: 'Somos distribuidores autorizados de Glomex, Decoratexz, Sempertex y Peyma, marcas líderes en artículos de fiesta y decoración a nivel nacional.',
+  },
+  {
+    pregunta:  '¿Cuál es el pedido mínimo?',
+    respuesta: 'No existe un mínimo fijo para hacer un pedido. Sin embargo, los precios mayoreo aplican según la tabla escalonada de cada producto. Puedes combinar categorías.',
+  },
+];
+
+// Confeti decorativo — reducido a 10 elementos para mejor rendimiento
 const PARTICLES = [
   { id:  0, top:  6, left:  8, size: 10, color: C.pink,   dur:  7, delay: 0.0, shape: 'square'  },
   { id:  1, top: 12, left: 87, size:  7, color: C.orange,  dur:  9, delay: 1.5, shape: 'circle'  },
@@ -179,14 +226,6 @@ const PARTICLES = [
   { id:  7, top: 83, left: 91, size:  9, color: C.cyan,    dur:  9, delay: 2.5, shape: 'circle'  },
   { id:  8, top: 47, left:  3, size:  8, color: C.blue,    dur: 10, delay: 0.8, shape: 'square'  },
   { id:  9, top: 92, left: 54, size:  5, color: C.purple,  dur:  7, delay: 1.2, shape: 'circle'  },
-  { id: 10, top: 30, left: 97, size:  9, color: C.green,   dur: 12, delay: 3.5, shape: 'diamond' },
-  { id: 11, top: 65, left: 49, size:  7, color: C.pink,    dur:  8, delay: 0.3, shape: 'square'  },
-  { id: 12, top: 18, left: 26, size:  5, color: C.orange,  dur:  6, delay: 1.8, shape: 'circle'  },
-  { id: 13, top: 51, left: 69, size: 11, color: C.cyan,    dur:  9, delay: 2.2, shape: 'square'  },
-  { id: 14, top: 78, left: 14, size:  6, color: C.blue,    dur: 11, delay: 0.6, shape: 'diamond' },
-  { id: 15, top: 42, left: 38, size:  8, color: C.purple,  dur:  7, delay: 1.4, shape: 'circle'  },
-  { id: 16, top:  9, left: 73, size:  6, color: C.green,   dur:  9, delay: 3.8, shape: 'square'  },
-  { id: 17, top: 88, left: 29, size: 10, color: C.pink,    dur:  8, delay: 0.9, shape: 'diamond' },
 ];
 
 // ════════════════════════════════════════════════════════════
@@ -224,10 +263,7 @@ function useTypingCycle(words, opts = TYPING) {
     return () => clearTimeout(t);
   }, [phase, suffix, idx]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return {
-    suffix,
-    showCursor: phase !== 'hold',
-  };
+  return { suffix, showCursor: phase !== 'hold' };
 }
 
 /** IntersectionObserver para animaciones de entrada al hacer scroll */
@@ -271,20 +307,18 @@ function Reveal({ children, delay = 0, direction = 'up', className = '' }) {
   );
 }
 
-/** Tarjeta con borde gradiente (técnica padding-box / border-box) */
+/** Tarjeta con borde gradiente — hover gestionado por CSS (var --hover-shadow) */
 function GradCard({ children, gradient, hoverColor = 'rgba(0,0,0,0.1)', className = '' }) {
   return (
     <div
       className={`lp-card ${className}`}
       style={{
-        background:      `linear-gradient(white, white) padding-box, ${gradient} border-box`,
+        background:       `linear-gradient(white, white) padding-box, ${gradient} border-box`,
         border:           '2px solid transparent',
-        borderRadius:    '1rem',
-        boxShadow:       '0 2px 12px rgba(0,0,0,0.07)',
+        borderRadius:     '1rem',
+        boxShadow:        '0 2px 12px rgba(0,0,0,0.07)',
         '--hover-shadow': `0 16px 40px ${hoverColor}`,
       }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 16px 40px ${hoverColor}`; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.07)'; }}
     >
       {children}
     </div>
@@ -294,9 +328,9 @@ function GradCard({ children, gradient, hoverColor = 'rgba(0,0,0,0.1)', classNam
 /** Estrellas de calificación */
 function StarRating({ count = 5 }) {
   return (
-    <div className="flex gap-0.5">
+    <div className="flex gap-0.5" aria-label={`${count} de 5 estrellas`}>
       {Array.from({ length: count }).map((_, i) => (
-        <Star key={i} size={16} fill={C.yellow} stroke="none" />
+        <Star key={i} size={16} fill={C.yellow} stroke="none" aria-hidden="true" />
       ))}
     </div>
   );
@@ -341,9 +375,8 @@ function SectionTitle({ title, subtitle }) {
 }
 
 /**
- * Renderiza cada carácter de `text` con un color diferente del logo,
+ * Cada carácter de `text` con un color diferente del logo,
  * ciclando por LETTER_COLORS según la posición del carácter.
- * Los espacios conservan su ancho con &nbsp;
  */
 function ColorLetters({ text }) {
   return (
@@ -360,46 +393,111 @@ function ColorLetters({ text }) {
   );
 }
 
-/** Nombre de tienda animado con efecto typewriter y letras multicolor */
+/** Nombre de tienda animado con efecto typewriter y explosión de confeti */
 function BranchTyper() {
   const { suffix, showCursor } = useTypingCycle(BRANCH_NAMES);
+  const [burst, setBurst]     = useState([]);
+  const prevLenRef            = useRef(0);
+
+  // Dispara confeti cada vez que empieza a escribirse una nueva sucursal
+  useEffect(() => {
+    if (prevLenRef.current === 0 && suffix.length === 1) {
+      const particles = Array.from({ length: 8 }, (_, i) => {
+        const angle = (i / 8) * 360;
+        const dist  = 55 + (i % 3) * 22;
+        return {
+          id:    i,
+          emoji: BURST_EMOJIS[i],
+          bx:    Math.cos((angle * Math.PI) / 180) * dist,
+          by:    Math.sin((angle * Math.PI) / 180) * dist - 10,
+          br:    i * 45 + 15,
+        };
+      });
+      setBurst(particles);
+      const t = setTimeout(() => setBurst([]), 850);
+      return () => clearTimeout(t);
+    }
+    prevLenRef.current = suffix.length;
+  }, [suffix.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="font-display leading-tight text-center select-none">
+    <div className="relative font-display leading-tight text-center select-none">
 
-      {/* Línea 1 — estática "Full Party Suc." letra por letra con color del logo */}
-      <div className="text-3xl sm:text-4xl lg:text-5xl">
-        <ColorLetters text="Full Party Suc." />
+      {/* ── Partículas de confeti ── */}
+      {burst.map(p => (
+        <span
+          key={p.id}
+          className="lp-burst-particle absolute pointer-events-none"
+          aria-hidden="true"
+          style={{
+            left:      '50%',
+            top:       '40%',
+            fontSize:  '1.3rem',
+            '--bx':    `${p.bx}px`,
+            '--by':    `${p.by}px`,
+            '--br':    `${p.br}deg`,
+            zIndex:    20,
+          }}
+        >
+          {p.emoji}
+        </span>
+      ))}
+
+      {/* Línea 1 — "Full Party" grande y estático */}
+      <div className={`text-5xl sm:text-6xl lg:text-7xl ${burst.length > 0 ? 'lp-fiesta-bounce' : ''}`}>
+        <ColorLetters text="Full Party" />
       </div>
 
-      {/* Línea 2 — sufijo animado.
-          min-height reserva el espacio aunque suffix esté vacío → evita el salto de layout */}
+      {/* Línea 2 — "Suc. " fijo + nombre escrito letra a letra */}
       <div
-        className="flex items-center justify-center text-4xl sm:text-5xl lg:text-6xl mt-1"
+        className="flex items-center justify-center text-2xl sm:text-3xl lg:text-4xl mt-2"
         style={{ minHeight: '1.25em' }}
       >
-        <span>
-          <ColorLetters text={suffix} />
-        </span>
-        {/* Cursor parpadeante */}
+        <span className="font-display" style={{ color: C.purple }}>Suc.&nbsp;</span>
+        <ColorLetters text={suffix} />
         <span
           className="cursor-blink inline-block rounded-sm self-center ml-0.5"
-          style={{
-            width:      3,
-            height:    '0.8em',
-            background: C.pink,
-            opacity:    showCursor ? 1 : 0,
-          }}
+          style={{ width: 2, height: '0.8em', background: C.pink, opacity: showCursor ? 1 : 0 }}
         />
       </div>
     </div>
   );
 }
 
+/** Ítem de FAQ con acordeón */
+function FaqItem({ pregunta, respuesta }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-b" style={{ borderColor: `${C.purple}22` }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full text-left flex items-center justify-between py-4 gap-4"
+        style={{ color: C.textHead }}
+        aria-expanded={open}
+      >
+        <span className="font-bold text-sm">{pregunta}</span>
+        <ChevronDown
+          size={16}
+          className="lp-faq-chevron flex-shrink-0"
+          data-open={String(open)}
+          style={{ color: C.pink }}
+          aria-hidden="true"
+        />
+      </button>
+      {open && (
+        <p className="pb-4 text-sm leading-relaxed" style={{ color: C.textBody }}>
+          {respuesta}
+        </p>
+      )}
+    </div>
+  );
+}
+
 /** Carrusel automático de reseñas estilo Google Maps */
 function ReviewsCarousel({ resenas }) {
-  const [idx,      setIdx]      = useState(0);
-  const [animCls,  setAnimCls]  = useState('review-enter');
+  const [idx,    setIdx]    = useState(0);
+  const [animCls, setAnimCls] = useState('review-enter');
+  const [paused, setPaused] = useState(false);
 
   const goTo = useCallback((nextIdx) => {
     setAnimCls('review-exit');
@@ -410,27 +508,35 @@ function ReviewsCarousel({ resenas }) {
   }, []);
 
   useEffect(() => {
+    if (paused) return;
     const t = setInterval(() => {
       goTo((idx + 1) % resenas.length);
     }, REVIEW_INTERVAL_MS);
     return () => clearInterval(t);
-  }, [idx, resenas.length, goTo]);
+  }, [idx, resenas.length, goTo, paused]);
 
   const r = resenas[idx];
 
   return (
-    <div className="max-w-2xl mx-auto">
-      {/* Tarjeta de reseña */}
+    <div
+      className="max-w-2xl mx-auto"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {/* Tarjeta de reseña activa */}
       <div
         key={r.id}
         className={`${animCls} rounded-3xl p-7 bg-white text-left`}
         style={{ boxShadow: `0 4px 24px ${r.color}22, 0 1px 6px rgba(0,0,0,0.06)`, border: `1.5px solid ${r.color}22` }}
+        aria-live="polite"
+        aria-atomic="true"
       >
         {/* Header */}
         <div className="flex items-center gap-4 mb-4">
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center font-display text-lg text-white flex-shrink-0"
             style={{ background: `linear-gradient(135deg, ${r.color}, ${C.purple})` }}
+            aria-hidden="true"
           >
             {r.inicial}
           </div>
@@ -444,11 +550,11 @@ function ReviewsCarousel({ resenas }) {
           {/* Google logo */}
           <div className="ml-auto flex-shrink-0">
             <span className="text-xs font-black tracking-tight" style={{
-              background: 'linear-gradient(90deg, #4285F4, #EA4335, #FBBC05, #34A853)',
+              background:            'linear-gradient(90deg, #4285F4, #EA4335, #FBBC05, #34A853)',
               WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}>Google</span>
+              WebkitTextFillColor:  'transparent',
+              backgroundClip:       'text',
+            }} aria-label="Google">Google</span>
           </div>
         </div>
 
@@ -458,13 +564,23 @@ function ReviewsCarousel({ resenas }) {
         </p>
       </div>
 
-      {/* Dots de navegación */}
+      {/* Controles: prev · dots · next */}
       <div className="flex items-center justify-center gap-2 mt-5">
+        <button
+          onClick={() => goTo((idx - 1 + resenas.length) % resenas.length)}
+          aria-label="Reseña anterior"
+          className="w-8 h-8 rounded-full flex items-center justify-center transition-colors lp-scale-hover"
+          style={{ background: `${C.pink}18`, color: C.pink }}
+        >
+          <ChevronLeft size={16} />
+        </button>
+
         {resenas.map((_, i) => (
           <button
             key={i}
             onClick={() => goTo(i)}
-            aria-label={`Reseña ${i + 1}`}
+            aria-label={`Ver reseña ${i + 1}`}
+            aria-current={i === idx ? 'true' : undefined}
             className="transition-all duration-300 rounded-full"
             style={{
               width:      i === idx ? 20 : 8,
@@ -473,6 +589,15 @@ function ReviewsCarousel({ resenas }) {
             }}
           />
         ))}
+
+        <button
+          onClick={() => goTo((idx + 1) % resenas.length)}
+          aria-label="Siguiente reseña"
+          className="w-8 h-8 rounded-full flex items-center justify-center transition-colors lp-scale-hover"
+          style={{ background: `${C.pink}18`, color: C.pink }}
+        >
+          <ChevronRight size={16} />
+        </button>
       </div>
 
       {/* Rating global */}
@@ -485,7 +610,7 @@ function ReviewsCarousel({ resenas }) {
   );
 }
 
-/** Tarjeta de marca con efecto gris → color */
+/** Tarjeta de marca con efecto gris → color gestionado por estado */
 function BrandCard({ nombre, desc, color, emoji }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -494,11 +619,11 @@ function BrandCard({ nombre, desc, color, emoji }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        border:     `2px solid ${hovered ? color : '#E9DEFF'}`,
-        boxShadow:  hovered ? `0 12px 32px ${color}28` : '0 2px 10px rgba(0,0,0,0.05)',
-        filter:     hovered ? 'none' : 'grayscale(30%)',
-        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-        transform:  hovered ? 'translateY(-5px) scale(1.03)' : 'translateY(0) scale(1)',
+        border:      `2px solid ${hovered ? color : '#E9DEFF'}`,
+        boxShadow:   hovered ? `0 12px 32px ${color}28` : '0 2px 10px rgba(0,0,0,0.05)',
+        filter:      hovered ? 'none' : 'grayscale(30%)',
+        transition:  'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+        transform:   hovered ? 'translateY(-5px) scale(1.03)' : 'translateY(0) scale(1)',
       }}
     >
       <div
@@ -508,7 +633,7 @@ function BrandCard({ nombre, desc, color, emoji }) {
         <span style={{ filter: hovered ? 'none' : 'saturate(0.5)' }}>{emoji}</span>
       </div>
       <p className="font-display text-sm transition-colors duration-300" style={{ color: hovered ? C.textHead : '#7A6090' }}>{nombre}</p>
-      <p className="text-xs transition-colors duration-300"               style={{ color: hovered ? C.textMuted : '#BBA8D4' }}>{desc}</p>
+      <p className="text-xs transition-colors duration-300"              style={{ color: hovered ? C.textMuted : '#BBA8D4' }}>{desc}</p>
     </div>
   );
 }
@@ -529,28 +654,38 @@ export default function LandingPage() {
   }, []);
 
   const irAlCatalogo = useCallback(() => {
+    trackEvent('cta_catalogo_click');
     window.location.hash = '#/catalogo';
   }, []);
 
   return (
     <div id="top" className="relative min-h-screen font-body overflow-x-hidden" style={{ background: C.bgHero }}>
 
-      {/* ── Confetti decorativo ─────────────────────── */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
+      {/* ── Saltar al contenido principal ───────────────── */}
+      <a
+        href="#main-content"
+        className="sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:font-bold focus:text-white focus:no-underline"
+        style={{ '--tw-bg-opacity': 1, background: C.pink }}
+      >
+        Saltar al contenido principal
+      </a>
+
+      {/* ── Confetti — solo en sm+ para no penalizar móvil ── */}
+      <div className="hidden sm:block fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }} aria-hidden="true">
         {PARTICLES.map(p => (
           <div
             key={p.id}
             style={{
-              position:     'absolute',
-              top:          `${p.top}%`,
-              left:         `${p.left}%`,
-              width:         p.size,
-              height:        p.size,
-              background:    p.color,
-              borderRadius:  p.shape === 'circle' ? '50%' : '2px',
-              transform:     p.shape === 'diamond' ? 'rotate(45deg)' : 'none',
-              animation:    `floatDrift ${p.dur}s ease-in-out ${p.delay}s infinite`,
-              filter:       `drop-shadow(0 0 3px ${p.color}99)`,
+              position:    'absolute',
+              top:         `${p.top}%`,
+              left:        `${p.left}%`,
+              width:        p.size,
+              height:       p.size,
+              background:   p.color,
+              borderRadius: p.shape === 'circle' ? '50%' : '2px',
+              transform:    p.shape === 'diamond' ? 'rotate(45deg)' : 'none',
+              animation:   `floatDrift ${p.dur}s ease-in-out ${p.delay}s infinite`,
+              filter:      `drop-shadow(0 0 3px ${p.color}99)`,
             }}
           />
         ))}
@@ -562,13 +697,14 @@ export default function LandingPage() {
         <nav
           className="sticky top-0 z-50 bg-white border-b"
           style={{ borderColor: '#EDE0F8', boxShadow: '0 2px 16px rgba(192,132,252,0.1)' }}
+          aria-label="Navegación principal"
         >
           <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
             {/* Logo */}
             <div className="flex items-center gap-3 flex-shrink-0">
               <img
                 src="/icons/icon-192.png"
-                alt={ENV.negocio}
+                alt={`${ENV.negocio} logo`}
                 className="w-11 h-11 rounded-xl"
                 style={{ boxShadow: `0 4px 12px ${C.pink}44` }}
               />
@@ -608,6 +744,7 @@ export default function LandingPage() {
                 rel="noopener noreferrer"
                 className="ml-2 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-black text-white lp-scale-hover"
                 style={{ background: `linear-gradient(135deg, ${C.pink}, ${C.purple})` }}
+                onClick={() => trackEvent('nav_whatsapp_click')}
               >
                 <WaIcon size={13} /> WhatsApp
               </a>
@@ -619,6 +756,7 @@ export default function LandingPage() {
               style={{ background: '#F5EEFF', color: C.purple }}
               onClick={() => setMenuOpen(v => !v)}
               aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
+              aria-expanded={menuOpen}
             >
               {menuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -641,7 +779,7 @@ export default function LandingPage() {
                 href={WA_HREF}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => setMenuOpen(false)}
+                onClick={() => { setMenuOpen(false); trackEvent('nav_whatsapp_click'); }}
                 className="mt-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-black text-white"
                 style={{ background: `linear-gradient(135deg, ${C.pink}, ${C.purple})` }}
               >
@@ -652,12 +790,16 @@ export default function LandingPage() {
         </nav>
 
         {/* ══ HERO ═══════════════════════════════════════ */}
-        <section className="relative px-5 pt-16 pb-28 text-center max-w-4xl mx-auto overflow-visible">
+        <section
+          id="main-content"
+          className="relative px-5 pt-16 pb-28 text-center max-w-4xl mx-auto overflow-visible"
+          aria-labelledby="hero-heading"
+        >
           {/* Globos decorativos */}
-          <div className="hidden sm:block absolute left-0  top-12 balloon-sway   pointer-events-none" style={{ zIndex: 0 }}><Balloon color={C.pink}   size={55} rotate={-8} /></div>
-          <div className="hidden sm:block absolute left-8  top-32 balloon-sway-r pointer-events-none" style={{ zIndex: 0 }}><Balloon color={C.orange} size={38} rotate={5}  /></div>
-          <div className="hidden sm:block absolute right-0 top-8  balloon-sway-r pointer-events-none" style={{ zIndex: 0 }}><Balloon color={C.purple} size={58} rotate={10} /></div>
-          <div className="hidden sm:block absolute right-10 top-36 balloon-sway  pointer-events-none" style={{ zIndex: 0 }}><Balloon color={C.cyan}   size={36} rotate={-5} /></div>
+          <div className="hidden sm:block absolute left-0  top-12 balloon-sway   pointer-events-none" style={{ zIndex: 0 }} aria-hidden="true"><Balloon color={C.pink}   size={55} rotate={-8} /></div>
+          <div className="hidden sm:block absolute left-8  top-32 balloon-sway-r pointer-events-none" style={{ zIndex: 0 }} aria-hidden="true"><Balloon color={C.orange} size={38} rotate={5}  /></div>
+          <div className="hidden sm:block absolute right-0 top-8  balloon-sway-r pointer-events-none" style={{ zIndex: 0 }} aria-hidden="true"><Balloon color={C.purple} size={58} rotate={10} /></div>
+          <div className="hidden sm:block absolute right-10 top-36 balloon-sway  pointer-events-none" style={{ zIndex: 0 }} aria-hidden="true"><Balloon color={C.cyan}   size={36} rotate={-5} /></div>
 
           <div className="relative" style={{ zIndex: 1 }}>
             <Reveal>
@@ -665,7 +807,7 @@ export default function LandingPage() {
                 className="inline-flex items-center gap-2 text-xs font-black px-5 py-2 rounded-full mb-8"
                 style={{ background: `${C.pink}18`, color: C.pink, border: `1px solid ${C.pink}35` }}
               >
-                <Sparkles size={12} />
+                <Sparkles size={12} aria-hidden="true" />
                 Distribuidora Mayoreo · Uruapan, Michoacán
               </span>
             </Reveal>
@@ -675,6 +817,7 @@ export default function LandingPage() {
 
             <Reveal delay={0.1}>
               <h1
+                id="hero-heading"
                 className="font-display text-5xl sm:text-6xl lg:text-7xl leading-tight mb-6 hero-glow"
                 style={{
                   background:            `linear-gradient(135deg, ${C.pink} 0%, ${C.purple} 50%, ${C.cyan} 100%)`,
@@ -702,7 +845,7 @@ export default function LandingPage() {
                   className="btn-pink-pulse flex items-center gap-3 px-10 py-5 rounded-2xl font-black text-lg text-white lp-scale-hover"
                   style={{ background: `linear-gradient(135deg, ${C.pink}, ${C.purple})` }}
                 >
-                  <ShoppingBag size={22} /> Ver Catálogo Digital
+                  <ShoppingBag size={22} aria-hidden="true" /> Ver Catálogo Digital
                 </button>
                 <a
                   href={WA_HREF}
@@ -710,6 +853,7 @@ export default function LandingPage() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-2.5 px-8 py-5 rounded-2xl font-black text-base bg-white lp-scale-hover"
                   style={{ color: C.purple, border: `2px solid ${C.purple}30`, boxShadow: '0 2px 12px rgba(192,132,252,0.15)' }}
+                  onClick={() => trackEvent('hero_whatsapp_click')}
                 >
                   <WaIcon size={18} /> Escribir al WhatsApp
                 </a>
@@ -745,10 +889,10 @@ export default function LandingPage() {
                   <GradCard gradient={gradient} hoverColor={`${color}22`} className="h-full">
                     <div className="p-6 flex flex-col gap-4">
                       <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: `${color}18` }}>
-                        <Icon size={24} style={{ color }} />
+                        <Icon size={24} style={{ color }} aria-hidden="true" />
                       </div>
                       <h3 className="font-display text-base" style={{ color: C.textHead }}>{titulo}</h3>
-                      <p className="text-sm leading-relaxed"           style={{ color: C.textBody }}>{desc}</p>
+                      <p className="text-sm leading-relaxed"  style={{ color: C.textBody }}>{desc}</p>
                     </div>
                   </GradCard>
                 </Reveal>
@@ -766,15 +910,18 @@ export default function LandingPage() {
                 <Reveal key={titulo} delay={i * 0.08}>
                   <button
                     onClick={irAlCatalogo}
-                    className="lp-scale-hover w-full rounded-2xl p-5 text-center flex flex-col items-center gap-3 bg-white"
-                    style={{ border: `2px solid ${color}22`, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = `${color}66`; e.currentTarget.style.boxShadow = `0 8px 28px ${color}22`; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = `${color}22`; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; }}
+                    className="lp-cat-card lp-scale-hover w-full rounded-2xl p-5 text-center flex flex-col items-center gap-3 bg-white"
+                    style={{
+                      border:              `2px solid ${color}22`,
+                      boxShadow:           '0 2px 12px rgba(0,0,0,0.06)',
+                      '--cat-border-hover': `${color}66`,
+                      '--cat-shadow-hover': `0 8px 28px ${color}22`,
+                    }}
                   >
-                    <span className="text-4xl">{emoji}</span>
+                    <span className="text-4xl" aria-hidden="true">{emoji}</span>
                     <h3 className="font-display text-sm leading-snug" style={{ color: C.textHead }}>{titulo}</h3>
                     <p  className="text-xs leading-snug"              style={{ color: C.textMuted }}>{desc}</p>
-                    <span className="text-xs font-black flex items-center gap-1" style={{ color }}>Ver más <ArrowRight size={11} /></span>
+                    <span className="text-xs font-black flex items-center gap-1" style={{ color }}>Ver más <ArrowRight size={11} aria-hidden="true" /></span>
                   </button>
                 </Reveal>
               ))}
@@ -792,22 +939,24 @@ export default function LandingPage() {
               <div
                 className="absolute top-[38px] left-[13%] right-[13%] h-[2px] rounded-full"
                 style={{ background: `linear-gradient(90deg, ${C.pink}, ${C.purple}, ${C.cyan}, ${C.green})` }}
+                aria-hidden="true"
               />
               {PASOS.map(({ num, icon: Icon, titulo, desc, color }, i) => (
                 <Reveal key={num} delay={i * 0.12}>
                   <div className="flex flex-col items-center text-center px-4">
                     <div
-                      className="relative z-10 w-[76px] h-[76px] rounded-full flex items-center justify-center mb-5 bg-white step-icon"
+                      className="relative z-10 w-[76px] h-[76px] rounded-full flex items-center justify-center mb-5 bg-white"
                       style={{ border: `3px solid ${color}`, boxShadow: `0 4px 20px ${color}44` }}
                     >
-                      <Icon size={28} style={{ color }} />
+                      <Icon size={28} style={{ color }} aria-hidden="true" />
                       <span
                         className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-display text-white"
                         style={{ background: color, boxShadow: `0 2px 8px ${color}88` }}
+                        aria-hidden="true"
                       >{num}</span>
                     </div>
                     <h3 className="font-display text-sm mb-1.5" style={{ color: C.textHead }}>{titulo}</h3>
-                    <p  className="text-xs leading-relaxed"     style={{ color: C.textBody }}>{desc}</p>
+                    <p  className="text-xs leading-relaxed"    style={{ color: C.textBody }}>{desc}</p>
                   </div>
                 </Reveal>
               ))}
@@ -818,6 +967,7 @@ export default function LandingPage() {
               <div
                 className="absolute left-[18px] top-5 bottom-5 w-[2px] rounded-full"
                 style={{ background: `linear-gradient(180deg, ${C.pink}, ${C.purple}, ${C.cyan}, ${C.green})` }}
+                aria-hidden="true"
               />
               {PASOS.map(({ num, icon: Icon, titulo, desc, color }, i) => (
                 <Reveal key={num} delay={i * 0.1} direction="left">
@@ -825,12 +975,13 @@ export default function LandingPage() {
                     <div
                       className="absolute -left-[30px] w-10 h-10 rounded-full flex items-center justify-center z-10 bg-white"
                       style={{ border: `2px solid ${color}`, boxShadow: `0 0 12px ${color}44` }}
+                      aria-hidden="true"
                     >
                       <span className="font-display text-sm" style={{ color }}>{num}</span>
                     </div>
                     <div className="pt-1">
                       <div className="flex items-center gap-2 mb-1.5">
-                        <Icon size={15} style={{ color }} />
+                        <Icon size={15} style={{ color }} aria-hidden="true" />
                         <h3 className="font-display text-sm" style={{ color: C.textHead }}>{titulo}</h3>
                       </div>
                       <p className="text-xs leading-relaxed" style={{ color: C.textBody }}>{desc}</p>
@@ -865,7 +1016,7 @@ export default function LandingPage() {
                   { label: 'Precios de Mayoreo',         color: C.green  },
                 ].map(({ label, color }) => (
                   <span key={label} className="flex items-center gap-1.5" style={{ color }}>
-                    <span>✓</span> {label}
+                    <span aria-hidden="true">✓</span> {label}
                   </span>
                 ))}
               </div>
@@ -888,6 +1039,28 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ══ FAQ ═════════════════════════════════════════ */}
+        <section id="faq" className="px-5 py-16" style={{ background: C.bgSteps }}>
+          <div className="max-w-3xl mx-auto">
+            <Reveal>
+              <SectionTitle
+                title="Preguntas Frecuentes"
+                subtitle="Todo lo que necesitas saber antes de hacer tu primer pedido."
+              />
+            </Reveal>
+            <Reveal delay={0.1}>
+              <div
+                className="bg-white rounded-3xl px-6 py-2"
+                style={{ boxShadow: '0 2px 20px rgba(192,132,252,0.1)', border: `1px solid ${C.purple}18` }}
+              >
+                {FAQS.map((faq, i) => (
+                  <FaqItem key={i} {...faq} />
+                ))}
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
         {/* ══ SUCURSALES ══════════════════════════════════ */}
         <section id="sucursales" className="px-5 py-16" style={{ background: C.bgBranches }}>
           <div className="max-w-5xl mx-auto">
@@ -904,6 +1077,7 @@ export default function LandingPage() {
                       <div
                         className="h-28 flex items-center justify-center relative overflow-hidden rounded-t-[14px]"
                         style={{ background: `linear-gradient(135deg, ${color}14, ${color}08)` }}
+                        aria-hidden="true"
                       >
                         <div className="absolute w-28 h-28 rounded-full" style={{ border: `1px solid ${color}18` }} />
                         <div className="absolute w-40 h-40 rounded-full" style={{ border: `1px solid ${color}0e` }} />
@@ -916,10 +1090,10 @@ export default function LandingPage() {
                       <div className="p-5 flex flex-col gap-3">
                         <h3 className="font-display text-base" style={{ color: C.textHead }}>{ENV.negocio} {nombre}</h3>
                         <p className="flex items-start gap-2 text-sm" style={{ color: C.textBody }}>
-                          <MapPin size={13} className="mt-0.5 flex-shrink-0" style={{ color }} />{direccion}
+                          <MapPin size={13} className="mt-0.5 flex-shrink-0" style={{ color }} aria-hidden="true" />{direccion}
                         </p>
                         <p className="flex items-center gap-2 text-sm" style={{ color: C.textBody }}>
-                          <Clock size={13} style={{ color }} />{horario}
+                          <Clock size={13} style={{ color }} aria-hidden="true" />{horario}
                         </p>
                         <a
                           href={mapsUrl}
@@ -927,8 +1101,9 @@ export default function LandingPage() {
                           rel="noopener noreferrer"
                           className="mt-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-black lp-scale-hover"
                           style={{ background: `${color}12`, color, border: `1px solid ${color}33` }}
+                          onClick={() => trackEvent('maps_link_click', { sucursal: nombre })}
                         >
-                          <Navigation size={13} /> Ver en Google Maps
+                          <Navigation size={13} aria-hidden="true" /> Ver en Google Maps
                         </a>
                       </div>
                     </div>
@@ -946,13 +1121,13 @@ export default function LandingPage() {
               <div
                 className="rounded-3xl px-8 py-14"
                 style={{
-                  backgroundImage: `linear-gradient(${C.bgBenefits}, ${C.bgBenefits}), linear-gradient(135deg, ${C.pink}, ${C.purple}, ${C.cyan})`,
+                  backgroundImage:  `linear-gradient(${C.bgBenefits}, ${C.bgBenefits}), linear-gradient(135deg, ${C.pink}, ${C.purple}, ${C.cyan})`,
                   backgroundOrigin: 'border-box',
                   backgroundClip:   'padding-box, border-box',
                   border:           '2px solid transparent',
                 }}
               >
-                <div className="text-5xl mb-4">🎉</div>
+                <div className="text-5xl mb-4" aria-hidden="true">🎉</div>
                 <h2 className="font-display text-3xl sm:text-4xl mb-4" style={{ color: C.textHead }}>¿Listo para ordenar al mayoreo?</h2>
                 <p className="text-sm leading-relaxed mb-10 max-w-lg mx-auto" style={{ color: C.textBody }}>
                   Escríbenos por WhatsApp o explora el catálogo. Atención personalizada para distribuidores y organizadores de eventos.
@@ -963,7 +1138,7 @@ export default function LandingPage() {
                     className="flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-white lp-scale-hover"
                     style={{ background: `linear-gradient(135deg, ${C.pink}, ${C.purple})`, boxShadow: `0 8px 24px ${C.pink}44` }}
                   >
-                    <ShoppingBag size={18} /> Explorar Catálogo
+                    <ShoppingBag size={18} aria-hidden="true" /> Explorar Catálogo
                   </button>
                   <a
                     href={WA_HREF}
@@ -971,6 +1146,7 @@ export default function LandingPage() {
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-white lp-scale-hover"
                     style={{ background: 'linear-gradient(135deg, #25d366, #128c7e)', boxShadow: '0 8px 24px rgba(37,211,102,0.35)' }}
+                    onClick={() => trackEvent('cta_whatsapp_click')}
                   >
                     <WaIcon size={18} /> Contactar por WhatsApp
                   </a>
@@ -980,35 +1156,102 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ══ FOOTER ══════════════════════════════════════ */}
-        <footer className="border-t bg-white px-5 py-8" style={{ borderColor: '#EDE0F8' }}>
-          <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5">
-              <img src="/icons/icon-192.png" alt={ENV.negocio} className="w-8 h-8 rounded-lg" />
-              <span
-                className="font-display text-base"
-                style={{
-                  background:            `linear-gradient(135deg, ${C.pink}, ${C.purple})`,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor:  'transparent',
-                  backgroundClip:       'text',
-                }}
+        {/* ══ FOOTER — 3 columnas ══════════════════════════ */}
+        <footer className="border-t bg-white" style={{ borderColor: '#EDE0F8' }}>
+          <div className="max-w-5xl mx-auto px-5 pt-10 pb-6 grid grid-cols-1 sm:grid-cols-3 gap-10">
+
+            {/* Columna 1: Logo + tagline + WhatsApp */}
+            <div>
+              <div className="flex items-center gap-2.5 mb-3">
+                <img src="/icons/icon-192.png" alt={ENV.negocio} className="w-8 h-8 rounded-lg" />
+                <span
+                  className="font-display text-base"
+                  style={{
+                    background:            `linear-gradient(135deg, ${C.pink}, ${C.purple})`,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor:  'transparent',
+                    backgroundClip:       'text',
+                  }}
+                >
+                  {ENV.negocio}
+                </span>
+              </div>
+              <p className="text-xs leading-relaxed mb-4" style={{ color: C.textMuted }}>
+                Distribuidora de artículos de fiesta al mayoreo en Uruapan, Michoacán.
+              </p>
+              <a
+                href={WA_HREF}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-white lp-scale-hover"
+                style={{ background: 'linear-gradient(135deg, #25d366, #128c7e)' }}
+                onClick={() => trackEvent('footer_whatsapp_click')}
               >
-                {ENV.negocio}
-              </span>
+                <WaIcon size={12} /> WhatsApp
+              </a>
             </div>
-            <p className="text-xs text-center" style={{ color: C.textMuted }}>
-              © {new Date().getFullYear()} {ENV.negocio} · Uruapan, Michoacán · Todos los derechos reservados
-            </p>
+
+            {/* Columna 2: Navegación */}
+            <div>
+              <h4 className="font-display text-sm mb-4" style={{ color: C.textHead }}>Navegación</h4>
+              <ul className="flex flex-col gap-2">
+                {NAV_LINKS.map(l => (
+                  <li key={l.label}>
+                    <button
+                      onClick={() => handleNav(l)}
+                      className="text-xs font-bold hover:text-pink-400 transition-colors"
+                      style={{ color: C.textMuted }}
+                    >
+                      {l.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Columna 3: Contacto */}
+            <div>
+              <h4 className="font-display text-sm mb-4" style={{ color: C.textHead }}>Contacto</h4>
+              <ul className="flex flex-col gap-3 text-xs" style={{ color: C.textMuted }}>
+                <li className="flex items-start gap-2">
+                  <MapPin size={12} className="mt-0.5 flex-shrink-0" style={{ color: C.pink }} aria-hidden="true" />
+                  {ENV.direccion}
+                </li>
+                <li className="flex items-center gap-2">
+                  <Clock size={12} style={{ color: C.pink }} aria-hidden="true" />
+                  {ENV.horario}
+                </li>
+                <li className="flex items-center gap-2">
+                  <MessageCircle size={12} style={{ color: C.pink }} aria-hidden="true" />
+                  <a href={WA_HREF} target="_blank" rel="noopener noreferrer" className="hover:text-pink-400 transition-colors font-bold">
+                    WhatsApp directo
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Barra inferior */}
+          <div
+            className="border-t px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs"
+            style={{ borderColor: '#EDE0F8', color: C.textMuted }}
+          >
+            <span>© {new Date().getFullYear()} {ENV.negocio} · Uruapan, Michoacán · Todos los derechos reservados</span>
             <div className="flex gap-4">
-              <button onClick={irAlCatalogo} className="text-xs font-bold transition-colors" style={{ color: C.textMuted }}
-                onMouseEnter={e => { e.currentTarget.style.color = C.pink; }}
-                onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-              >Catálogo</button>
-              <a href={WA_HREF} target="_blank" rel="noopener noreferrer" className="text-xs font-bold transition-colors" style={{ color: C.textMuted }}
-                onMouseEnter={e => { e.currentTarget.style.color = C.pink; }}
-                onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; }}
-              >WhatsApp</a>
+              <button
+                onClick={irAlCatalogo}
+                className="font-bold hover:text-pink-400 transition-colors"
+              >
+                Catálogo
+              </button>
+              <a
+                href={WA_HREF}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold hover:text-pink-400 transition-colors"
+              >
+                WhatsApp
+              </a>
             </div>
           </div>
         </footer>
@@ -1021,6 +1264,8 @@ export default function LandingPage() {
         rel="noopener noreferrer"
         className="wa-pulse fixed bottom-6 right-6 z-50 flex items-center gap-2.5 pl-4 pr-5 py-3.5 rounded-full font-black text-sm text-white lp-scale-hover"
         style={{ background: 'linear-gradient(135deg, #25d366, #1aab56)', boxShadow: '0 6px 20px rgba(37,211,102,0.5)' }}
+        aria-label="Contactar por WhatsApp"
+        onClick={() => trackEvent('fab_whatsapp_click')}
       >
         <WaIcon size={20} />
         <span className="hidden sm:inline">¿Dudas? ¡Escríbenos!</span>

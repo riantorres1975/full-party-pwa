@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es-MX">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#fbf7f3" />
-    <meta name="description" content="Catálogo digital de globos, decoración y artículos de fiesta en Uruapan. Ordena por WhatsApp y rastrea tu pedido en tiempo real. Envío local y recolección en tienda." />
-    <meta name="keywords" content="globos, artículos de fiesta, decoración, Uruapan, piñatas, letras led, Full Party" />
+    <meta name="description" content="Distribuidora de artículos de fiesta al mayoreo en Uruapan, Michoacán. Globos, vajilla desechable, decoración temática y más. Precios escalonados, pedidos por WhatsApp." />
+    <meta name="keywords" content="mayoreo artículos de fiesta, globos al mayoreo, decoración fiesta Uruapan, vajilla desechable, piñatas mayoreo, Full Party Uruapan, distribuidora fiesta Michoacán" />
     <meta name="author" content="<%- NOMBRE_NEGOCIO %>" />
 
     <!-- Open Graph -->
-    <meta property="og:title" content="<%- NOMBRE_NEGOCIO %> — Globos, Decoración y Fiestas" />
-    <meta property="og:description" content="Catálogo digital de globos, decoración y artículos de fiesta en Uruapan. Ordena por WhatsApp y rastrea tu pedido en tiempo real." />
-    <meta property="og:image" content="<%- SITE_URL %>/portada-whatsapp.jpg" />
+    <meta property="og:title" content="<%- NOMBRE_NEGOCIO %> — Mayoreo de Artículos para Fiesta en Uruapan" />
+    <meta property="og:description" content="Distribuidora de artículos de fiesta al mayoreo en Uruapan. Globos, vajilla, decoración y más. Precios escalonados, pedidos por WhatsApp." />
+    <meta property="og:image" content="<%- SITE_URL %>/og-image.jpg" />
     <meta property="og:url" content="<%- SITE_URL %>/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="<%- NOMBRE_NEGOCIO %>" />
@@ -19,9 +19,9 @@
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="<%- NOMBRE_NEGOCIO %> — Globos, Decoración y Fiestas" />
-    <meta name="twitter:description" content="Catálogo digital de globos, decoración y artículos de fiesta en Uruapan. Ordena por WhatsApp y rastrea tu pedido en tiempo real." />
-    <meta name="twitter:image" content="<%- SITE_URL %>/portada-whatsapp.jpg" />
+    <meta name="twitter:title" content="<%- NOMBRE_NEGOCIO %> — Mayoreo de Artículos para Fiesta" />
+    <meta name="twitter:description" content="Distribuidora de artículos de fiesta al mayoreo en Uruapan. Globos, vajilla, decoración y más." />
+    <meta name="twitter:image" content="<%- SITE_URL %>/og-image.jpg" />
 
     <!-- Canonical -->
     <link rel="canonical" href="<%- SITE_URL %>/" />
@@ -47,28 +47,102 @@
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" href="/favicon.png" />
-    
-    <title><%- NOMBRE_NEGOCIO %> - Catálogo Digital</title>
 
-    <!-- JSON-LD Structured Data -->
+    <title><%- NOMBRE_NEGOCIO %> — Mayoreo de Artículos para Fiesta en Uruapan</title>
+
+    <!-- Google Analytics 4 (reemplaza G-XXXXXXXXXX con tu Measurement ID) -->
+    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script> -->
+
+    <!-- JSON-LD: LocalBusiness -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "Store",
+      "@type": "LocalBusiness",
       "name": "<%- NOMBRE_NEGOCIO %>",
-      "description": "Catálogo digital de globos, decoración y artículos de fiesta en Uruapan. Ordena por WhatsApp y rastrea tu pedido en tiempo real.",
+      "description": "Distribuidora de artículos de fiesta al mayoreo en Uruapan, Michoacán. Globos, vajilla desechable, decoración temática y más.",
       "url": "<%- SITE_URL %>",
-      "image": "<%- SITE_URL %>/portada-whatsapp.jpg",
+      "image": "<%- SITE_URL %>/og-image.jpg",
+      "telephone": "+<%- WHATSAPP_NUMBER %>",
+      "priceRange": "$$",
       "address": {
         "@type": "PostalAddress",
         "addressLocality": "Uruapan",
         "addressRegion": "Michoacán",
         "addressCountry": "MX"
       },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 19.4167,
+        "longitude": -102.0667
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+          "opens": "09:00",
+          "closes": "19:00"
+        }
+      ],
       "hasOfferCatalog": {
         "@type": "OfferCatalog",
-        "name": "Artículos de fiesta y decoración"
+        "name": "Artículos de fiesta y decoración al mayoreo"
       }
+    }
+    </script>
+
+    <!-- JSON-LD: FAQPage -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "¿Tienen precios por mayoreo?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sí, contamos con tarifas escalonadas por volumen. Entre más piezas compras, mejor precio obtienes. Aplica desde la primera pieza."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cómo puedo hacer un pedido?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Navega nuestro catálogo digital, agrega los productos al carrito y envía tu orden directamente a nuestro WhatsApp con un solo clic. Sin llamadas, sin complicaciones."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Hacen envíos a domicilio?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sí, realizamos envíos dentro de Uruapan y zona metropolitana. También puedes recoger en cualquiera de nuestras dos sucursales."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cuántas sucursales tienen?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Contamos con dos sucursales en Uruapan: Centro (sucursal principal) y Sol Naciente (sucursal norte). Ambas con el mismo catálogo y precios."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Qué marcas manejan?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Somos distribuidores autorizados de Glomex, Decoratexz, Sempertex y Peyma, líderes en artículos de fiesta y decoración a nivel nacional."
+          }
+        }
+      ]
     }
     </script>
   </head>
