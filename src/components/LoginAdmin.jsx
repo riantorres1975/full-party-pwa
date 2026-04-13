@@ -20,14 +20,14 @@ export default function LoginAdmin({ onLogin, loading, error }) {
 
   const inputClasses = `w-full rounded-xl pl-10 pr-4 py-3 text-sm font-body font-semibold
                         bg-white/[0.07] border border-white/10 text-white
-                        placeholder:text-purple-400/50
-                        focus:border-purple-400/60 focus:bg-white/[0.10] focus:ring-0
+                        placeholder:text-slate-500
+                        focus:border-slate-400/60 focus:bg-white/[0.10] focus:ring-0
                         outline-none transition-all duration-200`;
 
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: 'linear-gradient(135deg, #0f0320 0%, #1a0733 40%, #2d1055 100%)' }}
+      style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)' }}
     >
       {/* Glow blobs */}
       <div
