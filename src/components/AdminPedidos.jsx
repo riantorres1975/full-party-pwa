@@ -131,7 +131,7 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChang
           <img src={item.imagen_url} alt={item.nombre} loading="lazy" onError={() => setImgError(true)}
                className="w-full h-full object-contain" style={{ filter: tachado ? 'grayscale(1)' : 'none' }} />
         ) : (
-          <Package size={esDesktop ? 14 : 20} className="text-purple-300" />
+          <Package size={esDesktop ? 14 : 20} className="text-slate-300" />
         )}
       </div>
 
@@ -877,7 +877,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
               aria-current={vistaAdmin === 'pedidos' ? 'page' : undefined}
               className={`relative flex items-center gap-2.5 px-1 py-3 lg:px-3 lg:py-2.5 text-sm font-body font-bold transition-all lg:rounded-xl lg:border-none border-b-[3px] 
                          ${vistaAdmin === 'pedidos'
-                           ? 'text-admin-text border-admin-text lg:bg-admin-elevated lg:border-l-[3px] lg:border-l-fiesta-magenta lg:border-b-0'
+                           ? 'text-admin-text border-admin-text lg:bg-admin-elevated lg:border-l-[3px] lg:border-l-blue-500 lg:border-b-0'
                            : 'text-admin-muted border-transparent hover:text-admin-text lg:hover:bg-admin-elevated'}`}
             >
               <ClipboardList size={18} />
@@ -894,7 +894,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
               aria-current={vistaAdmin === 'catalogo' ? 'page' : undefined}
               className={`flex flex-1 sm:flex-none items-center justify-center sm:justify-start gap-2.5 px-1 py-3 lg:px-3 lg:py-2.5 text-sm font-body font-bold transition-all lg:rounded-xl lg:border-none border-b-[3px] ml-4 lg:ml-0
                          ${vistaAdmin === 'catalogo'
-                           ? 'text-admin-text border-admin-text lg:bg-admin-elevated lg:border-l-[3px] lg:border-l-fiesta-magenta lg:border-b-0'
+                           ? 'text-admin-text border-admin-text lg:bg-admin-elevated lg:border-l-[3px] lg:border-l-blue-500 lg:border-b-0'
                            : 'text-admin-muted border-transparent hover:text-admin-text lg:hover:bg-admin-elevated'}`}
             >
               <LayoutGrid size={18} />
@@ -959,7 +959,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
             <h2 className="sr-only">{t('admin.catalog.title')}</h2>
             <Suspense fallback={
               <div className="flex items-center justify-center py-16 gap-3">
-                <div className="w-6 h-6 rounded-full border-[3px] border-admin-border border-t-fiesta-magenta animate-spin" />
+                <div className="w-6 h-6 rounded-full border-[3px] border-admin-border border-t-blue-500 animate-spin" />
                 <span className="text-sm font-body font-bold text-admin-muted">{t('admin.catalog.loading')}</span>
               </div>
             }>
@@ -973,7 +973,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
         <section className="bg-admin-card rounded-2xl border border-admin-border p-4 sm:p-5 lg:p-4 space-y-3 shadow-card">
           {/* Stats: compactos en desktop, grid en móvil */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 lg:gap-2">
-            {[{ key: 'todos', label: t('common.total'), icon: ClipboardList, color: '#6b35b8', bg: '#f3e8ff' },
+            {[{ key: 'todos', label: t('common.total'), icon: ClipboardList, color: '#2563eb', bg: '#dbeafe' },
               ...ESTADOS_CON_CANCELADO.map(e => ({ key: e, label: e, ...ESTADO_META[e] }))
             ].map(({ key, label, icon: IconComponent, color, bg }) => {
               const isActive = filtroEstado === key;
@@ -1020,7 +1020,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
               placeholder={t('admin.orders.searchPlaceholder')}
               className="w-full bg-admin-input rounded-2xl lg:rounded-xl pl-9 pr-9 py-3 lg:py-2.5 text-sm font-body font-semibold
                          text-admin-text placeholder:text-admin-inactive outline-none border-2
-                         border-admin-border focus:border-fiesta-magenta transition-colors"
+                         border-admin-border focus:border-blue-400 transition-colors"
             />
             {busquedaInput && (
               <button
@@ -1059,8 +1059,8 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
           <>
             {pedidos.length === 0 ? (
               <div className="min-h-[50vh] flex flex-col items-center justify-center text-center px-4">
-                <div className="w-16 h-16 rounded-full bg-purple-50 border-2 border-purple-100 flex items-center justify-center mb-3">
-                  <ClipboardList size={28} className="text-purple-300" />
+                <div className="w-16 h-16 rounded-full bg-slate-100 border-2 border-slate-200 flex items-center justify-center mb-3">
+                  <ClipboardList size={28} className="text-slate-300" />
                 </div>
                 <p className="font-body font-semibold text-xl text-admin-text-secondary">Todo al día</p>
                 <p className="text-sm font-body text-admin-muted mt-1">

@@ -516,7 +516,7 @@ export default function AdminCatalogo() {
               placeholder={t('admin.catalog.searchPlaceholder')}
               className="w-full bg-admin-card rounded-2xl pl-12 pr-4 py-3 text-sm font-body font-semibold
                          text-admin-text placeholder:text-admin-inactive outline-none border-2 border-admin-border
-                         focus:border-fiesta-magenta transition-colors"
+                         focus:border-blue-400 transition-colors"
             />
           </div>
           <button
@@ -537,7 +537,7 @@ export default function AdminCatalogo() {
               onClick={() => setShowExportMenu(prev => !prev)}
               disabled={exportando || productos.length === 0}
               className="inline-flex items-center gap-1.5 px-3 py-3 rounded-2xl text-sm font-body font-black
-                         border-2 border-admin-border text-admin-text hover:border-fiesta-magenta hover:text-fiesta-magenta
+                         border-2 border-admin-border text-admin-text hover:border-blue-400 hover:text-blue-600
                          transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
               title={t('admin.catalog.export')}
             >
@@ -595,7 +595,7 @@ export default function AdminCatalogo() {
             onClick={() => setFiltroActivo('todos')}
             className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-body font-black border-2 transition-colors"
             style={filtroActivo === 'todos'
-              ? { background: '#6b35b8', color: 'white', borderColor: '#6b35b8' }
+              ? { background: '#2563eb', color: 'white', borderColor: '#2563eb' }
               : { background: '#f3f4f6', color: '#6b7280', borderColor: '#e5e7eb' }}
           >
             {t('common.all')}
@@ -749,7 +749,7 @@ export default function AdminCatalogo() {
                 <div className="bg-admin-card border border-admin-border rounded-2xl w-full max-w-sm shadow-2xl flex flex-col max-h-[80vh]">
                   <div className="flex items-center justify-between px-5 py-4 border-b border-admin-border shrink-0">
                     <div className="flex items-center gap-2">
-                      <Tag size={18} className="text-purple-500" />
+                      <Tag size={18} className="text-blue-500" />
                       <h2 className="text-base font-body font-black text-admin-text">{t('admin.catalog.manageCategories')}</h2>
                     </div>
                     <button onClick={() => { setShowCatMgr(false); setCatEditando(null); setCatNuevoNombre(''); }} className="text-admin-muted hover:text-admin-text transition-colors" aria-label={t('common.close')}>
@@ -773,7 +773,7 @@ export default function AdminCatalogo() {
                                 if (e.key === 'Enter') handleRenameCategoria(cat);
                                 if (e.key === 'Escape') { setCatEditando(null); setCatNuevoNombre(''); }
                               }}
-                              className="flex-1 bg-admin-card border border-admin-border rounded-lg px-2 py-1 text-sm font-body text-admin-text outline-none focus:border-purple-400"
+                              className="flex-1 bg-admin-card border border-admin-border rounded-lg px-2 py-1 text-sm font-body text-admin-text outline-none focus:border-blue-400"
                             />
                             <button
                               onClick={() => handleRenameCategoria(cat)}
@@ -797,7 +797,7 @@ export default function AdminCatalogo() {
                             <span className="text-xs text-admin-muted shrink-0">{productos.filter(p => p.categoria === cat).length} {t('admin.catalog.productsShort')}</span>
                             <button
                               onClick={() => { setCatEditando(cat); setCatNuevoNombre(cat); }}
-                              className="shrink-0 text-admin-muted hover:text-purple-500 transition-colors"
+                              className="shrink-0 text-admin-muted hover:text-blue-500 transition-colors"
                               aria-label={`Renombrar ${cat}`}
                             >
                               <Pencil size={15} />
@@ -942,7 +942,7 @@ export default function AdminCatalogo() {
 
             {cargando && (
               <div className="flex items-center justify-center py-16 gap-3">
-                <div className="w-6 h-6 rounded-full border-[3px] border-admin-border border-t-fiesta-magenta animate-spin" />
+                <div className="w-6 h-6 rounded-full border-[3px] border-admin-border border-t-blue-500 animate-spin" />
                 <span className="text-sm font-body font-bold text-admin-muted">{t('admin.catalog.loadingInventory')}</span>
               </div>
             )}
