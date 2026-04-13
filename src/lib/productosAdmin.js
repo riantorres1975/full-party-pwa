@@ -79,6 +79,19 @@ async function validateImageSignature(file) {
  * Valida: tipo, tamaño, extensión y magic bytes del archivo.
  * Requiere bucket `productos-imagenes` y políticas de Storage para usuarios autenticados.
  */
+/**
+ * Convierte un nombre de archivo al formato SEO-friendly: minúsculas, sin acentos,
+ * espacios y caracteres especiales reemplazados por guiones, sin guiones dobles.
+ */
+function slugifyFilename(name) {
+  return name
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quitar acentos
+    .toLowerCase()
+    .replace(/[^a-z0-9.\-]/g, '-')  // solo alfanuméricos, puntos y guiones
+    .replace(/-{2,}/g, '-')          // colapsar guiones dobles
+    .replace(/^-+|-+$/g, '');        // quitar guiones al inicio/fin
+}
+
 export async function subirImagenProducto(file) {
   if (!file || !(file instanceof File)) {
     throw new Error('Selecciona un archivo de imagen válido.');
@@ -101,7 +114,8 @@ export async function subirImagenProducto(file) {
     throw new Error('El archivo no parece ser una imagen válida.');
   }
 
-  const path = `${randomId()}.${ext}`;
+  const baseName = slugifyFilename(file.name.replace(/\.[^.]+$/, ''));
+  const path = `${baseName}-${randomId()}.${ext}`;
   const { error: upErr } = await supabase.storage
     .from(BUCKET_IMAGENES_PRODUCTOS)
     .upload(path, file, {
