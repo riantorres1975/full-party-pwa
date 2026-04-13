@@ -37,6 +37,13 @@
     --text-secondary: #6b35b8;
     --text-muted: #8a56d4;
     --text-inactive: #9ca3af;
+    --accent-primary: #a855f7;
+    --accent-secondary: #ff3dac;
+    --accent-success: #25d366;
+    --gradient-accent: linear-gradient(135deg, #ff3dac, #a855f7);
+    --gradient-success: linear-gradient(135deg, #25d366, #1db954);
+    --shadow-accent-soft: 0 4px 20px rgba(255, 61, 172, 0.27);
+    --shadow-success-soft: 0 4px 20px rgba(37, 211, 102, 0.33);
     background-color: var(--surface-primary);
     background-image:
       radial-gradient(circle at 15% 20%, #ff3dac22 0%, transparent 35%),
