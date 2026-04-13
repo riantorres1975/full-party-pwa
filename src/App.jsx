@@ -221,7 +221,8 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
             }}
           >
             <div className="flex items-center justify-center gap-2 px-10 py-2.5">
-              <span className="text-base" aria-hidden="true">📣</span>
+              <span className="text-base" aria-hidden="true"
+                    style={{ display: 'inline-block', animation: 'megaSwing 1s ease-in-out infinite' }}>📢</span>
               <span className="text-sm leading-snug">{anuncioMsg}</span>
             </div>
             <button
