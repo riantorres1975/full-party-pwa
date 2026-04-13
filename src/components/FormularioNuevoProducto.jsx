@@ -345,7 +345,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                           min="0"
                           value={stockActual}
                           onChange={e => setStockActual(e.target.value)}
-                          className="w-full bg-white border border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all shadow-[0_2px_10px_rgb(0,0,0,0.02)]"
+                          className="w-full bg-white border border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all shadow-[0_2px_10px_rgb(0,0,0,0.02)]"
                           placeholder="0"
                         />
                       </div>
@@ -356,7 +356,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                           min="0"
                           value={stockMinimo}
                           onChange={e => setStockMinimo(e.target.value)}
-                          className="w-full bg-white border border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all shadow-[0_2px_10px_rgb(0,0,0,0.02)]"
+                          className="w-full bg-white border border-transparent rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all shadow-[0_2px_10px_rgb(0,0,0,0.02)]"
                           placeholder="5"
                         />
                       </div>
@@ -418,7 +418,7 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                 <button
                   type="submit"
                   disabled={enviando}
-                  className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-500 text-white font-bold rounded-full px-8 py-3 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+                  className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-500 text-white font-bold rounded-full px-8 py-3 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
                 >
                   {enviando && <Loader2 size={18} className="animate-spin" />}
                   {enviando ? t('admin.catalog.saving') : t('admin.form.saveProduct')}
