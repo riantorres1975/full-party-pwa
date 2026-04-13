@@ -16,7 +16,7 @@ export default function Buscador({ busqueda, setBusqueda, categoriaActiva, setCa
           type="text"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          placeholder="🔍 Buscar productos..."
+          placeholder="Buscar productos..."
           className="w-full bg-white rounded-2xl
                      pl-10 pr-10 py-3 text-sm font-body font-semibold text-ink-900
                      placeholder:text-ink-300 outline-none
@@ -49,11 +49,11 @@ export default function Buscador({ busqueda, setBusqueda, categoriaActiva, setCa
               transition-all duration-200 active:scale-95 whitespace-nowrap border-2
               ${categoriaActiva === cat.id
                 ? 'text-white border-transparent'
-                : 'bg-white border-ink-200 text-ink-500 hover:border-fiesta-magenta hover:text-fiesta-magenta'
+                : 'bg-white border-ink-200 text-ink-600 hover:border-ink-400 hover:text-ink-800'
               }
             `}
             style={categoriaActiva === cat.id
-              ? { background: 'linear-gradient(135deg, #2563eb, #6366f1)', boxShadow: '0 3px 12px #2563eb33' }
+              ? { background: '#2563eb', boxShadow: '0 2px 8px #2563eb33' }
               : {}
             }
           >
