@@ -196,9 +196,29 @@ ON CONFLICT DO NOTHING;
 -- ───────────────────────────────────────────────────────────────────────────
 -- Esto permite que los clientes vean cambios de stock / disponibilidad
 -- al instante cuando el admin modifica productos desde el panel.
-ALTER PUBLICATION supabase_realtime ADD TABLE public.productos;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.pedidos;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.configuracion;
+DO $$
+BEGIN
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.productos;
+  EXCEPTION WHEN duplicate_object THEN
+    NULL;
+  END;
+
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.pedidos;
+  EXCEPTION WHEN duplicate_object THEN
+    NULL;
+  END;
+
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.configuracion;
+  EXCEPTION WHEN duplicate_object THEN
+    NULL;
+  END;
+END $$;
+
+-- Ensure full row data is available on UPDATE/DELETE events for Realtime
+ALTER TABLE public.pedidos REPLICA IDENTITY FULL;
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 6. PASO MANUAL FINAL (Para el panel de Supabase)
