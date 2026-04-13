@@ -85,7 +85,7 @@ export default function BuscadorFiltros({
 
           {totalFiltrosActivos > 0 && (
             <span className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center
-                             text-[9px] font-body font-black bg-fiesta-yellow text-ink-900
+                             text-[9px] font-body font-black bg-blue-600 text-white
                              rounded-full border-2 border-white">
               {totalFiltrosActivos}
             </span>

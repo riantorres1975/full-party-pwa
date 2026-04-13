@@ -568,8 +568,8 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                   style={isFormReady
                     ? { background: 'linear-gradient(135deg, #2563eb, #6366f1)',
                         boxShadow: '0 4px 20px #2563eb33' }
-                    : { background: 'linear-gradient(135deg, #d4a0c8, #b49ad4)',
-                        boxShadow: 'none', opacity: 0.6 }
+                    : { background: '#94a3b8',
+                        boxShadow: 'none', opacity: 0.7 }
                   }
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
