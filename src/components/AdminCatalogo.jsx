@@ -42,7 +42,7 @@ function MiniaturaProducto({ url, nombre }) {
     <img
       src={url}
       alt={nombre || ''}
-      className="w-full h-full object-cover"
+      className="w-full h-full object-contain"
       onError={() => setFallo(true)}
     />
   );
