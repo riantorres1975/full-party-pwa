@@ -51,23 +51,23 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
             <svg viewBox="0 0 64 64" className="fp-header-balloon" role="img" aria-label="Globo">
               <defs>
                 <linearGradient id="fpBalloonFill" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#ff5a5a" />
-                  <stop offset="100%" stopColor="#e11d48" />
+                  <stop offset="0%" stopColor="#3b82f6" />
+                  <stop offset="100%" stopColor="#2563eb" />
                 </linearGradient>
                 <linearGradient id="fpBalloonKnot" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#f43f5e" />
-                  <stop offset="100%" stopColor="#be123c" />
+                  <stop offset="0%" stopColor="#6366f1" />
+                  <stop offset="100%" stopColor="#4338ca" />
                 </linearGradient>
               </defs>
               <ellipse cx="31" cy="24" rx="18" ry="20" fill="url(#fpBalloonFill)" />
               <ellipse cx="24" cy="18" rx="5" ry="7" fill="rgba(255,255,255,0.3)" />
               <path d="M28 43l3 5 5-4-4-2z" fill="url(#fpBalloonKnot)" />
-              <path d="M31 48c5 4 1 8 6 11" stroke="#be123c" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+              <path d="M31 48c5 4 1 8 6 11" stroke="#4338ca" strokeWidth="2.5" strokeLinecap="round" fill="none" />
             </svg>
           </span>
           <div className="min-w-0">
             <h1 className="font-display text-lg sm:text-2xl leading-tight"
-                style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7, #00d4ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                style={{ background: 'linear-gradient(135deg, #2563eb, #6366f1, #0ea5e9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               {NOMBRE_NEGOCIO}
             </h1>
             <p className="text-[10px] font-body font-bold tracking-widest uppercase text-ink-400">
@@ -222,7 +222,7 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
             <button
               onClick={onAbrirCarrito}
               className="relative p-2.5 rounded-full text-white transition-all duration-200 active:scale-90"
-              style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}
+              style={{ background: 'linear-gradient(135deg, #2563eb, #6366f1)' }}
               aria-label={t('header.cartAriaLabel', { count: cantidadTotal })}
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

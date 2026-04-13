@@ -58,7 +58,7 @@ export default function LoginAdmin({ onLogin, loading, error }) {
         <div className="flex flex-col items-center mb-8">
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg"
-            style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}
+            style={{ background: 'linear-gradient(135deg, #2563eb, #6366f1)' }}
           >
             <span className="text-white font-display text-xl tracking-wide">AD</span>
           </div>
