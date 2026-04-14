@@ -27,7 +27,6 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
-  const [showIntro, setShowIntro] = useState(false);
 
   const [activeFilters, setActiveFilters] = useState({
     categorias: [],
@@ -36,7 +35,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   });
 
   const { items, total, cantidadTotal,
-          agregarItem, reducirItem, eliminarItem, limpiarCarrito, getCantidad,
+          agregarItem, reducirItem, limpiarCarrito, getCantidad,
           stockError, sincronizarStock,
   } = useCarrito();
 
@@ -51,19 +50,6 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   useEffect(() => {
     if (productos.length > 0) sincronizarStock(productos);
   }, [productos, sincronizarStock]);
-
-  useEffect(() => {
-    const yaVioIntro = sessionStorage.getItem('fp_intro_v1') === '1';
-    if (yaVioIntro) return;
-
-    setShowIntro(true);
-    const t = setTimeout(() => {
-      setShowIntro(false);
-      sessionStorage.setItem('fp_intro_v1', '1');
-    }, 1850);
-
-    return () => clearTimeout(t);
-  }, []);
 
   // Filter logic
   const toggleFilter = (dimension, valor) => {
@@ -136,17 +122,6 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
   return (
     <div className={`min-h-screen lg:h-screen lg:overflow-hidden transition-colors duration-300 ${temaOscuro ? 'bg-[#0f1124]' : 'bg-cream'}`}>
-      {showIntro && (
-        <div className="fp-intro-overlay">
-          <div className="fp-intro-glow" />
-          <div className="fp-intro-card">
-            <img src="/icons/icon-512.png" alt="Full Party" className="fp-intro-logo" />
-            <h2 className="fp-intro-title">{t('intro.title')}</h2>
-            <p className="fp-intro-subtitle">{t('intro.subtitle')}</p>
-          </div>
-        </div>
-      )}
-
       <div className={temaOscuro ? 'theme-dark-catalog' : ''}>
         <header
           className={`sticky top-0 z-50 w-full backdrop-blur-md shadow-sm border-b pb-2 transition-colors duration-300 ${
@@ -258,7 +233,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     <button
                       onClick={() => setIsTrackingOpen(true)}
                       className="whitespace-nowrap ml-auto lg:hidden flex items-center gap-1 transition-colors"
-                      style={{ color: 'var(--color-fiesta-purple, #a855f7)' }}
+                      style={{ color: 'var(--accent-primary)' }}
                     >
                       {t('trust.trackOrder')}
                     </button>
@@ -272,14 +247,14 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     <div className="flex flex-col items-center justify-center py-20 px-8 text-center gap-4">
                       <div className="text-5xl animate-float">😵</div>
                       <div className="bg-white rounded-3xl p-6 max-w-sm w-full"
-                           style={{ border: '2px solid var(--border-default)', boxShadow: '0 4px 20px #ff3dac15' }}>
+                           style={{ border: '2px solid var(--border-default)', boxShadow: 'var(--shadow-accent-soft)' }}>
                         <p className="font-display text-lg text-ink-800 mb-1">{t('error.title')}</p>
                         <p className="text-xs font-body text-ink-400 mb-4 leading-relaxed">{error}</p>
                         <button
                           onClick={refetch}
                           className="w-full py-3 rounded-2xl font-body font-black text-sm text-white
                                      transition-all duration-200 active:scale-95"
-                          style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)', boxShadow: '0 4px 14px #ff3dac44' }}
+                          style={{ background: 'var(--gradient-accent)', boxShadow: 'var(--shadow-accent-soft)' }}
                         >
                           {t('error.retry')}
                         </button>
@@ -312,12 +287,10 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
       <CarritoDrawer
         items={items}
-        total={total}
         isOpen={isCartOpen}
         onCerrar={() => setIsCartOpen(false)}
         onAgregar={agregarItem}
         onReducir={reducirItem}
-        onEliminar={eliminarItem}
         onLimpiar={limpiarCarrito}
         productos={productos}
       />
