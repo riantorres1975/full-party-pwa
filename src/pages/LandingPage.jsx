@@ -1094,10 +1094,10 @@ export default function LandingPage() {
             </Reveal>
 
             <Reveal delay={0.26}>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="w-full max-w-[340px] mx-auto sm:max-w-none flex flex-col sm:flex-row items-center justify-center gap-4">
                 <button
                   onClick={irAlCatalogo}
-                  className="btn-pink-pulse flex items-center gap-3 px-10 py-5 rounded-2xl font-black text-lg text-white lp-scale-hover"
+                  className="btn-pink-pulse w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-5 rounded-2xl font-black text-lg text-white lp-scale-hover"
                   style={{ background: `linear-gradient(135deg, ${C.pink}, ${C.purple})` }}
                 >
                   <ShoppingBag size={22} aria-hidden="true" /> Ver Catálogo Digital
@@ -1106,7 +1106,7 @@ export default function LandingPage() {
                   href={WA_HREF}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2.5 px-8 py-5 rounded-2xl font-black text-base bg-white lp-scale-hover"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-5 rounded-2xl font-black text-base bg-white lp-scale-hover whitespace-nowrap"
                   style={{ color: C.accentDeep, border: `2px solid ${C.purple}30`, boxShadow: `0 2px 12px ${C.shadowLavender}` }}
                   onClick={() => trackEvent('hero_whatsapp_click')}
                 >
@@ -1638,7 +1638,7 @@ export default function LandingPage() {
         href={WA_HREF}
         target="_blank"
         rel="noopener noreferrer"
-        className="wa-pulse fixed bottom-6 right-6 z-50 flex items-center gap-2.5 pl-4 pr-5 py-3.5 rounded-full font-black text-sm text-white lp-scale-hover"
+        className="wa-pulse fixed bottom-6 right-6 z-50 flex items-center justify-center rounded-full font-black text-sm text-white lp-scale-hover w-14 h-14 p-0 sm:w-auto sm:h-auto sm:gap-2.5 sm:pl-4 sm:pr-5 sm:py-3.5"
         style={{ background: 'linear-gradient(135deg, #25d366, #1aab56)', boxShadow: '0 6px 20px rgba(37,211,102,0.5)' }}
         aria-label="Contactar por WhatsApp"
         onClick={() => trackEvent('fab_whatsapp_click')}
