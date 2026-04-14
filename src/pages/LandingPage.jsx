@@ -1218,23 +1218,23 @@ export default function LandingPage() {
             </div>
 
             {/* Mobile */}
-            <div className="md:hidden flex flex-col gap-0 relative pl-12">
+            <div className="md:hidden flex flex-col gap-0 relative">
               <div
-                className="absolute left-[18px] top-5 bottom-5 w-[2px] rounded-full"
+                className="absolute left-[19px] top-5 bottom-5 w-[2px] rounded-full"
                 style={{ background: `linear-gradient(180deg, ${C.pink}, ${C.purple}, ${C.cyan}, ${C.green})` }}
                 aria-hidden="true"
               />
               {PASOS.map(({ num, icon: Icon, titulo, desc, color }, i) => (
                 <Reveal key={num} delay={i * 0.1} direction="left">
-                  <div className="flex gap-4 items-start pb-9 relative">
+                  <div className={`grid grid-cols-[40px_minmax(0,1fr)] gap-4 items-start relative ${i === PASOS.length - 1 ? 'pb-0' : 'pb-9'}`}>
                     <div
-                      className="absolute -left-[30px] w-10 h-10 rounded-full flex items-center justify-center z-10 bg-white"
+                      className="w-10 h-10 rounded-full flex items-center justify-center z-10 bg-white"
                       style={{ border: `2px solid ${color}`, boxShadow: `0 0 12px ${color}44` }}
                       aria-hidden="true"
                     >
                       <span className="font-display text-sm" style={{ color }}>{num}</span>
                     </div>
-                    <div className="pt-1">
+                    <div className="pt-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5">
                         <Icon size={15} style={{ color }} aria-hidden="true" />
                         <h3 className="font-display text-sm" style={{ color: C.textHead }}>{titulo}</h3>
