@@ -114,10 +114,10 @@ const BENEFICIOS = [
 ];
 
 const CATEGORIAS = [
-  { emoji: '🎈', titulo: 'Globos y Arreglos',   desc: 'Látex, foil y arreglos personalizados', color: C.pink   },
-  { emoji: '🍽️', titulo: 'Vajilla Desechable',  desc: 'Platos, vasos y cubiertos por paquete', color: C.orange },
-  { emoji: '🎀', titulo: 'Decoración Temática', desc: 'Sets completos para toda ocasión',       color: C.purple },
-  { emoji: '🏷️', titulo: 'Ofertas de Mayoreo',  desc: 'Los mejores precios por volumen',        color: C.green  },
+  { emoji: '🎈', titulo: 'Globos de Látex',      desc: 'Colores, tamaños y marcas premium',       color: C.pink   },
+  { emoji: '🦸', titulo: 'Globos de Personajes', desc: 'Modelos temáticos para toda ocasión',      color: C.orange },
+  { emoji: '🎀', titulo: 'Arreglos con Globos',  desc: 'Combinaciones listas para tu evento',      color: C.purple },
+  { emoji: '🏷️', titulo: 'Mayoreo por Volumen',  desc: 'Precios escalonados para surtir negocio',  color: C.green  },
 ];
 
 const PASOS = [
@@ -128,10 +128,10 @@ const PASOS = [
 ];
 
 const MARCAS = [
-  { nombre: 'Glomex',     desc: 'Artículos de fiesta premium', color: C.pink,   emoji: '🎉' },
-  { nombre: 'Decoratexz', desc: 'Decoración y adornos',        color: C.purple, emoji: '🎀' },
-  { nombre: 'Sempertex',  desc: 'Globos de látex y foil',      color: C.green,  emoji: '🎈' },
-  { nombre: 'Peyma',      desc: 'Vajilla desechable',          color: C.orange, emoji: '🍽️' },
+  { nombre: 'Glomex',      desc: 'Globos de látex mayoreo',       color: C.pink,   emoji: '🎈' },
+  { nombre: 'Decoratex',   desc: 'Globos de látex y decoración',  color: C.purple, emoji: '🎀' },
+  { nombre: 'Sempertex',   desc: 'Calidad premium en látex',      color: C.green,  emoji: '✨' },
+  { nombre: 'Personajes',  desc: 'Globos temáticos licenciados',  color: C.orange, emoji: '🦸' },
 ];
 
 const RESENAS = [
@@ -246,7 +246,7 @@ const FAQS = [
   },
   {
     pregunta:  '¿Qué marcas manejan?',
-    respuesta: 'Somos distribuidores autorizados de Glomex, Decoratexz, Sempertex y Peyma, marcas líderes en artículos de fiesta y decoración a nivel nacional.',
+    respuesta: 'Somos distribuidores autorizados de Glomex, Decoratex y Sempertex. También manejamos globos de personajes para decoración y eventos.',
   },
   {
     pregunta:  '¿Cuál es el pedido mínimo?',
@@ -1088,8 +1088,8 @@ export default function LandingPage() {
 
             <Reveal delay={0.18}>
               <p className="text-base sm:text-lg leading-relaxed mb-10 max-w-xl mx-auto" style={{ color: C.textBody }}>
-                Cotiza y ordena los mejores artículos de fiesta al mayoreo.
-                Precios escalonados, pedido por WhatsApp en un clic.
+                Especialistas en globos de látex al mayoreo en Uruapan.
+                Manejamos marcas como Glomex, Decoratex y Sempertex, además de globos de personajes.
               </p>
             </Reveal>
 
@@ -1251,7 +1251,7 @@ export default function LandingPage() {
         {/* ══ MARCAS ══════════════════════════════════════ */}
         <section className="px-5 py-16" style={{ background: C.bgHero }}>
           <div className="max-w-5xl mx-auto">
-            <Reveal><SectionTitle title="Trabajamos con las Mejores Marcas" subtitle="Distribuidores autorizados de marcas líderes en artículos de fiesta." /></Reveal>
+            <Reveal><SectionTitle title="Trabajamos con las Mejores Marcas" subtitle="Distribuidores autorizados de globos de látex y globos de personajes." /></Reveal>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
               {MARCAS.map((m, i) => (
                 <Reveal key={m.nombre} delay={i * 0.09}>
@@ -1510,7 +1510,7 @@ export default function LandingPage() {
                 </span>
               </div>
               <p className="text-xs leading-relaxed mb-4" style={{ color: C.textMuted }}>
-                Distribuidora de artículos de fiesta al mayoreo en Uruapan, Michoacán.
+                Tienda y distribuidora de globos en Uruapan, Michoacán.
               </p>
               {/* Botones de redes sociales */}
               <div className="flex flex-wrap gap-2 mt-4">
