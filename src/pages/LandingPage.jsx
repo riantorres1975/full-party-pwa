@@ -1137,7 +1137,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ BENEFICIOS ══════════════════════════════════ */}
-        <section className="px-5 py-16" style={{ background: C.bgBenefits }}>
+        <section className="lp-below-fold px-5 py-16" style={{ background: C.bgBenefits }}>
           <div className="max-w-5xl mx-auto">
             <Reveal><SectionTitle title="¿Por qué Full Party?" subtitle="Todo lo que necesitas para hacer tu fiesta un éxito." /></Reveal>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -1159,7 +1159,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ CATEGORÍAS ══════════════════════════════════ */}
-        <section className="px-5 py-16" style={{ background: C.bgHero }}>
+        <section className="lp-below-fold px-5 py-16" style={{ background: C.bgHero }}>
           <div className="max-w-5xl mx-auto">
             <Reveal><SectionTitle title="Categorías Destacadas" subtitle="Los artículos más solicitados para tus eventos." /></Reveal>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1187,7 +1187,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ CÓMO FUNCIONA ═══════════════════════════════ */}
-        <section className="px-5 py-16" style={{ background: C.bgSteps }}>
+        <section className="lp-below-fold px-5 py-16" style={{ background: C.bgSteps }}>
           <div className="max-w-5xl mx-auto">
             <Reveal><SectionTitle title="¿Cómo funciona?" subtitle="Pedir al mayoreo nunca había sido tan fácil." /></Reveal>
 
@@ -1251,7 +1251,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ MARCAS ══════════════════════════════════════ */}
-        <section className="px-5 py-16" style={{ background: C.bgHero }}>
+        <section className="lp-below-fold px-5 py-16" style={{ background: C.bgHero }}>
           <div className="max-w-5xl mx-auto">
             <Reveal><SectionTitle title="Trabajamos con las Mejores Marcas" subtitle="Distribuidores autorizados de globos de látex y globos de personajes." /></Reveal>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
@@ -1282,7 +1282,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ RESEÑAS ═════════════════════════════════════ */}
-        <section id="resenas" className="px-5 py-16" style={{ background: C.bgReviews }}>
+        <section id="resenas" className="lp-below-fold px-5 py-16" style={{ background: C.bgReviews }}>
           <div className="max-w-5xl mx-auto">
             <Reveal>
               <SectionTitle
@@ -1297,7 +1297,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ GALERÍA DE CLIENTES ═════════════════════════ */}
-        <section className="px-5 py-16" style={{ background: C.bgHero }}>
+        <section className="lp-below-fold px-5 py-16" style={{ background: C.bgHero }}>
           <div className="max-w-5xl mx-auto">
             <Reveal>
               <SectionTitle
@@ -1348,7 +1348,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ FAQ ═════════════════════════════════════════ */}
-        <section id="faq" className="px-5 py-16" style={{ background: C.bgSteps }}>
+        <section id="faq" className="lp-below-fold px-5 py-16" style={{ background: C.bgSteps }}>
           <div className="max-w-3xl mx-auto">
             <Reveal>
               <SectionTitle
@@ -1370,7 +1370,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ SUCURSALES ══════════════════════════════════ */}
-        <section id="sucursales" className="px-5 py-16" style={{ background: C.bgBranches }}>
+        <section id="sucursales" className="lp-below-fold px-5 py-16" style={{ background: C.bgBranches }}>
           <div className="max-w-5xl mx-auto">
             <Reveal><SectionTitle title="Nuestras Sucursales" subtitle="Visítanos en Uruapan, Michoacán." /></Reveal>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -1448,7 +1448,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ CTA FINAL ═══════════════════════════════════ */}
-        <section id="contacto" className="px-5 py-16" style={{ background: C.bgBenefits }}>
+        <section id="contacto" className="lp-below-fold px-5 py-16" style={{ background: C.bgBenefits }}>
           <div className="max-w-4xl mx-auto text-center">
             <Reveal>
               <div
@@ -1492,7 +1492,7 @@ export default function LandingPage() {
         </main>
 
         {/* ══ FOOTER — 3 columnas ══════════════════════════ */}
-        <footer className="border-t bg-white" style={{ borderColor: C.borderSoft }}>
+        <footer className="lp-below-fold border-t bg-white" style={{ borderColor: C.borderSoft }}>
           <div className="max-w-5xl mx-auto px-5 pt-10 pb-6 grid grid-cols-1 sm:grid-cols-3 gap-10">
 
             {/* Columna 1: Logo + tagline + WhatsApp */}
