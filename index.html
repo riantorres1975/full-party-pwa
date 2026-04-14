@@ -50,6 +50,94 @@
 
     <title><%- NOMBRE_NEGOCIO %> — Mayoreo de Artículos para Fiesta en Uruapan</title>
 
+    <style>
+      #root {
+        opacity: 0;
+        transition: opacity 260ms ease;
+      }
+
+      body.fp-app-ready #root {
+        opacity: 1;
+      }
+
+      #fp-boot-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background:
+          radial-gradient(circle at 20% 15%, rgba(255, 61, 172, 0.4) 0%, transparent 42%),
+          radial-gradient(circle at 85% 20%, rgba(0, 212, 255, 0.35) 0%, transparent 45%),
+          radial-gradient(circle at 50% 85%, rgba(255, 225, 53, 0.25) 0%, transparent 48%),
+          linear-gradient(145deg, #ffffff 0%, #f9f2ff 58%, #f4edff 100%);
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 360ms ease, visibility 360ms ease;
+      }
+
+      body.fp-app-ready #fp-boot-overlay {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .fp-boot-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding: 20px 24px 18px;
+        border-radius: 24px;
+        border: 2px solid #e9d5ff;
+        background: rgba(255, 255, 255, 0.84);
+        box-shadow: 0 20px 60px rgba(107, 53, 184, 0.24);
+        backdrop-filter: blur(12px);
+        animation: fpBootCardIn 700ms cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .fp-boot-logo {
+        width: clamp(86px, 19vw, 120px);
+        height: auto;
+        border-radius: 24px;
+        border: 2px solid #f3e8ff;
+        box-shadow: 0 12px 28px rgba(107, 53, 184, 0.22);
+        animation: fpBootLogoFloat 2s ease-in-out 0.6s infinite;
+      }
+
+      .fp-boot-title {
+        margin: 0;
+        font-family: 'Fredoka One', cursive;
+        font-size: clamp(28px, 5vw, 36px);
+        line-height: 1;
+        background: linear-gradient(135deg, #ff3dac, #a855f7, #00d4ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .fp-boot-subtitle {
+        margin: 0;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #8b7aa8;
+        font-family: 'Nunito', sans-serif;
+      }
+
+      @keyframes fpBootCardIn {
+        from { opacity: 0; transform: translateY(20px) scale(0.94); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+
+      @keyframes fpBootLogoFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-6px); }
+      }
+    </style>
+
     <!-- Google Analytics 4 (reemplaza G-XXXXXXXXXX con tu Measurement ID) -->
     <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
     <script>
@@ -147,7 +235,28 @@
     </script>
   </head>
   <body>
+    <div id="fp-boot-overlay" aria-hidden="true">
+      <div class="fp-boot-card">
+        <img src="/icons/icon-512.png" alt="" class="fp-boot-logo" />
+        <h1 class="fp-boot-title">Full Party</h1>
+        <p class="fp-boot-subtitle">Cargando catalogo...</p>
+      </div>
+    </div>
     <div id="root"></div>
+    <script>
+      (function () {
+        var opened = false;
+        window.__fpMarkAppReady = function () {
+          if (opened) return;
+          opened = true;
+          document.body.classList.add('fp-app-ready');
+        };
+
+        setTimeout(function () {
+          window.__fpMarkAppReady();
+        }, 9000);
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

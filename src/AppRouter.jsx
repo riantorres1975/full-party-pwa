@@ -15,7 +15,18 @@ const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || '')
   .filter(Boolean);
 
 function useHashRoute() {
-  const [hash, setHash] = useState(window.location.hash);
+  const [hash, setHash] = useState(() => {
+    const currentHash = window.location.hash;
+    if (currentHash) return currentHash;
+
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (standalone) {
+      window.location.hash = '#/catalogo';
+      return '#/catalogo';
+    }
+
+    return currentHash;
+  });
   useEffect(() => {
     const handler = () => setHash(window.location.hash);
     window.addEventListener('hashchange', handler);
@@ -62,6 +73,37 @@ export default function AppRouter() {
 
 function AppRouterInner({ cargandoSesion, esRutaAdmin, esRutaCatalogo, session, user, loading, error, signIn, signOut, isDarkMode, toggleTheme }) {
   const { t } = useLanguage();
+  const [bootMinReady, setBootMinReady] = useState(false);
+
+  useEffect(() => {
+    const yaVioBoot = sessionStorage.getItem('fp_boot_v1') === '1';
+    const delay = yaVioBoot ? 320 : 1650;
+    const timer = setTimeout(() => {
+      setBootMinReady(true);
+      sessionStorage.setItem('fp_boot_v1', '1');
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!bootMinReady || cargandoSesion) return;
+
+    const revealApp = () => {
+      if (typeof window.__fpMarkAppReady === 'function') {
+        window.__fpMarkAppReady();
+      }
+    };
+
+    if (document.fonts?.ready) {
+      document.fonts.ready
+        .then(() => requestAnimationFrame(revealApp))
+        .catch(() => requestAnimationFrame(revealApp));
+      return;
+    }
+
+    requestAnimationFrame(revealApp);
+  }, [bootMinReady, cargandoSesion]);
 
   // Spinner mientras Supabase verifica la sesión
   if (cargandoSesion) {
