@@ -1,5 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import App         from './App';
+import LandingPage from './pages/LandingPage';
 import LoginAdmin  from './components/LoginAdmin';
 import { useAuth } from './hooks/useAuth';
 import { useTheme } from './hooks/useTheme';
@@ -14,7 +15,18 @@ const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || '')
   .filter(Boolean);
 
 function useHashRoute() {
-  const [hash, setHash] = useState(window.location.hash);
+  const [hash, setHash] = useState(() => {
+    const currentHash = window.location.hash;
+    if (currentHash) return currentHash;
+
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (standalone) {
+      window.location.hash = '#/catalogo';
+      return '#/catalogo';
+    }
+
+    return currentHash;
+  });
   useEffect(() => {
     const handler = () => setHash(window.location.hash);
     window.addEventListener('hashchange', handler);
@@ -31,19 +43,21 @@ export default function AppRouter() {
   const hash = useHashRoute();
   const { session, user, cargandoSesion, loading, error, signIn, signOut } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
-  const esRutaAdmin = hash.startsWith('#/admin');
+  const esRutaAdmin    = hash.startsWith('#/admin');
+  const esRutaCatalogo = hash.startsWith('#/catalogo');
 
-  // Confetti de fondo solo en el catálogo público
+  // Clase 'catalogo' solo en la ruta del catálogo público
   useEffect(() => {
-    document.body.classList.toggle('catalogo', !esRutaAdmin);
+    document.body.classList.toggle('catalogo', esRutaCatalogo);
     return () => document.body.classList.remove('catalogo');
-  }, [esRutaAdmin]);
+  }, [esRutaCatalogo]);
 
   return (
     <LanguageProvider>
       <AppRouterInner
         cargandoSesion={cargandoSesion}
         esRutaAdmin={esRutaAdmin}
+        esRutaCatalogo={esRutaCatalogo}
         session={session}
         user={user}
         loading={loading}
@@ -57,8 +71,39 @@ export default function AppRouter() {
   );
 }
 
-function AppRouterInner({ cargandoSesion, esRutaAdmin, session, user, loading, error, signIn, signOut, isDarkMode, toggleTheme }) {
+function AppRouterInner({ cargandoSesion, esRutaAdmin, esRutaCatalogo, session, user, loading, error, signIn, signOut, isDarkMode, toggleTheme }) {
   const { t } = useLanguage();
+  const [bootMinReady, setBootMinReady] = useState(false);
+
+  useEffect(() => {
+    const yaVioBoot = sessionStorage.getItem('fp_boot_v1') === '1';
+    const delay = yaVioBoot ? 320 : 1650;
+    const timer = setTimeout(() => {
+      setBootMinReady(true);
+      sessionStorage.setItem('fp_boot_v1', '1');
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!bootMinReady || cargandoSesion) return;
+
+    const revealApp = () => {
+      if (typeof window.__fpMarkAppReady === 'function') {
+        window.__fpMarkAppReady();
+      }
+    };
+
+    if (document.fonts?.ready) {
+      document.fonts.ready
+        .then(() => requestAnimationFrame(revealApp))
+        .catch(() => requestAnimationFrame(revealApp));
+      return;
+    }
+
+    requestAnimationFrame(revealApp);
+  }, [bootMinReady, cargandoSesion]);
 
   // Spinner mientras Supabase verifica la sesión
   if (cargandoSesion) {
@@ -115,10 +160,15 @@ function AppRouterInner({ cargandoSesion, esRutaAdmin, session, user, loading, e
     );
   }
 
-  // Ruta pública
-  return (
-    <ToastProvider>
-      <App temaOscuro={isDarkMode} onToggleTema={toggleTheme} isAdmin={!!session} />
-    </ToastProvider>
-  );
+  // Ruta catálogo
+  if (esRutaCatalogo) {
+    return (
+      <ToastProvider>
+        <App temaOscuro={isDarkMode} onToggleTema={toggleTheme} isAdmin={!!session} />
+      </ToastProvider>
+    );
+  }
+
+  // Ruta raíz → Landing Page
+  return <LandingPage />;
 }

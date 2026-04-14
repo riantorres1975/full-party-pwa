@@ -36,7 +36,7 @@ const inputDynStyle = {
   borderColor: 'var(--border-default)',
 };
 
-export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgregar, onReducir, onEliminar, onLimpiar, productos = [] }) {
+export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onReducir, onLimpiar, productos = [] }) {
 
   const { guardarPedido, guardando } = usePedido();
   const { t } = useLanguage();
@@ -124,15 +124,16 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
       precio: obtenerPrecioAplicable(item, item.cantidad),
     }));
 
+    const normalizedAddress = deliveryType === 'envio' ? address.trim() : '';
+
     setPendingOrder({
       folio: null,
-      url: null,
       itemsSnapshot: itemsWithAppliedPrice,
       total: calculatedTotal,
       tipoEntrega: deliveryType,
       nombre: customerName.trim(),
       telefono: cleanedPhone,
-      direccion: address,
+      direccion: normalizedAddress,
     });
   };
 
@@ -140,17 +141,18 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
     if (!pendingOrder) return;
 
     const { itemsSnapshot, total, tipoEntrega: type, nombre: name, telefono: phoneNumber, direccion: customerAddress } = pendingOrder;
+    const normalizedAddress = type === 'envio' ? customerAddress?.trim() || '' : '';
 
     // 1) Persist order in Supabase
     const { folio, error } = await guardarPedido({
-      nombre: name, telefono: phoneNumber, tipoEntrega: type, direccion: customerAddress, total, items: itemsSnapshot,
+      nombre: name, telefono: phoneNumber, tipoEntrega: type, direccion: normalizedAddress, total, items: itemsSnapshot,
     });
 
     if (error) console.warn('[Pedido] No se pudo guardar en Supabase:', error);
 
     // 2) Build WhatsApp URL with order reference
     const url = generarMensajeWhatsApp(itemsSnapshot, total, {
-      tipo: type, nombre: name, telefono: phoneNumber, direccion: customerAddress, folio,
+      tipo: type, nombre: name, telefono: phoneNumber, direccion: normalizedAddress, folio,
     });
 
     // 3) Open WhatsApp
@@ -235,7 +237,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
           {pendingOrder ? (
             <div className="flex flex-col items-center px-5 py-6 gap-4 animate-fade-in">
               <div className="w-20 h-20 rounded-full flex items-center justify-center text-white text-4xl font-black animate-scale-in"
-                   style={{ background: 'linear-gradient(135deg, #25D366, #1db954)', boxShadow: '0 8px 24px #25D36655' }}>
+                   style={{ background: 'var(--gradient-success)', boxShadow: 'var(--shadow-success-soft)' }}>
                 ✓
               </div>
               <div className="text-center">
@@ -251,7 +253,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                   <button
                     onClick={() => navigator.clipboard?.writeText(pendingOrder.folio).catch(() => {})}
                     className="text-xs font-body font-black px-3 py-1 rounded-full border transition-all hover:opacity-80"
-                    style={{ color: '#a855f7', borderColor: '#a855f720', background: 'var(--surface-elevated, var(--surface-card))' }}
+                    style={{ color: 'var(--accent-primary)', borderColor: 'var(--color-brand-soft)', background: 'var(--surface-elevated, var(--surface-card))' }}
                   >
                     {t('cart.copyFolio')}
                   </button>
@@ -274,7 +276,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                 <div className="flex justify-between items-center pt-1 border-t border-ink-100">
                   <span className="font-body text-ink-500 text-sm">{t('common.total')}</span>
                   <span className="font-body font-black text-lg"
-                        style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                        style={{ background: 'var(--gradient-accent)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                     {SIMBOLO_MONEDA}{pendingOrder.total.toFixed(2)}
                   </span>
                 </div>
@@ -293,9 +295,8 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
               </div>
             ) : (
               <ul className="space-y-3">
-                {items.map((item, index) => {
-                  const colors = ['#ff3dac','#a855f7','#00d4ff','#ff7b2e','#39e87b','#ffe135'];
-                  const c = colors[index % colors.length];
+                {items.map((item) => {
+                  const c = 'var(--accent-primary)';
                   const precioBase = Number(item.precio) || 0;
                   const precioAplicable = obtenerPrecioAplicable(item, item.cantidad);
                   const hayDescuento = precioAplicable < precioBase;
@@ -311,7 +312,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                   return (
                     <li key={item.id}
                         className="relative flex gap-3 items-center bg-white rounded-2xl p-3"
-                        style={{ border: `2px solid ${agotadoRT ? '#ef4444' : c + '22'}`, opacity: agotadoRT ? 0.7 : 1 }}>
+                        style={{ border: `2px solid ${agotadoRT ? 'var(--color-danger)' : 'var(--color-brand-soft)'}`, opacity: agotadoRT ? 0.7 : 1 }}>
 
                       {agotadoRT && (
                         <div className="absolute -top-2 -right-2 z-10 bg-red-500 text-white text-[9px] font-body font-black
@@ -323,16 +324,16 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                       {stockBajoRT && !agotadoRT && (
                         <div className="absolute -top-2 -right-2 z-10 text-white text-[9px] font-body font-black
                                         px-2 py-0.5 rounded-full shadow-md"
-                             style={{ background: 'linear-gradient(135deg, #f97316, #dc2626)' }}>
+                             style={{ background: 'var(--gradient-warning)' }}>
                           {t('product.max', { count: prodReal.stock_actual })}
                         </div>
                       )}
 
                       <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-ink-50"
-                           style={{ border: `2px solid ${c}44`, filter: agotadoRT ? 'grayscale(60%)' : 'none' }}>
+                           style={{ border: '2px solid var(--color-brand-soft-2)', filter: agotadoRT ? 'grayscale(60%)' : 'none' }}>
                         <img src={item.imagen_url} alt={item.nombre}
                           className="w-full h-full object-contain"
-                          onError={(e) => { e.target.src = `https://placehold.co/56x56/f3e8ff/a855f7?text=?`; }} />
+                          onError={(e) => { e.target.src = `https://placehold.co/56x56/f3e8ff/7b4fa6?text=?`; }} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-body text-sm font-bold text-ink-800 leading-tight truncate">{item.nombre}</p>
@@ -350,7 +351,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                             {SIMBOLO_MONEDA}{precioBase.toFixed(2)} {t('product.eachUnit')}
                           </p>
                         )}
-                        <p className="font-body text-sm font-black mt-0.5" style={{ color: agotadoRT ? '#9ca3af' : c }}>
+                        <p className="font-body text-sm font-black mt-0.5" style={{ color: agotadoRT ? 'var(--text-inactive)' : c }}>
                           {SIMBOLO_MONEDA}{subtotal.toFixed(2)}
                         </p>
                       </div>
@@ -374,7 +375,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                               disabled={maxStockAlcanzado}
                               className={`w-7 h-7 flex items-center justify-center rounded-full text-white transition-all
                                           ${maxStockAlcanzado ? 'opacity-50 cursor-not-allowed' : 'active:scale-90'}`}
-                              style={{ background: `linear-gradient(135deg, ${c}, #a855f7)` }}>
+                              style={{ background: 'var(--gradient-accent)' }}>
                               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
                               </svg>
@@ -408,8 +409,8 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                       className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl font-body font-bold text-xs
                                  transition-all duration-200 active:scale-95 border-2 whitespace-pre-line text-center"
                       style={deliveryType === val
-                        ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)', color: 'white',
-                            border: '2px solid transparent', boxShadow: '0 4px 14px #ff3dac44' }
+                        ? { background: 'var(--gradient-accent)', color: 'white',
+                            border: '2px solid transparent', boxShadow: 'var(--shadow-accent-soft)' }
                         : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '2px solid var(--border-default)' }
                       }
                     >
@@ -426,7 +427,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                     {HORARIO_TIENDA && <p style={{ color: 'var(--text-secondary)' }}>⏰ {HORARIO_TIENDA}</p>}
                     {MAPS_URL_TIENDA && (
                       <a href={MAPS_URL_TIENDA} target="_blank" rel="noopener noreferrer"
-                         className="font-black text-[10px]" style={{ color: '#a855f7' }}>
+                         className="font-black text-[10px]" style={{ color: 'var(--accent-primary)' }}>
                         {t('common.viewOnMaps')}
                       </a>
                     )}
@@ -443,7 +444,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                       onChange={(e) => setCustomerName(capitalizeName(e.target.value))}
                       placeholder={t('form.namePlaceholder')}
                       className={INPUT_CLASS}
-                      style={errors.nombre ? { ...inputDynStyle, borderColor: '#ff3dac' } : inputDynStyle}
+                      style={errors.nombre ? { ...inputDynStyle, borderColor: 'var(--color-danger)' } : inputDynStyle}
                     />
                     {errors.nombre && (
                       <p className="text-[11px] text-fiesta-magenta font-body font-bold mt-1 pl-1">{errors.nombre}</p>
@@ -460,7 +461,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                       placeholder={t('form.phonePlaceholder')}
                       maxLength={10}
                       className={INPUT_CLASS}
-                      style={errors.telefono ? { ...inputDynStyle, borderColor: '#ff3dac' } : isPhoneValid ? { ...inputDynStyle, borderColor: '#25D366' } : inputDynStyle}
+                      style={errors.telefono ? { ...inputDynStyle, borderColor: 'var(--color-danger)' } : isPhoneValid ? { ...inputDynStyle, borderColor: 'var(--accent-success)' } : inputDynStyle}
                     />
                     <p className={`text-[11px] font-body font-bold mt-1 pl-1 transition-colors
                                   ${errors.telefono ? 'text-fiesta-magenta' : isPhoneValid ? 'text-green-500' : 'text-ink-300'}`}>
@@ -496,7 +497,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                         placeholder={t('form.addressPlaceholder')}
                         rows={2}
                         className={INPUT_CLASS + ' resize-none'}
-                        style={errors.direccion ? { ...inputDynStyle, borderColor: '#ff3dac' } : inputDynStyle}
+                        style={errors.direccion ? { ...inputDynStyle, borderColor: 'var(--color-danger)' } : inputDynStyle}
                       />
                       {errors.direccion && (
                         <p className="text-[11px] text-fiesta-magenta font-body font-bold mt-1 pl-1">{errors.direccion}</p>
@@ -524,7 +525,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                              transition-all duration-300 active:scale-[0.98]
                              disabled:cursor-not-allowed"
                   style={!guardando
-                    ? { background: 'linear-gradient(135deg, #25D366, #1db954)', boxShadow: '0 4px 20px #25D36655' }
+                    ? { background: 'var(--gradient-success)', boxShadow: 'var(--shadow-success-soft)' }
                     : { background: 'linear-gradient(135deg, #a8d5b5, #7cb89a)', boxShadow: 'none', opacity: 0.7 }
                   }
                 >
@@ -546,7 +547,7 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                 <div className="flex justify-between items-center">
                   <span className="font-body text-sm font-bold text-ink-500">{t('cart.orderTotal')}</span>
                   <span className="font-body text-xl font-black"
-                        style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
+                        style={{ background: 'var(--gradient-accent)',
                                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                     {SIMBOLO_MONEDA}{calculatedTotal.toFixed(2)}
                   </span>
@@ -566,8 +567,8 @@ export default function CarritoDrawer({ items, total, isOpen, onCerrar, onAgrega
                              transition-all duration-300 active:scale-[0.98]
                              disabled:cursor-not-allowed"
                   style={isFormReady
-                    ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
-                        boxShadow: '0 4px 20px #ff3dac44' }
+                    ? { background: 'var(--gradient-accent)',
+                        boxShadow: 'var(--shadow-accent-soft)' }
                     : { background: 'linear-gradient(135deg, #d4a0c8, #b49ad4)',
                         boxShadow: 'none', opacity: 0.6 }
                   }
