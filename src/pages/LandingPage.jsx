@@ -267,32 +267,32 @@ const FAQS = [
 const GALERIA = [
   {
     id: 1,
-    img: 'https://scontent.fupn1-1.fna.fbcdn.net/v/t39.30808-6/655714227_1556266909838671_515110159478694284_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=111&ccb=1-7&_nc_sid=7b2446&_nc_eui2=AeH8jum2SGexg_ATW9XTVqoHwTtGGgOC4AXBO0YaA4LgBebWTk4kXup9lH8D3FkDLWgf54JZGMskTrX80GUKm1iQ&_nc_ohc=hDlCSLmcOi0Q7kNvwEMBJRq&_nc_oc=AdpBwa2HQYWvIDtKhCxVxdC_uV4SFv2xi5lVrLPNnNb8VccqMrGkzh6M84kyZwDdKcw&_nc_zt=23&_nc_ht=scontent.fupn1-1.fna&_nc_gid=S0eKesvxfnbIx4mtE4pmUQ&_nc_ss=7a3a8&oh=00_Af2IXln3zMnBSsmxTMShvTibcFJknbiR29ZDaUgTsNxZDg&oe=69E24A52',
+    img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/ejemplo_landigpage.jpg',
     cliente: 'Sofía M.',   evento: 'XV Años',     emoji: '🎀', color: C.pink,   accent: C.purple,
   },
   {
     id: 2,
-    img: 'https://scontent.fupn1-1.fna.fbcdn.net/v/t39.30808-6/650115519_1543308384467857_2964905523130558587_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=108&ccb=1-7&_nc_sid=7b2446&_nc_eui2=AeG9hd3s6JCe-5yrRRq6dFt4kOHc5lY5NMWQ4dzmVjk0xYgnRCA_yovFgy--riLtKWtGYyz-YsKGvkT2HkZdtkJN&_nc_ohc=tZmsddaCdP4Q7kNvwGY6DLE&_nc_oc=AdqDDIRUbt6YCvvj4JMLN4mK1S31FdaXBiaK_WNrA0rCDqwTTsaTdCgH38qNCvQcSm8&_nc_zt=23&_nc_ht=scontent.fupn1-1.fna&_nc_gid=KzcPkP7XXsgNAwN9tcw_-Q&_nc_ss=7a3a8&oh=00_Af2BRhB1tYPDxGlw39hGaWZ-RI3jWTuQmyTIfdn1b-BBdg&oe=69E25729',
+    img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/ejemplo_landigpage.jpg',
     cliente: 'Lupita R.',  evento: 'Cumpleaños',  emoji: '🎂', color: C.orange, accent: C.yellow,
   },
   {
     id: 3,
-    img: 'https://scontent.fupn1-1.fna.fbcdn.net/v/t39.30808-6/646371072_1536596845139011_9062621644060145380_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=103&ccb=1-7&_nc_sid=7b2446&_nc_eui2=AeEB2CW6sKK9BGsJKnv-wJPFw6L7JFhmMpLDovskWGYyksoM-qBn_LZlWIf87IWYpxktn0FzR408nm5lsz2_CMhj&_nc_ohc=vuNJwRU6I_QQ7kNvwHq-Raq&_nc_oc=Adp0FKgJbuoClnI_-SDTidOXUhgILYUWqJXipQD1w3uAkFyYYqDpPUpRPkPOCNU7PbE&_nc_zt=23&_nc_ht=scontent.fupn1-1.fna&_nc_gid=EvM4PniswelfIudy8P7D3Q&_nc_ss=7a3a8&oh=00_Af2F4-E8hKPp6lPNy6uE-8u1Ow0gfrE4NpK0V5h1UdinXQ&oe=69E22920',
+    img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/ejemplo_landigpage.jpg',
     cliente: 'Ana G.',     evento: 'Baby Shower', emoji: '🍼', color: C.cyan,   accent: C.blue,
   },
   {
     id: 4,
-    img: 'https://scontent.fupn1-1.fna.fbcdn.net/v/t39.30808-6/643795137_1533680585430637_2974080087927427246_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=104&ccb=1-7&_nc_sid=7b2446&_nc_eui2=AeFKaTOjIzaBGMBvR4ff16QnufUq_oOeJty59Sr-g54m3GnN-_GOOrg0uFmTsKBvGTEJ_RO-HHgt746jivoke3l0&_nc_ohc=jmmmz8-A1BkQ7kNvwHF3-eM&_nc_oc=Adr6KIPNNYXQuyx24XkqDfFKNC6exXR9sXl7d5YIB-EBZqR7HzGex9MbTZwdrthEHh8&_nc_zt=23&_nc_ht=scontent.fupn1-1.fna&_nc_gid=4XCgnGaaPyjCzZps3nF7NA&_nc_ss=7a3a8&oh=00_Af1-ZjSc9sqMU65SZYJe6vZkTm7LJb-7QNTLFfL0kVCSAQ&oe=69E24FE9',
+    img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/ejemplo_landigpage.jpg',
     cliente: 'Karen V.',   evento: 'Boda',        emoji: '💍', color: C.purple, accent: C.pink,
   },
   {
     id: 5,
-    img: 'https://scontent.fupn1-1.fna.fbcdn.net/v/t39.30808-6/634721196_1524228559709173_2276661410527749540_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=105&ccb=1-7&_nc_sid=7b2446&_nc_eui2=AeHUraMiLrg0h26h9sOV3JJxstMb2GhuHCuy0xvYaG4cKzWL3LBICPxXvy5LowTtf2nzmscNICcuekN-6NvMg7T1&_nc_ohc=9tUWX6p3JvsQ7kNvwEYG0F-&_nc_oc=AdoJ6dsdp0QhT8ryXVFI1lkWZsPq2tsm_LmXZjAXQQzNYIR6FmqYIqr4LT-mJkbUFtQ&_nc_zt=23&_nc_ht=scontent.fupn1-1.fna&_nc_gid=ePLfxrnALTmD7IfzA9CAzA&_nc_ss=7a3a8&oh=00_Af3OlGUMU3iW2smrEjAR4Y7VOgkiIq-wr68vhj87GtTrJA&oe=69E23CE4',
+    img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/ejemplo_landigpage.jpg',
     cliente: 'Fernanda L.', evento: 'Graduación', emoji: '🎓', color: C.green,  accent: C.cyan,
   },
   {
     id: 6,
-    img: 'https://scontent.fupn1-1.fna.fbcdn.net/v/t39.30808-6/598791752_1467910745340955_8368425489892137364_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=105&ccb=1-7&_nc_sid=7b2446&_nc_eui2=AeE2L3KV6G8A7nfgi0OIYPXO7LZSSKxzE_HstlJIrHMT8btqz-6wXTPKoNmwGVK65UM5VXOlVvLDYmmwAgq3lMy3&_nc_ohc=GmUaaGmOeSoQ7kNvwHVucI8&_nc_oc=AdoNZDGhbcj0JkKKTnLoNUgH1ePaAWcBpXzIqxLqV9FuU7iE0oPdtiNd3aBYMRKi8as&_nc_zt=23&_nc_ht=scontent.fupn1-1.fna&_nc_gid=4pum0MbIAHuaT1cOnEuWmg&_nc_ss=7a3a8&oh=00_Af0-dY1kh_J1yZT9zHhnh__BiMvSGd0_XA1hiuyaBQQ-Ig&oe=69E23460',
+    img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/ejemplo_landigpage.jpg',
     cliente: 'Tú',         evento: '¡Tu fiesta!', emoji: '🎉', color: C.pink,   accent: C.orange,
   },
 ];
