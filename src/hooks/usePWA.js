@@ -18,8 +18,13 @@ export function usePWA() {
     const ua = window.navigator.userAgent || '';
     setEsIOS(/iPad|iPhone|iPod/.test(ua));
 
+    if (window.__fpDeferredInstallPrompt) {
+      setInstallPrompt(window.__fpDeferredInstallPrompt);
+    }
+
     const handler = (e) => {
       e.preventDefault();
+      window.__fpDeferredInstallPrompt = e;
       setInstallPrompt(e);
 
       // Mostrar el prompt de instalación automáticamente tras un breve retraso
@@ -40,16 +45,28 @@ export function usePWA() {
 
     window.addEventListener('beforeinstallprompt', handler);
 
+    const onPromptReady = () => {
+      if (window.__fpDeferredInstallPrompt) {
+        setInstallPrompt(window.__fpDeferredInstallPrompt);
+      }
+    };
+
+    window.addEventListener('fp-installprompt-ready', onPromptReady);
+
     const onInstalled = () => {
       setIsInstalled(true);
+      window.__fpDeferredInstallPrompt = null;
       setInstallPrompt(null);
     };
 
     window.addEventListener('appinstalled', onInstalled);
+    window.addEventListener('fp-installprompt-cleared', onInstalled);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('fp-installprompt-ready', onPromptReady);
       window.removeEventListener('appinstalled', onInstalled);
+      window.removeEventListener('fp-installprompt-cleared', onInstalled);
     };
   }, []);
 
@@ -57,6 +74,7 @@ export function usePWA() {
     if (!installPrompt) return;
     const { outcome } = await installPrompt.prompt();
     if (outcome === 'accepted') {
+      window.__fpDeferredInstallPrompt = null;
       setInstallPrompt(null);
     }
   };

@@ -3,6 +3,23 @@ import ReactDOM from 'react-dom/client';
 import AppRouter from './AppRouter';
 import './index.css';
 
+// Capturar prompt de instalación desde el arranque (aunque aún no monte el catálogo)
+if (typeof window !== 'undefined' && !window.__fpInstallPromptListenerAttached) {
+  window.__fpInstallPromptListenerAttached = true;
+  window.__fpDeferredInstallPrompt = window.__fpDeferredInstallPrompt || null;
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    window.__fpDeferredInstallPrompt = event;
+    window.dispatchEvent(new Event('fp-installprompt-ready'));
+  });
+
+  window.addEventListener('appinstalled', () => {
+    window.__fpDeferredInstallPrompt = null;
+    window.dispatchEvent(new Event('fp-installprompt-cleared'));
+  });
+}
+
 // Dynamic preconnect for Supabase (images load faster)
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 if (supabaseUrl) {
