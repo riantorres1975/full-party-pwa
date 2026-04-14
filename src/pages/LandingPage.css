@@ -159,6 +159,21 @@
   transform: rotate(180deg);
 }
 
+/* ── Reseñas: altura estable para evitar saltos de layout ───── */
+.lp-review-stage {
+  min-height: 236px;
+}
+
+.lp-review-card {
+  height: 100%;
+}
+
+@media (max-width: 640px) {
+  .lp-review-stage {
+    min-height: 280px;
+  }
+}
+
 /* ── Galería de decoraciones de clientes ───────────────────── */
 @media (prefers-reduced-motion: no-preference) {
   @keyframes galFloat {
