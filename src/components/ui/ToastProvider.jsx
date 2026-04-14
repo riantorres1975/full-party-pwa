@@ -11,10 +11,10 @@ const ICONS = {
 };
 
 const COLORS = {
-  success: { bg: 'bg-green-100 dark:bg-green-900/80', border: 'border-green-300 dark:border-green-700', icon: 'text-green-600 dark:text-green-400', bar: 'bg-green-500' },
-  error:   { bg: 'bg-red-100 dark:bg-red-900/80', border: 'border-red-300 dark:border-red-700', icon: 'text-red-600 dark:text-red-400', bar: 'bg-red-500' },
-  info:    { bg: 'bg-blue-100 dark:bg-blue-900/80', border: 'border-blue-300 dark:border-blue-700', icon: 'text-blue-600 dark:text-blue-400', bar: 'bg-blue-500' },
-  warning: { bg: 'bg-amber-100 dark:bg-amber-900/80', border: 'border-amber-300 dark:border-amber-700', icon: 'text-amber-600 dark:text-amber-400', bar: 'bg-amber-500' },
+  success: { bg: 'bg-green-100 dark:bg-green-900/80', border: 'border-green-300 dark:border-green-700', icon: 'text-green-700 dark:text-green-300', text: 'text-green-900 dark:text-green-100', close: 'text-green-800/70 hover:text-green-900 dark:text-green-100/70 dark:hover:text-green-100', bar: 'bg-green-600' },
+  error:   { bg: 'bg-red-100 dark:bg-red-900/80', border: 'border-red-300 dark:border-red-700', icon: 'text-red-700 dark:text-red-300', text: 'text-red-900 dark:text-red-100', close: 'text-red-800/70 hover:text-red-900 dark:text-red-100/70 dark:hover:text-red-100', bar: 'bg-red-600' },
+  info:    { bg: 'bg-blue-100 dark:bg-blue-900/80', border: 'border-blue-300 dark:border-blue-700', icon: 'text-blue-700 dark:text-blue-300', text: 'text-blue-900 dark:text-blue-100', close: 'text-blue-800/70 hover:text-blue-900 dark:text-blue-100/70 dark:hover:text-blue-100', bar: 'bg-blue-600' },
+  warning: { bg: 'bg-amber-100 dark:bg-amber-900/80', border: 'border-amber-300 dark:border-amber-700', icon: 'text-amber-700 dark:text-amber-300', text: 'text-amber-900 dark:text-amber-100', close: 'text-amber-800/70 hover:text-amber-900 dark:text-amber-100/70 dark:hover:text-amber-100', bar: 'bg-amber-600' },
 };
 
 const MAX_TOASTS = 3;
@@ -28,19 +28,19 @@ function Toast({ toast, onDismiss }) {
   return (
     <div
       role="alert"
-      className={`pointer-events-auto flex items-start gap-3 w-full max-w-sm border rounded-xl p-4 shadow-lg
+      className={`relative pointer-events-auto flex items-start gap-3 w-full max-w-sm border rounded-xl p-4 shadow-lg
                   ${c.bg} ${c.border}
                   animate-[slideUpToast_300ms_ease-out] data-[removing=true]:animate-[toastOut_200ms_ease-in_forwards]`}
       data-removing={toast._removing || undefined}
     >
       <Icon className={`w-5 h-5 flex-shrink-0 mt-0.5 ${c.icon}`} />
-      <p className="flex-1 text-sm font-medium text-admin-text">{message}</p>
+      <p className={`flex-1 text-sm font-semibold leading-snug ${c.text}`}>{message}</p>
       <button
         onClick={() => onDismiss(toast.id)}
-        className="flex-shrink-0 p-0.5 rounded-lg hover:bg-black/5 transition-colors"
+        className={`flex-shrink-0 p-0.5 rounded-lg hover:bg-black/10 transition-colors ${c.close}`}
         aria-label="Cerrar"
       >
-        <X className="w-4 h-4 text-admin-muted" />
+        <X className="w-4 h-4" />
       </button>
       {/* Progress bar */}
       <div className="absolute bottom-0 left-4 right-4 h-0.5 rounded-full overflow-hidden bg-black/5">
