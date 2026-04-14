@@ -624,45 +624,47 @@ function ReviewsCarousel({ resenas }) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* Tarjeta de reseña activa */}
-      <div
-        key={r.id}
-        className={`${animCls} rounded-3xl p-7 bg-white text-left`}
-        style={{ boxShadow: `0 4px 24px ${r.color}22, 0 1px 6px rgba(0,0,0,0.06)`, border: `1.5px solid ${r.color}22` }}
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-4">
-          <div
-            className="w-12 h-12 rounded-full flex items-center justify-center font-display text-lg text-white flex-shrink-0"
-            style={{ background: `linear-gradient(135deg, ${r.color}, ${C.purple})` }}
-            aria-hidden="true"
-          >
-            {r.inicial}
-          </div>
-          <div className="min-w-0">
-            <p className="font-black text-sm truncate" style={{ color: C.textHead }}>{r.nombre}</p>
-            <div className="flex items-center gap-2 mt-0.5">
-              <StarRating count={r.stars} />
-              <span className="text-xs" style={{ color: C.textMuted }}>{r.fecha}</span>
+      <div className="lp-review-stage">
+        {/* Tarjeta de reseña activa */}
+        <div
+          key={r.id}
+          className={`${animCls} lp-review-card rounded-3xl p-7 bg-white text-left`}
+          style={{ boxShadow: `0 4px 24px ${r.color}22, 0 1px 6px rgba(0,0,0,0.06)`, border: `1.5px solid ${r.color}22` }}
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {/* Header */}
+          <div className="flex items-center gap-4 mb-4">
+            <div
+              className="w-12 h-12 rounded-full flex items-center justify-center font-display text-lg text-white flex-shrink-0"
+              style={{ background: `linear-gradient(135deg, ${r.color}, ${C.purple})` }}
+              aria-hidden="true"
+            >
+              {r.inicial}
+            </div>
+            <div className="min-w-0">
+              <p className="font-black text-sm truncate" style={{ color: C.textHead }}>{r.nombre}</p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <StarRating count={r.stars} />
+                <span className="text-xs" style={{ color: C.textMuted }}>{r.fecha}</span>
+              </div>
+            </div>
+            {/* Google logo */}
+            <div className="ml-auto flex-shrink-0">
+              <span className="text-xs font-black tracking-tight" style={{
+                background:            'linear-gradient(90deg, #4285F4, #EA4335, #FBBC05, #34A853)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor:  'transparent',
+                backgroundClip:       'text',
+              }} aria-label="Google">Google</span>
             </div>
           </div>
-          {/* Google logo */}
-          <div className="ml-auto flex-shrink-0">
-            <span className="text-xs font-black tracking-tight" style={{
-              background:            'linear-gradient(90deg, #4285F4, #EA4335, #FBBC05, #34A853)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor:  'transparent',
-              backgroundClip:       'text',
-            }} aria-label="Google">Google</span>
-          </div>
-        </div>
 
-        {/* Texto */}
-        <p className="text-sm leading-relaxed" style={{ color: C.textBody }}>
-          "{r.texto}"
-        </p>
+          {/* Texto */}
+          <p className="text-sm leading-relaxed" style={{ color: C.textBody }}>
+            "{r.texto}"
+          </p>
+        </div>
       </div>
 
       {/* Controles: prev · dots · next */}
