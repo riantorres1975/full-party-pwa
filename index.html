@@ -6,12 +6,14 @@
     <meta name="theme-color" content="#fbf7f3" />
     <meta name="description" content="Distribuidora de artículos de fiesta al mayoreo en Uruapan, Michoacán. Globos, vajilla desechable, decoración temática y más. Precios escalonados, pedidos por WhatsApp." />
     <meta name="keywords" content="mayoreo artículos de fiesta, globos al mayoreo, decoración fiesta Uruapan, vajilla desechable, piñatas mayoreo, Full Party Uruapan, distribuidora fiesta Michoacán" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="author" content="<%- NOMBRE_NEGOCIO %>" />
 
     <!-- Open Graph -->
     <meta property="og:title" content="<%- NOMBRE_NEGOCIO %> — Mayoreo de Artículos para Fiesta en Uruapan" />
     <meta property="og:description" content="Distribuidora de artículos de fiesta al mayoreo en Uruapan. Globos, vajilla, decoración y más. Precios escalonados, pedidos por WhatsApp." />
     <meta property="og:image" content="<%- SITE_URL %>/og-image.jpg" />
+    <meta property="og:image:alt" content="<%- NOMBRE_NEGOCIO %> - Catalogo digital mayoreo de articulos para fiesta" />
     <meta property="og:url" content="<%- SITE_URL %>/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="<%- NOMBRE_NEGOCIO %>" />
@@ -22,9 +24,11 @@
     <meta name="twitter:title" content="<%- NOMBRE_NEGOCIO %> — Mayoreo de Artículos para Fiesta" />
     <meta name="twitter:description" content="Distribuidora de artículos de fiesta al mayoreo en Uruapan. Globos, vajilla, decoración y más." />
     <meta name="twitter:image" content="<%- SITE_URL %>/og-image.jpg" />
+    <meta name="twitter:image:alt" content="<%- NOMBRE_NEGOCIO %> - Catalogo digital mayoreo de articulos para fiesta" />
 
     <!-- Canonical -->
     <link rel="canonical" href="<%- SITE_URL %>/" />
+    <link rel="alternate" href="<%- SITE_URL %>/" hreflang="es-MX" />
 
     <!-- Preconnect: Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -151,36 +155,72 @@
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "LocalBusiness",
+      "@type": "Store",
+      "@id": "<%- SITE_URL %>/#localbusiness",
       "name": "<%- NOMBRE_NEGOCIO %>",
       "description": "Distribuidora de artículos de fiesta al mayoreo en Uruapan, Michoacán. Globos, vajilla desechable, decoración temática y más.",
       "url": "<%- SITE_URL %>",
       "image": "<%- SITE_URL %>/og-image.jpg",
       "telephone": "+<%- WHATSAPP_NUMBER %>",
       "priceRange": "$$",
+      "areaServed": {
+        "@type": "City",
+        "name": "Uruapan"
+      },
+      "sameAs": [
+        "<%- SUC1_FACEBOOK %>",
+        "<%- SUC2_FACEBOOK %>",
+        "<%- TIKTOK_URL %>"
+      ],
       "address": {
         "@type": "PostalAddress",
         "addressLocality": "Uruapan",
         "addressRegion": "Michoacán",
         "addressCountry": "MX"
       },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": 19.4167,
-        "longitude": -102.0667
-      },
-      "openingHoursSpecification": [
+      "department": [
         {
-          "@type": "OpeningHoursSpecification",
-          "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
-          "opens": "09:00",
-          "closes": "19:00"
+          "@type": "Store",
+          "name": "<%- NOMBRE_NEGOCIO %> - <%- SUC1_NOMBRE %>",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "<%- SUC1_DIRECCION %>",
+            "addressLocality": "Uruapan",
+            "addressRegion": "Michoacán",
+            "addressCountry": "MX"
+          },
+          "hasMap": "<%- SUC1_MAPS_URL %>",
+          "openingHours": "<%- HORARIO_TIENDA %>"
+        },
+        {
+          "@type": "Store",
+          "name": "<%- NOMBRE_NEGOCIO %> - <%- SUC2_NOMBRE %>",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "<%- SUC2_DIRECCION %>",
+            "addressLocality": "Uruapan",
+            "addressRegion": "Michoacán",
+            "addressCountry": "MX"
+          },
+          "hasMap": "<%- SUC2_MAPS_URL %>",
+          "openingHours": "<%- HORARIO_TIENDA %>"
         }
       ],
       "hasOfferCatalog": {
         "@type": "OfferCatalog",
         "name": "Artículos de fiesta y decoración al mayoreo"
       }
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "@id": "<%- SITE_URL %>/#website",
+      "name": "<%- NOMBRE_NEGOCIO %>",
+      "url": "<%- SITE_URL %>",
+      "inLanguage": "es-MX"
     }
     </script>
 
@@ -216,12 +256,12 @@
         },
         {
           "@type": "Question",
-          "name": "¿Cuántas sucursales tienen?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Contamos con dos sucursales en Uruapan: Centro (sucursal principal) y Sol Naciente (sucursal norte). Ambas con el mismo catálogo y precios."
-          }
-        },
+            "name": "¿Cuántas sucursales tienen?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Contamos con dos sucursales en Uruapan: Francisco Villa y Sol Naciente. Ambas comparten catálogo y precios de mayoreo."
+            }
+          },
         {
           "@type": "Question",
           "name": "¿Qué marcas manejan?",
