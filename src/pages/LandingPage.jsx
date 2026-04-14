@@ -958,6 +958,8 @@ export default function LandingPage() {
               <img
                 src="/icons/icon-192.png"
                 alt={`${ENV.negocio} logo`}
+                width="44"
+                height="44"
                 className="w-11 h-11 rounded-xl"
                 style={{ boxShadow: `0 4px 12px ${C.pink}44` }}
               />
@@ -1496,7 +1498,7 @@ export default function LandingPage() {
             {/* Columna 1: Logo + tagline + WhatsApp */}
             <div>
               <div className="flex items-center gap-2.5 mb-3">
-                <img src="/icons/icon-192.png" alt={ENV.negocio} className="w-8 h-8 rounded-lg" />
+                <img src="/icons/icon-192.png" alt={ENV.negocio} width="32" height="32" className="w-8 h-8 rounded-lg" />
                 <span
                   className="font-display text-base"
                   style={{
