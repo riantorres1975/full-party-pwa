@@ -45,12 +45,32 @@ export default function AppRouter() {
   const { isDarkMode, toggleTheme } = useTheme();
   const esRutaAdmin    = hash.startsWith('#/admin');
   const esRutaCatalogo = hash.startsWith('#/catalogo');
+  const esRutaLanding  = !esRutaAdmin && !esRutaCatalogo;
 
-  // Clase 'catalogo' solo en la ruta del catálogo público
+  // Clases globales por ruta: forzar landing siempre en tema claro
   useEffect(() => {
     document.body.classList.toggle('catalogo', esRutaCatalogo);
-    return () => document.body.classList.remove('catalogo');
-  }, [esRutaCatalogo]);
+    document.body.classList.toggle('landing-page', esRutaLanding);
+
+    if (esRutaLanding) {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+      document.body.classList.remove('theme-dark');
+      const themeMeta = document.querySelector('meta[name="theme-color"]');
+      if (themeMeta) themeMeta.setAttribute('content', '#fbf7f3');
+    } else {
+      document.documentElement.classList.toggle('dark', isDarkMode);
+      document.documentElement.classList.toggle('light', !isDarkMode);
+      document.body.classList.toggle('theme-dark', isDarkMode);
+      const themeMeta = document.querySelector('meta[name="theme-color"]');
+      if (themeMeta) themeMeta.setAttribute('content', isDarkMode ? '#0f1124' : '#fbf7f3');
+    }
+
+    return () => {
+      document.body.classList.remove('catalogo');
+      document.body.classList.remove('landing-page');
+    };
+  }, [esRutaCatalogo, esRutaLanding, isDarkMode]);
 
   return (
     <LanguageProvider>
