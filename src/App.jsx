@@ -4,6 +4,7 @@ import { useCarrito }        from './hooks/useCarrito';
 import { useToast }          from './components/ui/ToastProvider';
 import { categorias as CATEGORIAS_CONFIG } from './data/productos';
 import { useAnuncio }         from './hooks/useAnuncio';
+import { usePedidosHabilitados } from './hooks/usePedidosHabilitados';
 import { useLanguage }        from './hooks/useLanguage';
 import Header             from './components/Header';
 import BuscadorFiltros    from './components/BuscadorFiltros';
@@ -20,6 +21,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   // Data from Supabase
   const { productos, loading, error, refetch } = useProductos();
   const { mensaje: anuncioMsg, activo: anuncioActivo } = useAnuncio();
+  const { pedidosHabilitados } = usePedidosHabilitados();
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
   // UI state
@@ -212,6 +214,15 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
           </div>
         )}
 
+        {!pedidosHabilitados && (
+          <div
+            className="text-center font-body font-black px-4 py-2.5"
+            style={{ background: 'linear-gradient(90deg, #ef4444, #dc2626)', color: 'white' }}
+          >
+            {t('cart.ordersPausedBanner')}
+          </div>
+        )}
+
         <main className={`lg:pb-0 lg:h-[calc(100vh-130px)] lg:overflow-hidden transition-all duration-300 ${items.length > 0 ? 'pb-40' : 'pb-8'}`}>
           <div className="max-w-[1600px] mx-auto w-full px-3 lg:px-6 h-full">
             <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(0,1fr)] lg:gap-6 xl:gap-8 lg:items-start lg:h-full">
@@ -293,6 +304,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
         onReducir={reducirItem}
         onLimpiar={limpiarCarrito}
         productos={productos}
+        pedidosHabilitados={pedidosHabilitados}
       />
 
       <ModalFiltros

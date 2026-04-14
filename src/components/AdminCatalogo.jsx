@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Package, Pencil, Trash2, Search, AlertTriangle, Plus, X, Tag, Check, Bookmark, Ruler, Megaphone, Download, Upload } from 'lucide-react';
+import { Package, Pencil, Trash2, Search, AlertTriangle, Plus, X, Tag, Check, Bookmark, Ruler, Megaphone, Download, Upload, Power } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { guardedQuery } from '../lib/supabaseGuard';
 import {
@@ -119,13 +119,34 @@ export default function AdminCatalogo() {
   const [anuncioMsg, setAnuncioMsg] = useState('');
   const [anuncioActivo, setAnuncioActivo] = useState(false);
   const [anuncioGuardando, setAnuncioGuardando] = useState(false);
+  const [pedidosHabilitados, setPedidosHabilitados] = useState(true);
+  const [pedidosGuardando, setPedidosGuardando] = useState(false);
 
   useEffect(() => {
     getConfig('anuncio', { mensaje: '', activo: false }).then(v => {
       setAnuncioMsg(v.mensaje || '');
       setAnuncioActivo(!!v.activo);
     });
+
+    getConfig('pedidos_habilitados', true).then(v => {
+      setPedidosHabilitados(v !== false);
+    });
   }, []);
+
+  async function handleTogglePedidos() {
+    const siguiente = !pedidosHabilitados;
+    setPedidosHabilitados(siguiente);
+    setPedidosGuardando(true);
+    try {
+      await setConfig('pedidos_habilitados', siguiente);
+      toast.success(siguiente ? t('admin.catalog.ordersEnabled') : t('admin.catalog.ordersDisabled'));
+    } catch (err) {
+      setPedidosHabilitados(!siguiente);
+      toast.error(err.message || t('admin.catalog.saveError'));
+    } finally {
+      setPedidosGuardando(false);
+    }
+  }
 
   // ── Importar / Exportar ──
   const [importando, setImportando] = useState(false);
@@ -673,6 +694,20 @@ export default function AdminCatalogo() {
             <Megaphone size={14} />
             {t('admin.catalog.banner')}
             {anuncioActivo && <span className="w-2 h-2 rounded-full bg-amber-500" />}
+          </button>
+          <button
+            type="button"
+            onClick={handleTogglePedidos}
+            disabled={pedidosGuardando}
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
+                       border-2 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+            style={pedidosHabilitados
+              ? { borderColor: '#86efac', color: '#166534', background: '#f0fdf4' }
+              : { borderColor: '#fca5a5', color: '#991b1b', background: '#fef2f2' }}
+            title={t('admin.catalog.orderControl')}
+          >
+            <Power size={14} />
+            {pedidosHabilitados ? t('admin.catalog.ordersOn') : t('admin.catalog.ordersOff')}
           </button>
         </div>
 
