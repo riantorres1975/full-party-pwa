@@ -2,7 +2,7 @@
   "name": "Full PartyApp",
   "short_name": "Full PartyApp",
   "description": "Ordena tus productos favoritos desde tu celular",
-  "start_url": "/",
+  "start_url": "/#/catalogo",
   "display": "standalone",
   "background_color": "#fbf7f3",
   "theme_color": "#fbf7f3",

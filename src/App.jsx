@@ -27,7 +27,6 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
-  const [showIntro, setShowIntro] = useState(false);
 
   const [activeFilters, setActiveFilters] = useState({
     categorias: [],
@@ -51,19 +50,6 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   useEffect(() => {
     if (productos.length > 0) sincronizarStock(productos);
   }, [productos, sincronizarStock]);
-
-  useEffect(() => {
-    const yaVioIntro = sessionStorage.getItem('fp_intro_v1') === '1';
-    if (yaVioIntro) return;
-
-    setShowIntro(true);
-    const t = setTimeout(() => {
-      setShowIntro(false);
-      sessionStorage.setItem('fp_intro_v1', '1');
-    }, 1850);
-
-    return () => clearTimeout(t);
-  }, []);
 
   // Filter logic
   const toggleFilter = (dimension, valor) => {
@@ -136,17 +122,6 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
   return (
     <div className={`min-h-screen lg:h-screen lg:overflow-hidden transition-colors duration-300 ${temaOscuro ? 'bg-[#0f1124]' : 'bg-cream'}`}>
-      {showIntro && (
-        <div className="fp-intro-overlay">
-          <div className="fp-intro-glow" />
-          <div className="fp-intro-card">
-            <img src="/icons/icon-512.png" alt="Full Party" className="fp-intro-logo" />
-            <h2 className="fp-intro-title">{t('intro.title')}</h2>
-            <p className="fp-intro-subtitle">{t('intro.subtitle')}</p>
-          </div>
-        </div>
-      )}
-
       <div className={temaOscuro ? 'theme-dark-catalog' : ''}>
         <header
           className={`sticky top-0 z-50 w-full backdrop-blur-md shadow-sm border-b pb-2 transition-colors duration-300 ${
