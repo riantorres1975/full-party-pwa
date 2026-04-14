@@ -36,7 +36,7 @@ export default function LoginAdmin({ onLogin, loading, error }) {
       >
         <div
           className="absolute -top-32 -left-32 w-96 h-96 rounded-full opacity-20 blur-3xl"
-          style={{ background: 'radial-gradient(circle, #6366f1, transparent 70%)' }}
+          style={{ background: 'radial-gradient(circle, #2563eb, transparent 70%)' }}
         />
         <div
           className="absolute -bottom-40 -right-20 w-[28rem] h-[28rem] rounded-full opacity-15 blur-3xl"
@@ -64,8 +64,8 @@ export default function LoginAdmin({ onLogin, loading, error }) {
           </div>
           <h1 className="font-display text-2xl text-white mb-1 tracking-wide">{import.meta.env.VITE_NOMBRE_NEGOCIO || 'Mi Tienda'}</h1>
           <div className="flex items-center gap-1.5 mt-2">
-            <ShieldCheck size={13} className="text-purple-400" />
-            <p className="text-xs font-body text-purple-400">{t('login.adminPanel')}</p>
+            <ShieldCheck size={13} className="text-sky-400" />
+            <p className="text-xs font-body text-sky-300">{t('login.adminPanel')}</p>
           </div>
         </div>
 
@@ -75,11 +75,11 @@ export default function LoginAdmin({ onLogin, loading, error }) {
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Email */}
           <div>
-            <label className="block text-xs font-body font-bold text-purple-300/80 mb-2 pl-0.5 tracking-wide uppercase">
+            <label className="block text-xs font-body font-bold text-slate-300 mb-2 pl-0.5 tracking-wide uppercase">
               {t('login.email')}
             </label>
             <div className="relative">
-              <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400/70" />
+              <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sky-300/70" />
               <input
                 ref={emailRef}
                 type="email"
@@ -95,11 +95,11 @@ export default function LoginAdmin({ onLogin, loading, error }) {
 
           {/* Password */}
           <div>
-            <label className="block text-xs font-body font-bold text-purple-300/80 mb-2 pl-0.5 tracking-wide uppercase">
+            <label className="block text-xs font-body font-bold text-slate-300 mb-2 pl-0.5 tracking-wide uppercase">
               {t('login.password')}
             </label>
             <div className="relative">
-              <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400/70" />
+              <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sky-300/70" />
               <input
                 type={showPass ? 'text' : 'password'}
                 value={password}
@@ -112,8 +112,8 @@ export default function LoginAdmin({ onLogin, loading, error }) {
               <button
                 type="button"
                 onClick={() => setShowPass(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400/60
-                           hover:text-purple-300 transition-colors p-1 rounded-lg"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400
+                           hover:text-sky-300 transition-colors p-1 rounded-lg"
                 aria-label={showPass ? t('login.hidePassword') : t('login.showPassword')}
               >
                 {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -134,19 +134,19 @@ export default function LoginAdmin({ onLogin, loading, error }) {
           <button
             type="submit"
             disabled={loading || !email || !password}
-            className="w-full py-3.5 rounded-xl font-body font-bold text-sm text-white mt-1
-                       transition-all duration-200 active:scale-[0.98]
-                       disabled:opacity-40 disabled:cursor-not-allowed
-                       focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a0733]"
-            style={{
-              background: loading || !email || !password
-                ? 'rgba(168,85,247,0.4)'
-                : 'linear-gradient(135deg, #2563eb, #6366f1)',
-              boxShadow: loading || !email || !password
-                ? 'none'
-                : '0 4px 24px rgba(255,61,172,0.35)',
-            }}
-          >
+             className="w-full py-3.5 rounded-xl font-body font-bold text-sm text-white mt-1
+                        transition-all duration-200 active:scale-[0.98]
+                        disabled:opacity-40 disabled:cursor-not-allowed
+                        focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#162033]"
+             style={{
+               background: loading || !email || !password
+                 ? 'rgba(100,116,139,0.45)'
+                 : 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+               boxShadow: loading || !email || !password
+                 ? 'none'
+                 : '0 10px 26px rgba(37,99,235,0.34)',
+             }}
+           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
@@ -160,7 +160,7 @@ export default function LoginAdmin({ onLogin, loading, error }) {
         <p className="text-center mt-7">
           <a
             href="/"
-            className="text-xs font-body text-purple-400/70 hover:text-purple-300
+            className="text-xs font-body text-slate-400 hover:text-sky-300
                        transition-colors underline underline-offset-2"
           >
             {t('login.backToCatalog')}

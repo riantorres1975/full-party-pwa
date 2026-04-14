@@ -33,6 +33,13 @@ export default function AppRouter() {
   const { isDarkMode, toggleTheme } = useTheme();
   const esRutaAdmin = hash.startsWith('#/admin');
 
+  useEffect(() => {
+    if (cargandoSesion) return;
+    if (!window.__fpBoot) return;
+    window.__fpBoot.sessionReady = true;
+    window.__fpBootMaybeHide?.();
+  }, [cargandoSesion]);
+
   // Confetti de fondo solo en el catálogo público
   useEffect(() => {
     document.body.classList.toggle('catalogo', !esRutaAdmin);

@@ -68,3 +68,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <AppRouter />
   </React.StrictMode>
 );
+
+if (window.__fpBoot) {
+  window.__fpBoot.appMounted = true;
+  window.__fpBootMaybeHide?.();
+}
