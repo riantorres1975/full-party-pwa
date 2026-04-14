@@ -288,9 +288,15 @@
           document.body.classList.add('fp-app-ready');
         };
 
+        var hash = window.location.hash || '';
+        var isCatalogOrAdmin = hash.indexOf('#/catalogo') === 0 || hash.indexOf('#/admin') === 0;
+        if (!isCatalogOrAdmin) {
+          window.__fpMarkAppReady();
+        }
+
         setTimeout(function () {
           window.__fpMarkAppReady();
-        }, 9000);
+        }, 3500);
       })();
     </script>
     <script type="module" src="/src/main.jsx"></script>
