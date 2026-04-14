@@ -160,6 +160,14 @@
   transform:    scale(1.04);
 }
 
+/* ── Aplazar render de secciones bajo el primer viewport ───── */
+@supports (content-visibility: auto) {
+  .lp-below-fold {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 920px;
+  }
+}
+
 /* ── Ocultar scrollbar en el dot-strip de reseñas ─────────── */
 .lp-hide-scroll { scrollbar-width: none; }
 .lp-hide-scroll::-webkit-scrollbar { display: none; }
