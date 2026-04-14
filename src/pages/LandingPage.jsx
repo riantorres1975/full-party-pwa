@@ -547,7 +547,7 @@ function BranchTyper() {
       ))}
 
       {/* Línea 1 — "Full Party" grande y estático */}
-      <div className={`text-5xl sm:text-6xl lg:text-7xl ${burst.length > 0 ? 'lp-fiesta-bounce' : ''}`}>
+      <div className="text-5xl sm:text-6xl lg:text-7xl">
         <ColorLetters text="Full Party" />
       </div>
 
