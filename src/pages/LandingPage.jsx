@@ -207,6 +207,7 @@ const SUCURSALES = [
     direccion: ENV.suc1.direccion,
     horario:   ENV.horario,
     mapsUrl:   ENV.suc1.mapsUrl,
+    embedUrl:  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3762.8065692929063!2d-102.0549798!3d19.420761799999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x842de367f2d59469%3A0x4799181c21c26fd5!2sFull%20Party%20Uruapan%20Suc%20Francisco%20Villa!5e0!3m2!1ses-419!2smx!4v1776194961609!5m2!1ses-419!2smx',
     facebook:  ENV.suc1.facebook,
     color:     C.pink,
     accent:    C.orange,
@@ -218,6 +219,7 @@ const SUCURSALES = [
     direccion: ENV.suc2.direccion,
     horario:   ENV.horario,
     mapsUrl:   ENV.suc2.mapsUrl,
+    embedUrl:  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3763.1415130404407!2d-102.0274577!3d19.4062907!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x842de3bcdec90e8d%3A0x5158156fe2efca48!2sFull%20Party%20Uruapan%20Suc%20Sol%20Naciente!5e0!3m2!1ses-419!2smx!4v1776194928231!5m2!1ses-419!2smx',
     facebook:  ENV.suc2.facebook,
     color:     C.purple,
     accent:    C.cyan,
@@ -1370,7 +1372,7 @@ export default function LandingPage() {
           <div className="max-w-5xl mx-auto">
             <Reveal><SectionTitle title="Nuestras Sucursales" subtitle="Visítanos en Uruapan, Michoacán." /></Reveal>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {SUCURSALES.map(({ nombre, direccion, horario, mapsUrl, badge, color, accent, ilustId, facebook }, i) => (
+              {SUCURSALES.map(({ nombre, direccion, horario, mapsUrl, embedUrl, badge, color, accent, facebook }, i) => (
                 <Reveal key={nombre} delay={i * 0.1} direction={i === 0 ? 'left' : 'right'}>
                   <GradCard
                     gradient={`linear-gradient(135deg, ${color}, ${accent})`}
@@ -1378,16 +1380,24 @@ export default function LandingPage() {
                     className="h-full"
                   >
                     <div>
-                      {/* Encabezado ilustrado */}
+                      {/* Encabezado con mapa embebido */}
                       <div
                         className="h-40 relative overflow-hidden rounded-t-[14px]"
-                        aria-hidden="true"
+                        style={{ borderBottom: `1px solid ${color}33` }}
                       >
-                        <SucursalIllustration color={color} accent={accent} id={ilustId} />
+                        <iframe
+                          src={embedUrl}
+                          className="w-full h-full"
+                          style={{ border: 0 }}
+                          loading="lazy"
+                          referrerPolicy="no-referrer-when-downgrade"
+                          allowFullScreen
+                          title={`Mapa de ${ENV.negocio} ${nombre}`}
+                        />
                         <span
                           className="absolute top-3 left-3 text-xs font-black px-3 py-1 rounded-full z-10"
                           style={{
-                            background:    `${color}28`,
+                            background:    'rgba(255,255,255,0.9)',
                             color,
                             border:        `1px solid ${color}44`,
                             backdropFilter:'blur(6px)',
