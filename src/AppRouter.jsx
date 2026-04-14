@@ -60,10 +60,21 @@ export default function AppRouter() {
     };
 
     if (document.fonts?.ready) {
+      const timeoutId = setTimeout(() => {
+        requestAnimationFrame(revealApp);
+      }, 350);
+
       document.fonts.ready
-        .then(() => requestAnimationFrame(revealApp))
-        .catch(() => requestAnimationFrame(revealApp));
-      return;
+        .then(() => {
+          clearTimeout(timeoutId);
+          requestAnimationFrame(revealApp);
+        })
+        .catch(() => {
+          clearTimeout(timeoutId);
+          requestAnimationFrame(revealApp);
+        });
+
+      return () => clearTimeout(timeoutId);
     }
 
     requestAnimationFrame(revealApp);
