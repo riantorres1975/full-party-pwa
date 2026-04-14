@@ -20,16 +20,6 @@ if (typeof window !== 'undefined' && !window.__fpInstallPromptListenerAttached) 
   });
 }
 
-// Dynamic preconnect for Supabase (images load faster)
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-if (supabaseUrl) {
-  const link = document.createElement('link');
-  link.rel = 'preconnect';
-  link.href = supabaseUrl;
-  link.crossOrigin = 'anonymous';
-  document.head.appendChild(link);
-}
-
 // Registrar Service Worker (PWA)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

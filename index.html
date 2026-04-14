@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#fbf7f3" />
     <meta name="description" content="Tienda y distribuidora de globos en Uruapan, Michoacán. Globos de látex al mayoreo, globos de personajes, arreglos con globos y precios escalonados por volumen." />
-    <meta name="keywords" content="globos uruapan, tienda de globos uruapan, globos al mayoreo uruapan, globos de latex uruapan, globos de personajes uruapan, distribuidora de globos michoacan, full party uruapan, glomex decoratexz sempertex" />
+    <meta name="keywords" content="globos uruapan, tienda de globos uruapan, globos al mayoreo uruapan, globos de latex uruapan, globos de personajes uruapan, distribuidora de globos michoacan, full party uruapan, glomex decoratex sempertex" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="author" content="<%- NOMBRE_NEGOCIO %>" />
 
@@ -77,13 +77,11 @@
           radial-gradient(circle at 50% 85%, rgba(255, 225, 53, 0.25) 0%, transparent 48%),
           linear-gradient(145deg, #ffffff 0%, #f9f2ff 58%, #f4edff 100%);
         opacity: 1;
-        visibility: visible;
-        transition: opacity 360ms ease, visibility 360ms ease;
+        transition: opacity 360ms ease;
       }
 
       body.fp-app-ready #fp-boot-overlay {
         opacity: 0;
-        visibility: hidden;
         pointer-events: none;
       }
 
@@ -277,7 +275,7 @@
   <body>
     <div id="fp-boot-overlay" aria-hidden="true">
       <div class="fp-boot-card">
-        <img src="/icons/icon-512.png" alt="" class="fp-boot-logo" />
+        <img src="/icons/icon-192.png" width="192" height="192" fetchpriority="high" alt="" class="fp-boot-logo" />
         <h1 class="fp-boot-title">Full Party</h1>
         <p class="fp-boot-subtitle">Cargando catalogo...</p>
       </div>
