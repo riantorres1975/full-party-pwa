@@ -150,7 +150,7 @@ async function optimizeImageForUpload(file) {
   canvas.width = targetWidth;
   canvas.height = targetHeight;
 
-  const context = canvas.getContext('2d', { alpha: false });
+  const context = canvas.getContext('2d');
   if (!context) return file;
 
   context.drawImage(image, 0, 0, targetWidth, targetHeight);
@@ -191,7 +191,15 @@ function slugifyFilename(name) {
     .replace(/^-+|-+$/g, '');        // quitar guiones al inicio/fin
 }
 
-export async function subirImagenProducto(file) {
+function getUploadBaseName(nombreProducto = '') {
+  const nombreLimpio = typeof nombreProducto === 'string' ? slugifyFilename(nombreProducto.trim()) : '';
+  if (!nombreLimpio) {
+    throw new Error('El nombre del producto es obligatorio para nombrar la imagen.');
+  }
+  return nombreLimpio;
+}
+
+export async function subirImagenProducto(file, { nombreProducto = '' } = {}) {
   if (!file || !(file instanceof File)) {
     throw new Error('Selecciona un archivo de imagen válido.');
   }
@@ -215,7 +223,7 @@ export async function subirImagenProducto(file) {
 
   const archivoSubida = await optimizeImageForUpload(file);
   const extFinal = ALLOWED_TYPES[archivoSubida.type] || ext;
-  const baseName = slugifyFilename(file.name.replace(/\.[^.]+$/, ''));
+  const baseName = getUploadBaseName(nombreProducto);
   const path = `${baseName}-${randomId()}.${extFinal}`;
   const { error: upErr } = await supabase.storage
     .from(BUCKET_IMAGENES_PRODUCTOS)

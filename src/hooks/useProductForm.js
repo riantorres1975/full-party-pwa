@@ -183,7 +183,7 @@ export function useProductForm(producto = null) {
 
     let urlFinal = imagenUrl.trim() || null;
     if (archivo) {
-      urlFinal = await subirImagenProducto(archivo);
+      urlFinal = await subirImagenProducto(archivo, { nombreProducto: nombre });
     }
 
     const precioBaseNum = Math.max(0, Number(precio) || 0);
