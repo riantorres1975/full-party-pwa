@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import '../catalog.css'; // Estilos exclusivos del catálogo/admin (dark-mode, etc.)
 import App from '../App';
 import LoginAdmin from '../components/LoginAdmin';
@@ -18,7 +18,6 @@ export default function AuthCatalogRoutes({ hash }) {
   const { session, user, cargandoSesion, loading, error, signIn, signOut } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const { t } = useLanguage();
-  const [bootMinReady, setBootMinReady] = useState(false);
 
   const esRutaAdmin = hash.startsWith('#/admin');
 
@@ -39,18 +38,7 @@ export default function AuthCatalogRoutes({ hash }) {
   }, [isDarkMode]);
 
   useEffect(() => {
-    const yaVioBoot = sessionStorage.getItem('fp_boot_v1') === '1';
-    const delay = yaVioBoot ? 320 : 1650;
-    const timer = setTimeout(() => {
-      setBootMinReady(true);
-      sessionStorage.setItem('fp_boot_v1', '1');
-    }, delay);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (!bootMinReady || cargandoSesion) return;
+    if (esRutaAdmin && cargandoSesion) return;
 
     const revealApp = () => {
       if (typeof window.__fpMarkAppReady === 'function') {
@@ -58,17 +46,10 @@ export default function AuthCatalogRoutes({ hash }) {
       }
     };
 
-    if (document.fonts?.ready) {
-      document.fonts.ready
-        .then(() => requestAnimationFrame(revealApp))
-        .catch(() => requestAnimationFrame(revealApp));
-      return;
-    }
-
     requestAnimationFrame(revealApp);
-  }, [bootMinReady, cargandoSesion]);
+  }, [esRutaAdmin, cargandoSesion]);
 
-  if (cargandoSesion) {
+  if (esRutaAdmin && cargandoSesion) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1a0733, #3d1a6e)' }}>
         <div className="flex flex-col items-center gap-3">
