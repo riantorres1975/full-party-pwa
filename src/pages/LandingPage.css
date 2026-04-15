@@ -125,6 +125,12 @@
   .hero-glow {
     filter: none !important;
   }
+
+  .lp-hero-title {
+    background: none !important;
+    color: #9f67ea !important;
+    -webkit-text-fill-color: #9f67ea !important;
+  }
 }
 
 /* ── Transiciones reutilizables ────────────────────────────── */
