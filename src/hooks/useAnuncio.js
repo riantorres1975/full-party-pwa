@@ -7,11 +7,18 @@ import { supabase } from '../lib/supabase';
  * Returns { mensaje, activo, loading }.
  * Only shown when `activo === true` and `mensaje` is non-empty.
  */
-export function useAnuncio() {
+export function useAnuncio(enabled = true) {
   const [anuncio, setAnuncio] = useState({ mensaje: '', activo: false });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
     let cancelled = false;
 
     supabase
@@ -29,10 +36,12 @@ export function useAnuncio() {
       });
 
     return () => { cancelled = true; };
-  }, []);
+  }, [enabled]);
 
   // ── Realtime: actualizar anuncio cuando el admin lo modifique ──
   useEffect(() => {
+    if (!enabled) return;
+
     const channel = supabase
       .channel('anuncio-rt')
       .on('postgres_changes',
@@ -48,7 +57,7 @@ export function useAnuncio() {
       .subscribe();
 
     return () => supabase.removeChannel(channel);
-  }, []);
+  }, [enabled]);
 
   return { ...anuncio, loading };
 }

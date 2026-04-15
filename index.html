@@ -40,6 +40,10 @@
     <!-- Canonical -->
     <link rel="canonical" href="<%- SITE_URL %>/" />
     <link rel="alternate" href="<%- SITE_URL %>/" hreflang="es-MX" />
+    <% if (SUPABASE_ORIGIN) { %>
+    <link rel="preconnect" href="<%- SUPABASE_ORIGIN %>" crossorigin>
+    <link rel="dns-prefetch" href="<%- SUPABASE_ORIGIN %>">
+    <% } %>
 
     <!-- Fuentes auto-hospedadas: se precargan con el HTML, eliminando el FOUT -->
     <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/fredoka-one.woff2">

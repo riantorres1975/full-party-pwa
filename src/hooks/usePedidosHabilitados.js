@@ -7,11 +7,18 @@ function normalizarValorPedidos(valor) {
   return true;
 }
 
-export function usePedidosHabilitados() {
+export function usePedidosHabilitados(enabled = true) {
   const [pedidosHabilitados, setPedidosHabilitados] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
     let cancelled = false;
 
     supabase
@@ -33,9 +40,11 @@ export function usePedidosHabilitados() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
+    if (!enabled) return;
+
     const channel = supabase
       .channel('pedidos-habilitados-rt')
       .on(
@@ -50,7 +59,7 @@ export function usePedidosHabilitados() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [enabled]);
 
   return { pedidosHabilitados, loading };
 }

@@ -6,6 +6,15 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   const siteUrl = env.VITE_SITE_URL || 'https://www.fullpartyuruapan.com.mx';
   const nombreNegocio = env.VITE_NOMBRE_NEGOCIO || 'Full Party Uruapan';
+  let supabaseOrigin = '';
+
+  try {
+    if (env.VITE_SUPABASE_URL) {
+      supabaseOrigin = new URL(env.VITE_SUPABASE_URL).origin;
+    }
+  } catch {
+    supabaseOrigin = '';
+  }
 
   return {
     plugins: [
@@ -26,6 +35,7 @@ export default defineConfig(({ mode }) => {
             SUC2_MAPS_URL:     env.VITE_SUC2_MAPS_URL     || siteUrl,
             SUC2_FACEBOOK:     env.VITE_SUC2_FACEBOOK     || siteUrl,
             TIKTOK_URL:        env.VITE_TIKTOK_URL        || siteUrl,
+            SUPABASE_ORIGIN:   supabaseOrigin,
           },
         },
       }),

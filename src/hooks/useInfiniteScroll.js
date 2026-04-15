@@ -1,7 +1,14 @@
 import { useState, useRef, useCallback } from 'react';
 
-const INITIAL_COUNT = 12;
-const BATCH_SIZE    = 12;
+function getInitialCount() {
+  if (typeof window === 'undefined') return 8;
+  return window.innerWidth < 768 ? 4 : 12;
+}
+
+function getBatchSize() {
+  if (typeof window === 'undefined') return 8;
+  return window.innerWidth < 768 ? 6 : 12;
+}
 
 /**
  * useInfiniteScroll
@@ -13,7 +20,7 @@ const BATCH_SIZE    = 12;
  *  - reset()        → llama al cambiar el array (búsqueda/filtros)
  */
 export function useInfiniteScroll(totalItems) {
-  const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
+  const [visibleCount, setVisibleCount] = useState(() => getInitialCount());
   const [cargando,     setCargando]     = useState(false);
   const observerRef = useRef(null);
   const totalRef    = useRef(totalItems);
@@ -23,7 +30,7 @@ export function useInfiniteScroll(totalItems) {
 
   // Reset to first page when dataset changes (filters/search)
   const reset = useCallback(() => {
-    setVisibleCount(INITIAL_COUNT);
+    setVisibleCount(getInitialCount());
     setCargando(false);
   }, []);
 
@@ -33,7 +40,8 @@ export function useInfiniteScroll(totalItems) {
     if (cargando || visibleCount >= totalRef.current) return;
     setCargando(true);
     requestAnimationFrame(() => {
-      setVisibleCount(prev => Math.min(prev + BATCH_SIZE, totalRef.current));
+      const batchSize = getBatchSize();
+      setVisibleCount(prev => Math.min(prev + batchSize, totalRef.current));
       setCargando(false);
     });
   };
