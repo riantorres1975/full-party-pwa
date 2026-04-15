@@ -12,7 +12,9 @@
       (function () {
         var hash = window.location.hash || '';
         var isCatalogOrAdmin = hash.indexOf('#/catalogo') === 0 || hash.indexOf('#/admin') === 0;
-        if (!isCatalogOrAdmin) {
+        if (isCatalogOrAdmin) {
+          document.documentElement.classList.add('fp-catalog-immediate');
+        } else {
           document.documentElement.classList.add('fp-skip-boot');
         }
       })();
@@ -125,6 +127,11 @@
         transition: opacity 260ms ease;
       }
 
+      html.fp-catalog-immediate #root {
+        opacity: 1;
+        transition: none;
+      }
+
       body.fp-app-ready #root {
         opacity: 1;
       }
@@ -155,6 +162,10 @@
       }
 
       html.fp-skip-boot #fp-boot-overlay {
+        display: none;
+      }
+
+      html.fp-catalog-immediate #fp-boot-overlay {
         display: none;
       }
 
@@ -370,11 +381,10 @@
           window.__fpMarkAppReady();
         }
 
-        // Fallback: revelar app como máximo en 1s (antes era 3.5s)
-        // Mejora directamente FCP y LCP en móvil
+        // Fallback: revelar app pronto si algo falla durante el arranque.
         setTimeout(function () {
           window.__fpMarkAppReady();
-        }, 1000);
+        }, 450);
       })();
     </script>
     <script type="module" src="/src/main.jsx"></script>
