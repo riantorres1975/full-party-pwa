@@ -29,10 +29,22 @@ function OptimizedImageInner({
   const [error, setError] = useState(false);
   const imgRef = useRef(null);
 
-  // Reset al cambiar de src, luego verificar si ya está en cache del navegador
+  const fallbackSrc = buildInlineFallback(fallbackText || alt || 'Producto');
+  const srcLimpio = typeof src === 'string' ? src.trim() : '';
+  const srcFinal = error || !srcLimpio ? fallbackSrc : srcLimpio;
+
+  useEffect(() => {
+    setError(false);
+  }, [src]);
+
+  // Reset al cambiar src final (original/fallback), luego verificar cache del navegador
   useEffect(() => {
     setLoaded(false);
-    setError(false);
+
+    if (!srcLimpio) {
+      setLoaded(true);
+      return undefined;
+    }
 
     // Micro-task delay para que el navegador actualice el elemento <img>
     // antes de verificar .complete (cached images)
@@ -41,12 +53,21 @@ function OptimizedImageInner({
         setLoaded(true);
       }
     });
-    return () => cancelAnimationFrame(raf);
-  }, [src]);
 
-  const fallbackSrc = buildInlineFallback(fallbackText || alt || 'Producto');
-  const srcLimpio = typeof src === 'string' ? src.trim() : '';
-  const srcFinal = error || !srcLimpio ? fallbackSrc : srcLimpio;
+    // Failsafe: evita quedarse eternamente en shimmer por abort/cancel de carga
+    const timeoutId = setTimeout(() => {
+      if (srcFinal !== fallbackSrc) {
+        setError(true);
+      } else {
+        setLoaded(true);
+      }
+    }, 2200);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timeoutId);
+    };
+  }, [srcFinal, srcLimpio, fallbackSrc]);
 
   return (
     <div
@@ -82,7 +103,7 @@ function OptimizedImageInner({
         onError={() => {
           if (!error) {
             setError(true);
-            setLoaded(false); // will trigger load with fallback
+            setLoaded(false);
           } else {
             setLoaded(true); // fallback also failed, just show it
           }
