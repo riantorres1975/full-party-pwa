@@ -8,6 +8,15 @@
     <meta name="keywords" content="globos uruapan, tienda de globos uruapan, globos al mayoreo uruapan, globos de latex uruapan, globos de personajes uruapan, distribuidora de globos michoacan, full party uruapan, glomex decoratex sempertex" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="author" content="<%- NOMBRE_NEGOCIO %>" />
+    <script>
+      (function () {
+        var hash = window.location.hash || '';
+        var isCatalogOrAdmin = hash.indexOf('#/catalogo') === 0 || hash.indexOf('#/admin') === 0;
+        if (!isCatalogOrAdmin) {
+          document.documentElement.classList.add('fp-skip-boot');
+        }
+      })();
+    </script>
 
     <!-- Open Graph -->
     <meta property="og:title" content="<%- NOMBRE_NEGOCIO %> — Mayoreo de Artículos para Fiesta en Uruapan" />
@@ -62,6 +71,10 @@
         opacity: 1;
       }
 
+      html.fp-skip-boot #root {
+        opacity: 1;
+      }
+
       #fp-boot-overlay {
         position: fixed;
         inset: 0;
@@ -81,6 +94,10 @@
       body.fp-app-ready #fp-boot-overlay {
         opacity: 0;
         pointer-events: none;
+      }
+
+      html.fp-skip-boot #fp-boot-overlay {
+        display: none;
       }
 
       .fp-boot-card {
@@ -273,7 +290,7 @@
   <body>
     <div id="fp-boot-overlay" aria-hidden="true">
       <div class="fp-boot-card">
-        <img src="/icons/icon-192.png" width="192" height="192" fetchpriority="high" alt="" class="fp-boot-logo" />
+        <img data-src="/icons/icon-192.png" width="192" height="192" fetchpriority="high" alt="" class="fp-boot-logo" />
         <h1 class="fp-boot-title">Full Party</h1>
         <p class="fp-boot-subtitle">Cargando catalogo...</p>
       </div>
@@ -290,6 +307,12 @@
 
         var hash = window.location.hash || '';
         var isCatalogOrAdmin = hash.indexOf('#/catalogo') === 0 || hash.indexOf('#/admin') === 0;
+        if (isCatalogOrAdmin) {
+          var bootLogo = document.querySelector('.fp-boot-logo[data-src]');
+          if (bootLogo) {
+            bootLogo.src = bootLogo.getAttribute('data-src');
+          }
+        }
         if (!isCatalogOrAdmin) {
           window.__fpMarkAppReady();
         }
