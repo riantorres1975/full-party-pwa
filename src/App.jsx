@@ -20,8 +20,9 @@ import SidebarFiltrosDesktop from './components/SidebarFiltrosDesktop';
 export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   // Data from Supabase
   const { productos, loading, error, refetch } = useProductos();
-  const { mensaje: anuncioMsg, activo: anuncioActivo } = useAnuncio();
-  const { pedidosHabilitados } = usePedidosHabilitados();
+  const [habilitarConfigFetch, setHabilitarConfigFetch] = useState(false);
+  const { mensaje: anuncioMsg, activo: anuncioActivo } = useAnuncio(habilitarConfigFetch);
+  const { pedidosHabilitados } = usePedidosHabilitados(habilitarConfigFetch);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
   // UI state
@@ -47,6 +48,19 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   useEffect(() => {
     if (stockError) toast.warning(stockError);
   }, [stockError]);
+
+  useEffect(() => {
+    if (!loading) {
+      setHabilitarConfigFetch(true);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setHabilitarConfigFetch(true);
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [loading]);
 
   // Keep cart in sync when products update in realtime
   useEffect(() => {
