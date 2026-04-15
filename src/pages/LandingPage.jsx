@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
+﻿import { useRef, useState, useEffect, useCallback } from 'react';
 import {
   ShoppingBag, MessageCircle, MapPin, Star, Package,
   Sparkles, ArrowRight, Menu, X, Navigation, Clock,
@@ -6,27 +6,27 @@ import {
 } from 'lucide-react';
 import './LandingPage.css';
 
-// ════════════════════════════════════════════════════════════
-// 1. PALETA — colores pasteles festivos del logo Full Party
-// ════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 1. PALETA â€” colores pasteles festivos del logo Full Party
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 const C = {
-  pink:    '#F472B6',   // Rosa pastel — protagonista
+  pink:    '#F472B6',   // Rosa pastel â€” protagonista
   purple:  '#C084FC',   // Morado suave
   green:   '#34D399',   // Verde menta
-  orange:  '#FB923C',   // Naranja cálido
+  orange:  '#FB923C',   // Naranja cÃ¡lido
   cyan:    '#22D3EE',   // Turquesa brillante
   blue:    '#818CF8',   // Azul indigo
-  yellow:  '#FDE047',   // Amarillo — estrellas
-  // Fondos de sección (tintes muy suaves)
+  yellow:  '#FDE047',   // Amarillo â€” estrellas
+  // Fondos de secciÃ³n (tintes muy suaves)
   bgHero:     '#FEFAFF',
   bgBenefits: '#FEF3FF',
   bgSteps:    '#F5F3FF',
   bgReviews:  '#FFF5F9',
   bgBranches: '#F0FFFE',
   // Texto
-  textHead:  '#2D0D5A',   // Morado muy oscuro — excelente contraste
+  textHead:  '#2D0D5A',   // Morado muy oscuro â€” excelente contraste
   textBody:  '#5B3080',   // Morado medio legible
-  textMuted: '#7B4FA6',   // Lavanda oscura — WCAG AA sobre fondos claros
+  textMuted: '#7B4FA6',   // Lavanda oscura â€” WCAG AA sobre fondos claros
   surfaceLavender: '#F5EEFF',
   borderSoft: '#EDE0F8',
   infoBlue: '#0369A1',
@@ -35,57 +35,57 @@ const C = {
   shadowLavender: 'rgba(192,132,252,0.1)',
 };
 
-// ════════════════════════════════════════════════════════════
-// 2. CONFIGURACIÓN — env vars y constantes globales
-// ════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 2. CONFIGURACIÃ“N â€” env vars y constantes globales
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 const ENV = {
   waNumber: import.meta.env.VITE_WHATSAPP_NUMBER || '521XXXXXXXXXX',
   negocio:  import.meta.env.VITE_NOMBRE_NEGOCIO  || 'Full Party',
-  horario:  import.meta.env.VITE_HORARIO_TIENDA  || 'Lun–Sáb 9am–7pm',
+  horario:  import.meta.env.VITE_HORARIO_TIENDA  || 'Lunâ€“SÃ¡b 9amâ€“7pm',
   tiktok:   import.meta.env.VITE_TIKTOK_URL      || null,
   suc1: {
     nombre:   import.meta.env.VITE_SUC1_NOMBRE    || 'Francisco Villa',
     badge:    import.meta.env.VITE_SUC1_BADGE     || 'Sucursal Principal',
-    direccion:import.meta.env.VITE_SUC1_DIRECCION || 'Uruapan, Michoacán',
+    direccion:import.meta.env.VITE_SUC1_DIRECCION || 'Uruapan, MichoacÃ¡n',
     mapsUrl:  import.meta.env.VITE_SUC1_MAPS_URL  || '#',
     facebook: import.meta.env.VITE_SUC1_FACEBOOK  || null,
   },
   suc2: {
     nombre:   import.meta.env.VITE_SUC2_NOMBRE    || 'Sol Naciente',
     badge:    import.meta.env.VITE_SUC2_BADGE     || 'Sucursal Norte',
-    direccion:import.meta.env.VITE_SUC2_DIRECCION || 'Col. Sol Naciente, Uruapan, Michoacán',
+    direccion:import.meta.env.VITE_SUC2_DIRECCION || 'Col. Sol Naciente, Uruapan, MichoacÃ¡n',
     mapsUrl:  import.meta.env.VITE_SUC2_MAPS_URL  || '#',
     facebook: import.meta.env.VITE_SUC2_FACEBOOK  || null,
   },
 };
 
-const WA_HREF  = `https://wa.me/${ENV.waNumber}?text=${encodeURIComponent('Hola, me interesa hacer un pedido por mayoreo 🎉')}`;
+const WA_HREF  = `https://wa.me/${ENV.waNumber}?text=${encodeURIComponent('Hola, me interesa hacer un pedido por mayoreo ðŸŽ‰')}`;
 const TYPING   = { typeSpeed: 85, eraseSpeed: 48, holdMs: 2400, pauseMs: 380 };
 const REVIEW_INTERVAL_MS = 5000;
 
-/** GA4: registra un evento si gtag está disponible */
+/** GA4: registra un evento si gtag estÃ¡ disponible */
 const trackEvent = (name, params = {}) => {
   if (typeof window.gtag === 'function') window.gtag('event', name, params);
 };
 
-// ════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // 3. DATOS DE CONTENIDO
-// ════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 const BRANCH_NAMES = [ENV.suc1.nombre, ENV.suc2.nombre];
 
-// Colores de letras inspirados en el logo (cíclicos por posición)
+// Colores de letras inspirados en el logo (cÃ­clicos por posiciÃ³n)
 const LETTER_COLORS = [C.pink, C.purple, C.green, C.orange, C.cyan, C.blue, C.yellow];
 
-// Emojis para la explosión de confeti al cambiar de sucursal
-const BURST_EMOJIS = ['🎉', '🎊', '✨', '⭐', '🌟', '🎈', '🎀', '🎁'];
+// Emojis para la explosiÃ³n de confeti al cambiar de sucursal
+const BURST_EMOJIS = ['ðŸŽ‰', 'ðŸŽŠ', 'âœ¨', 'â­', 'ðŸŒŸ', 'ðŸŽˆ', 'ðŸŽ€', 'ðŸŽ'];
 
 const NAV_LINKS = [
   { label: 'Inicio',     href: 'top',        hash: false },
-  { label: 'Catálogo',   href: '#/catalogo', hash: true  },
+  { label: 'CatÃ¡logo',   href: '#/catalogo', hash: true  },
   { label: 'Sucursales', href: 'sucursales', hash: false },
   { label: 'FAQ',        href: 'faq',        hash: false },
-  { label: 'Reseñas',    href: 'resenas',    hash: false },
+  { label: 'ReseÃ±as',    href: 'resenas',    hash: false },
   { label: 'Contacto',   href: 'contacto',   hash: false },
 ];
 
@@ -93,45 +93,45 @@ const BENEFICIOS = [
   {
     icon:     Star,
     titulo:   'Precios por Mayoreo',
-    desc:     'Tarifas escalonadas desde la primera pieza. Entre más compras, más ahorras.',
+    desc:     'Tarifas escalonadas desde la primera pieza. Entre mÃ¡s compras, mÃ¡s ahorras.',
     color:    C.pink,
     gradient: `linear-gradient(135deg, ${C.pink}, ${C.purple})`,
   },
   {
     icon:     MessageCircle,
     titulo:   'Pedidos por WhatsApp',
-    desc:     'Genera tu orden desde el catálogo y envíala a nuestro chat. Sin llamadas.',
+    desc:     'Genera tu orden desde el catÃ¡logo y envÃ­ala a nuestro chat. Sin llamadas.',
     color:    C.purple,
     gradient: `linear-gradient(135deg, ${C.purple}, ${C.cyan})`,
   },
   {
     icon:     MapPin,
-    titulo:   'Recolección en Sucursal',
-    desc:     'Retira en Centro o Sol Naciente. Envío disponible en Uruapan y zona.',
+    titulo:   'RecolecciÃ³n en Sucursal',
+    desc:     'Retira en Centro o Sol Naciente. EnvÃ­o disponible en Uruapan y zona.',
     color:    C.cyan,
     gradient: `linear-gradient(135deg, ${C.cyan}, ${C.blue})`,
   },
 ];
 
 const CATEGORIAS = [
-  { emoji: '🎈', titulo: 'Globos de Látex',      desc: 'Colores, tamaños y marcas premium',       color: C.pink   },
-  { emoji: '🦸', titulo: 'Globos de Personajes', desc: 'Modelos temáticos para toda ocasión',      color: C.orange },
-  { emoji: '🎀', titulo: 'Arreglos con Globos',  desc: 'Combinaciones listas para tu evento',      color: C.purple },
-  { emoji: '🏷️', titulo: 'Mayoreo por Volumen',  desc: 'Precios escalonados para surtir negocio',  color: C.green  },
+  { emoji: 'ðŸŽˆ', titulo: 'Globos de LÃ¡tex',      desc: 'Colores, tamaÃ±os y marcas premium',       color: C.pink   },
+  { emoji: 'ðŸ¦¸', titulo: 'Globos de Personajes', desc: 'Modelos temÃ¡ticos para toda ocasiÃ³n',      color: C.orange },
+  { emoji: 'ðŸŽ€', titulo: 'Arreglos con Globos',  desc: 'Combinaciones listas para tu evento',      color: C.purple },
+  { emoji: 'ðŸ·ï¸', titulo: 'Mayoreo por Volumen',  desc: 'Precios escalonados para surtir negocio',  color: C.green  },
 ];
 
 const PASOS = [
-  { num: '1', icon: ShoppingBag,   titulo: 'Navega',       desc: 'Explora +500 artículos ordenados por categoría.',    color: C.pink   },
+  { num: '1', icon: ShoppingBag,   titulo: 'Navega',       desc: 'Explora +500 artÃ­culos ordenados por categorÃ­a.',    color: C.pink   },
   { num: '2', icon: Package,       titulo: 'Al carrito',   desc: 'Agrega productos y ve el total mayoreo en vivo.',     color: C.purple },
   { num: '3', icon: Sparkles,      titulo: 'Revisa',       desc: 'Confirma cantidades y precios escalonados.',          color: C.cyan   },
   { num: '4', icon: MessageCircle, titulo: 'Por WhatsApp', desc: 'Un toque y tu pedido llega listo a nuestro chat.',   color: C.green  },
 ];
 
 const MARCAS = [
-  { nombre: 'Glomex',      desc: 'Globos de látex mayoreo',       color: C.pink,   emoji: '🎈' },
-  { nombre: 'Decoratex',   desc: 'Globos de látex y decoración',  color: C.purple, emoji: '🎀' },
-  { nombre: 'Sempertex',   desc: 'Calidad premium en látex',      color: C.green,  emoji: '✨' },
-  { nombre: 'Personajes',  desc: 'Globos temáticos licenciados',  color: C.orange, emoji: '🦸' },
+  { nombre: 'Glomex',      desc: 'Globos de lÃ¡tex mayoreo',       color: C.pink,   emoji: 'ðŸŽˆ' },
+  { nombre: 'Decoratex',   desc: 'Globos de lÃ¡tex y decoraciÃ³n',  color: C.purple, emoji: 'ðŸŽ€' },
+  { nombre: 'Sempertex',   desc: 'Calidad premium en lÃ¡tex',      color: C.green,  emoji: 'âœ¨' },
+  { nombre: 'Personajes',  desc: 'Globos temÃ¡ticos licenciados',  color: C.orange, emoji: 'ðŸ¦¸' },
 ];
 
 const RESENAS = [
@@ -141,7 +141,7 @@ const RESENAS = [
     inicial: 'E',
     color:   C.pink,
     stars:   4,
-    texto:   'Tiene la gran mayoría de lo que buscas. Claro, no siempre van a tener todo lo que quieres pero es una gran sucursal para surtir la gran mayoría para tus fiestas. Los empleados muy atentos y te ayudan a buscar lo que requieres.',
+    texto:   'Tiene la gran mayorÃ­a de lo que buscas. Claro, no siempre van a tener todo lo que quieres pero es una gran sucursal para surtir la gran mayorÃ­a para tus fiestas. Los empleados muy atentos y te ayudan a buscar lo que requieres.',
     fecha:   'hace 8 meses',
   },
   {
@@ -150,8 +150,8 @@ const RESENAS = [
     inicial: 'B',
     color:   C.purple,
     stars:   5,
-    texto:   'Rápida atención y buen surtido en artículos de fiesta, precios muy bajos.',
-    fecha:   'hace un año',
+    texto:   'RÃ¡pida atenciÃ³n y buen surtido en artÃ­culos de fiesta, precios muy bajos.',
+    fecha:   'hace un aÃ±o',
   },
   {
     id:      3,
@@ -168,7 +168,7 @@ const RESENAS = [
     inicial: 'Y',
     color:   C.orange,
     stars:   5,
-    texto:   'Excelente atención y precios muy accesibles. Me trataron muy bien.',
+    texto:   'Excelente atenciÃ³n y precios muy accesibles. Me trataron muy bien.',
     fecha:   'hace 10 meses',
   },
   {
@@ -177,7 +177,7 @@ const RESENAS = [
     inicial: 'L',
     color:   C.cyan,
     stars:   5,
-    texto:   'Encuentras de todo y a un súper precio, muy recomendable.',
+    texto:   'Encuentras de todo y a un sÃºper precio, muy recomendable.',
     fecha:   'hace 7 meses',
   },
   {
@@ -186,7 +186,7 @@ const RESENAS = [
     inicial: 'Y',
     color:   C.blue,
     stars:   5,
-    texto:   'Todo a buen precio y excelente atención.',
+    texto:   'Todo a buen precio y excelente atenciÃ³n.',
     fecha:   'hace 10 meses',
   },
   {
@@ -195,7 +195,7 @@ const RESENAS = [
     inicial: 'P',
     color:   C.pink,
     stars:   5,
-    texto:   'Encuentra lo básico para casi cualquier tipo de fiesta, a precios bajos. En los últimos meses han aumentado su variedad en mercancía.',
+    texto:   'Encuentra lo bÃ¡sico para casi cualquier tipo de fiesta, a precios bajos. En los Ãºltimos meses han aumentado su variedad en mercancÃ­a.',
     fecha:   'hace 11 meses',
   },
 ];
@@ -229,40 +229,40 @@ const SUCURSALES = [
 
 const FAQS = [
   {
-    pregunta:  '¿Tienen precios por mayoreo?',
-    respuesta: 'Sí, contamos con tarifas escalonadas por volumen. Entre más piezas compras, mejor precio obtienes. Las tablas de precio mayoreo están visibles en cada producto del catálogo.',
+    pregunta:  'Â¿Tienen precios por mayoreo?',
+    respuesta: 'SÃ­, contamos con tarifas escalonadas por volumen. Entre mÃ¡s piezas compras, mejor precio obtienes. Las tablas de precio mayoreo estÃ¡n visibles en cada producto del catÃ¡logo.',
   },
   {
-    pregunta:  '¿Cómo puedo hacer un pedido?',
-    respuesta: 'Navega el catálogo digital, agrega lo que necesitas al carrito y envía la orden a nuestro WhatsApp con un solo clic. Sin llamadas, sin formularios complicados.',
+    pregunta:  'Â¿CÃ³mo puedo hacer un pedido?',
+    respuesta: 'Navega el catÃ¡logo digital, agrega lo que necesitas al carrito y envÃ­a la orden a nuestro WhatsApp con un solo clic. Sin llamadas, sin formularios complicados.',
   },
   {
-    pregunta:  '¿Hacen envíos a domicilio?',
-    respuesta: 'Sí, realizamos envíos dentro de Uruapan y zona metropolitana. También puedes recoger sin costo en cualquiera de nuestras dos sucursales.',
+    pregunta:  'Â¿Hacen envÃ­os a domicilio?',
+    respuesta: 'SÃ­, realizamos envÃ­os dentro de Uruapan y zona metropolitana. TambiÃ©n puedes recoger sin costo en cualquiera de nuestras dos sucursales.',
   },
   {
-    pregunta:  '¿Cuántas sucursales tienen?',
-    respuesta: 'Contamos con dos sucursales en Uruapan: Centro (sucursal principal) y Sol Naciente (sucursal norte). Ambas manejan el mismo catálogo y precios.',
+    pregunta:  'Â¿CuÃ¡ntas sucursales tienen?',
+    respuesta: 'Contamos con dos sucursales en Uruapan: Centro (sucursal principal) y Sol Naciente (sucursal norte). Ambas manejan el mismo catÃ¡logo y precios.',
   },
   {
-    pregunta:  '¿Qué marcas manejan?',
-    respuesta: 'Somos distribuidores autorizados de Glomex, Decoratex y Sempertex. También manejamos globos de personajes para decoración y eventos.',
+    pregunta:  'Â¿QuÃ© marcas manejan?',
+    respuesta: 'Somos distribuidores autorizados de Glomex, Decoratex y Sempertex. TambiÃ©n manejamos globos de personajes para decoraciÃ³n y eventos.',
   },
   {
-    pregunta:  '¿Cuál es el pedido mínimo?',
-    respuesta: 'No existe un mínimo fijo para hacer un pedido. Sin embargo, los precios mayoreo aplican según la tabla escalonada de cada producto. Puedes combinar categorías.',
+    pregunta:  'Â¿CuÃ¡l es el pedido mÃ­nimo?',
+    respuesta: 'No existe un mÃ­nimo fijo para hacer un pedido. Sin embargo, los precios mayoreo aplican segÃºn la tabla escalonada de cada producto. Puedes combinar categorÃ­as.',
   },
 ];
 
 /**
- * Galería de decoraciones de clientes.
+ * GalerÃ­a de decoraciones de clientes.
  * Para agregar fotos reales: pon la URL en el campo `img`.
  * Ejemplo: img: 'https://tudominio.com/foto-cliente.jpg'
  * Cuando img es null se muestra un placeholder festivo.
  */
 /**
- * ⚠️  Las URLs de Facebook CDN expiran (~7 días).
- *    Para uso permanente: descarga las fotos y súbelas a
+ * âš ï¸  Las URLs de Facebook CDN expiran (~7 dÃ­as).
+ *    Para uso permanente: descarga las fotos y sÃºbelas a
  *    Supabase Storage o a la carpeta public/ del proyecto,
  *    luego reemplaza cada `img` con la URL definitiva.
  */
@@ -270,36 +270,36 @@ const GALERIA = [
   {
     id: 1,
     img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/ejemplo_landigpage.jpg',
-    cliente: 'Sofía M.',   evento: 'XV Años',     emoji: '🎀', color: C.pink,   accent: C.purple,
+    cliente: 'SofÃ­a M.',   evento: 'XV AÃ±os',     emoji: 'ðŸŽ€', color: C.pink,   accent: C.purple,
   },
   {
     id: 2,
     img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/ejemplo_landigpage.jpg',
-    cliente: 'Lupita R.',  evento: 'Cumpleaños',  emoji: '🎂', color: C.orange, accent: C.yellow,
+    cliente: 'Lupita R.',  evento: 'CumpleaÃ±os',  emoji: 'ðŸŽ‚', color: C.orange, accent: C.yellow,
   },
   {
     id: 3,
     img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/ejemplo_landigpage.jpg',
-    cliente: 'Ana G.',     evento: 'Baby Shower', emoji: '🍼', color: C.cyan,   accent: C.blue,
+    cliente: 'Ana G.',     evento: 'Baby Shower', emoji: 'ðŸ¼', color: C.cyan,   accent: C.blue,
   },
   {
     id: 4,
     img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/ejemplo_landigpage.jpg',
-    cliente: 'Karen V.',   evento: 'Boda',        emoji: '💍', color: C.purple, accent: C.pink,
+    cliente: 'Karen V.',   evento: 'Boda',        emoji: 'ðŸ’', color: C.purple, accent: C.pink,
   },
   {
     id: 5,
     img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/ejemplo_landigpage.jpg',
-    cliente: 'Fernanda L.', evento: 'Graduación', emoji: '🎓', color: C.green,  accent: C.cyan,
+    cliente: 'Fernanda L.', evento: 'GraduaciÃ³n', emoji: 'ðŸŽ“', color: C.green,  accent: C.cyan,
   },
   {
     id: 6,
     img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/ejemplo_landigpage.jpg',
-    cliente: 'Tú',         evento: '¡Tu fiesta!', emoji: '🎉', color: C.pink,   accent: C.orange,
+    cliente: 'TÃº',         evento: 'Â¡Tu fiesta!', emoji: 'ðŸŽ‰', color: C.pink,   accent: C.orange,
   },
 ];
 
-// Confeti decorativo — reducido a 10 elementos para mejor rendimiento
+// Confeti decorativo â€” reducido a 10 elementos para mejor rendimiento
 const PARTICLES = [
   { id:  0, top:  6, left:  8, size: 10, color: C.pink,   dur:  7, delay: 0.0, shape: 'square'  },
   { id:  1, top: 12, left: 87, size:  7, color: C.orange,  dur:  9, delay: 1.5, shape: 'circle'  },
@@ -313,11 +313,11 @@ const PARTICLES = [
   { id:  9, top: 92, left: 54, size:  5, color: C.purple,  dur:  7, delay: 1.2, shape: 'circle'  },
 ];
 
-// ════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // 4. HOOKS
-// ════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-/** Typewriter que cicla entre palabras: escribe → pausa → borra → repite */
+/** Typewriter que cicla entre palabras: escribe â†’ pausa â†’ borra â†’ repite */
 function useTypingCycle(words, opts = TYPING) {
   const { typeSpeed, eraseSpeed, holdMs, pauseMs } = opts;
   const [suffix, setSuffix] = useState(words[0]);
@@ -368,9 +368,9 @@ function useReveal(threshold = 0.12) {
   return [ref, visible];
 }
 
-// ════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // 5. COMPONENTES REUTILIZABLES
-// ════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 /** Envuelve hijos con fade-in + slide al entrar en viewport */
 function Reveal({ children, delay = 0, direction = 'up', className = '' }) {
@@ -392,7 +392,7 @@ function Reveal({ children, delay = 0, direction = 'up', className = '' }) {
   );
 }
 
-/** Tarjeta con borde gradiente — hover gestionado por CSS (var --hover-shadow) */
+/** Tarjeta con borde gradiente â€” hover gestionado por CSS (var --hover-shadow) */
 function GradCard({ children, gradient, hoverColor = 'rgba(0,0,0,0.1)', className = '' }) {
   return (
     <div
@@ -410,7 +410,7 @@ function GradCard({ children, gradient, hoverColor = 'rgba(0,0,0,0.1)', classNam
   );
 }
 
-/** Estrellas de calificación */
+/** Estrellas de calificaciÃ³n */
 function StarRating({ count = 5 }) {
   return (
     <div className="flex gap-0.5" role="img" aria-label={`${count} de 5 estrellas`}>
@@ -421,7 +421,7 @@ function StarRating({ count = 5 }) {
   );
 }
 
-/** Ícono SVG oficial de WhatsApp */
+/** Ãcono SVG oficial de WhatsApp */
 function WaIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -430,7 +430,7 @@ function WaIcon({ size = 20 }) {
   );
 }
 
-/** Ícono SVG de Facebook */
+/** Ãcono SVG de Facebook */
 function FbIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -439,7 +439,7 @@ function FbIcon({ size = 20 }) {
   );
 }
 
-/** Ícono SVG de TikTok */
+/** Ãcono SVG de TikTok */
 function TikTokIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -467,7 +467,7 @@ function Balloon({ color, size = 48, rotate = 0 }) {
   );
 }
 
-/** Título de sección reutilizable */
+/** TÃ­tulo de secciÃ³n reutilizable */
 function SectionTitle({ title, subtitle }) {
   return (
     <div className="text-center mb-12">
@@ -478,8 +478,8 @@ function SectionTitle({ title, subtitle }) {
 }
 
 /**
- * Cada carácter de `text` con un color diferente del logo,
- * ciclando por LETTER_COLORS según la posición del carácter.
+ * Cada carÃ¡cter de `text` con un color diferente del logo,
+ * ciclando por LETTER_COLORS segÃºn la posiciÃ³n del carÃ¡cter.
  */
 function ColorLetters({ text }) {
   return (
@@ -496,24 +496,9 @@ function ColorLetters({ text }) {
   );
 }
 
-/** Nombre de tienda animado con efecto typewriter y explosión de confeti */
+/** Nombre de tienda animado con efecto typewriter y explosiÃ³n de confeti */
 function BranchTyper() {
-  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
-
-  if (isMobile) {
-    return (
-      <div className="relative font-display leading-tight text-center select-none">
-        <div className="text-5xl sm:text-6xl lg:text-7xl">
-          <ColorLetters text="Full Party" />
-        </div>
-        <div className="flex items-center justify-center text-2xl sm:text-3xl lg:text-4xl mt-2" style={{ minHeight: '1.25em' }}>
-          <span className="font-display" style={{ color: C.textBody }}>Suc.&nbsp;</span>
-          <ColorLetters text={BRANCH_NAMES[0]} />
-        </div>
-      </div>
-    );
-  }
-
+  // Hooks siempre al inicio — regla de React: no llamar hooks condicionalmente
   const { suffix, showCursor } = useTypingCycle(BRANCH_NAMES);
   const [burst, setBurst]     = useState([]);
   const prevLenRef            = useRef(0);
@@ -542,7 +527,7 @@ function BranchTyper() {
   return (
     <div className="relative font-display leading-tight text-center select-none">
 
-      {/* ── Partículas de confeti ── */}
+      {/* â”€â”€ PartÃ­culas de confeti â”€â”€ */}
       {burst.map(p => (
         <span
           key={p.id}
@@ -562,12 +547,12 @@ function BranchTyper() {
         </span>
       ))}
 
-      {/* Línea 1 — "Full Party" grande y estático */}
+      {/* LÃ­nea 1 â€” "Full Party" grande y estÃ¡tico */}
       <div className="text-5xl sm:text-6xl lg:text-7xl">
         <ColorLetters text="Full Party" />
       </div>
 
-      {/* Línea 2 — "Suc. " fijo + nombre escrito letra a letra */}
+      {/* LÃ­nea 2 â€” "Suc. " fijo + nombre escrito letra a letra */}
       <div
         className="flex items-center justify-center text-2xl sm:text-3xl lg:text-4xl mt-2"
         style={{ minHeight: '1.25em' }}
@@ -583,7 +568,7 @@ function BranchTyper() {
   );
 }
 
-/** Ítem de FAQ con acordeón */
+/** Ãtem de FAQ con acordeÃ³n */
 function FaqItem({ pregunta, respuesta }) {
   const [open, setOpen] = useState(false);
   return (
@@ -612,7 +597,7 @@ function FaqItem({ pregunta, respuesta }) {
   );
 }
 
-/** Carrusel automático de reseñas estilo Google Maps */
+/** Carrusel automÃ¡tico de reseÃ±as estilo Google Maps */
 function ReviewsCarousel({ resenas }) {
   const [idx,    setIdx]    = useState(0);
   const [animCls, setAnimCls] = useState('review-enter');
@@ -643,7 +628,7 @@ function ReviewsCarousel({ resenas }) {
       onMouseLeave={() => setPaused(false)}
     >
       <div className="lp-review-stage">
-        {/* Tarjeta de reseña activa */}
+        {/* Tarjeta de reseÃ±a activa */}
         <div
           key={r.id}
           className={`${animCls} lp-review-card rounded-3xl p-7 bg-white text-left`}
@@ -685,11 +670,11 @@ function ReviewsCarousel({ resenas }) {
         </div>
       </div>
 
-      {/* Controles: prev · dots · next */}
+      {/* Controles: prev Â· dots Â· next */}
       <div className="flex items-center justify-center gap-2 mt-5">
         <button
           onClick={() => goTo((idx - 1 + resenas.length) % resenas.length)}
-          aria-label="Reseña anterior"
+          aria-label="ReseÃ±a anterior"
           className="w-8 h-8 rounded-full flex items-center justify-center transition-colors lp-scale-hover"
           style={{ background: `${C.pink}18`, color: C.pink }}
         >
@@ -700,7 +685,7 @@ function ReviewsCarousel({ resenas }) {
           <button
             key={i}
             onClick={() => goTo(i)}
-            aria-label={`Ver reseña ${i + 1}`}
+            aria-label={`Ver reseÃ±a ${i + 1}`}
             aria-current={i === idx ? 'true' : undefined}
             className="transition-all duration-300 rounded-full"
             style={{
@@ -713,7 +698,7 @@ function ReviewsCarousel({ resenas }) {
 
         <button
           onClick={() => goTo((idx + 1) % resenas.length)}
-          aria-label="Siguiente reseña"
+          aria-label="Siguiente reseÃ±a"
           className="w-8 h-8 rounded-full flex items-center justify-center transition-colors lp-scale-hover"
           style={{ background: `${C.pink}18`, color: C.pink }}
         >
@@ -725,13 +710,13 @@ function ReviewsCarousel({ resenas }) {
       <div className="flex items-center justify-center gap-2 mt-4">
         <StarRating count={5} />
         <span className="font-black text-sm" style={{ color: C.textHead }}>4.9</span>
-        <span className="text-xs" style={{ color: C.textMuted }}>· {resenas.length} reseñas en Google Maps</span>
+        <span className="text-xs" style={{ color: C.textMuted }}>Â· {resenas.length} reseÃ±as en Google Maps</span>
       </div>
     </div>
   );
 }
 
-/** Tarjeta de galería con flotación, zoom e iluminación en CSS puro */
+/** Tarjeta de galerÃ­a con flotaciÃ³n, zoom e iluminaciÃ³n en CSS puro */
 function GaleriaCard({ img, cliente, evento, emoji, color, accent, floatDur = 5, floatDelay = 0 }) {
   return (
     <div
@@ -741,7 +726,7 @@ function GaleriaCard({ img, cliente, evento, emoji, color, accent, floatDur = 5,
         '--gal-shadow': `0 24px 48px ${color}40`,
       }}
     >
-      {/* Envoltorio que recibe la animación de flotación */}
+      {/* Envoltorio que recibe la animaciÃ³n de flotaciÃ³n */}
       <div
         className="lp-galeria-float w-full h-full relative"
         style={{
@@ -752,7 +737,7 @@ function GaleriaCard({ img, cliente, evento, emoji, color, accent, floatDur = 5,
         {img ? (
           <img
             src={img}
-            alt={`Decoración de ${cliente} — ${evento}`}
+            alt={`DecoraciÃ³n de ${cliente} â€” ${evento}`}
             loading="lazy"
           />
         ) : (
@@ -761,9 +746,9 @@ function GaleriaCard({ img, cliente, evento, emoji, color, accent, floatDur = 5,
             className="w-full h-full flex flex-col items-center justify-center gap-3 select-none"
             style={{ background: `linear-gradient(145deg, ${color}22, ${accent}18)`, border: `2px dashed ${color}44` }}
           >
-            <span className="absolute top-3 right-3 text-lg opacity-40" aria-hidden="true">✨</span>
-            <span className="absolute bottom-5 left-3 text-lg opacity-30" aria-hidden="true">🎊</span>
-            <span className="absolute top-7 left-5 text-sm opacity-25"  aria-hidden="true">⭐</span>
+            <span className="absolute top-3 right-3 text-lg opacity-40" aria-hidden="true">âœ¨</span>
+            <span className="absolute bottom-5 left-3 text-lg opacity-30" aria-hidden="true">ðŸŽŠ</span>
+            <span className="absolute top-7 left-5 text-sm opacity-25"  aria-hidden="true">â­</span>
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center text-3xl"
               style={{ background: `${color}20`, border: `2px solid ${color}33` }}
@@ -794,7 +779,7 @@ function GaleriaCard({ img, cliente, evento, emoji, color, accent, floatDur = 5,
   );
 }
 
-/** Ilustración SVG festiva para el encabezado de la tarjeta de sucursal */
+/** IlustraciÃ³n SVG festiva para el encabezado de la tarjeta de sucursal */
 function SucursalIllustration({ color, accent, id }) {
   const gid = `sg-${id}`;
   return (
@@ -840,7 +825,7 @@ function SucursalIllustration({ color, accent, id }) {
       <path d="M268,112 Q266,121 270,125 Q266,127 268,133"
         stroke={accent} strokeWidth="1.3" strokeLinecap="round" fill="none" opacity="0.38" />
 
-      {/* Confeti — círculos */}
+      {/* Confeti â€” cÃ­rculos */}
       {[
         [65, 55, 5, color, 0.45], [240, 50, 6, accent, 0.4],
         [50, 115, 4, accent, 0.38], [255, 118, 5, color, 0.4],
@@ -849,7 +834,7 @@ function SucursalIllustration({ color, accent, id }) {
         <circle key={i} cx={x} cy={y} r={r} fill={c} opacity={op} />
       ))}
 
-      {/* Confeti — rombos */}
+      {/* Confeti â€” rombos */}
       {[
         [85, 105, color, 0.38], [215, 112, accent, 0.35],
         [160, 135, color, 0.3], [280, 60, accent, 0.4],
@@ -862,10 +847,10 @@ function SucursalIllustration({ color, accent, id }) {
       {/* Estrellas */}
       {[[70, 42], [232, 40], [95, 135], [205, 130]].map(([x, y], i) => (
         <text key={i} x={x} y={y} fontSize="13"
-          fill={i % 2 === 0 ? color : accent} opacity="0.6" textAnchor="middle">★</text>
+          fill={i % 2 === 0 ? color : accent} opacity="0.6" textAnchor="middle">â˜…</text>
       ))}
 
-      {/* Círculo central (fondo del ícono) */}
+      {/* CÃ­rculo central (fondo del Ã­cono) */}
       <circle cx="150" cy="90" r="36" fill="white" opacity="0.5" />
       <circle cx="150" cy="90" r="26" fill="white" opacity="0.45" />
 
@@ -879,7 +864,7 @@ function SucursalIllustration({ color, accent, id }) {
   );
 }
 
-/** Tarjeta de marca con efecto gris → color gestionado por estado */
+/** Tarjeta de marca con efecto gris â†’ color gestionado por estado */
 function BrandCard({ nombre, desc, color, emoji }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -907,9 +892,9 @@ function BrandCard({ nombre, desc, color, emoji }) {
   );
 }
 
-// ════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // 6. COMPONENTE PRINCIPAL
-// ════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -930,7 +915,7 @@ export default function LandingPage() {
   return (
     <div id="top" className="relative min-h-screen font-body overflow-x-hidden" style={{ background: C.bgHero }}>
 
-      {/* ── Saltar al contenido principal ───────────────── */}
+      {/* â”€â”€ Saltar al contenido principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <a
         href="#main-content"
         className="sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:font-bold focus:text-white focus:no-underline"
@@ -939,7 +924,7 @@ export default function LandingPage() {
         Saltar al contenido principal
       </a>
 
-      {/* ── Confetti — solo en sm+ para no penalizar móvil ── */}
+      {/* â”€â”€ Confetti â€” solo en sm+ para no penalizar mÃ³vil â”€â”€ */}
       <div className="hidden sm:block fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }} aria-hidden="true">
         {PARTICLES.map(p => (
           <div
@@ -962,11 +947,11 @@ export default function LandingPage() {
 
       <div className="relative" style={{ zIndex: 2 }}>
 
-        {/* ══ NAV ════════════════════════════════════════ */}
+        {/* â•â• NAV â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <nav
           className="sticky top-0 z-50 bg-white border-b"
           style={{ borderColor: C.borderSoft, boxShadow: `0 2px 16px ${C.shadowLavender}` }}
-          aria-label="Navegación principal"
+          aria-label="NavegaciÃ³n principal"
         >
           <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
             {/* Logo */}
@@ -1026,14 +1011,14 @@ export default function LandingPage() {
               className="md:hidden p-2 rounded-xl"
               style={{ background: C.surfaceLavender, color: C.purple }}
               onClick={() => setMenuOpen(v => !v)}
-              aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
+              aria-label={menuOpen ? 'Cerrar menÃº' : 'Abrir menÃº'}
               aria-expanded={menuOpen}
             >
               {menuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
 
-          {/* Menú mobile */}
+          {/* MenÃº mobile */}
           {menuOpen && (
             <div className="md:hidden border-t bg-white px-5 py-4 flex flex-col gap-1" style={{ borderColor: C.borderSoft }}>
               {NAV_LINKS.map(l => (
@@ -1060,10 +1045,10 @@ export default function LandingPage() {
           )}
         </nav>
 
-        {/* ══ CONTENIDO PRINCIPAL ════════════════════════ */}
+        {/* â•â• CONTENIDO PRINCIPAL â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <main id="main-content">
 
-        {/* ══ HERO ═══════════════════════════════════════ */}
+        {/* â•â• HERO â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <section
           className="relative px-5 pt-16 pb-28 text-center max-w-4xl mx-auto overflow-visible"
           aria-labelledby="hero-heading"
@@ -1081,7 +1066,7 @@ export default function LandingPage() {
                 style={{ background: `${C.pink}18`, color: C.pinkDeep, border: `1px solid ${C.pink}35` }}
               >
                 <Sparkles size={12} aria-hidden="true" />
-                Distribuidora Mayoreo · Uruapan, Michoacán
+                Distribuidora Mayoreo Â· Uruapan, MichoacÃ¡n
               </span>
             </Reveal>
 
@@ -1100,14 +1085,14 @@ export default function LandingPage() {
                   letterSpacing:        '-0.5px',
                 }}
               >
-                MAYOREO DE<br />ARTÍCULOS<br />PARA FIESTA
+                MAYOREO DE<br />ARTÃCULOS<br />PARA FIESTA
               </h1>
             </Reveal>
 
             <Reveal delay={0.18}>
               <p className="text-base sm:text-lg leading-relaxed mb-10 max-w-xl mx-auto" style={{ color: C.textBody }}>
-                Especialistas en globos de látex al mayoreo en Uruapan.
-                Manejamos marcas como Glomex, Decoratex y Sempertex, además de globos de personajes.
+                Especialistas en globos de lÃ¡tex al mayoreo en Uruapan.
+                Manejamos marcas como Glomex, Decoratex y Sempertex, ademÃ¡s de globos de personajes.
               </p>
             </Reveal>
 
@@ -1118,7 +1103,7 @@ export default function LandingPage() {
                   className="btn-pink-pulse w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-5 rounded-2xl font-black text-lg text-white lp-scale-hover"
                   style={{ background: `linear-gradient(135deg, ${C.pink}, ${C.purple})` }}
                 >
-                  <ShoppingBag size={22} aria-hidden="true" /> Ver Catálogo Digital
+                  <ShoppingBag size={22} aria-hidden="true" /> Ver CatÃ¡logo Digital
                 </button>
                 <a
                   href={WA_HREF}
@@ -1138,9 +1123,9 @@ export default function LandingPage() {
               <div className="mt-14 flex flex-wrap justify-center gap-10">
                 {[
                   { value: '500+', label: 'Productos',  color: C.pink   },
-                  { value: '12+',  label: 'Categorías', color: C.purple },
+                  { value: '12+',  label: 'CategorÃ­as', color: C.purple },
                   { value: '2',    label: 'Sucursales', color: C.cyan   },
-                  { value: '💜',   label: 'Uruapan',    color: C.orange },
+                  { value: 'ðŸ’œ',   label: 'Uruapan',    color: C.orange },
                 ].map(s => (
                   <div key={s.label} className="text-center">
                     <div className="font-display text-3xl" style={{ color: s.color }}>{s.value}</div>
@@ -1152,10 +1137,10 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ══ BENEFICIOS ══════════════════════════════════ */}
+        {/* â•â• BENEFICIOS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <section className="lp-below-fold px-5 py-16" style={{ background: C.bgBenefits }}>
           <div className="max-w-5xl mx-auto">
-            <Reveal><SectionTitle title="¿Por qué Full Party?" subtitle="Todo lo que necesitas para hacer tu fiesta un éxito." /></Reveal>
+            <Reveal><SectionTitle title="Â¿Por quÃ© Full Party?" subtitle="Todo lo que necesitas para hacer tu fiesta un Ã©xito." /></Reveal>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
               {BENEFICIOS.map(({ icon: Icon, titulo, desc, color, gradient }, i) => (
                 <Reveal key={titulo} delay={i * 0.1}>
@@ -1174,10 +1159,10 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ══ CATEGORÍAS ══════════════════════════════════ */}
+        {/* â•â• CATEGORÃAS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <section className="lp-below-fold px-5 py-16" style={{ background: C.bgHero }}>
           <div className="max-w-5xl mx-auto">
-            <Reveal><SectionTitle title="Categorías Destacadas" subtitle="Los artículos más solicitados para tus eventos." /></Reveal>
+            <Reveal><SectionTitle title="CategorÃ­as Destacadas" subtitle="Los artÃ­culos mÃ¡s solicitados para tus eventos." /></Reveal>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {CATEGORIAS.map(({ emoji, titulo, desc, color }, i) => (
                 <Reveal key={titulo} delay={i * 0.08}>
@@ -1194,7 +1179,7 @@ export default function LandingPage() {
                     <span className="text-4xl" aria-hidden="true">{emoji}</span>
                     <h3 className="font-display text-sm leading-snug" style={{ color: C.textHead }}>{titulo}</h3>
                     <p  className="text-xs leading-snug"              style={{ color: C.textMuted }}>{desc}</p>
-                    <span className="text-xs font-black flex items-center gap-1" style={{ color }}>Ver más <ArrowRight size={11} aria-hidden="true" /></span>
+                    <span className="text-xs font-black flex items-center gap-1" style={{ color }}>Ver mÃ¡s <ArrowRight size={11} aria-hidden="true" /></span>
                   </button>
                 </Reveal>
               ))}
@@ -1202,10 +1187,10 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ══ CÓMO FUNCIONA ═══════════════════════════════ */}
+        {/* â•â• CÃ“MO FUNCIONA â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <section className="lp-below-fold px-5 py-16" style={{ background: C.bgSteps }}>
           <div className="max-w-5xl mx-auto">
-            <Reveal><SectionTitle title="¿Cómo funciona?" subtitle="Pedir al mayoreo nunca había sido tan fácil." /></Reveal>
+            <Reveal><SectionTitle title="Â¿CÃ³mo funciona?" subtitle="Pedir al mayoreo nunca habÃ­a sido tan fÃ¡cil." /></Reveal>
 
             {/* Desktop */}
             <div className="hidden md:grid grid-cols-4 gap-0 relative">
@@ -1266,10 +1251,10 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ══ MARCAS ══════════════════════════════════════ */}
+        {/* â•â• MARCAS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <section className="lp-below-fold px-5 py-16" style={{ background: C.bgHero }}>
           <div className="max-w-5xl mx-auto">
-            <Reveal><SectionTitle title="Trabajamos con las Mejores Marcas" subtitle="Distribuidores autorizados de globos de látex y globos de personajes." /></Reveal>
+            <Reveal><SectionTitle title="Trabajamos con las Mejores Marcas" subtitle="Distribuidores autorizados de globos de lÃ¡tex y globos de personajes." /></Reveal>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
               {MARCAS.map((m, i) => (
                 <Reveal key={m.nombre} delay={i * 0.09}>
@@ -1289,7 +1274,7 @@ export default function LandingPage() {
                   { label: 'Precios de Mayoreo',         color: C.green  },
                 ].map(({ label, color }) => (
                   <span key={label} className="flex items-center gap-1.5" style={{ color }}>
-                    <span aria-hidden="true">✓</span> {label}
+                    <span aria-hidden="true">âœ“</span> {label}
                   </span>
                 ))}
               </div>
@@ -1297,13 +1282,13 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ══ RESEÑAS ═════════════════════════════════════ */}
+        {/* â•â• RESEÃ‘AS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <section id="resenas" className="lp-below-fold px-5 py-16" style={{ background: C.bgReviews }}>
           <div className="max-w-5xl mx-auto">
             <Reveal>
               <SectionTitle
                 title="Lo que dicen nuestros clientes"
-                subtitle="Reseñas verificadas de clientes satisfechos en Google Maps."
+                subtitle="ReseÃ±as verificadas de clientes satisfechos en Google Maps."
               />
             </Reveal>
             <Reveal delay={0.1}>
@@ -1312,12 +1297,12 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ══ GALERÍA DE CLIENTES ═════════════════════════ */}
+        {/* â•â• GALERÃA DE CLIENTES â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <section className="lp-below-fold px-5 py-16" style={{ background: C.bgHero }}>
           <div className="max-w-5xl mx-auto">
             <Reveal>
               <SectionTitle
-                title="Así celebran nuestros clientes"
+                title="AsÃ­ celebran nuestros clientes"
                 subtitle="Decoraciones reales creadas con productos Full Party Uruapan."
               />
             </Reveal>
@@ -1342,14 +1327,14 @@ export default function LandingPage() {
               >
                 <div>
                   <p className="font-display text-sm" style={{ color: C.textHead }}>
-                    ¿Decoraste con productos Full Party?
+                    Â¿Decoraste con productos Full Party?
                   </p>
                   <p className="text-xs mt-0.5" style={{ color: C.textMuted }}>
-                    Comparte tu foto por WhatsApp y aparece aquí 🎉
+                    Comparte tu foto por WhatsApp y aparece aquÃ­ ðŸŽ‰
                   </p>
                 </div>
                 <a
-                  href={`https://wa.me/${ENV.waNumber}?text=${encodeURIComponent('¡Hola! Quiero compartir la foto de mi decoración con productos Full Party 🎉')}`}
+                  href={`https://wa.me/${ENV.waNumber}?text=${encodeURIComponent('Â¡Hola! Quiero compartir la foto de mi decoraciÃ³n con productos Full Party ðŸŽ‰')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm text-white lp-scale-hover"
@@ -1363,7 +1348,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ══ FAQ ═════════════════════════════════════════ */}
+        {/* â•â• FAQ â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <section id="faq" className="lp-below-fold px-5 py-16" style={{ background: C.bgSteps }}>
           <div className="max-w-3xl mx-auto">
             <Reveal>
@@ -1385,10 +1370,10 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ══ SUCURSALES ══════════════════════════════════ */}
+        {/* â•â• SUCURSALES â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <section id="sucursales" className="lp-below-fold px-5 py-16" style={{ background: C.bgBranches }}>
           <div className="max-w-5xl mx-auto">
-            <Reveal><SectionTitle title="Nuestras Sucursales" subtitle="Visítanos en Uruapan, Michoacán." /></Reveal>
+            <Reveal><SectionTitle title="Nuestras Sucursales" subtitle="VisÃ­tanos en Uruapan, MichoacÃ¡n." /></Reveal>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {SUCURSALES.map(({ nombre, direccion, horario, mapsUrl, embedUrl, badge, color, accent, facebook }, i) => (
                 <Reveal key={nombre} delay={i * 0.1} direction={i === 0 ? 'left' : 'right'}>
@@ -1463,7 +1448,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ══ CTA FINAL ═══════════════════════════════════ */}
+        {/* â•â• CTA FINAL â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <section id="contacto" className="lp-below-fold px-5 py-16" style={{ background: C.bgBenefits }}>
           <div className="max-w-4xl mx-auto text-center">
             <Reveal>
@@ -1476,10 +1461,10 @@ export default function LandingPage() {
                   border:           '2px solid transparent',
                 }}
               >
-                <div className="text-5xl mb-4" aria-hidden="true">🎉</div>
-                <h2 className="font-display text-3xl sm:text-4xl mb-4" style={{ color: C.textHead }}>¿Listo para ordenar al mayoreo?</h2>
+                <div className="text-5xl mb-4" aria-hidden="true">ðŸŽ‰</div>
+                <h2 className="font-display text-3xl sm:text-4xl mb-4" style={{ color: C.textHead }}>Â¿Listo para ordenar al mayoreo?</h2>
                 <p className="text-sm leading-relaxed mb-10 max-w-lg mx-auto" style={{ color: C.textBody }}>
-                  Escríbenos por WhatsApp o explora el catálogo. Atención personalizada para distribuidores y organizadores de eventos.
+                  EscrÃ­benos por WhatsApp o explora el catÃ¡logo. AtenciÃ³n personalizada para distribuidores y organizadores de eventos.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                   <button
@@ -1487,7 +1472,7 @@ export default function LandingPage() {
                     className="flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-white lp-scale-hover"
                     style={{ background: `linear-gradient(135deg, ${C.pink}, ${C.purple})`, boxShadow: `0 8px 24px ${C.pink}44` }}
                   >
-                    <ShoppingBag size={18} aria-hidden="true" /> Explorar Catálogo
+                    <ShoppingBag size={18} aria-hidden="true" /> Explorar CatÃ¡logo
                   </button>
                   <a
                     href={WA_HREF}
@@ -1507,7 +1492,7 @@ export default function LandingPage() {
 
         </main>
 
-        {/* ══ FOOTER — 3 columnas ══════════════════════════ */}
+        {/* â•â• FOOTER â€” 3 columnas â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <footer className="lp-below-fold border-t bg-white" style={{ borderColor: C.borderSoft }}>
           <div className="max-w-5xl mx-auto px-5 pt-10 pb-6 grid grid-cols-1 sm:grid-cols-3 gap-10">
 
@@ -1528,7 +1513,7 @@ export default function LandingPage() {
                 </span>
               </div>
               <p className="text-xs leading-relaxed mb-4" style={{ color: C.textMuted }}>
-                Tienda y distribuidora de globos en Uruapan, Michoacán.
+                Tienda y distribuidora de globos en Uruapan, MichoacÃ¡n.
               </p>
               {/* Botones de redes sociales */}
               <div className="flex flex-wrap gap-2 mt-4">
@@ -1585,9 +1570,9 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Columna 2: Navegación */}
+            {/* Columna 2: NavegaciÃ³n */}
             <div>
-              <h3 className="font-display text-sm mb-4" style={{ color: C.textHead }}>Navegación</h3>
+              <h3 className="font-display text-sm mb-4" style={{ color: C.textHead }}>NavegaciÃ³n</h3>
               <ul className="flex flex-col gap-2">
                 {NAV_LINKS.map(l => (
                   <li key={l.label}>
@@ -1630,13 +1615,13 @@ export default function LandingPage() {
             className="border-t px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs"
             style={{ borderColor: C.borderSoft, color: C.textMuted }}
           >
-            <span>© {new Date().getFullYear()} {ENV.negocio} · Uruapan, Michoacán · Todos los derechos reservados</span>
+            <span>Â© {new Date().getFullYear()} {ENV.negocio} Â· Uruapan, MichoacÃ¡n Â· Todos los derechos reservados</span>
             <div className="flex gap-4">
               <button
                 onClick={irAlCatalogo}
                 className="font-bold hover:text-pink-400 transition-colors"
               >
-                Catálogo
+                CatÃ¡logo
               </button>
               <a
                 href={WA_HREF}
@@ -1651,7 +1636,7 @@ export default function LandingPage() {
         </footer>
       </div>
 
-      {/* ══ BOTÓN FLOTANTE WHATSAPP ══════════════════════ */}
+      {/* â•â• BOTÃ“N FLOTANTE WHATSAPP â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <a
         href={WA_HREF}
         target="_blank"
@@ -1662,7 +1647,7 @@ export default function LandingPage() {
         onClick={() => trackEvent('fab_whatsapp_click')}
       >
         <WaIcon size={20} />
-        <span className="hidden sm:inline">¿Dudas? ¡Escríbenos!</span>
+        <span className="hidden sm:inline">Â¿Dudas? Â¡EscrÃ­benos!</span>
       </a>
     </div>
   );
