@@ -55,12 +55,9 @@ function OptimizedImageInner({
     });
 
     // Failsafe: evita quedarse eternamente en shimmer por abort/cancel de carga
+    // sin forzar fallback prematuro cuando la red va lenta.
     const timeoutId = setTimeout(() => {
-      if (srcFinal !== fallbackSrc) {
-        setError(true);
-      } else {
-        setLoaded(true);
-      }
+      setLoaded(true);
     }, 2200);
 
     return () => {
