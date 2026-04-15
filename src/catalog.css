@@ -386,3 +386,205 @@ body.theme-dark .bg-purple-100 { background-color: #2d1a5e !important; }
 body.theme-dark [role="listbox"] button:hover {
   background-color: var(--admin-elevated) !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UTILIDADES DEL CATÁLOGO
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.safe-top    { padding-top:    env(safe-area-inset-top,    0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* Ocultar scrollbar manteniendo scroll funcional */
+.hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLOBO ANIMADO EN HEADER DEL CATÁLOGO
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.fp-header-balloon-wrap {
+  width: 2.1rem;
+  height: 2.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  animation: fpBalloonSway 2.6s ease-in-out infinite;
+  transform-origin: 50% 90%;
+}
+
+.fp-header-balloon {
+  width: 1.65rem;
+  height: 1.65rem;
+  animation: fpBalloonFloat 2.3s ease-in-out infinite;
+  filter: drop-shadow(0 3px 8px rgba(225, 29, 72, 0.28));
+}
+
+@media (min-width: 640px) {
+  .fp-header-balloon-wrap {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+  .fp-header-balloon {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+@keyframes fpBalloonFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes fpBalloonSway {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-4deg); }
+  75% { transform: rotate(4deg); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INTRO OVERLAY ANIMADA (pantalla de carga del catálogo)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.fp-intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(255, 61, 172, 0.4) 0%, transparent 42%),
+    radial-gradient(circle at 85% 20%, rgba(0, 212, 255, 0.35) 0%, transparent 45%),
+    radial-gradient(circle at 50% 85%, rgba(255, 225, 53, 0.25) 0%, transparent 48%),
+    linear-gradient(145deg, #ffffff 0%, #f9f2ff 58%, #f4edff 100%);
+  animation: fpIntroFadeOut 360ms ease-out 1480ms forwards;
+}
+
+/* Intro oscura */
+body.theme-dark .fp-intro-overlay {
+  background:
+    radial-gradient(circle at 20% 15%, rgba(255, 61, 172, 0.25) 0%, transparent 42%),
+    radial-gradient(circle at 85% 20%, rgba(0, 212, 255, 0.2) 0%, transparent 45%),
+    radial-gradient(circle at 50% 85%, rgba(168, 85, 247, 0.2) 0%, transparent 48%),
+    linear-gradient(145deg, #0f1124 0%, #1a1040 58%, #140e30 100%);
+}
+
+body.theme-dark .fp-intro-card {
+  background: rgba(18, 21, 42, 0.9) !important;
+  border-color: #363b64 !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.theme-dark .fp-intro-logo {
+  border-color: #363b64 !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.theme-dark .fp-intro-subtitle {
+  color: #8a84b8 !important;
+}
+
+.fp-intro-glow {
+  position: absolute;
+  width: min(78vw, 520px);
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.24), transparent 62%);
+  filter: blur(8px);
+  animation: fpIntroPulse 1.5s ease-in-out infinite;
+}
+
+.fp-intro-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 24px 18px;
+  border-radius: 24px;
+  border: 2px solid #e9d5ff;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 20px 60px rgba(107, 53, 184, 0.24);
+  animation: fpIntroCardIn 850ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fp-intro-logo {
+  width: clamp(86px, 19vw, 120px);
+  height: auto;
+  border-radius: 24px;
+  border: 2px solid #f3e8ff;
+  box-shadow: 0 12px 28px rgba(107, 53, 184, 0.22);
+  animation: fpIntroLogoSpinIn 900ms cubic-bezier(0.16, 1, 0.3, 1), fpIntroLogoFloat 2.1s ease-in-out 0.95s infinite;
+}
+
+.fp-intro-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(28px, 5vw, 36px);
+  line-height: 1;
+  margin: 0;
+  background: linear-gradient(135deg, #ff3dac, #a855f7, #00d4ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: fpIntroTextIn 700ms ease-out 180ms both;
+}
+
+.fp-intro-subtitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8b7aa8;
+  animation: fpIntroTextIn 700ms ease-out 260ms both;
+}
+
+@keyframes fpIntroCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.93);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fpIntroLogoSpinIn {
+  from {
+    opacity: 0;
+    transform: rotate(-18deg) scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes fpIntroLogoFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes fpIntroPulse {
+  0%, 100% { opacity: 0.55; transform: scale(0.96); }
+  50% { opacity: 0.95; transform: scale(1.05); }
+}
+
+@keyframes fpIntroTextIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fpIntroFadeOut {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
