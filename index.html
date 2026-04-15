@@ -39,17 +39,11 @@
     <link rel="canonical" href="<%- SITE_URL %>/" />
     <link rel="alternate" href="<%- SITE_URL %>/" hreflang="es-MX" />
 
-    <!-- Preconnect: Google Fonts (crítico para FCP) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Google Fonts -->
-    <link rel="preload" as="style"
-      href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;500;600;700;800&display=swap"
-      onload="this.onload=null;this.rel='stylesheet'" />
-    <noscript>
-      <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;500;600;700;800&display=swap" />
-    </noscript>
+    <!-- Fuentes auto-hospedadas: se precargan con el HTML, eliminando el FOUT -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/fredoka-one.woff2">
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/nunito-latin-400-normal.woff2">
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/nunito-latin-700-normal.woff2">
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/nunito-latin-800-normal.woff2">
 
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -63,6 +57,69 @@
     <title><%- NOMBRE_NEGOCIO %> — Mayoreo de Artículos para Fiesta en Uruapan</title>
 
     <style>
+      /* ── @font-face auto-hospedadas ───────────────────────────────────────
+         Los archivos están en /public/fonts/ (mismo origen).
+         Los preload de arriba hacen que el browser descargue los WOFF2
+         al mismo tiempo que parsea el <head>, antes de que React renderice.
+         ───────────────────────────────────────────────────────── */
+      @font-face {
+        font-family: 'Fredoka One';
+        font-style: normal;
+        font-weight: 400;
+        font-display: block;
+        src: url('/fonts/fredoka-one.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'Nunito';
+        font-style: normal;
+        font-weight: 400;
+        font-display: block;
+        src: url('/fonts/nunito-latin-400-normal.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'Nunito';
+        font-style: normal;
+        font-weight: 500;
+        font-display: swap;
+        src: url('/fonts/nunito-latin-500-normal.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'Nunito';
+        font-style: normal;
+        font-weight: 600;
+        font-display: swap;
+        src: url('/fonts/nunito-latin-600-normal.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'Nunito';
+        font-style: normal;
+        font-weight: 700;
+        font-display: block;
+        src: url('/fonts/nunito-latin-700-normal.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'Nunito';
+        font-style: normal;
+        font-weight: 800;
+        font-display: block;
+        src: url('/fonts/nunito-latin-800-normal.woff2') format('woff2');
+      }
+      /* ── Critical CSS: body base ──────────────────────────────────────────
+         Evita el flash blanco (FOUC) antes de que cargue el bundle CSS.
+         ─────────────────────────────────────────────────────────────────── */
+      *, *::before, *::after { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background-color: #fff8fe;
+        background-image:
+          radial-gradient(circle at 15% 20%, #ff3dac22 0%, transparent 35%),
+          radial-gradient(circle at 85% 10%, #00d4ff22 0%, transparent 35%),
+          radial-gradient(circle at 50% 80%, #ffe13522 0%, transparent 40%),
+          radial-gradient(circle at 90% 70%, #a855f722 0%, transparent 30%);
+        color: #1a0733;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
       #root {
         opacity: 0;
         transition: opacity 260ms ease;
