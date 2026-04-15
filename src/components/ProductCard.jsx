@@ -50,6 +50,7 @@ function ProductCardInner({
         boxShadow: enCarrito && !agotado
           ? '0 4px 20px rgba(168, 85, 247, 0.18)'
           : undefined,
+        animation: esNuevo ? 'cardNuevoGlow 3s ease-in-out infinite' : undefined,
         opacity: agotado ? 0.65 : 1,
       }}
     >
@@ -98,8 +99,8 @@ function ProductCardInner({
 
           {producto.es_nuevo === true && !agotado && (
             <div className="absolute top-2 left-2 text-[9px] font-body font-black uppercase tracking-wider
-                            px-2 py-0.5 rounded-full text-white"
-                 style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}>
+                            px-2 py-0.5 rounded-full text-white animate-pulse"
+                 style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)', animationDuration: '2.5s' }}>
               {t('common.new')}
             </div>
           )}
