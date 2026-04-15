@@ -2,25 +2,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { registrarCategoria, registrarMarca, registrarTamano } from '../data/productos';
 
-function precargarImagenLCP(productos) {
-  if (typeof document === 'undefined' || !Array.isArray(productos) || productos.length === 0) return;
-
-  const candidata = productos.find((p) => p?.imagen_url && p?.activo !== false);
-  if (!candidata?.imagen_url) return;
-
-  const href = candidata.imagen_url;
-  const existente = document.querySelector(`link[data-fp-lcp="1"][href="${href}"]`);
-  if (existente) return;
-
-  const link = document.createElement('link');
-  link.rel = 'preload';
-  link.as = 'image';
-  link.href = href;
-  link.crossOrigin = 'anonymous';
-  link.setAttribute('data-fp-lcp', '1');
-  document.head.appendChild(link);
-}
-
 /**
  * useProductos
  * Fetch de todos los productos desde Supabase + suscripción Realtime.
@@ -62,7 +43,6 @@ export function useProductos() {
         setProductos([]);
       } else {
         const lista = data ?? [];
-        precargarImagenLCP(lista);
         lista.forEach(p => {
           registrarCategoria(p.categoria);
           registrarMarca(p.marca);
