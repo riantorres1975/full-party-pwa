@@ -498,6 +498,22 @@ function ColorLetters({ text }) {
 
 /** Nombre de tienda animado con efecto typewriter y explosión de confeti */
 function BranchTyper() {
+  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
+
+  if (isMobile) {
+    return (
+      <div className="relative font-display leading-tight text-center select-none">
+        <div className="text-5xl sm:text-6xl lg:text-7xl">
+          <ColorLetters text="Full Party" />
+        </div>
+        <div className="flex items-center justify-center text-2xl sm:text-3xl lg:text-4xl mt-2" style={{ minHeight: '1.25em' }}>
+          <span className="font-display" style={{ color: C.textBody }}>Suc.&nbsp;</span>
+          <ColorLetters text={BRANCH_NAMES[0]} />
+        </div>
+      </div>
+    );
+  }
+
   const { suffix, showCursor } = useTypingCycle(BRANCH_NAMES);
   const [burst, setBurst]     = useState([]);
   const prevLenRef            = useRef(0);
@@ -1075,7 +1091,7 @@ export default function LandingPage() {
             <Reveal delay={0.1}>
               <h1
                 id="hero-heading"
-                className="font-display text-5xl sm:text-6xl lg:text-7xl leading-tight mb-6 hero-glow"
+                className="lp-hero-title font-display text-5xl sm:text-6xl lg:text-7xl leading-tight mb-6 hero-glow"
                 style={{
                   background:            `linear-gradient(135deg, ${C.pink} 0%, ${C.purple} 50%, ${C.cyan} 100%)`,
                   WebkitBackgroundClip: 'text',
