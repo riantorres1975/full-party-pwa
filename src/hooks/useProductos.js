@@ -4,6 +4,7 @@ import { registrarCategoria, registrarMarca, registrarTamano } from '../data/pro
 
 const PRODUCTOS_CACHE_KEY = 'fp_productos_cache_v1';
 const PRODUCTOS_CACHE_TTL_MS = 30 * 60 * 1000;
+const INITIAL_PRODUCT_COUNT = 24;
 
 function readProductosCache() {
   try {
@@ -60,18 +61,57 @@ export function useProductos() {
   useEffect(() => {
     let cancelado = false; // evita setState en componente desmontado
 
+    const baseQuery = () =>
+      supabase
+        .from('productos')
+        .select('*')
+        .order('activo', { ascending: false })
+        .order('nombre', { ascending: true });
+
     async function fetchProductos() {
       if (productos.length === 0 || tick > 0) {
         setLoading(true);
       }
       setError(null);
 
-      const { data, error: sbError } = await supabase
-        .from('productos')
-        .select('*')
-        .order('activo', { ascending: false })  // activos primero
-        .order('nombre', { ascending: true });
+      const enPrimerArranqueSinCache = productos.length === 0 && tick === 0;
 
+      if (enPrimerArranqueSinCache) {
+        const { data: primerLote, error: primerError } = await baseQuery().limit(INITIAL_PRODUCT_COUNT);
+
+        if (cancelado) return;
+
+        if (!primerError && Array.isArray(primerLote) && primerLote.length > 0) {
+          registrarMetadatosProductos(primerLote);
+          setProductos(primerLote);
+          setLoading(false);
+        }
+
+        const { data, error: sbError } = await baseQuery();
+        if (cancelado) return;
+
+        if (sbError) {
+          if (primerError || !primerLote || primerLote.length === 0) {
+            console.error('[useProductos]', sbError.code, sbError.message);
+            setError(
+              sbError.code === 'PGRST301'
+                ? 'No tienes permisos para ver los productos.'
+                : 'Error al cargar productos. Intenta de nuevo más tarde.'
+            );
+            setProductos([]);
+          }
+        } else {
+          const lista = data ?? [];
+          registrarMetadatosProductos(lista);
+          writeProductosCache(lista);
+          setProductos(lista);
+        }
+
+        setLoading(false);
+        return;
+      }
+
+      const { data, error: sbError } = await baseQuery();
       if (cancelado) return;
 
       if (sbError) {
