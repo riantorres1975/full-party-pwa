@@ -4,6 +4,7 @@ import { SIMBOLO_MONEDA } from '../data/productos';
 import { obtenerPrecioAplicable } from '../utils/precios';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useLanguage } from '../hooks/useLanguage';
+import { getProductPlaceholderUrl, getSafeProductImageUrl } from '../utils/imagenes';
 
 export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, cantidad = 0 }) {
   const [cerrando, setCerrando] = useState(false);
@@ -58,6 +59,8 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
   const precioAplicable = obtenerPrecioAplicable(producto, cantidad || 1);
   const hayDescuento = enCarrito && precioAplicable < precioBase;
   const esNuevo = producto.es_nuevo === true && !agotado;
+  const fallbackImage = getProductPlaceholderUrl(producto.nombre, '900x900');
+  const imageSrc = getSafeProductImageUrl(producto.imagen_url, producto.nombre, '900x900');
 
   const escalasMayoreo = (() => {
     let escalas = producto.precios_mayoreo;
@@ -141,11 +144,12 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
                 style={{ background: 'var(--surface-card)' }}
               >
                 <img
-                  src={producto.imagen_url}
+                  src={imageSrc}
                   alt={producto.nombre}
                   className="w-full h-full object-contain transition-transform duration-500 sm:hover:scale-[1.05]"
                   onError={(e) => {
-                    e.target.src = `https://placehold.co/900x900/f3e8ff/a855f7?text=${encodeURIComponent(producto.nombre)}`;
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = fallbackImage;
                   }}
                 />
               </div>
