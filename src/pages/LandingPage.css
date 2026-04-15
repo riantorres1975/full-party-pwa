@@ -114,24 +114,7 @@
 .review-enter   { animation: reviewIn    0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 .review-exit    { animation: reviewOut   0.3s  ease forwards; pointer-events: none;    }
 
-/* ── Móvil: reducir animaciones costosas para mejorar LCP/FCP ─ */
-@media (max-width: 768px) {
-  .btn-pink-pulse,
-  .wa-pulse,
-  .hero-glow {
-    animation: none !important;
-  }
 
-  .hero-glow {
-    filter: none !important;
-  }
-
-  .lp-hero-title {
-    background: none !important;
-    color: #9f67ea !important;
-    -webkit-text-fill-color: #9f67ea !important;
-  }
-}
 
 /* ── Transiciones reutilizables ────────────────────────────── */
 .lp-card {
