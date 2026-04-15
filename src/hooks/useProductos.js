@@ -2,6 +2,38 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { registrarCategoria, registrarMarca, registrarTamano } from '../data/productos';
 
+const PRODUCTOS_CACHE_KEY = 'fp_productos_cache_v1';
+const PRODUCTOS_CACHE_TTL_MS = 30 * 60 * 1000;
+
+function readProductosCache() {
+  try {
+    const raw = localStorage.getItem(PRODUCTOS_CACHE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.data) || typeof parsed.ts !== 'number') return [];
+    if (Date.now() - parsed.ts > PRODUCTOS_CACHE_TTL_MS) return [];
+    return parsed.data;
+  } catch {
+    return [];
+  }
+}
+
+function writeProductosCache(lista) {
+  try {
+    localStorage.setItem(PRODUCTOS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: lista }));
+  } catch {
+    // Ignore quota/storage errors.
+  }
+}
+
+function registrarMetadatosProductos(lista) {
+  lista.forEach((p) => {
+    registrarCategoria(p.categoria);
+    registrarMarca(p.marca);
+    registrarTamano(p.tamano);
+  });
+}
+
 /**
  * useProductos
  * Fetch de todos los productos desde Supabase + suscripción Realtime.
@@ -13,16 +45,25 @@ import { registrarCategoria, registrarMarca, registrarTamano } from '../data/pro
  * - refetch   : función para reintentar manualmente
  */
 export function useProductos() {
-  const [productos, setProductos] = useState([]);
-  const [loading,   setLoading]   = useState(true);
+  const [cacheSeed] = useState(() => readProductosCache());
+  const [productos, setProductos] = useState(cacheSeed);
+  const [loading,   setLoading]   = useState(cacheSeed.length === 0);
   const [error,     setError]     = useState(null);
   const [tick,      setTick]      = useState(0); // dispara refetch
+
+  useEffect(() => {
+    if (cacheSeed.length > 0) {
+      registrarMetadatosProductos(cacheSeed);
+    }
+  }, [cacheSeed]);
 
   useEffect(() => {
     let cancelado = false; // evita setState en componente desmontado
 
     async function fetchProductos() {
-      setLoading(true);
+      if (productos.length === 0 || tick > 0) {
+        setLoading(true);
+      }
       setError(null);
 
       const { data, error: sbError } = await supabase
@@ -40,14 +81,13 @@ export function useProductos() {
             ? 'No tienes permisos para ver los productos.'
             : 'Error al cargar productos. Intenta de nuevo más tarde.'
         );
-        setProductos([]);
+        if (productos.length === 0) {
+          setProductos([]);
+        }
       } else {
         const lista = data ?? [];
-        lista.forEach(p => {
-          registrarCategoria(p.categoria);
-          registrarMarca(p.marca);
-          registrarTamano(p.tamano);
-        });
+        registrarMetadatosProductos(lista);
+        writeProductosCache(lista);
         setProductos(lista);
       }
 
@@ -64,23 +104,29 @@ export function useProductos() {
       .channel('productos-rt')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'productos' },
         ({ new: nuevo }) => {
-          registrarCategoria(nuevo.categoria);
-          registrarMarca(nuevo.marca);
-          registrarTamano(nuevo.tamano);
-          setProductos(prev => [nuevo, ...prev]);
+          registrarMetadatosProductos([nuevo]);
+          setProductos((prev) => {
+            const next = [nuevo, ...prev];
+            writeProductosCache(next);
+            return next;
+          });
         })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'productos' },
         ({ new: actualizado }) => {
-          registrarCategoria(actualizado.categoria);
-          registrarMarca(actualizado.marca);
-          registrarTamano(actualizado.tamano);
-          setProductos(prev =>
-            prev.map(p => p.id === actualizado.id ? actualizado : p)
-          );
+          registrarMetadatosProductos([actualizado]);
+          setProductos((prev) => {
+            const next = prev.map((p) => (p.id === actualizado.id ? actualizado : p));
+            writeProductosCache(next);
+            return next;
+          });
         })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'productos' },
         ({ old: eliminado }) => {
-          setProductos(prev => prev.filter(p => p.id !== eliminado.id));
+          setProductos((prev) => {
+            const next = prev.filter((p) => p.id !== eliminado.id);
+            writeProductosCache(next);
+            return next;
+          });
         })
       .subscribe((status) => {
         if (status === 'CHANNEL_ERROR') {
