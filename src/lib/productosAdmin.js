@@ -45,6 +45,15 @@ function errorColumnaEsNuevoInexistente(error) {
 /** Maximum product image size: 5 MB */
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
+/** Límite de render para normalizar imágenes antes de subirlas */
+const MAX_IMAGE_DIMENSION = 1600;
+
+/** Objetivo razonable de peso final para catálogo */
+const TARGET_IMAGE_SIZE_BYTES = 900 * 1024;
+
+const MIN_WEBP_QUALITY = 0.55;
+const START_WEBP_QUALITY = 0.82;
+
 /** Extensiones y MIME types permitidos */
 const ALLOWED_TYPES = {
   'image/jpeg': 'jpg',
@@ -62,6 +71,14 @@ const IMAGE_SIGNATURES = [
   [0x52, 0x49, 0x46, 0x46],             // WebP (RIFF container)
 ];
 
+function isAvif(bytes) {
+  if (bytes.length < 12) return false;
+  const boxType = String.fromCharCode(bytes[4], bytes[5], bytes[6], bytes[7]);
+  if (boxType !== 'ftyp') return false;
+  const brand = String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11]);
+  return brand === 'avif' || brand === 'avis';
+}
+
 /**
  * Valida que los primeros bytes del archivo correspondan a un formato de imagen real.
  * Previene subir archivos maliciosos renombrados con extensión de imagen.
@@ -69,9 +86,91 @@ const IMAGE_SIGNATURES = [
 async function validateImageSignature(file) {
   const buffer = await file.slice(0, 12).arrayBuffer();
   const bytes = new Uint8Array(buffer);
+  if (isAvif(bytes)) return true;
   return IMAGE_SIGNATURES.some(sig =>
     sig.every((byte, i) => bytes[i] === byte)
   );
+}
+
+function shouldOptimizeImage(file) {
+  return file.type === 'image/jpeg'
+    || file.type === 'image/png'
+    || file.type === 'image/webp'
+    || file.type === 'image/avif';
+}
+
+function loadImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.decoding = 'async';
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('No se pudo procesar la imagen seleccionada.'));
+    };
+    image.src = objectUrl;
+  });
+}
+
+function canvasToBlob(canvas, type, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error('No se pudo generar una versión optimizada de la imagen.'));
+        return;
+      }
+      resolve(blob);
+    }, type, quality);
+  });
+}
+
+async function optimizeImageForUpload(file) {
+  if (!shouldOptimizeImage(file)) return file;
+
+  let image;
+  try {
+    image = await loadImageFromFile(file);
+  } catch {
+    return file;
+  }
+
+  const width = image.naturalWidth || image.width;
+  const height = image.naturalHeight || image.height;
+  if (!width || !height) return file;
+
+  const scale = Math.min(1, MAX_IMAGE_DIMENSION / width, MAX_IMAGE_DIMENSION / height);
+  const targetWidth = Math.max(1, Math.round(width * scale));
+  const targetHeight = Math.max(1, Math.round(height * scale));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
+
+  const context = canvas.getContext('2d', { alpha: false });
+  if (!context) return file;
+
+  context.drawImage(image, 0, 0, targetWidth, targetHeight);
+
+  let quality = START_WEBP_QUALITY;
+  let blob = await canvasToBlob(canvas, 'image/webp', quality);
+
+  while (blob.size > TARGET_IMAGE_SIZE_BYTES && quality > MIN_WEBP_QUALITY) {
+    quality = Math.max(MIN_WEBP_QUALITY, quality - 0.08);
+    blob = await canvasToBlob(canvas, 'image/webp', quality);
+    if (quality === MIN_WEBP_QUALITY) break;
+  }
+
+  if (blob.size >= file.size) return file;
+
+  const baseName = file.name.replace(/\.[^.]+$/, '');
+  return new File([blob], `${baseName}.webp`, {
+    type: 'image/webp',
+    lastModified: Date.now(),
+  });
 }
 
 /**
@@ -114,14 +213,16 @@ export async function subirImagenProducto(file) {
     throw new Error('El archivo no parece ser una imagen válida.');
   }
 
+  const archivoSubida = await optimizeImageForUpload(file);
+  const extFinal = ALLOWED_TYPES[archivoSubida.type] || ext;
   const baseName = slugifyFilename(file.name.replace(/\.[^.]+$/, ''));
-  const path = `${baseName}-${randomId()}.${ext}`;
+  const path = `${baseName}-${randomId()}.${extFinal}`;
   const { error: upErr } = await supabase.storage
     .from(BUCKET_IMAGENES_PRODUCTOS)
-    .upload(path, file, {
+    .upload(path, archivoSubida, {
       cacheControl: '3600',
       upsert: false,
-      contentType: file.type,
+      contentType: archivoSubida.type,
     });
 
   if (upErr) {
