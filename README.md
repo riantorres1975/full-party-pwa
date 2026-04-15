@@ -265,12 +265,13 @@ Lectura pública. Solo admins pueden escribir. Se usa para el sistema de anuncio
 - Dark mode desde el header
 - Búsqueda en tiempo real por nombre, descripción, marca y tamaño
 - Filtros por categoría, marca y tamaño (AND entre dimensiones, OR dentro de cada una)
-- Infinite scroll — carga 12 productos, agrega 12 más al llegar al final
-- Lazy loading de imágenes
+- Infinite scroll adaptativo — móvil inicia con 4 y agrega 6; desktop inicia con 12 y agrega 12
+- Imágenes optimizadas con lazy loading y fallback robusto (si falta URL o falla la carga)
 - Productos agotados en escala de grises con botón deshabilitado
 - Cambios del admin (precio, stock, disponibilidad) se reflejan en el catálogo sin recargar, vía Realtime
 - Modal de detalle: bottom sheet en móvil, side-by-side en desktop
 - Banner de anuncio configurable desde el admin (gradiente animado, el cliente puede cerrarlo por sesión)
+- Render inicial acelerado con caché local de productos + revalidación en segundo plano
 
 ### Carrito y checkout
 
@@ -329,6 +330,9 @@ El cliente ingresa su folio o teléfono y ve un stepper animado con el estado ac
 
 - Alta de productos con formulario en dos columnas
 - Imagen por archivo (JPG/PNG/GIF/WEBP/AVIF, máx 5 MB) o por URL externa
+- Optimización automática antes de subir: resize, compresión y conversión a WebP cuando conviene
+- Se conserva transparencia (sin fondo negro en PNG/WebP/AVIF)
+- Nombre de archivo SEO-friendly basado en el nombre del producto
 - Precios por mayoreo: filas dinámicas por etiqueta/cantidad/precio
 - Stock: modo ilimitado o por unidades con campo "agregar al stock" (suma, no reemplaza)
 - Toggle de disponibilidad por producto
@@ -345,6 +349,13 @@ El cliente ingresa su folio o teléfono y ve un stepper animado con el estado ac
 - Al detectar una nueva versión se activa automáticamente
 - Si un chunk JS ya no existe en el servidor (nuevo deploy), el SW manda `FORCE_RELOAD` a todas las pestañas
 - Revisa actualizaciones del SW cada 5 minutos
+
+### Rendimiento (estado actual)
+
+- Fuentes auto-hospedadas con `font-display: swap` para reducir bloqueos de render
+- Catálogo con carga en 2 fases cuando no hay caché: primer lote rápido + lista completa en background
+- Caché local de productos (`localStorage`) con TTL y sincronización por Realtime
+- Optimización de imágenes en cliente para evitar uploads pesados que degraden LCP
 
 ---
 
