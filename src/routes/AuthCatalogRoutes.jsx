@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
+import '../catalog.css'; // Estilos exclusivos del catálogo/admin (dark-mode, etc.)
 import App from '../App';
 import LoginAdmin from '../components/LoginAdmin';
 import { useAuth } from '../hooks/useAuth';

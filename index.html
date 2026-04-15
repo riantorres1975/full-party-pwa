@@ -39,6 +39,9 @@
     <link rel="canonical" href="<%- SITE_URL %>/" />
     <link rel="alternate" href="<%- SITE_URL %>/" hreflang="es-MX" />
 
+    <!-- Preconnect: Google Fonts (crítico para FCP) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- Google Fonts -->
     <link rel="preload" as="style"
       href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;500;600;700;800&display=swap"
@@ -47,8 +50,6 @@
       <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;500;600;700;800&display=swap" />
     </noscript>
-    <!-- Preconnect: placeholder images fallback -->
-    <link rel="dns-prefetch" href="https://placehold.co" />
 
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -290,7 +291,7 @@
   <body>
     <div id="fp-boot-overlay" aria-hidden="true">
       <div class="fp-boot-card">
-        <img data-src="/icons/icon-192.png" width="192" height="192" fetchpriority="high" alt="" class="fp-boot-logo" />
+        <img src="/icons/icon-192.png" width="192" height="192" fetchpriority="high" decoding="async" alt="" class="fp-boot-logo" />
         <h1 class="fp-boot-title">Full Party</h1>
         <p class="fp-boot-subtitle">Cargando catalogo...</p>
       </div>
@@ -307,19 +308,16 @@
 
         var hash = window.location.hash || '';
         var isCatalogOrAdmin = hash.indexOf('#/catalogo') === 0 || hash.indexOf('#/admin') === 0;
-        if (isCatalogOrAdmin) {
-          var bootLogo = document.querySelector('.fp-boot-logo[data-src]');
-          if (bootLogo) {
-            bootLogo.src = bootLogo.getAttribute('data-src');
-          }
-        }
+        // El logo ahora usa src directo, no data-src
         if (!isCatalogOrAdmin) {
           window.__fpMarkAppReady();
         }
 
+        // Fallback: revelar app como máximo en 1s (antes era 3.5s)
+        // Mejora directamente FCP y LCP en móvil
         setTimeout(function () {
           window.__fpMarkAppReady();
-        }, 3500);
+        }, 1000);
       })();
     </script>
     <script type="module" src="/src/main.jsx"></script>
