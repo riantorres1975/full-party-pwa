@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#fbf7f3" />
-    <meta name="description" content="Tienda y distribuidora de globos en Uruapan, Michoacán. Globos de látex al mayoreo, globos de personajes, arreglos con globos y precios escalonados por volumen." />
+    <meta name="description" content="Distribuidora de articulos para fiesta en Uruapan, Michoacan. Especialistas en globos Glomex, kits de personajes, cortinas de lluvia y guirnaldas. Precios de mayoreo y pedidos por WhatsApp." />
     <meta name="keywords" content="globos uruapan, tienda de globos uruapan, globos al mayoreo uruapan, globos de latex uruapan, globos de personajes uruapan, distribuidora de globos michoacan, full party uruapan, glomex decoratex sempertex" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="author" content="<%- NOMBRE_NEGOCIO %>" />
@@ -22,7 +22,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="<%- NOMBRE_NEGOCIO %> — Mayoreo de Artículos para Fiesta en Uruapan" />
-    <meta property="og:description" content="Tienda y distribuidora de globos en Uruapan. Globos de látex mayoreo, globos de personajes y arreglos con globos. Cotiza por WhatsApp." />
+    <meta property="og:description" content="Especialistas en globos Glomex, kits de personajes, cortinas de lluvia y guirnaldas en Uruapan. Mayoreo y pedidos por WhatsApp." />
     <meta property="og:image" content="<%- SITE_URL %>/og-image.jpg" />
     <meta property="og:image:alt" content="<%- NOMBRE_NEGOCIO %> - Catalogo digital mayoreo de articulos para fiesta" />
     <meta property="og:url" content="<%- SITE_URL %>/" />
@@ -33,7 +33,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="<%- NOMBRE_NEGOCIO %> — Mayoreo de Artículos para Fiesta" />
-    <meta name="twitter:description" content="Tienda y distribuidora de globos en Uruapan. Globos de látex mayoreo, personajes y arreglos con globos." />
+    <meta name="twitter:description" content="Especialistas en globos Glomex, kits de personajes, cortinas de lluvia y guirnaldas en Uruapan. Mayoreo y pedidos por WhatsApp." />
     <meta name="twitter:image" content="<%- SITE_URL %>/og-image.jpg" />
     <meta name="twitter:image:alt" content="<%- NOMBRE_NEGOCIO %> - Catalogo digital mayoreo de articulos para fiesta" />
 
@@ -56,9 +56,12 @@
     <meta name="apple-mobile-web-app-title" content="<%- NOMBRE_NEGOCIO %>" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/icons/icon-48.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/icons/icon-64.png" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
 
     <title><%- NOMBRE_NEGOCIO %> — Mayoreo de Artículos para Fiesta en Uruapan</title>
 
@@ -244,8 +247,9 @@
       "@type": "Store",
       "@id": "<%- SITE_URL %>/#localbusiness",
       "name": "<%- NOMBRE_NEGOCIO %>",
-      "description": "Tienda y distribuidora de globos en Uruapan, Michoacán. Globos de látex al mayoreo, globos de personajes y arreglos con globos.",
+      "description": "Distribuidora de articulos para fiesta en Uruapan, Michoacan. Especialistas en globos Glomex, kits de personajes, cortinas de lluvia y guirnaldas.",
       "url": "<%- SITE_URL %>",
+      "logo": "<%- SITE_URL %>/icons/logo-master.png",
       "image": "<%- SITE_URL %>/og-image.jpg",
       "telephone": "+<%- WHATSAPP_NUMBER %>",
       "priceRange": "$$",
@@ -307,6 +311,17 @@
       "name": "<%- NOMBRE_NEGOCIO %>",
       "url": "<%- SITE_URL %>",
       "inLanguage": "es-MX"
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "<%- NOMBRE_NEGOCIO %>",
+      "url": "<%- SITE_URL %>",
+      "logo": "<%- SITE_URL %>/icons/logo-master.png",
+      "image": "<%- SITE_URL %>/icons/logo-master.png"
     }
     </script>
 
