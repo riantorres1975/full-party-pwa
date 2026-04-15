@@ -13,6 +13,7 @@ import { useConfirm } from '../hooks/useConfirm';
 import { usePedidosAdmin, ESTADOS, ESTADOS_CON_CANCELADO } from '../hooks/usePedidosAdmin';
 import { useDebounce } from '../hooks/useDebounce';
 import { useLanguage } from '../hooks/useLanguage';
+import { getProductPlaceholderUrl, getSafeProductImageUrl } from '../utils/imagenes';
 
 const AdminCatalogo = lazy(() => import('./AdminCatalogo'));
 
@@ -56,7 +57,8 @@ function normalizarArticulos(lista, modoPicking) {
 // ── Lista de artículos expandible + Picking dinámico ────────────────────────
 function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChange, esDesktop }) {
   const { t } = useLanguage();
-  const [imgError, setImgError] = useState(false);
+  const fallbackImage = getProductPlaceholderUrl(item.nombre, '80x80');
+  const imageSrc = getSafeProductImageUrl(item.imagen_url, item.nombre, '80x80');
   const precioSurtido = Number(item.precio_surtido ?? item.precio) || 0;
   const precioAplicado = Number(item.precio) || 0;
   const precioBase = Number(item.precio_base ?? item.precio_original ?? item.precio) || 0;
@@ -127,12 +129,15 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChang
       )}
 
       <div className={claseMiniatura}>
-        {item.imagen_url && !imgError ? (
-          <img src={item.imagen_url} alt={item.nombre} loading="lazy" onError={() => setImgError(true)}
-               className="w-full h-full object-contain" style={{ filter: tachado ? 'grayscale(1)' : 'none' }} />
-        ) : (
-          <Package size={esDesktop ? 14 : 20} className="text-purple-300" />
-        )}
+        <img
+             src={imageSrc}
+             alt={item.nombre}
+             loading="lazy"
+             onError={(e) => {
+               e.currentTarget.onerror = null;
+               e.currentTarget.src = fallbackImage;
+             }}
+             className="w-full h-full object-contain" style={{ filter: tachado ? 'grayscale(1)' : 'none' }} />
       </div>
 
       <div className="flex-1 min-w-0">

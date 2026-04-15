@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { categorias } from '../data/productos';
 import { toTitleCase } from '../utils/normalizar';
 import { subirImagenProducto } from '../lib/productosAdmin';
+import { getProductPlaceholderUrl } from '../utils/imagenes';
 
 export const CATEGORIA_NUEVA_ID = '__agregar_nueva__';
 export const MARCA_NUEVA_ID = '__agregar_marca__';
@@ -184,6 +185,10 @@ export function useProductForm(producto = null) {
     let urlFinal = imagenUrl.trim() || null;
     if (archivo) {
       urlFinal = await subirImagenProducto(archivo, { nombreProducto: nombre });
+    }
+
+    if (!urlFinal) {
+      urlFinal = getProductPlaceholderUrl(nombre, '1200x1200');
     }
 
     const precioBaseNum = Math.max(0, Number(precio) || 0);

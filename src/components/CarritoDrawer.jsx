@@ -6,6 +6,7 @@ import { SIMBOLO_MONEDA, DIRECCION_TIENDA, HORARIO_TIENDA, MAPS_URL_TIENDA } fro
 import { usePedido } from '../hooks/usePedido';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useLanguage } from '../hooks/useLanguage';
+import { getProductPlaceholderUrl, getSafeProductImageUrl } from '../utils/imagenes';
 
 // Session rate limit (max orders per time window)
 const MAX_ORDERS_PER_SESSION = 5;
@@ -310,6 +311,8 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
                   const precioAplicable = obtenerPrecioAplicable(item, item.cantidad);
                   const hayDescuento = precioAplicable < precioBase;
                   const subtotal = precioAplicable * item.cantidad;
+                  const fallbackImage = getProductPlaceholderUrl(item.nombre, '56x56');
+                  const imageSrc = getSafeProductImageUrl(item.imagen_url, item.nombre, '56x56');
 
                   const prodReal = productos.find(p => p.id === item.id);
                   const agotadoRT = prodReal
@@ -340,9 +343,12 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
 
                       <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-ink-50"
                            style={{ border: '2px solid var(--color-brand-soft-2)', filter: agotadoRT ? 'grayscale(60%)' : 'none' }}>
-                        <img src={item.imagen_url} alt={item.nombre}
+                        <img src={imageSrc} alt={item.nombre}
                           className="w-full h-full object-contain"
-                          onError={(e) => { e.target.src = `https://placehold.co/56x56/f3e8ff/7b4fa6?text=?`; }} />
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = fallbackImage;
+                          }} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-body text-sm font-bold text-ink-800 leading-tight truncate">{item.nombre}</p>
