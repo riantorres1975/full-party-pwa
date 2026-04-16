@@ -5,6 +5,18 @@ import { registrarCategoria, registrarMarca, registrarTamano } from '../data/pro
 const PRODUCTOS_CACHE_KEY = 'fp_productos_cache_v1';
 const PRODUCTOS_CACHE_TTL_MS = 30 * 60 * 1000;
 const INITIAL_PRODUCT_COUNT = 24;
+const LCP_IMAGE_KEY = 'fp_lcp_image_v1';
+
+function writeLcpImageHint(lista) {
+  try {
+    const primeroActivo = lista.find((p) => p.activo !== false && typeof p.imagen_url === 'string' && p.imagen_url.trim());
+    if (primeroActivo?.imagen_url) {
+      localStorage.setItem(LCP_IMAGE_KEY, primeroActivo.imagen_url.trim());
+    }
+  } catch {
+    // Ignore quota errors
+  }
+}
 
 function readProductosCache() {
   try {
@@ -83,6 +95,7 @@ export function useProductos() {
 
         if (!primerError && Array.isArray(primerLote) && primerLote.length > 0) {
           registrarMetadatosProductos(primerLote);
+          writeLcpImageHint(primerLote);
           setProductos(primerLote);
           setLoading(false);
         }
@@ -104,6 +117,7 @@ export function useProductos() {
           const lista = data ?? [];
           registrarMetadatosProductos(lista);
           writeProductosCache(lista);
+          writeLcpImageHint(lista);
           setProductos(lista);
         }
 

@@ -17,6 +17,20 @@
         } else {
           document.documentElement.classList.add('fp-skip-boot');
         }
+        // Preload de la imagen LCP conocida (guardada en visitas previas)
+        if (pathname.startsWith('/catalogo')) {
+          try {
+            var lcp = localStorage.getItem('fp_lcp_image_v1');
+            if (lcp && /^https?:\/\//.test(lcp)) {
+              var l = document.createElement('link');
+              l.rel = 'preload';
+              l.as = 'image';
+              l.href = lcp;
+              l.fetchPriority = 'high';
+              document.head.appendChild(l);
+            }
+          } catch (e) {}
+        }
       })();
     </script>
 
@@ -231,14 +245,32 @@
       }
     </style>
 
-    <!-- Google Analytics 4 (reemplaza G-E07C39EMGD con tu Measurement ID) -->
-    <script async defer src="https://www.googletagmanager.com/gtag/js?id=G-E07C39EMGD"></script>
+    <!-- Google Analytics 4 (carga diferida post-LCP para no bloquear el render) -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      var displayMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone ? 'standalone' : 'browser';
-      gtag('config', 'G-E07C39EMGD', { display_mode: displayMode });
+      (function () {
+        function loadGA() {
+          if (window.__gaLoaded) return;
+          window.__gaLoaded = true;
+          var s = document.createElement('script');
+          s.async = true;
+          s.src = 'https://www.googletagmanager.com/gtag/js?id=G-E07C39EMGD';
+          document.head.appendChild(s);
+          gtag('js', new Date());
+          var displayMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone ? 'standalone' : 'browser';
+          gtag('config', 'G-E07C39EMGD', { display_mode: displayMode });
+        }
+        // Cargar cuando el navegador esté idle, o al primer gesto del usuario
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(loadGA, { timeout: 4000 });
+        } else {
+          setTimeout(loadGA, 3000);
+        }
+        ['pointerdown', 'keydown', 'scroll'].forEach(function (ev) {
+          window.addEventListener(ev, loadGA, { once: true, passive: true });
+        });
+      })();
     </script>
 
     <!-- JSON-LD: LocalBusiness -->

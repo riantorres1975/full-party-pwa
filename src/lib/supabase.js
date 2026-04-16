@@ -15,3 +15,16 @@ if (!SUPABASE_URL || !SUPABASE_ANON) {
 }
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// bfcache: desconectar Realtime cuando la página se oculta, reconectar al volver.
+// Los WebSockets abiertos bloquean el back/forward cache del navegador.
+if (typeof window !== 'undefined' && supabase?.realtime) {
+  window.addEventListener('pagehide', () => {
+    try { supabase.realtime.disconnect(); } catch {}
+  });
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) {
+      try { supabase.realtime.connect(); } catch {}
+    }
+  });
+}
