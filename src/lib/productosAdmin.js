@@ -191,12 +191,14 @@ function slugifyFilename(name) {
     .replace(/^-+|-+$/g, '');        // quitar guiones al inicio/fin
 }
 
+const MAX_FILENAME_LENGTH = 60;
+
 function getUploadBaseName(nombreProducto = '') {
   const nombreLimpio = typeof nombreProducto === 'string' ? slugifyFilename(nombreProducto.trim()) : '';
   if (!nombreLimpio) {
     throw new Error('El nombre del producto es obligatorio para nombrar la imagen.');
   }
-  return nombreLimpio;
+  return nombreLimpio.slice(0, MAX_FILENAME_LENGTH).replace(/-+$/, '');
 }
 
 export async function subirImagenProducto(file, { nombreProducto = '' } = {}) {
