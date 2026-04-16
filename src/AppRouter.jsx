@@ -1,5 +1,5 @@
 import { useEffect, lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import { LanguageProvider } from './hooks/useLanguage';
 
@@ -13,7 +13,17 @@ const Spinner = (
 
 function RouterEffects() {
   const location = useLocation();
+  const navigate = useNavigate();
   const esRutaLanding = location.pathname === '/';
+
+  // PWA instalada: redirigir al catálogo si se abre en modo standalone
+  useEffect(() => {
+    if (location.pathname !== '/') return;
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone;
+    if (standalone) navigate('/catalogo', { replace: true });
+  }, []);
 
   useEffect(() => {
     document.body.classList.toggle('landing-page', esRutaLanding);
