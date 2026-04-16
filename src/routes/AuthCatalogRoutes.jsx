@@ -1,4 +1,5 @@
 import { useEffect, lazy, Suspense } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import '../catalog.css'; // Estilos exclusivos del catálogo/admin (dark-mode, etc.)
 import App from '../App';
 import LoginAdmin from '../components/LoginAdmin';
@@ -14,12 +15,14 @@ const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || '')
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
 
-export default function AuthCatalogRoutes({ hash }) {
+export default function AuthCatalogRoutes() {
   const { session, user, cargandoSesion, loading, error, signIn, signOut } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const { t } = useLanguage();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const esRutaAdmin = hash.startsWith('#/admin');
+  const esRutaAdmin = location.pathname.startsWith('/admin');
 
   useEffect(() => {
     document.body.classList.add('catalogo');
@@ -79,7 +82,7 @@ export default function AuthCatalogRoutes({ hash }) {
             <button
               onClick={async () => {
                 await signOut();
-                window.location.hash = '';
+                navigate('/');
               }}
               className="text-sm underline text-purple-400 hover:text-purple-200 transition-colors"
             >
@@ -105,7 +108,7 @@ export default function AuthCatalogRoutes({ hash }) {
             onToggleTema={toggleTheme}
             onSignOut={async () => {
               await signOut();
-              window.location.hash = '';
+              navigate('/');
             }}
           />
         </Suspense>

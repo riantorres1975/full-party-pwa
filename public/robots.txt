@@ -1,6 +1,6 @@
 # Full Party Uruapan — Catálogo Digital PWA
 User-agent: *
 Allow: /
-Disallow: /#/admin
+Disallow: /admin
 
 Sitemap: https://www.fullpartyuruapan.com.mx/sitemap.xml

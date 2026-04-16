@@ -59,7 +59,7 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
           icon: '/icons/icon-192.png',
           badge: '/icons/icon-192.png',
           tag: `order-${order.id}`,
-          data: { url: '/#/admin' },
+          data: { url: '/admin' },
           vibrate: [200, 120, 200],
         });
         return;

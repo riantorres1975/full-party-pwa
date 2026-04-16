@@ -1,8 +1,8 @@
 {
-  "name": "Full PartyApp",
-  "short_name": "Full PartyApp",
-  "description": "Ordena tus productos favoritos desde tu celular",
-  "start_url": "/#/catalogo",
+  "name": "Full Party Uruapan",
+  "short_name": "Full Party",
+  "description": "Catálogo mayoreo de artículos para fiesta en Uruapan. Globos, kits de personajes, cortinas de lluvia y más.",
+  "start_url": "/catalogo",
   "display": "standalone",
   "background_color": "#fbf7f3",
   "theme_color": "#fbf7f3",
