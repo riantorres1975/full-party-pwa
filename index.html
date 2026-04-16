@@ -237,7 +237,8 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-E07C39EMGD');
+      var displayMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone ? 'standalone' : 'browser';
+      gtag('config', 'G-E07C39EMGD', { display_mode: displayMode });
     </script>
 
     <!-- JSON-LD: LocalBusiness -->
