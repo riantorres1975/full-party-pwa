@@ -4,7 +4,7 @@ import { SIMBOLO_MONEDA } from '../data/productos';
 import { obtenerPrecioAplicable } from '../utils/precios';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useLanguage } from '../hooks/useLanguage';
-import { getProductPlaceholderUrl, getSafeProductImageUrl } from '../utils/imagenes';
+import { getProductPlaceholderUrl, getSafeProductImageUrl, getSupabaseImageUrl } from '../utils/imagenes';
 
 export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, cantidad = 0 }) {
   const [cerrando, setCerrando] = useState(false);
@@ -60,7 +60,10 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
   const hayDescuento = enCarrito && precioAplicable < precioBase;
   const esNuevo = producto.es_nuevo === true && !agotado;
   const fallbackImage = getProductPlaceholderUrl(producto.nombre, '900x900');
-  const imageSrc = getSafeProductImageUrl(producto.imagen_url, producto.nombre, '900x900');
+  const imageSrc = getSupabaseImageUrl(
+    getSafeProductImageUrl(producto.imagen_url, producto.nombre, '900x900'),
+    { width: 900, quality: 85 }
+  );
 
   const escalasMayoreo = (() => {
     let escalas = producto.precios_mayoreo;

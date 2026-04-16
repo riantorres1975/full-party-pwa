@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, memo } from 'react';
+import { getSupabaseImageUrl } from '../utils/imagenes';
 
 function buildInlineFallback(label = 'Producto') {
   const safeLabel = String(label || 'Producto').trim().slice(0, 40) || 'Producto';
@@ -24,6 +25,8 @@ function OptimizedImageInner({
   aspectClass = 'aspect-square',
   containerClass = '',
   containerStyle = {},
+  imgWidth = 400,
+  quality = 80,
 }) {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
@@ -31,7 +34,8 @@ function OptimizedImageInner({
 
   const fallbackSrc = buildInlineFallback(fallbackText || alt || 'Producto');
   const srcLimpio = typeof src === 'string' ? src.trim() : '';
-  const srcFinal = error || !srcLimpio ? fallbackSrc : srcLimpio;
+  const srcTransformado = srcLimpio ? getSupabaseImageUrl(srcLimpio, { width: imgWidth, quality }) : srcLimpio;
+  const srcFinal = error || !srcLimpio ? fallbackSrc : srcTransformado;
 
   useEffect(() => {
     setError(false);
