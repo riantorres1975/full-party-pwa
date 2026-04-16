@@ -13,6 +13,7 @@ PWA para tienda de artículos de fiesta. El cliente navega el catálogo, arma su
 | Tailwind CSS | 3.4 | Estilos |
 | Supabase JS | 2.98 | Base de datos, Auth y Realtime |
 | lucide-react | latest | Íconos |
+| React Router DOM | 7 | Routing por pathname (BrowserRouter) |
 | Service Worker | — | PWA, cache offline |
 
 ---
@@ -32,7 +33,7 @@ PWA para tienda de artículos de fiesta. El cliente navega el catálogo, arma su
 │
 └── src/
     ├── main.jsx                ← entry point + registro SW
-    ├── AppRouter.jsx           ← rutas por hash
+    ├── AppRouter.jsx           ← BrowserRouter + Routes
     ├── App.jsx                 ← catálogo público
     │
     ├── lib/
@@ -289,7 +290,7 @@ Lectura pública. Solo admins pueden escribir. Se usa para el sistema de anuncio
 
 El cliente ingresa su folio o teléfono y ve un stepper animado con el estado actual. Si el pedido está cancelado muestra una pantalla especial.
 
-### Panel de administración (`/#/admin`)
+### Panel de administración (`/admin`)
 
 **Layout:**
 - Desktop: sidebar con avatar, nav con badges, quick stats, toggle de tema
@@ -326,7 +327,7 @@ El cliente ingresa su folio o teléfono y ve un stepper animado con el estado ac
 | Listo para Entrega (desde picking) | Lista de artículos entregados, faltantes y nuevo total |
 | Listo para Entrega (manual) | Aviso de que puede pasar o sale a domicilio |
 
-### Gestión de catálogo (`/#/admin/catalogo`)
+### Gestión de catálogo (`/admin/catalogo`)
 
 - Alta de productos con formulario en dos columnas
 - Imagen por archivo (JPG/PNG/GIF/WEBP/AVIF, máx 5 MB) o por URL externa
@@ -364,11 +365,12 @@ El cliente ingresa su folio o teléfono y ve un stepper animado con el estado ac
 | URL | Vista | Acceso |
 |---|---|---|
 | `/` | Landing Page pública | Libre |
-| `/#/catalogo` | Catálogo de productos | Libre |
-| `/#/admin` | Pedidos | Requiere sesión + email en `VITE_ADMIN_EMAILS` |
-| `/#/admin/catalogo` | Catálogo admin | Requiere sesión + email en `VITE_ADMIN_EMAILS` |
+| `/catalogo` | Catálogo de productos | Libre |
+| `/catalogo/:categoria` | Catálogo filtrado | Libre |
+| `/admin` | Pedidos | Requiere sesión + email en `VITE_ADMIN_EMAILS` |
+| `/admin/catalogo` | Catálogo admin | Requiere sesión + email en `VITE_ADMIN_EMAILS` |
 
-Enrutamiento por hash sin react-router. Funciona en cualquier hosting estático sin configuración adicional.
+Routing con React Router DOM v7 (BrowserRouter). El archivo `vercel.json` incluye el rewrite SPA necesario para que las rutas funcionen en Vercel.
 
 ---
 
@@ -378,7 +380,9 @@ Enrutamiento por hash sin react-router. Funciona en cualquier hosting estático 
 npm run build   # genera /dist
 ```
 
-Sube `/dist` a **Vercel** y configura las variables de entorno en el dashboard. El archivo `vercel.json` ya incluye los headers de seguridad.
+Sube `/dist` a **Vercel** y configura las variables de entorno en el dashboard. El archivo `vercel.json` ya incluye los headers de seguridad y el rewrite SPA para React Router.
+
+Google Analytics 4 está activo con el ID `G-E07C39EMGD` en `index.html`.
 
 Para Netlify agrega `public/_redirects`:
 ```

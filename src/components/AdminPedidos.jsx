@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { MessageCircle, ChevronDown, Package, LayoutGrid, ClipboardList, Search, RefreshCw, LogOut, ShoppingBag, Clock, CheckCircle2, XCircle, Phone, Truck, Store, MapPin, Bell } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { SIMBOLO_MONEDA } from '../data/productos';
@@ -740,25 +741,19 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
 
 // ── Dashboard principal ──────────────────────────────────────────────────────
 function useAdminVistaInicial() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [vista, setVista] = useState(() =>
-    window.location.hash === '#/admin/catalogo' ? 'catalogo' : 'pedidos'
+    location.pathname === '/admin/catalogo' ? 'catalogo' : 'pedidos'
   );
 
-  useEffect(() => {
-    const sync = () => {
-      setVista(window.location.hash === '#/admin/catalogo' ? 'catalogo' : 'pedidos');
-    };
-    window.addEventListener('hashchange', sync);
-    return () => window.removeEventListener('hashchange', sync);
-  }, []);
-
-  const setVistaYHash = (v) => {
+  const setVistaYUrl = (v) => {
     setVista(v);
-    // replaceState actualiza la URL sin disparar hashchange → evita re-render del router
-    history.replaceState(null, '', v === 'catalogo' ? '#/admin/catalogo' : '#/admin');
+    navigate(v === 'catalogo' ? '/admin/catalogo' : '/admin', { replace: true });
   };
 
-  return [vista, setVistaYHash];
+  return [vista, setVistaYUrl];
 }
 
 export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema }) {

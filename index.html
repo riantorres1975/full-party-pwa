@@ -10,8 +10,8 @@
     <meta name="author" content="<%- NOMBRE_NEGOCIO %>" />
     <script>
       (function () {
-        var hash = window.location.hash || '';
-        var isCatalogOrAdmin = hash.indexOf('#/catalogo') === 0 || hash.indexOf('#/admin') === 0;
+        var pathname = window.location.pathname || '';
+        var isCatalogOrAdmin = pathname.startsWith('/catalogo') || pathname.startsWith('/admin');
         if (isCatalogOrAdmin) {
           document.documentElement.classList.add('fp-catalog-immediate');
         } else {
@@ -231,14 +231,14 @@
       }
     </style>
 
-    <!-- Google Analytics 4 (reemplaza G-XXXXXXXXXX con tu Measurement ID) -->
-    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <!-- Google Analytics 4 (reemplaza G-E07C39EMGD con tu Measurement ID) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-E07C39EMGD"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-XXXXXXXXXX');
-    </script> -->
+      gtag('config', 'G-E07C39EMGD');
+    </script>
 
     <!-- JSON-LD: LocalBusiness -->
     <script type="application/ld+json">
@@ -393,8 +393,8 @@
           document.body.classList.add('fp-app-ready');
         };
 
-        var hash = window.location.hash || '';
-        var isCatalogOrAdmin = hash.indexOf('#/catalogo') === 0 || hash.indexOf('#/admin') === 0;
+        var pathname = window.location.pathname || '';
+        var isCatalogOrAdmin = pathname.startsWith('/catalogo') || pathname.startsWith('/admin');
         // El logo ahora usa src directo, no data-src
         if (!isCatalogOrAdmin) {
           window.__fpMarkAppReady();

@@ -29,7 +29,7 @@ export async function guardedQuery(queryFn) {
 
   if (result.error && isSessionError(result.error)) {
     await supabase.auth.signOut();
-    window.location.hash = '#/admin';
+    window.location.href = '/admin';
     return { data: null, error: { ...result.error, message: 'Sesión expirada. Inicia sesión de nuevo.' } };
   }
 
@@ -44,7 +44,7 @@ export async function guardedQuery(queryFn) {
 export async function throwIfSessionError(error) {
   if (error && isSessionError(error)) {
     await supabase.auth.signOut();
-    window.location.hash = '#/admin';
+    window.location.href = '/admin';
     throw new Error('Sesión expirada. Inicia sesión de nuevo.');
   }
 }

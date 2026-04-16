@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ShoppingBag, MessageCircle, MapPin, Star, Package,
   Sparkles, ArrowRight, Menu, X, Navigation, Clock,
@@ -82,7 +83,7 @@ const BURST_EMOJIS = ['🎉', '🎊', '✨', '⭐', '🌟', '🎈', '🎀', '�
 
 const NAV_LINKS = [
   { label: 'Inicio',     href: 'top',        hash: false },
-  { label: 'Catálogo',   href: '#/catalogo', hash: true  },
+  { label: 'Catálogo',   href: '/catalogo',  hash: true  },
   { label: 'Sucursales', href: 'sucursales', hash: false },
   { label: 'FAQ',        href: 'faq',        hash: false },
   { label: 'Reseñas',    href: 'resenas',    hash: false },
@@ -896,20 +897,21 @@ function BrandCard({ nombre, desc, color, emoji }) {
 // ════════════════════════════════════════════════════════════
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleNav = useCallback((link) => {
     setMenuOpen(false);
     if (link.hash) {
-      window.location.hash = link.href;
+      navigate(link.href);
     } else {
       document.getElementById(link.href)?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, []);
+  }, [navigate]);
 
   const irAlCatalogo = useCallback(() => {
     trackEvent('cta_catalogo_click');
-    window.location.hash = '#/catalogo';
-  }, []);
+    navigate('/catalogo');
+  }, [navigate]);
 
   return (
     <div id="top" className="relative min-h-screen font-body overflow-x-hidden" style={{ background: C.bgHero }}>

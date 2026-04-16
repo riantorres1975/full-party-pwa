@@ -1,39 +1,20 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import { LanguageProvider } from './hooks/useLanguage';
 
 const AuthCatalogRoutes = lazy(() => import('./routes/AuthCatalogRoutes'));
 
-function useHashRoute() {
-  const [hash, setHash] = useState(() => {
-    const currentHash = window.location.hash;
-    if (currentHash) return currentHash;
+const Spinner = (
+  <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--surface-primary)' }}>
+    <div className="w-8 h-8 rounded-full border-[3px] border-purple-700 border-t-purple-300 animate-spin" />
+  </div>
+);
 
-    const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    if (standalone) {
-      window.location.hash = '#/catalogo';
-      return '#/catalogo';
-    }
+function RouterEffects() {
+  const location = useLocation();
+  const esRutaLanding = location.pathname === '/';
 
-    return currentHash;
-  });
-  useEffect(() => {
-    const handler = () => setHash(window.location.hash);
-    window.addEventListener('hashchange', handler);
-    window.addEventListener('popstate', handler);
-    return () => {
-      window.removeEventListener('hashchange', handler);
-      window.removeEventListener('popstate', handler);
-    };
-  }, []);
-  return hash;
-}
-
-export default function AppRouter() {
-  const hash = useHashRoute();
-  const esRutaLanding = !hash.startsWith('#/admin') && !hash.startsWith('#/catalogo');
-
-  // Forzar landing en tema claro y revelar app sin esperar auth
   useEffect(() => {
     document.body.classList.toggle('landing-page', esRutaLanding);
 
@@ -80,21 +61,43 @@ export default function AppRouter() {
     requestAnimationFrame(revealApp);
   }, [esRutaLanding]);
 
+  return null;
+}
+
+export default function AppRouter() {
   return (
-    <LanguageProvider>
-      {esRutaLanding ? (
-        <LandingPage />
-      ) : (
-        <Suspense
-          fallback={
-            <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--surface-primary)' }}>
-              <div className="w-8 h-8 rounded-full border-[3px] border-purple-700 border-t-purple-300 animate-spin" />
-            </div>
-          }
-        >
-          <AuthCatalogRoutes hash={hash} />
-        </Suspense>
-      )}
-    </LanguageProvider>
+    <BrowserRouter>
+      <LanguageProvider>
+        <RouterEffects />
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route
+            path="/catalogo"
+            element={
+              <Suspense fallback={Spinner}>
+                <AuthCatalogRoutes />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/catalogo/:categoria"
+            element={
+              <Suspense fallback={Spinner}>
+                <AuthCatalogRoutes />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/admin/*"
+            element={
+              <Suspense fallback={Spinner}>
+                <AuthCatalogRoutes />
+              </Suspense>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </LanguageProvider>
+    </BrowserRouter>
   );
 }

@@ -97,7 +97,7 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
           {/* Acceso rápido al admin */}
           {isAdmin && (
             <a
-              href="#/admin"
+              href="/admin"
               className="hidden sm:flex items-center gap-1.5 text-xs font-body font-bold px-2.5 py-1.5 rounded-full
                          border-2 transition-all duration-200 active:scale-95"
               style={{
@@ -176,7 +176,7 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
 
                 {isAdmin && (
                   <a
-                    href="#/admin"
+                    href="/admin"
                     onClick={() => setMenuAbierto(false)}
                     className="block w-full text-left px-3 py-2 rounded-lg text-xs font-body font-bold transition-colors hover:bg-ink-100"
                     style={{ color: 'var(--text-primary)' }}
