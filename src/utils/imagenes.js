@@ -12,12 +12,10 @@ export function getSafeProductImageUrl(url, nombre = '', size = '900x900') {
 }
 
 /**
- * Añade parámetros de transformación a URLs de Supabase Storage.
- * Para URLs externas (no Supabase) devuelve la URL sin cambios.
+ * Reservado para cuando se active el plan Pro de Supabase (Image Transformations).
+ * Por ahora devuelve la URL original sin modificar.
  */
-export function getSupabaseImageUrl(url, { width = 400, quality = 80 } = {}) {
+export function getSupabaseImageUrl(url) {
   const cleanUrl = typeof url === 'string' ? url.trim() : '';
-  if (!cleanUrl || !SUPABASE_STORAGE_RE.test(cleanUrl)) return cleanUrl;
-  const base = cleanUrl.split('?')[0];
-  return `${base}?width=${width}&format=webp&quality=${quality}`;
+  return cleanUrl;
 }
