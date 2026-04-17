@@ -208,7 +208,7 @@ const SUCURSALES = [
     nombre:    ENV.suc1.nombre,
     badge:     ENV.suc1.badge,
     direccion: ENV.suc1.direccion,
-    horario:   ENV.horario,
+    horario:   'Lun–Sáb 9am–7pm',
     mapsUrl:   ENV.suc1.mapsUrl,
     embedUrl:  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3762.8065692929063!2d-102.0549798!3d19.420761799999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x842de367f2d59469%3A0x4799181c21c26fd5!2sFull%20Party%20Uruapan%20Suc%20Francisco%20Villa!5e0!3m2!1ses-419!2smx!4v1776194961609!5m2!1ses-419!2smx',
     facebook:  ENV.suc1.facebook,
@@ -220,7 +220,7 @@ const SUCURSALES = [
     nombre:    ENV.suc2.nombre,
     badge:     ENV.suc2.badge,
     direccion: ENV.suc2.direccion,
-    horario:   ENV.horario,
+    horario:   'Lun–Sáb 9am–7pm · Dom 9am–2pm',
     mapsUrl:   ENV.suc2.mapsUrl,
     embedUrl:  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3763.1415130404407!2d-102.0274577!3d19.4062907!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x842de3bcdec90e8d%3A0x5158156fe2efca48!2sFull%20Party%20Uruapan%20Suc%20Sol%20Naciente!5e0!3m2!1ses-419!2smx!4v1776194928231!5m2!1ses-419!2smx',
     facebook:  ENV.suc2.facebook,
@@ -241,11 +241,11 @@ const FAQS = [
   },
   {
     pregunta:  '¿Hacen envíos a todo México?',
-    respuesta: 'Sí, realizamos envíos locales en Uruapan y nacionales a todo México. También puedes recoger en cualquiera de nuestras dos sucursales: Suc. Francisco Villa (tel. 452 525 4596) o Suc. Sol Naciente (tel. 452 104 0377).',
+    respuesta: 'Sí, realizamos envíos locales en Uruapan y nacionales a todo México. También puedes recoger en nuestras sucursales: Suc. Francisco Villa (tel. 452 525 4596, Lun–Sáb 9am–7pm) o Suc. Sol Naciente (tel. 452 104 0377, Lun–Sáb 9am–7pm · Dom 9am–2pm).',
   },
   {
     pregunta:  '¿Dónde están ubicadas sus sucursales?',
-    respuesta: 'Tenemos dos sucursales en Uruapan, Michoacán. Suc. Francisco Villa: C. Francisco Villa 103, Centro. Suc. Sol Naciente: Universo 117, Col. Sol Naciente. Ambas abren Lun–Sáb 9am–7pm y Dom 9am–2pm.',
+    respuesta: 'Tenemos dos sucursales en Uruapan, Michoacán. Suc. Francisco Villa: C. Francisco Villa 103, Centro — Lun–Sáb 9am–7pm (cerrado domingos). Suc. Sol Naciente: Universo 117, Col. Sol Naciente — Lun–Sáb 9am–7pm y Dom 9am–2pm.',
   },
   {
     pregunta:  '¿Qué marcas de globos manejan?',
