@@ -1364,13 +1364,7 @@ export default function LandingPage() {
 
         {/* ══ NOVEDADES ═══════════════════════════════════ */}
         {novedades.length > 0 && (
-          <section
-            className="lp-below-fold px-5 pt-8 pb-14"
-            style={{
-              background: `linear-gradient(160deg, #FFF0FA 0%, #F3EEFF 45%, #EBF6FF 100%)`,
-              borderTop: `1px solid ${C.pink}22`,
-            }}
-          >
+          <section className="lp-below-fold px-5 pt-8 pb-14" style={{ background: C.bgHero }}>
             <div className="max-w-5xl mx-auto">
               <Reveal>
                 <div className="flex items-center justify-between mb-7 flex-wrap gap-3">
