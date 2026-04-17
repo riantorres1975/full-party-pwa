@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ShoppingBag, MessageCircle, MapPin, Star, Package,
@@ -6,6 +6,8 @@ import {
   ChevronLeft, ChevronRight, ChevronDown,
 } from 'lucide-react';
 import './LandingPage.css';
+import { useProductos } from '../hooks/useProductos';
+import OptimizedImage from '../components/OptimizedImage';
 
 // ════════════════════════════════════════════════════════════
 // 1. PALETA — colores pasteles festivos del logo Full Party
@@ -901,11 +903,224 @@ function BrandCard({ nombre, desc, color, emoji }) {
 }
 
 // ════════════════════════════════════════════════════════════
-// 6. COMPONENTE PRINCIPAL
+// 6. CARRUSEL DE NOVEDADES
+// ════════════════════════════════════════════════════════════
+const MAX_NOVEDADES = 12;
+const CARRUSEL_INTERVAL = 3800;
+const CARD_GAP = 16;
+
+function NovedadesCarrusel({ novedades }) {
+  const containerRef  = useRef(null);
+  const [idx, setIdx] = useState(0);
+  const [animating, setAnimating] = useState(true);
+  const [paused, setPaused] = useState(false);
+  const [cols, setCols]     = useState(4);
+  const [cardW, setCardW]   = useState(0);
+
+  // Calcula ancho de card y columnas según el contenedor real
+  useEffect(() => {
+    function measure() {
+      if (!containerRef.current) return;
+      const w = containerRef.current.offsetWidth;
+      const c = w >= 1024 ? 4 : w >= 640 ? 3 : 2;
+      setCols(c);
+      setCardW((w - CARD_GAP * (c - 1)) / c);
+    }
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  // Clonamos las primeras `cols` cards al final para el loop infinito
+  const items = useMemo(() => [...novedades, ...novedades.slice(0, cols)], [novedades, cols]);
+  const realLen = novedades.length;
+
+  const goNext = useCallback(() => {
+    setAnimating(true);
+    setIdx(i => i + 1);
+  }, []);
+
+  const goPrev = useCallback(() => {
+    setAnimating(true);
+    setIdx(i => Math.max(0, i - 1));
+  }, []);
+
+  // Cuando el rail llega a los clones, salta sin transición al índice real
+  const handleTransitionEnd = useCallback(() => {
+    if (idx >= realLen) {
+      setAnimating(false);
+      setIdx(idx % realLen);
+    }
+  }, [idx, realLen]);
+
+  // Re-activa transición tras el salto instantáneo
+  useEffect(() => {
+    if (!animating) {
+      const t = setTimeout(() => setAnimating(true), 30);
+      return () => clearTimeout(t);
+    }
+  }, [animating]);
+
+  // Auto-avance
+  useEffect(() => {
+    if (paused || realLen <= cols) return;
+    const t = setInterval(goNext, CARRUSEL_INTERVAL);
+    return () => clearInterval(t);
+  }, [paused, realLen, cols, goNext]);
+
+  const translateX = -(idx * (cardW + CARD_GAP));
+  const dotIdx     = idx % realLen;
+
+  if (realLen === 0) return null;
+
+  return (
+    <div
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {/* Rail deslizante */}
+      <div ref={containerRef} className="overflow-hidden">
+        <div
+          className="flex"
+          style={{
+            gap:       CARD_GAP,
+            transform: cardW ? `translateX(${translateX}px)` : 'none',
+            transition: animating ? 'transform 0.55s cubic-bezier(0.25, 1, 0.5, 1)' : 'none',
+            willChange: 'transform',
+          }}
+          onTransitionEnd={handleTransitionEnd}
+        >
+          {items.map((p, i) => (
+            <Link
+              key={`${p.id}-${i}`}
+              to="/catalogo"
+              className="group flex flex-col flex-shrink-0"
+              style={{
+                width:        cardW || `calc(${100 / cols}% - ${CARD_GAP}px)`,
+                borderRadius: '1.25rem',
+                background:   'white',
+                border:       `2px solid transparent`,
+                backgroundImage: `linear-gradient(white, white) padding-box,
+                                  linear-gradient(135deg, ${C.pink}66, ${C.purple}66) border-box`,
+                boxShadow:    '0 4px 18px rgba(192,132,252,0.12)',
+                transition:   'transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease',
+                overflow:     'hidden',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-6px) scale(1.02)';
+                e.currentTarget.style.boxShadow = `0 20px 40px ${C.pink}30, 0 8px 16px ${C.purple}20`;
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                e.currentTarget.style.boxShadow = '0 4px 18px rgba(192,132,252,0.12)';
+              }}
+            >
+              {/* Imagen: fondo degradado suave, imagen centrada completa */}
+              <div
+                className="relative flex items-center justify-center overflow-hidden"
+                style={{
+                  aspectRatio: '1/1',
+                  background:  `radial-gradient(circle at 60% 40%, ${C.pink}14 0%, ${C.purple}0a 60%, transparent 100%)`,
+                  padding:     '12px',
+                }}
+              >
+                <OptimizedImage
+                  src={p.imagen_url}
+                  alt={p.nombre}
+                  className="w-full h-full group-hover:scale-110 transition-transform duration-500"
+                  style={{ objectFit: 'contain' }}
+                />
+                {/* Badge Nuevo */}
+                <span
+                  className="absolute top-2 left-2 text-[10px] font-black px-2.5 py-1 rounded-full text-white flex items-center gap-1"
+                  style={{
+                    background:    `linear-gradient(135deg, ${C.pink}, ${C.purple})`,
+                    boxShadow:     `0 2px 8px ${C.pink}55`,
+                    backdropFilter:'blur(4px)',
+                  }}
+                >
+                  <Sparkles size={9} aria-hidden="true" /> Nuevo
+                </span>
+                {/* Brillo en hover */}
+                <div
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                  style={{
+                    background: `linear-gradient(135deg, ${C.pink}0a 0%, transparent 50%, ${C.cyan}0a 100%)`,
+                  }}
+                />
+              </div>
+
+              {/* Info */}
+              <div
+                className="p-3 flex flex-col flex-1"
+                style={{ borderTop: `1px solid ${C.borderSoft}` }}
+              >
+                <p className="text-[10px] font-black uppercase tracking-wider mb-0.5" style={{ color: C.purple }}>
+                  {p.categoria || 'Artículo'}
+                </p>
+                <h3 className="font-display text-xs leading-snug flex-1 line-clamp-2" style={{ color: C.textHead }}>
+                  {p.nombre}
+                </h3>
+                <span
+                  className="mt-2 inline-flex items-center gap-1 text-[10px] font-black group-hover:gap-2 transition-all"
+                  style={{ color: C.pink }}
+                >
+                  Ver en catálogo <ArrowRight size={10} aria-hidden="true" />
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Controles */}
+      {realLen > cols && (
+        <div className="flex items-center justify-center gap-3 mt-5">
+          <button onClick={goPrev} aria-label="Anterior"
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110"
+            style={{ background: `${C.pink}18`, color: C.pink }}>
+            <ChevronLeft size={16} />
+          </button>
+
+          <div className="flex gap-1.5">
+            {novedades.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => { setAnimating(true); setIdx(i); }}
+                aria-label={`Producto ${i + 1}`}
+                className="rounded-full transition-all duration-400"
+                style={{
+                  width:      i === dotIdx ? 20 : 7,
+                  height:     7,
+                  background: i === dotIdx ? C.pink : `${C.pink}44`,
+                }}
+              />
+            ))}
+          </div>
+
+          <button onClick={goNext} aria-label="Siguiente"
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110"
+            style={{ background: `${C.pink}18`, color: C.pink }}>
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// 7. COMPONENTE PRINCIPAL
 // ════════════════════════════════════════════════════════════
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { productos } = useProductos();
+  const novedades = useMemo(
+    () => productos.filter(p => p.es_nuevo === true && p.activo !== false).slice(0, MAX_NOVEDADES),
+    [productos],
+  );
 
   const handleNav = useCallback((link) => {
     setMenuOpen(false);
@@ -1168,8 +1383,41 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ══ NOVEDADES ═══════════════════════════════════ */}
+        {novedades.length > 0 && (
+          <section className="lp-below-fold px-5 py-16" style={{ background: C.bgHero }}>
+            <div className="max-w-5xl mx-auto">
+              <Reveal>
+                <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
+                  <div>
+                    <span
+                      className="inline-flex items-center gap-1.5 text-xs font-black px-3 py-1.5 rounded-full mb-2"
+                      style={{ background: `${C.pink}18`, color: C.pink }}
+                    >
+                      <Sparkles size={11} aria-hidden="true" /> Recién llegados
+                    </span>
+                    <h2 className="font-display text-2xl sm:text-3xl" style={{ color: C.textHead }}>
+                      Novedades
+                    </h2>
+                  </div>
+                  <Link
+                    to="/catalogo"
+                    className="text-xs font-black flex items-center gap-1 hover:gap-2 transition-all"
+                    style={{ color: C.pink }}
+                  >
+                    Ver todo el catálogo <ArrowRight size={12} aria-hidden="true" />
+                  </Link>
+                </div>
+              </Reveal>
+              <Reveal delay={0.1}>
+                <NovedadesCarrusel novedades={novedades} />
+              </Reveal>
+            </div>
+          </section>
+        )}
+
         {/* ══ CATEGORÍAS ══════════════════════════════════ */}
-        <section className="lp-below-fold px-5 py-16" style={{ background: C.bgHero }}>
+        <section className="lp-below-fold px-5 py-16" style={{ background: C.bgBenefits }}>
           <div className="max-w-5xl mx-auto">
             <Reveal><SectionTitle title="Categorías Destacadas" subtitle="Los artículos más solicitados para tus eventos." /></Reveal>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
