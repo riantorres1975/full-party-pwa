@@ -1361,28 +1361,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ══ BENEFICIOS ══════════════════════════════════ */}
-        <section className="lp-below-fold px-5 py-16" style={{ background: C.bgBenefits }}>
-          <div className="max-w-5xl mx-auto">
-            <Reveal><SectionTitle title="¿Por qué Full Party?" subtitle="Todo lo que necesitas para hacer tu fiesta un éxito." /></Reveal>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-              {BENEFICIOS.map(({ icon: Icon, titulo, desc, color, gradient }, i) => (
-                <Reveal key={titulo} delay={i * 0.1}>
-                  <GradCard gradient={gradient} hoverColor={`${color}22`} className="h-full">
-                    <div className="p-6 flex flex-col gap-4">
-                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: `${color}18` }}>
-                        <Icon size={24} style={{ color }} aria-hidden="true" />
-                      </div>
-                      <h3 className="font-display text-base" style={{ color: C.textHead }}>{titulo}</h3>
-                      <p className="text-sm leading-relaxed"  style={{ color: C.textBody }}>{desc}</p>
-                    </div>
-                  </GradCard>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* ══ NOVEDADES ═══════════════════════════════════ */}
         {novedades.length > 0 && (
           <section className="lp-below-fold px-5 py-16" style={{ background: C.bgHero }}>
@@ -1415,6 +1393,28 @@ export default function LandingPage() {
             </div>
           </section>
         )}
+
+        {/* ══ BENEFICIOS ══════════════════════════════════ */}
+        <section className="lp-below-fold px-5 py-16" style={{ background: C.bgBenefits }}>
+          <div className="max-w-5xl mx-auto">
+            <Reveal><SectionTitle title="¿Por qué Full Party?" subtitle="Todo lo que necesitas para hacer tu fiesta un éxito." /></Reveal>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              {BENEFICIOS.map(({ icon: Icon, titulo, desc, color, gradient }, i) => (
+                <Reveal key={titulo} delay={i * 0.1}>
+                  <GradCard gradient={gradient} hoverColor={`${color}22`} className="h-full">
+                    <div className="p-6 flex flex-col gap-4">
+                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: `${color}18` }}>
+                        <Icon size={24} style={{ color }} aria-hidden="true" />
+                      </div>
+                      <h3 className="font-display text-base" style={{ color: C.textHead }}>{titulo}</h3>
+                      <p className="text-sm leading-relaxed"  style={{ color: C.textBody }}>{desc}</p>
+                    </div>
+                  </GradCard>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
 
         {/* ══ CATEGORÍAS ══════════════════════════════════ */}
         <section className="lp-below-fold px-5 py-16" style={{ background: C.bgBenefits }}>
