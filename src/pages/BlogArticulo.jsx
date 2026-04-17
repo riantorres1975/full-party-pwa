@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link, useParams, Navigate } from 'react-router-dom';
 import { Calendar, User, ArrowLeft, ArrowRight, ShoppingBag, MessageCircle } from 'lucide-react';
 import { ARTICULOS, getArticulo } from '../data/articulos';
+import SiteLayout from '../components/SiteLayout';
 
 const C = {
   pink:    '#F472B6',
@@ -96,8 +97,8 @@ export default function BlogArticulo() {
   const otros = ARTICULOS.filter((a) => a.slug !== articulo.slug).slice(0, 3);
 
   return (
-    <div style={{ background: C.bgHero, color: C.textBody }} className="min-h-screen">
-      <main className="max-w-3xl mx-auto px-5 py-12">
+    <SiteLayout>
+      <div className="max-w-3xl mx-auto px-5 py-12">
 
         <Link
           to="/blog"
@@ -228,7 +229,7 @@ export default function BlogArticulo() {
             </div>
           </section>
         )}
-      </main>
-    </div>
+      </div>
+    </SiteLayout>
   );
 }

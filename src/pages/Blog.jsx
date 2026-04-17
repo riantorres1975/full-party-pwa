@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Calendar, ArrowRight, MessageCircle } from 'lucide-react';
 import { ARTICULOS } from '../data/articulos';
+import SiteLayout from '../components/SiteLayout';
 
 const C = {
   pink:    '#F472B6',
@@ -26,8 +27,8 @@ const COLORS = {
 
 export default function Blog() {
   return (
-    <div style={{ background: C.bgHero, color: C.textBody }} className="min-h-screen">
-      <main className="max-w-5xl mx-auto px-5 py-12">
+    <SiteLayout>
+      <div className="max-w-5xl mx-auto px-5 py-12">
 
         <header className="text-center mb-14">
           <Link
@@ -125,7 +126,7 @@ export default function Blog() {
             <MessageCircle size={16} aria-hidden="true" /> Escribir por WhatsApp
           </a>
         </section>
-      </main>
-    </div>
+      </div>
+    </SiteLayout>
   );
 }

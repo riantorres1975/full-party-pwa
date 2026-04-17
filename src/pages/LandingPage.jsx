@@ -82,12 +82,14 @@ const LETTER_COLORS = [C.pink, C.purple, C.green, C.orange, C.cyan, C.blue, C.ye
 const BURST_EMOJIS = ['🎉', '🎊', '✨', '⭐', '🌟', '🎈', '🎀', '🎁'];
 
 const NAV_LINKS = [
-  { label: 'Inicio',     href: 'top',        hash: false },
-  { label: 'Catálogo',   href: '/catalogo',  hash: true  },
-  { label: 'Sucursales', href: 'sucursales', hash: false },
-  { label: 'FAQ',        href: 'faq',        hash: false },
-  { label: 'Reseñas',    href: 'resenas',    hash: false },
-  { label: 'Contacto',   href: 'contacto',   hash: false },
+  { label: 'Inicio',        href: 'top',            hash: false },
+  { label: 'Catálogo',      href: '/catalogo',      hash: true  },
+  { label: 'Destacados',    href: '/destacados',    hash: true  },
+  { label: 'Cómo funciona', href: '/como-funciona', hash: true  },
+  { label: 'Sucursales',    href: '/sucursales',    hash: true  },
+  { label: 'Blog',          href: '/blog',          hash: true  },
+  { label: 'FAQ',           href: 'faq',            hash: false },
+  { label: 'Contacto',      href: 'contacto',       hash: false },
 ];
 
 const BENEFICIOS = [
@@ -990,12 +992,12 @@ export default function LandingPage() {
             </div>
 
             {/* Links desktop */}
-            <div className="hidden md:flex items-center gap-1">
+            <div className="hidden lg:flex items-center gap-0.5">
               {NAV_LINKS.map(l => (
                 <button
                   key={l.label}
                   onClick={() => handleNav(l)}
-                  className="lp-nav-link px-4 py-2"
+                  className="lp-nav-link px-3 py-2 whitespace-nowrap text-xs"
                   style={{ color: C.textBody }}
                 >
                   {l.label}
@@ -1005,7 +1007,7 @@ export default function LandingPage() {
                 href={WA_HREF}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="ml-2 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-black text-white lp-scale-hover"
+                className="ml-2 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-black text-white lp-scale-hover whitespace-nowrap"
                 style={{ background: `linear-gradient(135deg, ${C.pink}, ${C.purple})` }}
                 onClick={() => trackEvent('nav_whatsapp_click')}
               >
@@ -1015,7 +1017,7 @@ export default function LandingPage() {
 
             {/* Hamburger */}
             <button
-              className="md:hidden p-2 rounded-xl"
+              className="lg:hidden p-2 rounded-xl"
               style={{ background: C.surfaceLavender, color: C.purple }}
               onClick={() => setMenuOpen(v => !v)}
               aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
@@ -1027,7 +1029,7 @@ export default function LandingPage() {
 
           {/* Menú mobile */}
           {menuOpen && (
-            <div className="md:hidden border-t bg-white px-5 py-4 flex flex-col gap-1" style={{ borderColor: C.borderSoft }}>
+            <div className="lg:hidden border-t bg-white px-5 py-4 flex flex-col gap-1" style={{ borderColor: C.borderSoft }}>
               {NAV_LINKS.map(l => (
                 <button
                   key={l.label}
