@@ -1,13 +1,21 @@
 import { useState, useRef, useCallback } from 'react';
 
 function getInitialCount() {
-  if (typeof window === 'undefined') return 8;
-  return window.innerWidth < 768 ? 4 : 12;
+  if (typeof window === 'undefined') return 12;
+  const w = window.innerWidth;
+  if (w < 640)  return 6;   // móvil: 2 cols × 3 filas
+  if (w < 1024) return 12;  // tablet: 3-4 cols × 3 filas
+  if (w < 1536) return 20;  // laptop: 5-6 cols × ~3-4 filas
+  return 28;                // desktop ancho: 7-9 cols × ~3-4 filas
 }
 
 function getBatchSize() {
-  if (typeof window === 'undefined') return 8;
-  return window.innerWidth < 768 ? 6 : 12;
+  if (typeof window === 'undefined') return 12;
+  const w = window.innerWidth;
+  if (w < 640)  return 8;
+  if (w < 1024) return 12;
+  if (w < 1536) return 20;
+  return 28;
 }
 
 /**

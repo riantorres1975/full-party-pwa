@@ -4,7 +4,7 @@ import { registrarCategoria, registrarMarca, registrarTamano } from '../data/pro
 
 const PRODUCTOS_CACHE_KEY = 'fp_productos_cache_v1';
 const PRODUCTOS_CACHE_TTL_MS = 30 * 60 * 1000;
-const INITIAL_PRODUCT_COUNT = 24;
+const INITIAL_PRODUCT_COUNT = 40;
 const LCP_IMAGE_KEY = 'fp_lcp_image_v1';
 
 function writeLcpImageHint(lista) {
