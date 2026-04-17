@@ -58,6 +58,14 @@
   .hero-glow      { animation: heroGlow    3.5s ease-in-out infinite;                    }
 }
 
+/* ── Cards de novedades ────────────────────────────────────── */
+@keyframes novedadPulse {
+  0%, 100% { box-shadow: 0 4px 18px rgba(244, 114, 182, 0.18), 0 2px 8px rgba(192, 132, 252, 0.10); }
+  50%       { box-shadow: 0 8px 32px rgba(244, 114, 182, 0.36), 0 4px 16px rgba(192, 132, 252, 0.22); }
+}
+.novedad-card { animation: novedadPulse 3s ease-in-out infinite; }
+.novedad-card:hover { animation-play-state: paused; }
+
 /* ── Botón CTA principal ───────────────────────────────────── */
 @keyframes pinkPulse {
   0%, 100% { box-shadow: 0 0 0 0   rgba(244, 114, 182, 0.6), 0 6px 20px rgba(244, 114, 182, 0.35); }

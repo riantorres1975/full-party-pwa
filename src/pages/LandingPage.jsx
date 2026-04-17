@@ -995,29 +995,17 @@ function NovedadesCarrusel({ novedades }) {
             <Link
               key={`${p.id}-${i}`}
               to="/catalogo"
-              className="group flex flex-col flex-shrink-0"
+              className="novedad-card group flex flex-col flex-shrink-0"
               style={{
                 width:        cardW || `calc(${100 / cols}% - ${CARD_GAP}px)`,
                 borderRadius: '1.25rem',
                 background:   'white',
-                border:       `2px solid ${C.pink}40`,
-                boxShadow:    `0 6px 24px ${C.pink}20, 0 2px 8px ${C.purple}15`,
-                transition:   'transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease, border-color 0.3s ease',
+                transition:   'transform 0.3s cubic-bezier(0.16,1,0.3,1)',
                 overflow:     'hidden',
               }}
-              onMouseEnter={e => {
-                e.currentTarget.style.transform = 'translateY(-7px) scale(1.02)';
-                e.currentTarget.style.boxShadow = `0 24px 48px ${C.pink}35, 0 8px 20px ${C.purple}25`;
-                e.currentTarget.style.borderColor = C.pink;
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                e.currentTarget.style.boxShadow = `0 6px 24px ${C.pink}20, 0 2px 8px ${C.purple}15`;
-                e.currentTarget.style.borderColor = `${C.pink}40`;
-              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-7px) scale(1.02)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0) scale(1)'; }}
             >
-              {/* Franja de color arriba */}
-              <div style={{ height: 4, background: `linear-gradient(90deg, ${C.pink}, ${C.purple}, ${C.cyan})` }} />
 
               {/* Imagen */}
               <div
