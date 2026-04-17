@@ -11,6 +11,54 @@ const Spinner = (
   </div>
 );
 
+const SITE_NAME   = 'Full Party Uruapan';
+const SITE_URL    = 'https://www.fullpartyuruapan.com.mx';
+
+const PAGE_META = {
+  '/':        {
+    title:       `${SITE_NAME} — Artículos para Fiesta al Mayoreo en Uruapan`,
+    description: 'Distribuidora de artículos para fiesta en Uruapan, Michoacán. +500 productos: globos Glomex, cortinas de lluvia, guirnaldas, velas y sets. Mayoreo y menudeo. Envíos a todo México.',
+    canonical:   `${SITE_URL}/`,
+  },
+  '/catalogo': {
+    title:       `Catálogo de Artículos para Fiesta | ${SITE_NAME}`,
+    description: 'Explora +500 productos al mayoreo: globos de látex Glomex, globos foil, cortinas de lluvia, guirnaldas, velas, sets y accesorios. Precios escalonados y envíos a todo México.',
+    canonical:   `${SITE_URL}/catalogo`,
+  },
+  '/admin':   {
+    title:       `Administración | ${SITE_NAME}`,
+    description: null,
+    canonical:   null,
+  },
+};
+
+function setPageMeta({ title, description, canonical }) {
+  if (title) document.title = title;
+
+  const mDesc = document.querySelector('meta[name="description"]');
+  if (mDesc && description) mDesc.setAttribute('content', description);
+
+  const ogTitle = document.querySelector('meta[property="og:title"]');
+  if (ogTitle && title) ogTitle.setAttribute('content', title);
+
+  const ogDesc = document.querySelector('meta[property="og:description"]');
+  if (ogDesc && description) ogDesc.setAttribute('content', description);
+
+  const twTitle = document.querySelector('meta[name="twitter:title"]');
+  if (twTitle && title) twTitle.setAttribute('content', title);
+
+  const twDesc = document.querySelector('meta[name="twitter:description"]');
+  if (twDesc && description) twDesc.setAttribute('content', description);
+
+  let canonicalEl = document.querySelector('link[rel="canonical"]');
+  if (!canonicalEl) {
+    canonicalEl = document.createElement('link');
+    canonicalEl.rel = 'canonical';
+    document.head.appendChild(canonicalEl);
+  }
+  if (canonical) canonicalEl.href = canonical;
+}
+
 function RouterEffects() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -24,6 +72,16 @@ function RouterEffects() {
       window.navigator.standalone;
     if (standalone) navigate('/catalogo', { replace: true });
   }, []);
+
+  useEffect(() => {
+    const path = location.pathname;
+    const meta =
+      PAGE_META[path] ??
+      (path.startsWith('/admin')   ? PAGE_META['/admin']   : null) ??
+      (path.startsWith('/catalogo')? PAGE_META['/catalogo']: null) ??
+      PAGE_META['/'];
+    setPageMeta(meta);
+  }, [location.pathname]);
 
   useEffect(() => {
     document.body.classList.toggle('landing-page', esRutaLanding);
