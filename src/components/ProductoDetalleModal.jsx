@@ -50,35 +50,6 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
 
   if (!producto) return null;
 
-  // JSON-LD inyectado en <head> mientras el modal está abierto
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: producto.nombre,
-    ...(producto.descripcion ? { description: producto.descripcion } : {}),
-    image: getSupabaseImageUrl(
-      getSafeProductImageUrl(producto.imagen_url, producto.nombre, '900x900'),
-      { width: 900, quality: 85 }
-    ),
-    ...(marca ? { brand: { '@type': 'Brand', name: marca } } : {}),
-    offers: {
-      '@type': agotado ? 'Offer' : 'AggregateOffer',
-      priceCurrency: 'MXN',
-      availability: agotado
-        ? 'https://schema.org/OutOfStock'
-        : 'https://schema.org/InStock',
-      ...(agotado
-        ? { price: precioBase.toFixed(2) }
-        : {
-            lowPrice: escalasMayoreo.length > 0
-              ? Math.min(...escalasMayoreo.map(e => e.precio)).toFixed(2)
-              : precioBase.toFixed(2),
-            highPrice: precioBase.toFixed(2),
-          }),
-      seller: { '@type': 'Organization', name: 'Full Party Uruapan' },
-    },
-  };
-
   const agotado = producto.activo === false;
   const marca = typeof producto.marca === 'string' ? producto.marca.trim() : '';
   const tamano = typeof producto.tamano === 'string' ? producto.tamano.trim() : '';
@@ -110,6 +81,35 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
     producto.stock_ilimitado === false &&
     (producto.stock_actual || 0) > 0 &&
     (producto.stock_actual || 0) <= 5;
+
+  // JSON-LD inyectado en <head> mientras el modal está abierto
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: producto.nombre,
+    ...(producto.descripcion ? { description: producto.descripcion } : {}),
+    image: getSupabaseImageUrl(
+      getSafeProductImageUrl(producto.imagen_url, producto.nombre, '900x900'),
+      { width: 900, quality: 85 }
+    ),
+    ...(marca ? { brand: { '@type': 'Brand', name: marca } } : {}),
+    offers: {
+      '@type': agotado ? 'Offer' : 'AggregateOffer',
+      priceCurrency: 'MXN',
+      availability: agotado
+        ? 'https://schema.org/OutOfStock'
+        : 'https://schema.org/InStock',
+      ...(agotado
+        ? { price: precioBase.toFixed(2) }
+        : {
+            lowPrice: escalasMayoreo.length > 0
+              ? Math.min(...escalasMayoreo.map(e => e.precio)).toFixed(2)
+              : precioBase.toFixed(2),
+            highPrice: precioBase.toFixed(2),
+          }),
+      seller: { '@type': 'Organization', name: 'Full Party Uruapan' },
+    },
+  };
 
   return (
     <>
