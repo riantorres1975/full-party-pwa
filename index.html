@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#fbf7f3" />
-    <meta name="description" content="Distribuidora de articulos para fiesta en Uruapan, Michoacan. Especialistas en globos Glomex, kits de personajes, cortinas de lluvia y guirnaldas. Precios de mayoreo y pedidos por WhatsApp." />
-    <meta name="keywords" content="globos uruapan, tienda de globos uruapan, globos al mayoreo uruapan, globos de latex uruapan, globos de personajes uruapan, distribuidora de globos michoacan, full party uruapan, glomex decoratex sempertex" />
+    <meta name="description" content="Distribuidora de artículos para fiesta en Uruapan, Michoacán. +500 productos: globos Glomex, cortinas de lluvia, guirnaldas, velas, sets y accesorios. Mayoreo y menudeo. Envíos a todo México. Pedidos por WhatsApp." />
+    <meta name="keywords" content="globos uruapan, globos al mayoreo uruapan, globos de latex uruapan, globos foil uruapan, globos de personajes uruapan, cortinas de lluvia uruapan, guirnaldas uruapan, velas para fiesta, sets de globos, globos glomex michoacan, distribuidora articulos fiesta uruapan, full party uruapan, glomex decoratex sempertex, globos cumpleanos uruapan, decoracion fiesta michoacan, globos graduacion, globos dia de las madres, letras foil, brillo para globos, accesorios globos" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="author" content="<%- NOMBRE_NEGOCIO %>" />
     <script>
@@ -41,8 +41,8 @@
     </script>
 
     <!-- Open Graph -->
-    <meta property="og:title" content="<%- NOMBRE_NEGOCIO %> — Mayoreo de Artículos para Fiesta en Uruapan" />
-    <meta property="og:description" content="Especialistas en globos Glomex, kits de personajes, cortinas de lluvia y guirnaldas en Uruapan. Mayoreo y pedidos por WhatsApp." />
+    <meta property="og:title" content="<%- NOMBRE_NEGOCIO %> — Artículos para Fiesta al Mayoreo en Uruapan" />
+    <meta property="og:description" content="+500 productos: globos Glomex, cortinas de lluvia, guirnaldas, velas y sets. Mayoreo y menudeo. Envíos a todo México. Pedidos por WhatsApp." />
     <meta property="og:image" content="<%- SITE_URL %>/og-image.jpg" />
     <meta property="og:image:alt" content="<%- NOMBRE_NEGOCIO %> - Catalogo digital mayoreo de articulos para fiesta" />
     <meta property="og:url" content="<%- SITE_URL %>/" />
@@ -52,8 +52,8 @@
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="<%- NOMBRE_NEGOCIO %> — Mayoreo de Artículos para Fiesta" />
-    <meta name="twitter:description" content="Especialistas en globos Glomex, kits de personajes, cortinas de lluvia y guirnaldas en Uruapan. Mayoreo y pedidos por WhatsApp." />
+    <meta name="twitter:title" content="<%- NOMBRE_NEGOCIO %> — Artículos para Fiesta al Mayoreo en Uruapan" />
+    <meta name="twitter:description" content="+500 productos: globos, cortinas de lluvia, guirnaldas y más. Envíos a todo México. Pedidos por WhatsApp." />
     <meta name="twitter:image" content="<%- SITE_URL %>/og-image.jpg" />
     <meta name="twitter:image:alt" content="<%- NOMBRE_NEGOCIO %> - Catalogo digital mayoreo de articulos para fiesta" />
 
@@ -286,58 +286,100 @@
       "@type": "Store",
       "@id": "<%- SITE_URL %>/#localbusiness",
       "name": "<%- NOMBRE_NEGOCIO %>",
-      "description": "Distribuidora de articulos para fiesta en Uruapan, Michoacan. Especialistas en globos Glomex, kits de personajes, cortinas de lluvia y guirnaldas.",
+      "description": "Distribuidora de artículos para fiesta en Uruapan, Michoacán con más de 500 productos. Especializados en globos Glomex, Decoratex y Sempertex, cortinas de lluvia, guirnaldas, velas, sets y accesorios. Mayoreo y menudeo. Envíos a todo México.",
       "url": "<%- SITE_URL %>",
       "logo": "<%- SITE_URL %>/icons/logo-master.png",
       "image": "<%- SITE_URL %>/og-image.jpg",
-      "telephone": "+<%- WHATSAPP_NUMBER %>",
+      "telephone": "+52 452 104 0377",
       "priceRange": "$$",
-      "areaServed": {
-        "@type": "City",
-        "name": "Uruapan"
-      },
+      "currenciesAccepted": "MXN",
+      "paymentAccepted": "Efectivo, Transferencia",
+      "areaServed": [
+        { "@type": "City", "name": "Uruapan" },
+        { "@type": "State", "name": "Michoacán" },
+        { "@type": "Country", "name": "México" }
+      ],
       "sameAs": [
-        "<%- SUC1_FACEBOOK %>",
-        "<%- SUC2_FACEBOOK %>",
-        "<%- TIKTOK_URL %>"
+        "https://www.facebook.com/profile.php?id=100068298698109",
+        "https://www.facebook.com/profile.php?id=61556609619804",
+        "https://www.tiktok.com/@fullpartyuruapan"
       ],
       "address": {
         "@type": "PostalAddress",
         "addressLocality": "Uruapan",
         "addressRegion": "Michoacán",
+        "postalCode": "60000",
         "addressCountry": "MX"
       },
       "department": [
         {
           "@type": "Store",
-          "name": "<%- NOMBRE_NEGOCIO %> - <%- SUC1_NOMBRE %>",
+          "name": "Full Party Uruapan — Suc. Francisco Villa",
+          "telephone": "+52 452 525 4596",
           "address": {
             "@type": "PostalAddress",
-            "streetAddress": "<%- SUC1_DIRECCION %>",
+            "streetAddress": "C. Francisco Villa 103, Centro",
             "addressLocality": "Uruapan",
             "addressRegion": "Michoacán",
+            "postalCode": "60000",
             "addressCountry": "MX"
           },
-          "hasMap": "<%- SUC1_MAPS_URL %>",
-          "openingHours": "<%- HORARIO_TIENDA %>"
+          "hasMap": "https://maps.app.goo.gl/H6aWp32hqQSbbgBK9",
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+              "opens": "09:00",
+              "closes": "19:00"
+            },
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Sunday"],
+              "opens": "09:00",
+              "closes": "14:00"
+            }
+          ]
         },
         {
           "@type": "Store",
-          "name": "<%- NOMBRE_NEGOCIO %> - <%- SUC2_NOMBRE %>",
+          "name": "Full Party Uruapan — Suc. Sol Naciente",
+          "telephone": "+52 452 104 0377",
           "address": {
             "@type": "PostalAddress",
-            "streetAddress": "<%- SUC2_DIRECCION %>",
+            "streetAddress": "Universo 117, Sol Naciente",
             "addressLocality": "Uruapan",
             "addressRegion": "Michoacán",
+            "postalCode": "60154",
             "addressCountry": "MX"
           },
           "hasMap": "<%- SUC2_MAPS_URL %>",
-          "openingHours": "<%- HORARIO_TIENDA %>"
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+              "opens": "09:00",
+              "closes": "19:00"
+            },
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Sunday"],
+              "opens": "09:00",
+              "closes": "14:00"
+            }
+          ]
         }
       ],
       "hasOfferCatalog": {
         "@type": "OfferCatalog",
-        "name": "Globos de latex y globos de personajes al mayoreo"
+        "name": "Catálogo de artículos para fiesta al mayoreo",
+        "itemListElement": [
+          { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Globos de látex Glomex" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Globos foil y letras foil" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Cortinas de lluvia" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Guirnaldas decorativas" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Sets de globos (5 piezas)" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Velas y accesorios para fiesta" } }
+        ]
       }
     }
     </script>
@@ -372,44 +414,60 @@
       "mainEntity": [
         {
           "@type": "Question",
-          "name": "¿Tienen precios por mayoreo?",
+          "name": "¿Tienen precios de mayoreo en globos y artículos para fiesta?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Sí, contamos con tarifas escalonadas por volumen. Entre más piezas compras, mejor precio obtienes. Aplica desde la primera pieza."
+            "text": "Sí, manejamos precios escalonados por volumen tanto en mayoreo como en menudeo. Entre más piezas compras, mejor precio por unidad. Aplica en toda la tienda: globos de látex, cortinas de lluvia, guirnaldas, velas, sets y más."
           }
         },
         {
           "@type": "Question",
-          "name": "¿Cómo puedo hacer un pedido?",
+          "name": "¿Cómo hago un pedido en Full Party Uruapan?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Navega nuestro catálogo digital, agrega los productos al carrito y envía tu orden directamente a nuestro WhatsApp con un solo clic. Sin llamadas, sin complicaciones."
+            "text": "Navega nuestro catálogo digital en fullpartyuruapan.com.mx, agrega los productos al carrito y envía tu pedido directo a nuestro WhatsApp al +52 452 104 0377 con un solo clic. También puedes visitar cualquiera de nuestras dos sucursales en Uruapan."
           }
         },
         {
           "@type": "Question",
-          "name": "¿Hacen envíos a domicilio?",
+          "name": "¿Realizan envíos a todo México?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Sí, realizamos envíos dentro de Uruapan y zona metropolitana. También puedes recoger en cualquiera de nuestras dos sucursales."
+            "text": "Sí, realizamos envíos locales en Uruapan y envíos nacionales a todo México. También puedes recoger en cualquiera de nuestras dos sucursales: Suc. Francisco Villa (C. Francisco Villa 103, Centro) y Suc. Sol Naciente (Universo 117, Sol Naciente)."
           }
         },
         {
           "@type": "Question",
-            "name": "¿Cuántas sucursales tienen?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Contamos con dos sucursales en Uruapan: Francisco Villa y Sol Naciente. Ambas comparten catálogo y precios de mayoreo."
-            }
-          },
+          "name": "¿Dónde están ubicadas sus sucursales en Uruapan?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Contamos con dos sucursales en Uruapan, Michoacán: Suc. Francisco Villa en C. Francisco Villa 103, Centro (tel. 452 525 4596) y Suc. Sol Naciente en Universo 117, Sol Naciente (tel. 452 104 0377). Ambas atienden Lun–Sáb 9am–7pm y Dom 9am–2pm."
+          }
+        },
         {
           "@type": "Question",
-            "name": "¿Qué marcas manejan en globos de látex?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Somos distribuidores autorizados de Glomex, Decoratex y Sempertex. También manejamos globos de personajes para decoración y eventos."
-            }
+          "name": "¿Qué marcas de globos de látex manejan?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Somos distribuidores de las mejores marcas del mercado: Glomex, Decoratex, Sempertex, El Bueno, Mega Shine y Glow Shine. Contamos con globos de látex, globos foil, globos de número, letras foil y globos de personajes de moda."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Venden globos de personajes y de tendencia?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sí, actualizamos constantemente nuestro catálogo con globos de personajes de moda, kits de temporada (graduación, Día de las Madres, cumpleaños), globos de revelación de sexo, bazucas de confeti y más. Más de 500 productos disponibles."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Tienen globos y artículos para decoradores y revendedores?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sí, atendemos a decoradores profesionales, revendedores, organizadores de eventos, escuelas y empresas con precios de mayoreo, amplio surtido y atención personalizada. Puedes hacer tu pedido por WhatsApp o visitarnos en cualquiera de nuestras sucursales en Uruapan."
+          }
+        }
       ]
     }
     </script>
