@@ -38,7 +38,7 @@ function ProductCardInner({
     return validas[0] || null;
   })();
 
-  const isPriority = index < 2;
+  const isPriority = index < 4;
   const esNuevo = producto.es_nuevo === true && !agotado;
 
   return (

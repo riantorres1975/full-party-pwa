@@ -17,17 +17,23 @@
         } else {
           document.documentElement.classList.add('fp-skip-boot');
         }
-        // Preload de la imagen LCP conocida (guardada en visitas previas)
+        // Preload de las primeras 4 imágenes del catálogo (LCP + above-the-fold)
         if (pathname.startsWith('/catalogo')) {
           try {
-            var lcp = localStorage.getItem('fp_lcp_image_v1');
-            if (lcp && /^https?:\/\//.test(lcp)) {
-              var l = document.createElement('link');
-              l.rel = 'preload';
-              l.as = 'image';
-              l.href = lcp;
-              l.fetchPriority = 'high';
-              document.head.appendChild(l);
+            var raw = localStorage.getItem('fp_lcp_image_v1');
+            if (raw) {
+              var urls = raw.charAt(0) === '[' ? JSON.parse(raw) : [raw];
+              for (var i = 0; i < urls.length && i < 4; i++) {
+                var u = urls[i];
+                if (typeof u === 'string' && /^https?:\/\//.test(u)) {
+                  var l = document.createElement('link');
+                  l.rel = 'preload';
+                  l.as = 'image';
+                  l.href = u;
+                  if (i === 0) l.fetchPriority = 'high';
+                  document.head.appendChild(l);
+                }
+              }
             }
           } catch (e) {}
         }

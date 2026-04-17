@@ -9,9 +9,12 @@ const LCP_IMAGE_KEY = 'fp_lcp_image_v1';
 
 function writeLcpImageHint(lista) {
   try {
-    const primeroActivo = lista.find((p) => p.activo !== false && typeof p.imagen_url === 'string' && p.imagen_url.trim());
-    if (primeroActivo?.imagen_url) {
-      localStorage.setItem(LCP_IMAGE_KEY, primeroActivo.imagen_url.trim());
+    const activos = lista
+      .filter((p) => p.activo !== false && typeof p.imagen_url === 'string' && p.imagen_url.trim())
+      .slice(0, 4)
+      .map((p) => p.imagen_url.trim());
+    if (activos.length > 0) {
+      localStorage.setItem(LCP_IMAGE_KEY, JSON.stringify(activos));
     }
   } catch {
     // Ignore quota errors
