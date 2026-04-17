@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ShoppingBag, MessageCircle, ArrowRight } from 'lucide-react';
+import SiteLayout from '../components/SiteLayout';
 
 const C = {
   pink:    '#F472B6',
@@ -88,8 +89,8 @@ const CATEGORIAS = [
 
 export default function Destacados() {
   return (
-    <div style={{ background: C.bgHero, color: C.textBody }} className="min-h-screen">
-      <main className="max-w-6xl mx-auto px-5 py-12">
+    <SiteLayout>
+      <div className="max-w-6xl mx-auto px-5 py-12">
 
         <header className="text-center mb-14">
           <Link
@@ -179,7 +180,7 @@ export default function Destacados() {
             </a>
           </div>
         </section>
-      </main>
-    </div>
+      </div>
+    </SiteLayout>
   );
 }

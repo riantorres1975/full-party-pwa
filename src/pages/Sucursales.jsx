@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { MapPin, Clock, Phone, Navigation, Truck, MessageCircle, ShoppingBag } from 'lucide-react';
+import SiteLayout from '../components/SiteLayout';
 
 const C = {
   pink:    '#F472B6',
@@ -54,8 +55,8 @@ const SUCURSALES = [
 
 export default function Sucursales() {
   return (
-    <div style={{ background: C.bgHero, color: C.textBody }} className="min-h-screen">
-      <main className="max-w-5xl mx-auto px-5 py-12">
+    <SiteLayout>
+      <div className="max-w-5xl mx-auto px-5 py-12">
 
         <header className="text-center mb-12">
           <Link
@@ -216,7 +217,7 @@ export default function Sucursales() {
             </a>
           </div>
         </section>
-      </main>
-    </div>
+      </div>
+    </SiteLayout>
   );
 }
