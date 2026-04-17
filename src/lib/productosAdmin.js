@@ -46,13 +46,13 @@ function errorColumnaEsNuevoInexistente(error) {
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 /** Límite de render para normalizar imágenes antes de subirlas */
-const MAX_IMAGE_DIMENSION = 1600;
+const MAX_IMAGE_DIMENSION = 1200;
 
 /** Objetivo razonable de peso final para catálogo */
-const TARGET_IMAGE_SIZE_BYTES = 900 * 1024;
+const TARGET_IMAGE_SIZE_BYTES = 260 * 1024;
 
-const MIN_WEBP_QUALITY = 0.55;
-const START_WEBP_QUALITY = 0.82;
+const MIN_WEBP_QUALITY = 0.5;
+const START_WEBP_QUALITY = 0.78;
 
 /** Extensiones y MIME types permitidos */
 const ALLOWED_TYPES = {
