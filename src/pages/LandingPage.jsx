@@ -1000,61 +1000,61 @@ function NovedadesCarrusel({ novedades }) {
                 width:        cardW || `calc(${100 / cols}% - ${CARD_GAP}px)`,
                 borderRadius: '1.25rem',
                 background:   'white',
-                border:       `2px solid transparent`,
-                backgroundImage: `linear-gradient(white, white) padding-box,
-                                  linear-gradient(135deg, ${C.pink}66, ${C.purple}66) border-box`,
-                boxShadow:    '0 4px 18px rgba(192,132,252,0.12)',
-                transition:   'transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease',
+                border:       `2px solid ${C.pink}40`,
+                boxShadow:    `0 6px 24px ${C.pink}20, 0 2px 8px ${C.purple}15`,
+                transition:   'transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease, border-color 0.3s ease',
                 overflow:     'hidden',
               }}
               onMouseEnter={e => {
-                e.currentTarget.style.transform = 'translateY(-6px) scale(1.02)';
-                e.currentTarget.style.boxShadow = `0 20px 40px ${C.pink}30, 0 8px 16px ${C.purple}20`;
+                e.currentTarget.style.transform = 'translateY(-7px) scale(1.02)';
+                e.currentTarget.style.boxShadow = `0 24px 48px ${C.pink}35, 0 8px 20px ${C.purple}25`;
+                e.currentTarget.style.borderColor = C.pink;
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                e.currentTarget.style.boxShadow = '0 4px 18px rgba(192,132,252,0.12)';
+                e.currentTarget.style.boxShadow = `0 6px 24px ${C.pink}20, 0 2px 8px ${C.purple}15`;
+                e.currentTarget.style.borderColor = `${C.pink}40`;
               }}
             >
-              {/* Imagen: fondo degradado suave, imagen centrada completa */}
+              {/* Franja de color arriba */}
+              <div style={{ height: 4, background: `linear-gradient(90deg, ${C.pink}, ${C.purple}, ${C.cyan})` }} />
+
+              {/* Imagen */}
               <div
                 className="relative flex items-center justify-center overflow-hidden"
                 style={{
                   aspectRatio: '1/1',
-                  background:  `radial-gradient(circle at 60% 40%, ${C.pink}14 0%, ${C.purple}0a 60%, transparent 100%)`,
-                  padding:     '12px',
+                  background:  `linear-gradient(145deg, ${C.pink}12 0%, ${C.purple}0e 50%, ${C.cyan}0a 100%)`,
+                  padding:     '14px',
                 }}
               >
                 <OptimizedImage
                   src={p.imagen_url}
                   alt={p.nombre}
-                  className="w-full h-full group-hover:scale-110 transition-transform duration-500"
-                  style={{ objectFit: 'contain' }}
+                  className="w-full h-full group-hover:scale-108 transition-transform duration-500"
+                  style={{ objectFit: 'contain', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.10))' }}
                 />
                 {/* Badge Nuevo */}
                 <span
                   className="absolute top-2 left-2 text-[10px] font-black px-2.5 py-1 rounded-full text-white flex items-center gap-1"
                   style={{
-                    background:    `linear-gradient(135deg, ${C.pink}, ${C.purple})`,
-                    boxShadow:     `0 2px 8px ${C.pink}55`,
-                    backdropFilter:'blur(4px)',
+                    background: `linear-gradient(135deg, ${C.pink}, ${C.purple})`,
+                    boxShadow:  `0 2px 8px ${C.pink}55`,
                   }}
                 >
                   <Sparkles size={9} aria-hidden="true" /> Nuevo
                 </span>
                 {/* Brillo en hover */}
                 <div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                  style={{
-                    background: `linear-gradient(135deg, ${C.pink}0a 0%, transparent 50%, ${C.cyan}0a 100%)`,
-                  }}
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none rounded-xl"
+                  style={{ background: `radial-gradient(circle at 50% 50%, ${C.pink}12, transparent 70%)` }}
                 />
               </div>
 
               {/* Info */}
               <div
                 className="p-3 flex flex-col flex-1"
-                style={{ borderTop: `1px solid ${C.borderSoft}` }}
+                style={{ borderTop: `1px solid ${C.pink}20` }}
               >
                 <p className="text-[10px] font-black uppercase tracking-wider mb-0.5" style={{ color: C.purple }}>
                   {p.categoria || 'Artículo'}
@@ -1078,9 +1078,9 @@ function NovedadesCarrusel({ novedades }) {
       {realLen > cols && (
         <div className="flex items-center justify-center gap-3 mt-5">
           <button onClick={goPrev} aria-label="Anterior"
-            className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110"
-            style={{ background: `${C.pink}18`, color: C.pink }}>
-            <ChevronLeft size={16} />
+            className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110"
+            style={{ background: 'white', color: C.pink, boxShadow: `0 2px 12px ${C.pink}30`, border: `1.5px solid ${C.pink}40` }}>
+            <ChevronLeft size={17} />
           </button>
 
           <div className="flex gap-1.5">
@@ -1089,20 +1089,21 @@ function NovedadesCarrusel({ novedades }) {
                 key={i}
                 onClick={() => { setAnimating(true); setIdx(i); }}
                 aria-label={`Producto ${i + 1}`}
-                className="rounded-full transition-all duration-400"
+                className="rounded-full transition-all duration-300"
                 style={{
-                  width:      i === dotIdx ? 20 : 7,
+                  width:      i === dotIdx ? 22 : 7,
                   height:     7,
-                  background: i === dotIdx ? C.pink : `${C.pink}44`,
+                  background: i === dotIdx ? `linear-gradient(90deg, ${C.pink}, ${C.purple})` : `${C.pink}40`,
+                  boxShadow:  i === dotIdx ? `0 2px 6px ${C.pink}55` : 'none',
                 }}
               />
             ))}
           </div>
 
           <button onClick={goNext} aria-label="Siguiente"
-            className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110"
-            style={{ background: `${C.pink}18`, color: C.pink }}>
-            <ChevronRight size={16} />
+            className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110"
+            style={{ background: 'white', color: C.pink, boxShadow: `0 2px 12px ${C.pink}30`, border: `1.5px solid ${C.pink}40` }}>
+            <ChevronRight size={17} />
           </button>
         </div>
       )}
@@ -1363,14 +1364,20 @@ export default function LandingPage() {
 
         {/* ══ NOVEDADES ═══════════════════════════════════ */}
         {novedades.length > 0 && (
-          <section className="lp-below-fold px-5 py-16" style={{ background: C.bgHero }}>
+          <section
+            className="lp-below-fold px-5 pt-8 pb-14"
+            style={{
+              background: `linear-gradient(160deg, #FFF0FA 0%, #F3EEFF 45%, #EBF6FF 100%)`,
+              borderTop: `1px solid ${C.pink}22`,
+            }}
+          >
             <div className="max-w-5xl mx-auto">
               <Reveal>
-                <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
+                <div className="flex items-center justify-between mb-7 flex-wrap gap-3">
                   <div>
                     <span
                       className="inline-flex items-center gap-1.5 text-xs font-black px-3 py-1.5 rounded-full mb-2"
-                      style={{ background: `${C.pink}18`, color: C.pink }}
+                      style={{ background: `linear-gradient(135deg, ${C.pink}30, ${C.purple}25)`, color: C.pink, border: `1px solid ${C.pink}33` }}
                     >
                       <Sparkles size={11} aria-hidden="true" /> Recién llegados
                     </span>
