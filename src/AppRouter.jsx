@@ -4,6 +4,11 @@ import LandingPage from './pages/LandingPage';
 import { LanguageProvider } from './hooks/useLanguage';
 
 const AuthCatalogRoutes = lazy(() => import('./routes/AuthCatalogRoutes'));
+const Sucursales        = lazy(() => import('./pages/Sucursales'));
+const ComoFunciona      = lazy(() => import('./pages/ComoFunciona'));
+const Destacados        = lazy(() => import('./pages/Destacados'));
+const Blog              = lazy(() => import('./pages/Blog'));
+const BlogArticulo      = lazy(() => import('./pages/BlogArticulo'));
 
 const Spinner = (
   <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--surface-primary)' }}>
@@ -29,6 +34,26 @@ const PAGE_META = {
     title:       `Administración | ${SITE_NAME}`,
     description: null,
     canonical:   null,
+  },
+  '/sucursales': {
+    title:       `Sucursales en Uruapan | ${SITE_NAME}`,
+    description: 'Visítanos en Uruapan, Michoacán. Suc. Francisco Villa (C. Francisco Villa 103, Centro) y Suc. Sol Naciente (Universo 117). Envíos a todo México y recolección en tienda.',
+    canonical:   `${SITE_URL}/sucursales`,
+  },
+  '/como-funciona': {
+    title:       `¿Cómo hacer un pedido? | ${SITE_NAME}`,
+    description: 'Aprende cómo pedir al mayoreo en Full Party Uruapan en 4 pasos: navega el catálogo, agrega al carrito, revisa y envía por WhatsApp. Atención personalizada para decoradores y revendedores.',
+    canonical:   `${SITE_URL}/como-funciona`,
+  },
+  '/destacados': {
+    title:       `Categorías Destacadas | ${SITE_NAME}`,
+    description: 'Las categorías más solicitadas de Full Party Uruapan: globos de látex Glomex, globos foil, números, personajes, cortinas, guirnaldas, velas y sets al mayoreo.',
+    canonical:   `${SITE_URL}/destacados`,
+  },
+  '/blog': {
+    title:       `Blog | ${SITE_NAME}`,
+    description: 'Guías, tutoriales e ideas para decorar tus fiestas. Consejos prácticos de decoradores profesionales sobre globos, arcos, paletas de color y más.',
+    canonical:   `${SITE_URL}/blog`,
   },
 };
 
@@ -75,6 +100,8 @@ function RouterEffects() {
 
   useEffect(() => {
     const path = location.pathname;
+    // /blog/:slug lo maneja el propio componente BlogArticulo con su meta dinámico
+    if (path.startsWith('/blog/')) return;
     const meta =
       PAGE_META[path] ??
       (path.startsWith('/admin')   ? PAGE_META['/admin']   : null) ??
@@ -160,6 +187,46 @@ export default function AppRouter() {
             element={
               <Suspense fallback={Spinner}>
                 <AuthCatalogRoutes />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/sucursales"
+            element={
+              <Suspense fallback={Spinner}>
+                <Sucursales />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/como-funciona"
+            element={
+              <Suspense fallback={Spinner}>
+                <ComoFunciona />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/destacados"
+            element={
+              <Suspense fallback={Spinner}>
+                <Destacados />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/blog"
+            element={
+              <Suspense fallback={Spinner}>
+                <Blog />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/blog/:slug"
+            element={
+              <Suspense fallback={Spinner}>
+                <BlogArticulo />
               </Suspense>
             }
           />
