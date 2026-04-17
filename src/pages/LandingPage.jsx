@@ -908,6 +908,11 @@ function BrandCard({ nombre, desc, color, emoji }) {
 const MAX_NOVEDADES = 12;
 const CARRUSEL_INTERVAL = 3800;
 const CARD_GAP = 16;
+const MXN_COMPACT = new Intl.NumberFormat('es-MX', {
+  style: 'currency',
+  currency: 'MXN',
+  maximumFractionDigits: 0,
+});
 
 function NovedadesCarrusel({ novedades }) {
   const containerRef  = useRef(null);
@@ -922,7 +927,7 @@ function NovedadesCarrusel({ novedades }) {
     function measure() {
       if (!containerRef.current) return;
       const w = containerRef.current.offsetWidth;
-      const c = w >= 1024 ? 4 : w >= 640 ? 3 : 2;
+      const c = w >= 900 ? 4 : w >= 620 ? 3 : 2;
       setCols(c);
       setCardW((w - CARD_GAP * (c - 1)) / c);
     }
@@ -932,27 +937,39 @@ function NovedadesCarrusel({ novedades }) {
     return () => ro.disconnect();
   }, []);
 
-  // Clonamos las primeras `cols` cards al final para el loop infinito
-  const items = useMemo(() => [...novedades, ...novedades.slice(0, cols)], [novedades, cols]);
   const realLen = novedades.length;
+  const hasOverflow = realLen > cols;
+  const items = useMemo(() => {
+    if (!hasOverflow) return novedades;
+    return [...novedades, ...novedades.slice(0, cols)];
+  }, [novedades, cols, hasOverflow]);
 
   const goNext = useCallback(() => {
+    if (!hasOverflow) {
+      setIdx(i => (i + 1) % Math.max(realLen, 1));
+      return;
+    }
     setAnimating(true);
     setIdx(i => i + 1);
-  }, []);
+  }, [hasOverflow, realLen]);
 
   const goPrev = useCallback(() => {
+    if (!hasOverflow) {
+      setIdx(i => (i - 1 + Math.max(realLen, 1)) % Math.max(realLen, 1));
+      return;
+    }
     setAnimating(true);
     setIdx(i => Math.max(0, i - 1));
-  }, []);
+  }, [hasOverflow, realLen]);
 
   // Cuando el rail llega a los clones, salta sin transición al índice real
   const handleTransitionEnd = useCallback(() => {
+    if (!hasOverflow) return;
     if (idx >= realLen) {
       setAnimating(false);
       setIdx(idx % realLen);
     }
-  }, [idx, realLen]);
+  }, [idx, realLen, hasOverflow]);
 
   // Re-activa transición tras el salto instantáneo
   useEffect(() => {
@@ -964,10 +981,10 @@ function NovedadesCarrusel({ novedades }) {
 
   // Auto-avance
   useEffect(() => {
-    if (paused || realLen <= cols) return;
+    if (paused || !hasOverflow) return;
     const t = setInterval(goNext, CARRUSEL_INTERVAL);
     return () => clearInterval(t);
-  }, [paused, realLen, cols, goNext]);
+  }, [paused, hasOverflow, goNext]);
 
   const translateX = -(idx * (cardW + CARD_GAP));
   const dotIdx     = idx % realLen;
@@ -976,6 +993,7 @@ function NovedadesCarrusel({ novedades }) {
 
   return (
     <div
+      className="lp-novedades-shell"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -995,42 +1013,46 @@ function NovedadesCarrusel({ novedades }) {
             <Link
               key={`${p.id}-${i}`}
               to="/catalogo"
-              className="novedad-card group flex flex-col flex-shrink-0"
+              className="lp-novedad-card group flex flex-col flex-shrink-0"
               style={{
-                width:        cardW || `calc(${100 / cols}% - ${CARD_GAP}px)`,
-                borderRadius: '1.25rem',
-                background:   'white',
-                transition:   'transform 0.3s cubic-bezier(0.16,1,0.3,1)',
-                overflow:     'hidden',
+                width: cardW || `calc(${100 / cols}% - ${CARD_GAP}px)`,
+                animationDelay: `${(i % cols) * 70}ms`,
               }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-7px) scale(1.02)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0) scale(1)'; }}
+              aria-label={`Ver ${p.nombre} en el catálogo`}
             >
 
               {/* Imagen */}
               <div
-                className="relative flex items-center justify-center overflow-hidden"
-                style={{
-                  aspectRatio: '1/1',
-                  background:  `linear-gradient(145deg, ${C.pink}12 0%, ${C.purple}0e 50%, ${C.cyan}0a 100%)`,
-                  padding:     '14px',
-                }}
+                className="lp-novedad-media relative flex items-center justify-center overflow-hidden"
               >
+                <div className="lp-novedad-glow" aria-hidden="true" />
                 <OptimizedImage
                   src={p.imagen_url}
                   alt={p.nombre}
-                  className="w-full h-full group-hover:scale-108 transition-transform duration-500"
+                  aspectClass="w-full h-full aspect-auto"
+                  className="lp-novedad-img w-full h-full"
                   style={{ objectFit: 'contain', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.10))' }}
                 />
                 {/* Badge Nuevo */}
                 <span
-                  className="absolute top-2 left-2 text-[10px] font-black px-2.5 py-1 rounded-full text-white flex items-center gap-1"
+                  className="lp-pill-nuevo absolute top-2.5 left-2.5 text-[10px] font-black px-2.5 py-1 rounded-full text-white flex items-center gap-1"
                   style={{
                     background: `linear-gradient(135deg, ${C.pink}, ${C.purple})`,
                     boxShadow:  `0 2px 8px ${C.pink}55`,
                   }}
                 >
                   <Sparkles size={9} aria-hidden="true" /> Nuevo
+                </span>
+                <span
+                  className="absolute top-2.5 right-2.5 text-[10px] font-black px-2 py-1 rounded-full"
+                  style={{
+                    color: C.textHead,
+                    background: 'rgba(255,255,255,0.88)',
+                    border: `1px solid ${C.purple}30`,
+                    backdropFilter: 'blur(3px)',
+                  }}
+                >
+                  Mayoreo
                 </span>
                 {/* Brillo en hover */}
                 <div
@@ -1041,7 +1063,7 @@ function NovedadesCarrusel({ novedades }) {
 
               {/* Info */}
               <div
-                className="p-3 flex flex-col flex-1"
+                className="p-3.5 flex flex-col flex-1"
                 style={{ borderTop: `1px solid ${C.pink}20` }}
               >
                 <p className="text-[10px] font-black uppercase tracking-wider mb-0.5" style={{ color: C.purple }}>
@@ -1050,8 +1072,20 @@ function NovedadesCarrusel({ novedades }) {
                 <h3 className="font-display text-xs leading-snug flex-1 line-clamp-2" style={{ color: C.textHead }}>
                   {p.nombre}
                 </h3>
+                {Number.isFinite(Number(p.precio)) && Number(p.precio) > 0 && (
+                  <span
+                    className="mt-2 inline-flex items-center w-fit text-[11px] font-black px-2 py-1 rounded-lg"
+                    style={{
+                      color: '#b42372',
+                      background: `linear-gradient(135deg, ${C.pink}18, ${C.purple}16)`,
+                      border: `1px solid ${C.pink}30`,
+                    }}
+                  >
+                    Desde {MXN_COMPACT.format(Number(p.precio))}
+                  </span>
+                )}
                 <span
-                  className="mt-2 inline-flex items-center gap-1 text-[10px] font-black group-hover:gap-2 transition-all"
+                  className="mt-2.5 inline-flex items-center gap-1 text-[10px] font-black group-hover:gap-2 transition-all"
                   style={{ color: C.pink }}
                 >
                   Ver en catálogo <ArrowRight size={10} aria-hidden="true" />
@@ -1063,7 +1097,7 @@ function NovedadesCarrusel({ novedades }) {
       </div>
 
       {/* Controles */}
-      {realLen > cols && (
+      {hasOverflow && (
         <div className="flex items-center justify-center gap-3 mt-5">
           <button onClick={goPrev} aria-label="Anterior"
             className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110"
@@ -1353,7 +1387,7 @@ export default function LandingPage() {
         {/* ══ NOVEDADES ═══════════════════════════════════ */}
         {novedades.length > 0 && (
           <section className="lp-below-fold px-5 pt-8 pb-14" style={{ background: C.bgHero }}>
-            <div className="max-w-5xl mx-auto">
+            <div className="max-w-[1100px] mx-auto">
               <Reveal>
                 <div className="flex items-center justify-between mb-7 flex-wrap gap-3">
                   <div>

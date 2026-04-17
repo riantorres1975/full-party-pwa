@@ -58,13 +58,123 @@
   .hero-glow      { animation: heroGlow    3.5s ease-in-out infinite;                    }
 }
 
-/* ── Cards de novedades ────────────────────────────────────── */
-@keyframes novedadPulse {
-  0%, 100% { box-shadow: 0 4px 18px rgba(244, 114, 182, 0.18), 0 2px 8px rgba(192, 132, 252, 0.10); }
-  50%       { box-shadow: 0 8px 32px rgba(244, 114, 182, 0.36), 0 4px 16px rgba(192, 132, 252, 0.22); }
+/* ── Cards + shell de novedades ────────────────────────────── */
+.lp-novedades-shell {
+  position: relative;
+  padding: 0.8rem;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(192, 132, 252, 0.22);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.9)),
+    radial-gradient(90% 80% at 10% 0%, rgba(34, 211, 238, 0.12), transparent 60%),
+    radial-gradient(100% 80% at 95% 100%, rgba(244, 114, 182, 0.14), transparent 65%);
+  box-shadow: 0 14px 38px rgba(86, 26, 122, 0.12);
 }
-.novedad-card { animation: novedadPulse 3s ease-in-out infinite; }
-.novedad-card:hover { animation-play-state: paused; }
+
+.lp-novedades-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: linear-gradient(125deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.45) 50%, rgba(255,255,255,0) 70%);
+  transform: translateX(-130%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lp-novedades-shell::before {
+    animation: shellSweep 7s ease-in-out infinite;
+  }
+}
+
+@keyframes shellSweep {
+  0%, 18% { transform: translateX(-130%); }
+  42%, 100% { transform: translateX(130%); }
+}
+
+@keyframes novedadIntro {
+  from { opacity: 0; transform: translateY(14px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes novedadGlow {
+  0%, 100% { opacity: 0.3; transform: scale(0.95); }
+  50% { opacity: 0.6; transform: scale(1.06); }
+}
+
+@keyframes pillPop {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-1px) scale(1.06); }
+}
+
+@keyframes pillSpark {
+  0%, 60% { opacity: 0; transform: translateX(-150%); }
+  100% { opacity: 0.9; transform: translateX(160%); }
+}
+
+.lp-novedad-card {
+  position: relative;
+  border-radius: 1.15rem;
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(253,249,255,0.96));
+  border: 1px solid rgba(203, 156, 245, 0.26);
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(68, 24, 108, 0.08);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+  animation: novedadIntro 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.lp-novedad-card:hover {
+  transform: translateY(-7px);
+  border-color: rgba(244, 114, 182, 0.48);
+  box-shadow: 0 18px 40px rgba(68, 24, 108, 0.16), 0 6px 22px rgba(244, 114, 182, 0.22);
+}
+
+.lp-novedad-media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  padding: 10px;
+  background:
+    linear-gradient(160deg, rgba(244, 114, 182, 0.13) 0%, rgba(192, 132, 252, 0.09) 45%, rgba(34, 211, 238, 0.12) 100%);
+}
+
+.lp-novedad-glow {
+  position: absolute;
+  inset: -18% -8% auto;
+  height: 70%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0));
+  animation: novedadGlow 3.3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.lp-novedad-img {
+  transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease;
+}
+
+.lp-novedad-card:hover .lp-novedad-img {
+  transform: scale(1.09) translateY(-2px);
+  filter: drop-shadow(0 10px 18px rgba(68, 24, 108, 0.2));
+}
+
+.lp-pill-nuevo {
+  position: relative;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lp-pill-nuevo {
+    animation: pillPop 1.8s ease-in-out infinite;
+  }
+
+  .lp-pill-nuevo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, rgba(255,255,255,0) 25%, rgba(255,255,255,0.65) 50%, rgba(255,255,255,0) 75%);
+    transform: translateX(-150%);
+    animation: pillSpark 2.4s ease-out infinite;
+  }
+}
 
 /* ── Botón CTA principal ───────────────────────────────────── */
 @keyframes pinkPulse {
@@ -267,7 +377,12 @@
   .review-exit,
   .balloon-sway,
   .balloon-sway-r,
-  .hero-glow {
+  .hero-glow,
+  .lp-novedad-card,
+  .lp-novedad-glow,
+  .lp-pill-nuevo,
+  .lp-pill-nuevo::after,
+  .lp-novedades-shell::before {
     animation: none !important;
   }
   .lp-card,
