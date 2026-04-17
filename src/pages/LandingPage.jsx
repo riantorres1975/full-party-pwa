@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   ShoppingBag, MessageCircle, MapPin, Star, Package,
   Sparkles, ArrowRight, Menu, X, Navigation, Clock,
@@ -1501,7 +1501,7 @@ export default function LandingPage() {
 
         {/* ══ FOOTER — 3 columnas ══════════════════════════ */}
         <footer className="lp-below-fold border-t bg-white" style={{ borderColor: C.borderSoft }}>
-          <div className="max-w-5xl mx-auto px-5 pt-10 pb-6 grid grid-cols-1 sm:grid-cols-3 gap-10">
+          <div className="max-w-5xl mx-auto px-5 pt-10 pb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
 
             {/* Columna 1: Logo + tagline + WhatsApp */}
             <div>
@@ -1585,7 +1585,7 @@ export default function LandingPage() {
                   <li key={l.label}>
                     <button
                       onClick={() => handleNav(l)}
-                      className="text-xs font-bold hover:text-pink-400 transition-colors"
+                      className="text-xs font-bold hover:text-pink-400 transition-colors text-left"
                       style={{ color: C.textMuted }}
                     >
                       {l.label}
@@ -1595,7 +1595,59 @@ export default function LandingPage() {
               </ul>
             </div>
 
-            {/* Columna 3: Contacto */}
+            {/* Columna 3: Secciones */}
+            <div>
+              <h3 className="font-display text-sm mb-4" style={{ color: C.textHead }}>Secciones</h3>
+              <ul className="flex flex-col gap-2">
+                <li>
+                  <Link
+                    to="/catalogo"
+                    className="text-xs font-bold hover:text-pink-400 transition-colors"
+                    style={{ color: C.textMuted }}
+                  >
+                    Catálogo
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/destacados"
+                    className="text-xs font-bold hover:text-pink-400 transition-colors"
+                    style={{ color: C.textMuted }}
+                  >
+                    Categorías destacadas
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/sucursales"
+                    className="text-xs font-bold hover:text-pink-400 transition-colors"
+                    style={{ color: C.textMuted }}
+                  >
+                    Sucursales
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/como-funciona"
+                    className="text-xs font-bold hover:text-pink-400 transition-colors"
+                    style={{ color: C.textMuted }}
+                  >
+                    ¿Cómo hacer un pedido?
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/blog"
+                    className="text-xs font-bold hover:text-pink-400 transition-colors"
+                    style={{ color: C.textMuted }}
+                  >
+                    Blog
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Columna 4: Contacto */}
             <div>
               <h3 className="font-display text-sm mb-4" style={{ color: C.textHead }}>Contacto</h3>
               <ul className="flex flex-col gap-3 text-xs" style={{ color: C.textMuted }}>

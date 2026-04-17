@@ -1,0 +1,92 @@
+// Artículos del blog — contenido real indexable por Google.
+// Cada artículo se renderiza en /blog/[slug].
+
+export const ARTICULOS = [
+  {
+    slug: 'cuantos-globos-necesito-cumpleanos',
+    titulo: '¿Cuántos globos necesito para decorar un cumpleaños?',
+    extracto: 'Guía práctica para calcular la cantidad exacta de globos de látex y foil según el tamaño del evento, tipo de decoración y espacio disponible.',
+    fecha: '2026-04-17',
+    fechaLegible: '17 de abril, 2026',
+    categoria: 'Guías',
+    autor: 'Full Party Uruapan',
+    emoji: '🎈',
+    color: 'pink',
+    parrafos: [
+      'Una de las preguntas más frecuentes que recibimos en Full Party Uruapan es cuántos globos se necesitan para decorar un cumpleaños. La respuesta depende de tres factores clave: el tipo de decoración, el tamaño del espacio y el estilo visual que buscas. En esta guía te damos los números reales que usan los decoradores profesionales para que tu fiesta luzca espectacular sin desperdiciar material.',
+      'Para un cumpleaños infantil en casa, con un arco de globos sencillo sobre la mesa de pastel, calcula entre 80 y 120 globos de látex de 12 pulgadas. Si prefieres un arco orgánico grande tipo arco de puerta, necesitarás entre 180 y 250 globos en tamaños mezclados (5", 11" y 16"). Para decorar todo el salón con centros de mesa, columnas y arco principal, de 400 a 600 globos es lo habitual.',
+      'Los globos de látex más versátiles son los de 11 y 12 pulgadas, ideales para arcos y racimos. Los de 5 pulgadas sirven para rellenar huecos en arcos orgánicos y darle textura profesional. Los globos foil con números o personajes funcionan como punto focal: normalmente se usan entre 1 y 4 por evento, complementados con globos de látex alrededor.',
+      'Si tu fiesta es al aire libre, considera comprar un 20% extra de globos de látex: el sol, el viento y el calor reducen la vida útil del globo. Los globos foil y metalizados son más resistentes al clima y mantienen su forma mejor que el látex en exteriores. En Uruapan, por el clima templado, esto es especialmente importante durante las tardes soleadas.',
+      'Otro consejo práctico: siempre compra 10% más de lo que calculas. Es normal que algunos globos se rompan al inflarlos o durante el montaje. En Full Party manejamos precios escalonados de mayoreo, así que comprar en cantidad te conviene: el costo por unidad baja considerablemente al pasar ciertos rangos de piezas.',
+      'Si tienes dudas sobre las cantidades exactas para tu evento, escríbenos por WhatsApp al +52 452 104 0377 con el tipo de decoración, número de invitados y tamaño del espacio. Con gusto te asesoramos para que aproveches al máximo tu presupuesto.',
+    ],
+  },
+  {
+    slug: 'como-armar-arco-organico-globos',
+    titulo: 'Guía paso a paso: cómo armar un arco orgánico de globos',
+    extracto: 'El arco orgánico es la decoración estrella de fiestas y bodas. Aprende a armarlo desde cero con materiales, técnicas y tips de decoradores profesionales.',
+    fecha: '2026-04-10',
+    fechaLegible: '10 de abril, 2026',
+    categoria: 'Tutoriales',
+    autor: 'Full Party Uruapan',
+    emoji: '🎨',
+    color: 'purple',
+    parrafos: [
+      'El arco orgánico de globos se ha convertido en la decoración favorita de bodas, XV años, cumpleaños y eventos corporativos. A diferencia del arco tradicional uniforme, el orgánico juega con tamaños mixtos, densidades variables y clústers asimétricos que le dan un aspecto moderno y natural. En esta guía te enseñamos a armarlo paso a paso, igual que lo hacemos para nuestros clientes decoradores.',
+      'Materiales que vas a necesitar: entre 180 y 300 globos de látex en tamaños 5", 11" y 16" (mezcla de colores); una estructura base (tubo PVC, malla de gallina o marco de metal); hilo de nylon o cáñamo grueso; pistola de silicón caliente con barras; una bomba de inflado eléctrica (ahorra muchísimo tiempo); y tus accesorios decorativos: hojas de palma, eucalipto o flores artificiales si quieres.',
+      'Paso 1: inflado. Infla todos los globos antes de empezar el montaje. No los llenes al máximo: un globo de 11" inflado al 90% dura más y aguanta mejor el clima. Separa por tamaños y colores en bolsas o cajas. La clave del arco orgánico es tener suficiente variedad para jugar con las proporciones.',
+      'Paso 2: arma clústers de 4 globos. Toma dos globos y retuérceles el cuello formando una X. Repite con otros dos y únelos al primer par. Este "quad" de 4 globos es tu unidad básica. Arma entre 40 y 60 clústers de tamaños 11" en colores variados.',
+      'Paso 3: fijación a la estructura. Ata cada clúster a la estructura base con hilo, o enróllalo directamente si es malla. Empieza por un extremo y avanza lentamente alternando colores. Deja huecos intencionales: el arco orgánico no es uniforme, esa es precisamente su gracia.',
+      'Paso 4: relleno con globos pequeños. Usa los globos de 5" y silicón caliente para rellenar los huecos que queden entre clústers. Pégalos directamente a los globos grandes cuidando no reventarlos. Esta capa es la que le da profundidad y textura profesional al arco.',
+      'Paso 5: toque final. Si tu estilo lo permite, agrega follaje artificial, flores de papel o cintas satinadas para darle el acabado boho o elegante. Revisa que no haya huecos visibles y ajusta la forma general. Un arco orgánico bien armado debería ser más grueso en el centro y adelgazar hacia los extremos.',
+      'En Full Party Uruapan tenemos todo lo que necesitas para armar tu arco: globos Glomex, Decoratex y Sempertex en colores y tamaños variados, brillo Mega Shine para el acabado y accesorios para el montaje. Pasa por cualquiera de nuestras dos sucursales o pídelo con envío a toda la república.',
+    ],
+  },
+  {
+    slug: 'globos-metalizados-vs-latex',
+    titulo: 'Globos metalizados vs látex: diferencias, usos y cuándo elegir cada uno',
+    extracto: 'Comparamos globos metalizados (foil) y de látex para que elijas el indicado según tu evento: duración, costo, acabado y versatilidad.',
+    fecha: '2026-04-03',
+    fechaLegible: '3 de abril, 2026',
+    categoria: 'Guías',
+    autor: 'Full Party Uruapan',
+    emoji: '💫',
+    color: 'cyan',
+    parrafos: [
+      'Una duda común al planear la decoración de un evento es si conviene usar globos de látex, globos metalizados (foil) o una combinación de ambos. Cada tipo tiene ventajas específicas según el uso que le quieras dar, el presupuesto disponible y la duración esperada. Aquí te explicamos las diferencias principales para que tomes la mejor decisión.',
+      'Los globos de látex son los más tradicionales y económicos. Están hechos de caucho natural, vienen en decenas de colores y tamaños (desde 5" hasta 36"), y son 100% biodegradables. Son ideales para arcos orgánicos, racimos, columnas y decoraciones masivas donde necesitas volumen visual. Su costo por unidad es bajo, lo que los hace perfectos para compras al mayoreo.',
+      'Los globos metalizados o foil están fabricados con una película de poliamida con recubrimiento metálico. Su superficie brillante refleja la luz y da un acabado premium muy llamativo. Vienen en formas predefinidas: números, letras, estrellas, corazones, figuras gigantes y personajes con licencia. Son la elección obvia cuando quieres un punto focal impactante.',
+      'En cuanto a duración, hay diferencias notables. Un globo de látex inflado con aire dura entre 3 y 5 días visualmente presentable. Con helio, dura entre 8 y 12 horas flotando. Un globo foil inflado con aire puede mantenerse inflado semanas enteras, y con helio flota entre 3 y 5 días. Si tu evento es al día siguiente del montaje, el foil te da más margen.',
+      'Sobre resistencia al clima: los globos de látex sufren con el sol directo y el calor intenso, pueden perder brillo o reventar. Los foil aguantan mucho mejor la temperatura y la humedad, por lo que son mejores para eventos al aire libre o decoraciones expuestas al sol. En Uruapan, durante temporada de calor, esta diferencia es importante.',
+      'En precio, el látex gana por mucho: puedes armar una decoración completa con 150 globos de látex por lo que cuestan 5 o 6 globos foil grandes. Por eso la estrategia más usada por decoradores profesionales es combinar ambos: el látex hace el volumen y la estructura, mientras que el foil aporta los elementos temáticos (número del cumpleaños, nombre del festejado, personajes favoritos).',
+      '¿Cuándo elegir cada uno? Si tu presupuesto es ajustado y necesitas volumen, usa 80% látex y 20% foil. Si buscas un punto focal impactante (mesa de regalos, backdrop de fotos, entrada), el foil es la mejor inversión. Si el evento es prolongado (varios días), el foil te garantiza que la decoración se mantenga. Para fiestas infantiles con personajes específicos, el foil con licencia oficial no tiene sustituto.',
+      'En Full Party Uruapan manejamos ambos tipos al mayoreo: látex Glomex, Decoratex y Sempertex en toda la gama de colores, y foil en formas, números, letras y personajes de temporada. Consulta nuestro catálogo o escríbenos por WhatsApp para asesoría personalizada según tu evento.',
+    ],
+  },
+  {
+    slug: 'ideas-decoracion-xv-anos',
+    titulo: 'Ideas de decoración para fiesta de XV años: tendencias y paletas que marcan',
+    extracto: 'Tendencias actuales en decoración de XV años: paletas de colores, estilos visuales, arcos temáticos y combinaciones ganadoras para una fiesta inolvidable.',
+    fecha: '2026-03-25',
+    fechaLegible: '25 de marzo, 2026',
+    categoria: 'Inspiración',
+    autor: 'Full Party Uruapan',
+    emoji: '👑',
+    color: 'orange',
+    parrafos: [
+      'La fiesta de XV años es uno de los eventos más importantes en la vida de una quinceañera, y la decoración juega un papel protagónico. En los últimos años, las tendencias han evolucionado hacia estilos más modernos, fotogénicos y personalizados. Aquí te compartimos las ideas más solicitadas por nuestras clientas decoradoras y organizadoras de eventos en Uruapan y toda la región.',
+      'Paleta 1: rosa empolvado con dorado y blanco. Esta combinación clásica elegante sigue siendo la más pedida. Usa globos de látex en rosa pastel, rosa pálido y nude, acompañados de foil dorado para números y letras. Agrega detalles de blanco roto y toques de champagne. Es una paleta romántica que funciona tanto para ambientes intimistas como para salones grandes.',
+      'Paleta 2: azul marino con plata y dorado rosa. Para quinceañeras que buscan un look sofisticado tipo evento corporativo o gala. Globos látex en azul marino profundo, acentos plata metalizada y foil en dorado rosa (rose gold). Funciona espectacular con vestidos en tonos vino, esmeralda o negro.',
+      'Paleta 3: colores vibrantes estilo mexicano moderno. Magenta, naranja vibrante, amarillo mostaza y verde esmeralda. Esta paleta tropical con identidad cultural ha ganado fuerza para celebraciones mexicanas contemporáneas. Combina con papel picado, flores de cempasúchil artificiales y detalles en talavera.',
+      'Tendencia visual: backdrop fotográfico. Todas las quinceañeras de hoy necesitan una zona de fotos impresionante. Los backdrops más pedidos son: arco orgánico gigante cubriendo una pared completa, muro de globos con el nombre en letras foil, follaje artificial con flores de papel, y estructuras circulares tipo aro con flores y globos. La clave es que sea Instagrameable.',
+      'Tendencia visual: mesa principal destacada. La mesa de la quinceañera debe ser el punto más fotografiado. Agrega un arco orgánico detrás, letras gigantes con su nombre, centros de mesa altos con flores y velas, y colgantes de techo (estrellas, corazones o flores de papel). Los globos no son solo decoración: son parte del escenario.',
+      'Elementos imprescindibles: número 15 gigante foil (entre 60 y 120 cm de alto), letras foil con el nombre, tiara decorativa o corona para la silla de la festejada, alfombra o camino de entrada, cascada de globos en la entrada del salón, y luces de cortina cálidas para el ambiente nocturno.',
+      'Presupuesto realista: para una decoración completa con arco principal, mesa de pastel, backdrop de fotos y centros de mesa, calcula entre 300 y 500 globos de látex más 8-15 piezas de foil. En Full Party manejamos todo lo que necesitas al mayoreo con precios escalonados. Si eres decoradora o organizas eventos, nuestro WhatsApp +52 452 104 0377 está para asesorarte con tu pedido.',
+      'Lo más importante: personaliza según la quinceañera. Pregúntale sus colores favoritos, su estilo (clásico, moderno, boho, glam), y su tema preferido. Una decoración bien pensada refleja la personalidad de la festejada y hace la celebración mucho más memorable. Y en Full Party Uruapan estamos listos para que esa visión se haga realidad.',
+    ],
+  },
+];
+
+export function getArticulo(slug) {
+  return ARTICULOS.find((a) => a.slug === slug) || null;
+}
