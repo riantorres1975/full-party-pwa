@@ -107,9 +107,9 @@ function ProductCardInner({
         </div>
 
         <div className="px-2 pt-2 pb-1.5 sm:px-3 sm:pt-3 sm:pb-2 flex-1 flex flex-col">
-          <h2 className="font-display text-[12px] sm:text-[13px] leading-snug text-ink-900 line-clamp-2">
+          <h3 className="font-display text-[12px] sm:text-[13px] leading-snug text-ink-900 line-clamp-2">
             {producto.nombre}
-          </h2>
+          </h3>
           {producto.descripcion && (
             <p className="text-[11px] font-body text-ink-400 leading-snug mt-0.5 line-clamp-1 sm:line-clamp-2">
               {producto.descripcion}
