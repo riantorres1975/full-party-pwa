@@ -1098,8 +1098,8 @@ export default function LandingPage() {
 
             <Reveal delay={0.18}>
               <p className="text-base sm:text-lg leading-relaxed mb-10 max-w-xl mx-auto" style={{ color: C.textBody }}>
-                Especialistas en globos de látex al mayoreo en Uruapan.
-                Manejamos marcas como Glomex, Decoratex y Sempertex, además de globos de personajes.
+                +500 productos para decoradores, revendedores y organizadores de eventos.
+                Globos Glomex, cortinas de lluvia, guirnaldas, velas, sets y más — con precios de mayoreo y envíos a todo México.
               </p>
             </Reveal>
 
@@ -1520,7 +1520,7 @@ export default function LandingPage() {
                 </span>
               </div>
               <p className="text-xs leading-relaxed mb-4" style={{ color: C.textMuted }}>
-                Tienda y distribuidora de globos en Uruapan, Michoacán.
+                Distribuidora de artículos para fiesta en Uruapan, Michoacán. +500 productos al mayoreo y menudeo. Envíos a todo México.
               </p>
               {/* Botones de redes sociales */}
               <div className="flex flex-wrap gap-2 mt-4">
@@ -1601,16 +1601,24 @@ export default function LandingPage() {
               <ul className="flex flex-col gap-3 text-xs" style={{ color: C.textMuted }}>
                 <li className="flex items-start gap-2">
                   <MapPin size={12} className="mt-0.5 flex-shrink-0" style={{ color: C.pink }} aria-hidden="true" />
-                  {ENV.direccion}
+                  <span>
+                    <span className="font-bold" style={{ color: C.textHead }}>Suc. Francisco Villa</span><br />
+                    C. Francisco Villa 103, Centro<br />
+                    <Clock size={10} className="inline mr-0.5" aria-hidden="true" />Lun–Sáb 9am–7pm
+                  </span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Clock size={12} style={{ color: C.pink }} aria-hidden="true" />
-                  {ENV.horario}
+                <li className="flex items-start gap-2">
+                  <MapPin size={12} className="mt-0.5 flex-shrink-0" style={{ color: C.purple }} aria-hidden="true" />
+                  <span>
+                    <span className="font-bold" style={{ color: C.textHead }}>Suc. Sol Naciente</span><br />
+                    Universo 117, Sol Naciente<br />
+                    <Clock size={10} className="inline mr-0.5" aria-hidden="true" />Lun–Sáb 9am–7pm · Dom 9am–2pm
+                  </span>
                 </li>
                 <li className="flex items-center gap-2">
                   <MessageCircle size={12} style={{ color: C.pink }} aria-hidden="true" />
                   <a href={WA_HREF} target="_blank" rel="noopener noreferrer" className="hover:text-pink-400 transition-colors font-bold">
-                    WhatsApp directo
+                    WhatsApp: 452 104 0377
                   </a>
                 </li>
               </ul>
