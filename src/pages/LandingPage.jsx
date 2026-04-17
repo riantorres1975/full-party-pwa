@@ -94,45 +94,47 @@ const BENEFICIOS = [
   {
     icon:     Star,
     titulo:   'Precios por Mayoreo',
-    desc:     'Tarifas escalonadas desde la primera pieza. Entre más compras, más ahorras.',
+    desc:     'Tarifas escalonadas desde la primera pieza. Entre más compras, mejor precio por unidad.',
     color:    C.pink,
     gradient: `linear-gradient(135deg, ${C.pink}, ${C.purple})`,
   },
   {
     icon:     MessageCircle,
     titulo:   'Pedidos por WhatsApp',
-    desc:     'Genera tu orden desde el catálogo y envíala a nuestro chat. Sin llamadas.',
+    desc:     'Genera tu orden desde el catálogo y envíala directo al +52 452 104 0377. Sin llamadas.',
     color:    C.purple,
     gradient: `linear-gradient(135deg, ${C.purple}, ${C.cyan})`,
   },
   {
     icon:     MapPin,
-    titulo:   'Recolección en Sucursal',
-    desc:     'Retira en Centro o Sol Naciente. Envío disponible en Uruapan y zona.',
+    titulo:   'Envíos a Todo México',
+    desc:     'Envíos locales en Uruapan y nacionales a todo el país. También recolección en sucursal.',
     color:    C.cyan,
     gradient: `linear-gradient(135deg, ${C.cyan}, ${C.blue})`,
   },
 ];
 
 const CATEGORIAS = [
-  { emoji: '🎈', titulo: 'Globos de Látex',      desc: 'Colores, tamaños y marcas premium',       color: C.pink   },
-  { emoji: '🦸', titulo: 'Globos de Personajes', desc: 'Modelos temáticos para toda ocasión',      color: C.orange },
-  { emoji: '🎀', titulo: 'Arreglos con Globos',  desc: 'Combinaciones listas para tu evento',      color: C.purple },
-  { emoji: '🏷️', titulo: 'Mayoreo por Volumen',  desc: 'Precios escalonados para surtir negocio',  color: C.green  },
+  { emoji: '🎈', titulo: 'Globos de Látex',        desc: 'Glomex, Decoratex y Sempertex. Colores, tamaños y calidad helio',  color: C.pink   },
+  { emoji: '🦸', titulo: 'Globos de Personajes',   desc: 'Personajes de moda, graduación y Día de las Madres',               color: C.orange },
+  { emoji: '🎀', titulo: 'Cortinas y Guirnaldas',  desc: 'Cortinas de lluvia, guirnaldas y decoraciones para todo evento',   color: C.purple },
+  { emoji: '🏷️', titulo: 'Sets y Accesorios',      desc: 'Sets de 5 piezas, velas, brillo, bombas eléctricas y más',         color: C.green  },
 ];
 
 const PASOS = [
-  { num: '1', icon: ShoppingBag,   titulo: 'Navega',       desc: 'Explora +500 artículos ordenados por categoría.',    color: C.pink   },
-  { num: '2', icon: Package,       titulo: 'Al carrito',   desc: 'Agrega productos y ve el total mayoreo en vivo.',     color: C.purple },
-  { num: '3', icon: Sparkles,      titulo: 'Revisa',       desc: 'Confirma cantidades y precios escalonados.',          color: C.cyan   },
-  { num: '4', icon: MessageCircle, titulo: 'Por WhatsApp', desc: 'Un toque y tu pedido llega listo a nuestro chat.',   color: C.green  },
+  { num: '1', icon: ShoppingBag,   titulo: 'Navega',       desc: 'Explora +500 artículos: globos, cortinas, guirnaldas, velas y más.',  color: C.pink   },
+  { num: '2', icon: Package,       titulo: 'Al carrito',   desc: 'Agrega productos y ve el precio mayoreo actualizado en tiempo real.',  color: C.purple },
+  { num: '3', icon: Sparkles,      titulo: 'Revisa',       desc: 'Confirma cantidades, precios escalonados y elige entrega o envío.',    color: C.cyan   },
+  { num: '4', icon: MessageCircle, titulo: 'Por WhatsApp', desc: 'Un toque y tu pedido llega listo al +52 452 104 0377. Sin llamadas.',  color: C.green  },
 ];
 
 const MARCAS = [
-  { nombre: 'Glomex',      desc: 'Globos de látex mayoreo',       color: C.pink,   emoji: '🎈' },
+  { nombre: 'Glomex',      desc: 'Globos de látex al mayoreo',    color: C.pink,   emoji: '🎈' },
   { nombre: 'Decoratex',   desc: 'Globos de látex y decoración',  color: C.purple, emoji: '🎀' },
   { nombre: 'Sempertex',   desc: 'Calidad premium en látex',      color: C.green,  emoji: '✨' },
-  { nombre: 'Personajes',  desc: 'Globos temáticos licenciados',  color: C.orange, emoji: '🦸' },
+  { nombre: 'El Bueno',    desc: 'Globos y artículos de fiesta',  color: C.orange, emoji: '🎊' },
+  { nombre: 'Mega Shine',  desc: 'Brillo y accesorios para globos', color: C.cyan, emoji: '💫' },
+  { nombre: 'Glow Shine',  desc: 'Acabados brillantes premium',   color: C.blue,   emoji: '⭐' },
 ];
 
 const RESENAS = [
@@ -230,28 +232,32 @@ const SUCURSALES = [
 
 const FAQS = [
   {
-    pregunta:  '¿Tienen precios por mayoreo?',
-    respuesta: 'Sí, contamos con tarifas escalonadas por volumen. Entre más piezas compras, mejor precio obtienes. Las tablas de precio mayoreo están visibles en cada producto del catálogo.',
+    pregunta:  '¿Tienen precios de mayoreo y menudeo?',
+    respuesta: 'Sí, manejamos ambos. Los precios son escalonados: entre más piezas compras, mejor precio por unidad. Las tablas están visibles en cada producto del catálogo digital.',
   },
   {
-    pregunta:  '¿Cómo puedo hacer un pedido?',
-    respuesta: 'Navega el catálogo digital, agrega lo que necesitas al carrito y envía la orden a nuestro WhatsApp con un solo clic. Sin llamadas, sin formularios complicados.',
+    pregunta:  '¿Cómo hago un pedido?',
+    respuesta: 'Navega el catálogo, agrega lo que necesitas al carrito y con un toque envías tu pedido listo a nuestro WhatsApp +52 452 104 0377. Sin llamadas, sin formularios.',
   },
   {
-    pregunta:  '¿Hacen envíos a domicilio?',
-    respuesta: 'Sí, realizamos envíos dentro de Uruapan y zona metropolitana. También puedes recoger sin costo en cualquiera de nuestras dos sucursales.',
+    pregunta:  '¿Hacen envíos a todo México?',
+    respuesta: 'Sí, realizamos envíos locales en Uruapan y nacionales a todo México. También puedes recoger en cualquiera de nuestras dos sucursales: Suc. Francisco Villa (tel. 452 525 4596) o Suc. Sol Naciente (tel. 452 104 0377).',
   },
   {
-    pregunta:  '¿Cuántas sucursales tienen?',
-    respuesta: 'Contamos con dos sucursales en Uruapan: Centro (sucursal principal) y Sol Naciente (sucursal norte). Ambas manejan el mismo catálogo y precios.',
+    pregunta:  '¿Dónde están ubicadas sus sucursales?',
+    respuesta: 'Tenemos dos sucursales en Uruapan, Michoacán. Suc. Francisco Villa: C. Francisco Villa 103, Centro. Suc. Sol Naciente: Universo 117, Col. Sol Naciente. Ambas abren Lun–Sáb 9am–7pm y Dom 9am–2pm.',
   },
   {
-    pregunta:  '¿Qué marcas manejan?',
-    respuesta: 'Somos distribuidores autorizados de Glomex, Decoratex y Sempertex. También manejamos globos de personajes para decoración y eventos.',
+    pregunta:  '¿Qué marcas de globos manejan?',
+    respuesta: 'Distribuimos Glomex, Decoratex, Sempertex, El Bueno, Mega Shine y Glow Shine. Más de 500 productos en catálogo: globos de látex, foil, números, letras, personajes y accesorios.',
+  },
+  {
+    pregunta:  '¿Atienden a decoradores y revendedores?',
+    respuesta: 'Sí, atendemos a decoradores, revendedores, organizadores de eventos, escuelas y empresas con precios de mayoreo. Actualizamos el catálogo constantemente con personajes y productos de tendencia.',
   },
   {
     pregunta:  '¿Cuál es el pedido mínimo?',
-    respuesta: 'No existe un mínimo fijo para hacer un pedido. Sin embargo, los precios mayoreo aplican según la tabla escalonada de cada producto. Puedes combinar categorías.',
+    respuesta: 'No hay mínimo fijo. Los precios mayoreo aplican según la tabla escalonada de cada producto. Puedes combinar artículos de diferentes categorías en un solo pedido por WhatsApp.',
   },
 ];
 
