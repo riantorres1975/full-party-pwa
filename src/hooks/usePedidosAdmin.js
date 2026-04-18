@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { guardedQuery } from '../lib/supabaseGuard';
 import { notificarCliente } from '../utils/whatsapp';
 
-const ESTADOS = ['Por Surtir', 'Armando Pedido', 'Listo para Entrega'];
+const ESTADOS = ['Por Surtir', 'Armando Pedido', 'Listo para Entrega', 'Enviado'];
 const ESTADOS_CON_CANCELADO = [...ESTADOS, 'Cancelado'];
 
 export { ESTADOS, ESTADOS_CON_CANCELADO };
@@ -148,6 +148,17 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
     });
   }, [pedidos, filtroEstado, busqueda]);
 
+  // Solo búsqueda, sin filtro de estado — para el tablero Kanban
+  const pedidosPorBusqueda = useMemo(() => {
+    if (!busqueda) return pedidos;
+    const q = busqueda.toLowerCase();
+    return pedidos.filter(p =>
+      p.folio.toLowerCase().includes(q) ||
+      p.cliente_nombre.toLowerCase().includes(q) ||
+      p.cliente_telefono.includes(q)
+    );
+  }, [pedidos, busqueda]);
+
   // ── Contadores (memoizado) ────────────────────────────────────
   const contadores = useMemo(() => {
     return ESTADOS_CON_CANCELADO.reduce((acc, e) => {
@@ -248,7 +259,7 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
     busqueda, setBusqueda, notificando,
     pedidoSeleccionadoId, setPedidoSeleccionadoId,
     fetchPedidos, pedidosFiltrados, contadores,
-    pedidoSeleccionado,
+    pedidoSeleccionado, pedidosPorBusqueda,
     cambiarEstado, cancelarPedido, notificar,
     notificationPermission, requestNotificationPermission, testNotification,
   };

@@ -231,9 +231,17 @@ export const categorias = [
 | Estado | Color | Significado |
 |---|---|---|
 | `Por Surtir` | Rojo | Pedido recién recibido |
-| `Armando Pedido` | Amarillo | En preparación |
+| `Armando Pedido` | Amarillo | En preparación / picking |
 | `Listo para Entrega` | Verde | Listo para recoger o enviar |
+| `Enviado` | Azul | Salió de la tienda, en camino al cliente |
 | `Cancelado` | Gris | Cancelado por el admin |
+
+> **Nota:** si agregas el estado `Enviado` a una base de datos existente, ejecuta en Supabase SQL Editor:
+> ```sql
+> ALTER TABLE public.pedidos DROP CONSTRAINT pedidos_estado_check;
+> ALTER TABLE public.pedidos ADD CONSTRAINT pedidos_estado_check
+>   CHECK (estado IN ('Por Surtir','Armando Pedido','Listo para Entrega','Enviado','Cancelado'));
+> ```
 
 ### `configuracion`
 
@@ -288,7 +296,7 @@ Lectura pública. Solo admins pueden escribir. Se usa para el sistema de anuncio
 
 ### Rastreo de pedidos
 
-El cliente ingresa su folio o teléfono y ve un stepper animado con el estado actual. Si el pedido está cancelado muestra una pantalla especial.
+El cliente ingresa su folio o teléfono y ve un stepper animado de 4 pasos: Por Surtir → Armando Pedido → Listo para Entrega → Enviado. La barra de progreso se colorea proporcionalmente. Si el pedido está cancelado muestra una pantalla especial.
 
 ### Panel de administración (`/admin`)
 
@@ -300,14 +308,18 @@ El cliente ingresa su folio o teléfono y ve un stepper animado con el estado ac
 **Pedidos:**
 - Lista en tiempo real vía Realtime (nuevos pedidos aparecen solos, actualizaciones se propagan a todas las sesiones)
 - Buscador por folio, nombre o teléfono
-- Vista master-detail en desktop
+- **Tablero Kanban en desktop**: 5 columnas (Por Surtir · Armando Pedido · Listo para Entrega · Enviado · Cancelado) — cada columna es scrollable, siempre visibles independientemente del filtro activo
+- Click en cualquier card abre modal con el detalle completo del pedido
 - Cambio de estado con actualización optimista
 - Notificación al cliente por WhatsApp sincronizada entre sesiones (se desactiva tras enviar, se reactiva al cambiar estado)
+- Mensaje de WhatsApp adaptado según tipo de entrega (envío a domicilio vs recoger en tienda)
+- Botón **"Copiar datos para repartidor"** en pedidos con envío listos: copia nombre, teléfono, dirección y total al portapapeles
 
 **Picking (modo "Armando Pedido"):**
-- Checkboxes por artículo, toda la fila es clickeable
+- Fila compacta: checkbox · imagen · nombre · controles +/− · subtotal en una sola línea
+- Controles +/− integrados en la fila, solo visibles cuando la cantidad es >1 y el artículo está marcado
 - Progress bar que avanza al surtir
-- Artículos surtidos se mueven al final de la lista
+- Artículos pendientes se muestran primero, los surtidos al final
 - Si se desmarca un artículo se marca como faltante y se actualiza `activo = false` en el catálogo
 - Panel de totales dinámico con descuento por faltantes
 - Botón "Pasar a Listo" hace todo en un solo UPDATE: cambia estado, guarda total ajustado, persiste `encontrado` por artículo y abre WhatsApp con detalle
@@ -324,8 +336,12 @@ El cliente ingresa su folio o teléfono y ve un stepper animado con el estado ac
 |---|---|
 | Por Surtir | Confirmación de recepción |
 | Armando Pedido | Aviso de que está en preparación |
-| Listo para Entrega (desde picking) | Lista de artículos entregados, faltantes y nuevo total |
-| Listo para Entrega (manual) | Aviso de que puede pasar o sale a domicilio |
+| Listo para Entrega (picking, envío) | Lista de artículos + total + aviso de que saldrá a domicilio |
+| Listo para Entrega (picking, tienda) | Lista de artículos + total + invitación a pasar a recoger |
+| Listo para Entrega (manual, envío) | Aviso de que saldrá pronto a domicilio |
+| Listo para Entrega (manual, tienda) | Aviso de que puede pasar a recoger |
+| Enviado | Aviso de que el pedido ya salió de la tienda |
+| Cancelado | Notificación de cancelación |
 
 ### Gestión de catálogo (`/admin/catalogo`)
 
