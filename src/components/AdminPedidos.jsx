@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { MessageCircle, ChevronDown, Package, LayoutGrid, ClipboardList, Search, RefreshCw, LogOut, ShoppingBag, Clock, CheckCircle2, XCircle, Phone, Truck, Store, MapPin, Bell } from 'lucide-react';
+import { MessageCircle, ChevronDown, Package, LayoutGrid, ClipboardList, Search, RefreshCw, LogOut, ShoppingBag, Clock, CheckCircle2, XCircle, Phone, Truck, Store, MapPin, Bell, X, Copy, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { SIMBOLO_MONEDA } from '../data/productos';
 import { notificarCliente } from '../utils/whatsapp';
@@ -22,6 +22,7 @@ const ESTADO_META = {
   'Por Surtir':         { color: '#ef4444', bg: '#fee2e2', colorClass: 'text-status-pending',  bgClass: 'bg-status-pending-light',  borderClass: 'border-status-pending',  accentClass: 'bg-status-pending',  icon: ShoppingBag, activeStyle: { background: '#ef4444', color: 'white', boxShadow: '0 2px 8px #ef444455' }, inactiveStyle: { background: '#fee2e2', color: '#ef4444' } },
   'Armando Pedido':     { color: '#eab308', bg: '#fef9c3', colorClass: 'text-status-progress', bgClass: 'bg-status-progress-light', borderClass: 'border-status-progress', accentClass: 'bg-status-progress', icon: Clock, activeStyle: { background: '#eab308', color: 'white', boxShadow: '0 2px 8px #eab30855' }, inactiveStyle: { background: '#fef9c3', color: '#eab308' } },
   'Listo para Entrega': { color: '#22c55e', bg: '#dcfce7', colorClass: 'text-status-done',     bgClass: 'bg-status-done-light',     borderClass: 'border-status-done',     accentClass: 'bg-status-done',     icon: CheckCircle2, activeStyle: { background: '#22c55e', color: 'white', boxShadow: '0 2px 8px #22c55e55' }, inactiveStyle: { background: '#dcfce7', color: '#22c55e' } },
+  'Enviado':            { color: '#3b82f6', bg: '#dbeafe', colorClass: 'text-blue-500',         bgClass: 'bg-blue-100',              borderClass: 'border-blue-500',        accentClass: 'bg-blue-500',        icon: Truck, activeStyle: { background: '#3b82f6', color: 'white', boxShadow: '0 2px 8px #3b82f655' }, inactiveStyle: { background: '#dbeafe', color: '#3b82f6' } },
   'Cancelado':          { color: '#6b7280', bg: '#f3f4f6', colorClass: 'text-gray-500',        bgClass: 'bg-gray-100',              borderClass: 'border-gray-500',        accentClass: 'bg-gray-500',        icon: XCircle, activeStyle: { background: '#6b7280', color: 'white', boxShadow: '0 2px 8px #6b728055' }, inactiveStyle: { background: '#f3f4f6', color: '#6b7280' } },
 };
 
@@ -29,6 +30,7 @@ function estadoLabel(estado, t) {
   if (estado === 'Por Surtir') return t('tracking.status.pending');
   if (estado === 'Armando Pedido') return t('tracking.status.preparing');
   if (estado === 'Listo para Entrega') return t('tracking.status.ready');
+  if (estado === 'Enviado') return 'Enviado';
   if (estado === 'Cancelado') return t('admin.orders.status.cancelled');
   return estado;
 }
@@ -97,23 +99,20 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChang
     ? 'text-sm font-body font-bold shrink-0'
     : 'flex-shrink-0 text-right self-center';
 
-  return (
-    <>
-    <div
-      className={`${claseFila} ${
-        modoPicking
-          ? `rounded-xl px-2 ${pendientePicking ? 'bg-amber-50 border border-amber-200' : parcial ? 'bg-yellow-50 border border-yellow-300' : 'bg-emerald-50 border border-emerald-200'}`
-          : ''
-      }`}
-      style={{ opacity: tachado ? 0.45 : 1 }}
-    >
-      {modoPicking && (
+  // ── Picking mode: layout compacto todo en una fila ──────────────────────────
+  if (modoPicking) {
+    return (
+      <div
+        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 mb-2 border transition-all duration-150 ${
+          pendientePicking ? 'bg-amber-50 border-amber-200'
+          : parcial        ? 'bg-yellow-50 border-yellow-300'
+          :                  'bg-emerald-50 border-emerald-200'
+        }`}
+      >
+        {/* Checkbox */}
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onCantidadChange(marcado ? 0 : cantidadPedida);
-          }}
-          className={claseCheckbox}
+          onClick={(e) => { e.stopPropagation(); onCantidadChange(marcado ? 0 : cantidadPedida); }}
+          className="flex-shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all duration-150 active:scale-90"
           style={{
             background: marcado ? '#22c55e' : 'white',
             borderColor: marcado ? '#22c55e' : '#d1d5db',
@@ -127,17 +126,64 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChang
             </svg>
           )}
         </button>
-      )}
 
+        {/* Imagen */}
+        <div className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 bg-white border border-admin-border-soft flex items-center justify-center">
+          <img src={imageSrc} alt={item.nombre} loading="lazy"
+               onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackImage; }}
+               className="w-full h-full object-contain" />
+        </div>
+
+        {/* Nombre + precio unitario */}
+        <div className="flex-1 min-w-0">
+          <p className="font-body font-bold text-sm text-admin-text leading-snug line-clamp-2">{item.nombre}</p>
+          {hayDescuento && (
+            <p className="text-[10px] font-body font-bold text-emerald-600">{SIMBOLO_MONEDA}{precioMostrar.toFixed(2)} c/u</p>
+          )}
+        </div>
+
+        {/* Controles cantidad + subtotal */}
+        <div className="flex-shrink-0 flex flex-col items-end gap-1">
+          {cantidadPedida > 1 && marcado ? (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); onCantidadChange(Math.max(1, cantidadSurtida - 1)); }}
+                disabled={cantidadSurtida <= 1}
+                className="w-6 h-6 rounded-md border-2 flex items-center justify-center text-sm font-bold transition-all active:scale-90 disabled:opacity-30"
+                style={{ background: 'white', borderColor: '#d1d5db', color: '#374151' }}
+              >−</button>
+              <span className="w-5 text-center text-sm font-black tabular-nums"
+                    style={{ color: cantidadSurtida < cantidadPedida ? '#eab308' : '#22c55e' }}>
+                {cantidadSurtida}
+              </span>
+              <button
+                onClick={(e) => { e.stopPropagation(); onCantidadChange(Math.min(cantidadPedida, cantidadSurtida + 1)); }}
+                disabled={cantidadSurtida >= cantidadPedida}
+                className="w-6 h-6 rounded-md border-2 flex items-center justify-center text-sm font-bold transition-all active:scale-90 disabled:opacity-30"
+                style={{ background: 'white', borderColor: '#d1d5db', color: '#374151' }}
+              >+</button>
+              <span className="text-[10px] font-body text-admin-muted">/{cantidadPedida}</span>
+            </div>
+          ) : (
+            <span className="text-xs font-body text-admin-muted">×{cantidadPedida}</span>
+          )}
+          <span className="text-sm font-body font-black" style={{ color: marcado ? '#22c55e' : '#9ca3af' }}>
+            {SIMBOLO_MONEDA}{subtotal}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Vista normal (no picking) ────────────────────────────────────────────────
+  return (
+    <div
+      className={claseFila}
+      style={{ opacity: tachado ? 0.45 : 1 }}
+    >
       <div className={claseMiniatura}>
-        <img
-             src={imageSrc}
-             alt={item.nombre}
-             loading="lazy"
-             onError={(e) => {
-               e.currentTarget.onerror = null;
-               e.currentTarget.src = fallbackImage;
-             }}
+        <img src={imageSrc} alt={item.nombre} loading="lazy"
+             onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackImage; }}
              className="w-full h-full object-contain" style={{ filter: tachado ? 'grayscale(1)' : 'none' }} />
       </div>
 
@@ -145,107 +191,36 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChang
         <p className={`font-body font-bold leading-snug line-clamp-1 ${esDesktop ? 'text-sm' : 'text-xs'} ${tachado ? 'line-through text-admin-inactive' : 'text-admin-text'}`}>
           {item.nombre}
         </p>
-        {modoPicking && (
-          <span
-            className={`inline-flex mt-0.5 px-2 py-0.5 rounded-full font-body font-black ${esDesktop ? 'text-xs' : 'text-[10px]'} ${
-              pendientePicking ? 'bg-amber-100 text-amber-700'
-              : parcial ? 'bg-amber-100 text-amber-700'
-              : 'bg-emerald-100 text-emerald-700'
-            }`}
-          >
-            {pendientePicking ? t('admin.orders.pendingToFulfill')
-             : parcial ? t('admin.orders.partial', { done: cantidadSurtida, total: cantidadPedida })
-             : t('admin.orders.fulfilled')}
-          </span>
-        )}
-        {!modoPicking && tachado && (
+        {tachado && (
           <span className={`inline-flex mt-0.5 px-2 py-0.5 rounded-full font-body font-black ${esDesktop ? 'text-xs' : 'text-[10px]'} bg-red-100 text-red-600`}>
             {t('common.soldOut')}
           </span>
         )}
-        {!modoPicking && parcial && (
+        {!tachado && parcial && (
           <span className={`inline-flex mt-0.5 px-2 py-0.5 rounded-full font-body font-black ${esDesktop ? 'text-xs' : 'text-[10px]'} bg-amber-100 text-amber-700`}>
             {t('admin.orders.fulfilledCount', { done: cantidadSurtida, total: cantidadPedida })}
           </span>
         )}
         {hayDescuento && (
           <p className={`font-body font-bold text-emerald-600 mt-0.5 ${esDesktop ? 'text-xs' : 'text-[10px]'}`}>
-            Descuento mayoreo aplicado (-{SIMBOLO_MONEDA}{ahorroTotal})
+            -{SIMBOLO_MONEDA}{ahorroTotal} mayoreo
           </p>
         )}
-        {esDesktop && (
-          <p className="text-xs font-body text-admin-muted">
-            {t('admin.orders.qtyShort')}: {cantidadSurtida !== cantidadPedida && !modoPicking ? `${cantidadSurtida} ${t('admin.orders.of')} ${cantidadPedida}` : item.cantidad}
-          </p>
-        )}
-        {!esDesktop && item.tamano && (
-          <p className="text-[11px] font-body text-admin-muted mt-0.5">{t('filters.size')}: {item.tamano}</p>
-        )}
-        {!esDesktop && item.familia_mayoreo && (
-          <p className="text-[11px] font-body text-admin-muted">Mayoreo: {item.familia_mayoreo}</p>
-        )}
-        {!esDesktop && (
-          <p className="text-[11px] font-body text-admin-muted">
-            {t('admin.orders.quantity')}: {cantidadSurtida !== cantidadPedida && !modoPicking ? `${cantidadSurtida} ${t('admin.orders.of')} ${cantidadPedida}` : item.cantidad}
-          </p>
-        )}
+        <p className={`font-body text-admin-muted ${esDesktop ? 'text-xs' : 'text-[11px]'}`}>
+          ×{cantidadSurtida !== cantidadPedida ? `${cantidadSurtida}/${cantidadPedida}` : cantidadPedida}
+          {!esDesktop && item.tamano ? ` · ${item.tamano}` : ''}
+        </p>
       </div>
 
       <div className={clasePrecio}>
-        <p className={tachado ? 'line-through text-admin-inactive' : 'text-admin-text'}>
+        <p className={`font-body font-bold ${esDesktop ? 'text-sm' : 'text-xs'} ${tachado ? 'line-through text-admin-inactive' : 'text-admin-text'}`}>
           {SIMBOLO_MONEDA}{subtotal}
         </p>
-        {hayDescuento ? (
-          <div className="text-right leading-tight">
-            <p className="text-[10px] font-body text-admin-inactive line-through">
-              {SIMBOLO_MONEDA}{precioBase.toFixed(2)} c/u
-            </p>
-            <p className="text-[10px] font-body font-bold text-emerald-600">
-              {SIMBOLO_MONEDA}{precioMostrar.toFixed(2)} c/u
-            </p>
-          </div>
-        ) : (
-          !esDesktop && <p className="text-[10px] font-body text-admin-muted">{SIMBOLO_MONEDA}{precioMostrar.toFixed(2)} c/u</p>
-        )}
-        {cambioPrecioMayoreo && (
-          <p className="text-[10px] font-body font-bold text-amber-600 mt-0.5">
-            {t('admin.orders.adjustedPrice')}
-          </p>
+        {hayDescuento && (
+          <p className="text-[10px] font-body text-admin-inactive line-through">{SIMBOLO_MONEDA}{(precioBase * cantidadPedida).toFixed(2)}</p>
         )}
       </div>
     </div>
-    {/* +/- controls below, only when selected and quantity > 1 */}
-    {modoPicking && marcado && cantidadPedida > 1 && (
-      <div className={`flex items-center gap-2 ${esDesktop ? 'ml-9 mt-1 mb-1' : 'ml-10 mt-1 mb-2'}`}>
-        <span className={`font-body font-bold text-admin-muted ${esDesktop ? 'text-xs' : 'text-[11px]'}`}>{t('admin.orders.fulfilledShort')}:</span>
-        <button
-          onClick={(e) => { e.stopPropagation(); onCantidadChange(Math.max(1, cantidadSurtida - 1)); }}
-          disabled={cantidadSurtida <= 1}
-          className="w-7 h-7 rounded-lg border-2 flex items-center justify-center text-sm font-bold transition-all active:scale-90 disabled:opacity-30"
-          style={{ background: 'white', borderColor: '#d1d5db', color: '#374151' }}
-          aria-label={t('admin.orders.decreaseFulfilledQty')}
-        >
-          −
-        </button>
-        <span
-          className="w-6 text-center text-sm font-body font-black tabular-nums"
-          style={{ color: cantidadSurtida < cantidadPedida ? '#eab308' : '#22c55e' }}
-        >
-          {cantidadSurtida}
-        </span>
-        <button
-          onClick={(e) => { e.stopPropagation(); onCantidadChange(Math.min(cantidadPedida, cantidadSurtida + 1)); }}
-          disabled={cantidadSurtida >= cantidadPedida}
-          className="w-7 h-7 rounded-lg border-2 flex items-center justify-center text-sm font-bold transition-all active:scale-90 disabled:opacity-30"
-          style={{ background: 'white', borderColor: '#d1d5db', color: '#374151' }}
-          aria-label={t('admin.orders.increaseFulfilledQty')}
-        >
-          +
-        </button>
-        <span className={`font-body text-admin-muted ${esDesktop ? 'text-xs' : 'text-[11px]'}`}>{t('admin.orders.of')} {cantidadPedida}</span>
-      </div>
-    )}
-    </>
   );
 }
 
@@ -421,16 +396,6 @@ function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, onT
       {/* Contenido */}
       {abierto && (
         <div className={`bg-admin-card animate-fade-in ${esDesktop ? 'px-4' : 'px-3'}`}>
-          {modoPicking && (
-            <div className="flex items-center gap-2 px-1 py-2">
-              <p className="text-[11px] font-body font-bold text-amber-600 flex-1">
-                {t('admin.orders.pickingHelp')}
-              </p>
-              <span className="text-xs font-body font-black text-admin-text whitespace-nowrap">
-                {articulosSurtidos.filter(a => (a.cantidad_surtida || 0) === Number(a.cantidad)).length}/{items.length}
-              </span>
-            </div>
-          )}
           <div>
             {/* Sort: pending first, surtidos at bottom in picking mode */}
             {(modoPicking
@@ -569,6 +534,137 @@ function TarjetaPedidoCompacta({ pedido, seleccionado, onClick }) {
   );
 }
 
+// ── Kanban card ─────────────────────────────────────────────────────────────
+function TarjetaKanban({ pedido, onClick }) {
+  const { t } = useLanguage();
+  const meta = ESTADO_META[pedido.estado] ?? ESTADO_META['Por Surtir'];
+  const diffMs = Date.now() - new Date(pedido.created_at).getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const timeAgo = diffMin < 1 ? t('admin.orders.now') : diffMin < 60 ? `${diffMin}m` : diffMin < 1440 ? `${Math.floor(diffMin / 60)}h` : `${Math.floor(diffMin / 1440)}d`;
+  const initials = pedido.cliente_nombre?.split(' ').slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '??';
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full text-left bg-white dark:bg-admin-card rounded-xl p-3 shadow-sm border border-admin-border hover:shadow-md hover:border-admin-border-soft transition-all duration-200 active:scale-[0.98] group"
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <div
+          className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0"
+          style={{ background: meta.bg, color: meta.color }}
+        >
+          {initials}
+        </div>
+        <p className="font-body font-bold text-sm text-admin-text truncate flex-1">{pedido.cliente_nombre}</p>
+        <span className="text-[10px] font-body text-admin-muted flex-shrink-0">{timeAgo}</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-body text-admin-muted">{pedido.folio}</span>
+        <span className="text-sm font-body font-black" style={{ color: meta.color }}>
+          {SIMBOLO_MONEDA}{Number(pedido.total).toFixed(2)}
+        </span>
+      </div>
+      <div className="mt-1.5 flex items-center gap-1 text-[10px] font-body text-admin-muted">
+        {pedido.tipo_entrega === 'envio' ? <><Truck size={10} /><span>{t('cart.deliveryHome')}</span></> : <><Store size={10} /><span>{t('cart.pickupStore')}</span></>}
+      </div>
+    </button>
+  );
+}
+
+// ── Kanban column ────────────────────────────────────────────────────────────
+function ColumnaKanban({ estado, pedidos, onCardClick }) {
+  const { t } = useLanguage();
+  const meta = ESTADO_META[estado];
+  const Icon = meta.icon;
+
+  return (
+    <div className="flex flex-col min-w-[200px] w-full rounded-2xl overflow-hidden border border-admin-border bg-admin-elevated shadow-card" style={{ maxWidth: 320 }}>
+      {/* Column header */}
+      <div
+        className="flex items-center gap-2 px-4 py-3 flex-shrink-0 rounded-t-2xl"
+        style={{ background: meta.color }}
+      >
+        <Icon size={14} color="white" strokeWidth={2.5} />
+        <span className="text-xs font-body font-black uppercase tracking-wider text-white flex-1 truncate">
+          {estadoLabel(estado, t)}
+        </span>
+        <span className="text-[10px] font-black bg-white/30 text-white px-1.5 py-0.5 rounded-full leading-none">
+          {pedidos.length}
+        </span>
+      </div>
+
+      {/* Cards */}
+      <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[100px]">
+        {pedidos.map(pedido => (
+          <TarjetaKanban
+            key={pedido.id}
+            pedido={pedido}
+            onClick={() => onCardClick(pedido)}
+          />
+        ))}
+        {pedidos.length === 0 && (
+          <div className="h-16 flex items-center justify-center">
+            <p className="text-[10px] font-body text-admin-inactive">—</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Kanban modal ─────────────────────────────────────────────────────────────
+function ModalDetallePedido({ pedido, onClose, onCambiarEstado, actualizando, notificando, onNotificar, onPickingListo, onCancelar, setPedidos, setFiltroEstado }) {
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-admin-card rounded-2xl border border-admin-border shadow-elevated w-full max-w-lg max-h-[90dvh] flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-admin-border flex-shrink-0">
+          <p className="font-body font-bold text-base text-admin-text">{pedido.folio}</p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-admin-muted hover:text-admin-text hover:bg-admin-elevated transition-colors"
+            aria-label="Cerrar"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-5">
+          <TarjetaPedido
+            key={pedido.id}
+            pedido={pedido}
+            onCambiarEstado={async (id, estado) => {
+              await onCambiarEstado(id, estado);
+              onClose();
+            }}
+            actualizando={actualizando}
+            notificando={notificando === pedido.id}
+            onNotificar={onNotificar}
+            onCancelar={async (p) => { await onCancelar(p); onClose(); }}
+            onPickingListo={(pedidoActualizado) => {
+              setPedidos(prev => prev.map(p => p.id === pedidoActualizado.id ? pedidoActualizado : p));
+              setFiltroEstado('Listo para Entrega');
+              onClose();
+            }}
+            esDesktop={true}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Single order card
 function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onNotificar, onPickingListo, onCancelar, esDesktop }) {
   const { t, lang } = useLanguage();
@@ -579,6 +675,21 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
   const esActualizando = actualizando === pedido.id;
   const yaNotificado = pedido.notificado_estado === pedido.estado;
   const [totalPicking, setTotalPicking] = useState(null);
+  const [copiado, setCopiado] = useState(false);
+
+  function copiarDatosEnvio() {
+    const total = (totalPicking !== null ? totalPicking : Number(pedido.total)).toFixed(2);
+    const texto =
+      `📦 Datos de entrega\n` +
+      `Cliente: ${pedido.cliente_nombre}\n` +
+      `Tel: ${pedido.cliente_telefono}\n` +
+      `Dirección: ${pedido.direccion || 'No especificada'}\n` +
+      `Total a cobrar: $${total}`;
+    navigator.clipboard.writeText(texto).then(() => {
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2500);
+    });
+  }
 
   const claseHeader = esDesktop
     ? 'flex items-center justify-between gap-3 pb-4 mb-4 border-b border-admin-border-soft'
@@ -653,6 +764,21 @@ function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onN
           {SIMBOLO_MONEDA}{(totalPicking !== null && pedido.estado === 'Armando Pedido' ? totalPicking : Number(pedido.total)).toFixed(2)}
         </span>
       </div>
+
+      {/* Botón copiar datos para repartidor */}
+      {pedido.estado === 'Listo para Entrega' && pedido.tipo_entrega === 'envio' && (
+        <button
+          onClick={copiarDatosEnvio}
+          className={`w-full mb-3 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-body font-bold transition-all duration-200 active:scale-95 border-2 ${
+            copiado
+              ? 'bg-emerald-50 border-emerald-300 text-emerald-600'
+              : 'bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100'
+          }`}
+        >
+          {copiado ? <Check size={15} /> : <Copy size={15} />}
+          {copiado ? 'Datos copiados' : 'Copiar datos para repartidor'}
+        </button>
+      )}
 
       {/* Selector de estado */}
       <div className="relative mb-3">
@@ -763,13 +889,14 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
   const [vistaAdmin, setVistaAdmin] = useAdminVistaInicial();
   const [busquedaInput, setBusquedaInput] = useState('');
   const busquedaDebounced = useDebounce(busquedaInput, 300);
+  const [pedidoModal, setPedidoModal] = useState(null);
 
   const {
     pedidos, setPedidos, loading, error,
     actualizando, filtroEstado, setFiltroEstado,
     busqueda, setBusqueda, notificando,
     pedidoSeleccionadoId, setPedidoSeleccionadoId,
-    fetchPedidos, pedidosFiltrados, contadores,
+    fetchPedidos, pedidosFiltrados, pedidosPorBusqueda, contadores,
     pedidoSeleccionado,
     cambiarEstado, cancelarPedido, notificar,
     notificationPermission, requestNotificationPermission, testNotification,
@@ -953,7 +1080,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
 
       {/* ── Main Content ── */}
       <main id="admin-main" className="flex-1 min-w-0 lg:h-screen lg:overflow-y-auto">
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-4 lg:p-5 lg:max-w-[1200px]">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-4 lg:p-5 lg:max-w-none">
 
         <div style={{ display: vistaAdmin === 'catalogo' ? undefined : 'none' }}>
             <h2 className="sr-only">{t('admin.catalog.title')}</h2>
@@ -972,7 +1099,7 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
             <h2 className="sr-only">{t('admin.orders.management')}</h2>
         <section className="bg-admin-card rounded-2xl border border-admin-border p-4 sm:p-5 lg:p-4 space-y-3 shadow-card">
           {/* Stats: compactos en desktop, grid en móvil */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 lg:gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {[{ key: 'todos', label: t('common.total'), icon: ClipboardList, color: '#6b35b8', bg: '#f3e8ff' },
               ...ESTADOS_CON_CANCELADO.map(e => ({ key: e, label: e, ...ESTADO_META[e] }))
             ].map(({ key, label, icon: IconComponent, color, bg }) => {
@@ -1090,78 +1217,30 @@ export default function AdminPedidos({ user, onSignOut, temaOscuro, onToggleTema
                   ))}
                 </div>
 
-                <div className="hidden lg:grid lg:grid-cols-[340px_minmax(0,720px)] gap-4 h-[calc(100dvh-14rem)] min-h-[560px]">
-                  <div className="bg-admin-card rounded-2xl border border-admin-border overflow-hidden flex flex-col shadow-card">
-                    <div className="px-5 py-4 border-b border-admin-border">
-                      <p className="font-body font-semibold text-sm text-admin-text">{t('admin.nav.orders')}</p>
-                      <p className="text-xs font-body font-bold text-admin-muted mt-0.5">
-                        {t('admin.orders.results', { count: pedidosFiltrados.length })}
-                      </p>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-3">
-                      {/* Grouped by status */}
-                      {ESTADOS_CON_CANCELADO.map(estado => {
-                        const grupo = pedidosFiltrados.filter(p => p.estado === estado);
-                        if (grupo.length === 0) return null;
-                        const m = ESTADO_META[estado];
-                        return (
-                          <div key={estado} className="mb-3">
-                            <div className="sticky top-0 z-10 flex items-center gap-2 px-2 py-1.5 bg-admin-card/95 backdrop-blur-sm">
-                              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: m.color }} />
-                              <span className="text-[10px] font-body font-bold text-admin-muted uppercase tracking-wider">{estadoLabel(estado, t)}</span>
-                              <span className="text-[10px] font-body text-admin-inactive">{grupo.length}</span>
-                            </div>
-                            <div className="space-y-1">
-                              {grupo.map(pedido => (
-                                <TarjetaPedidoCompacta
-                                  key={pedido.id}
-                                  pedido={pedido}
-                                  seleccionado={pedido.id === pedidoSeleccionadoId}
-                                  onClick={() => setPedidoSeleccionadoId(pedido.id)}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="bg-admin-card rounded-2xl border border-admin-border overflow-hidden flex flex-col shadow-card">
-                    <div className="px-6 py-4 border-b border-admin-border">
-                      <p className="font-body font-semibold text-base text-admin-text">{t('admin.orders.orderDetail')}</p>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-6">
-                      {pedidoSeleccionado ? (
-                        <TarjetaPedido
-                          key={pedidoSeleccionado.id}
-                          pedido={pedidoSeleccionado}
-                          onCambiarEstado={cambiarEstadoYFiltrar}
-                          actualizando={actualizando}
-                          notificando={notificando === pedidoSeleccionado.id}
-                          onNotificar={notificar}
-                          onCancelar={cancelarPedido}
-                          onPickingListo={(pedidoActualizado) => {
-                            setPedidos(prev => prev.map(p =>
-                              p.id === pedidoActualizado.id ? pedidoActualizado : p
-                            ));
-                            setFiltroEstado('Listo para Entrega');
-                          }}
-                          esDesktop={true}
-                        />
-                      ) : (
-                        <div className="h-full min-h-[360px] flex flex-col items-center justify-center text-center">
-                          <ClipboardList size={40} className="text-admin-muted mb-3" />
-                          <p className="font-body font-medium text-lg text-admin-muted">
-                            {t('admin.orders.selectOrder')}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                {/* ── Kanban Board (Desktop) ── */}
+                <div className="hidden lg:flex justify-center gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin', height: 'calc(100dvh - 280px)', minHeight: 400 }}>
+                  {ESTADOS_CON_CANCELADO.map(estado => (
+                    <ColumnaKanban
+                      key={estado}
+                      estado={estado}
+                      pedidos={pedidosPorBusqueda.filter(p => p.estado === estado)}
+                      onCardClick={setPedidoModal}
+                    />
+                  ))}
                 </div>
+                {pedidoModal && (
+                  <ModalDetallePedido
+                    pedido={pedidosPorBusqueda.find(p => p.id === pedidoModal.id) ?? pedidoModal}
+                    onClose={() => setPedidoModal(null)}
+                    onCambiarEstado={cambiarEstadoYFiltrar}
+                    actualizando={actualizando}
+                    notificando={notificando}
+                    onNotificar={notificar}
+                    onCancelar={cancelarPedido}
+                    setPedidos={setPedidos}
+                    setFiltroEstado={setFiltroEstado}
+                  />
+                )}
               </>
             )}
           </>

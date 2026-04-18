@@ -83,7 +83,8 @@ export function generarMensajeWhatsApp(items, total, entrega) {
 
 // ── Notificación WhatsApp al cliente (admin → cliente) ──────────────────────
 export function notificarCliente(pedido, articulosSurtidos = null) {
-  const { cliente_nombre: nombre, cliente_telefono: tel, folio, estado } = pedido;
+  const { cliente_nombre: nombre, cliente_telefono: tel, folio, estado, tipo_entrega, direccion } = pedido;
+  const esEnvio = tipo_entrega === 'envio';
 
   const EMOJI = {
     caja: String.fromCodePoint(0x1F4E6),
@@ -126,12 +127,21 @@ export function notificarCliente(pedido, articulosSurtidos = null) {
         parciales.map(a => `  ${EMOJI.cruz} ${a.nombre}: pediste ${a.cantidad}, surtimos ${a.cantidad_surtida}`).join('\n') + '\n';
     }
 
-    mensaje =
-      `¡Hola ${nombre}! Tu pedido *${folio}* ya está listo y empacado. ${EMOJI.caja}\n\n` +
-      `*Artículos incluidos:*\n${listaSurtidos}\n` +
-      infoFaltantes +
-      `\n${EMOJI.dinero} *Tu total a pagar es: ${SIMBOLO_MONEDA}${nuevoTotal.toFixed(2)}*\n\n` +
-      `¡Nos vemos pronto! ${EMOJI.fiesta}`;
+    if (esEnvio) {
+      mensaje =
+        `¡Hola ${nombre}! Tu pedido *${folio}* ya está listo y empacado. ${EMOJI.caja}\n\n` +
+        `*Artículos incluidos:*\n${listaSurtidos}\n` +
+        infoFaltantes +
+        `\n${EMOJI.dinero} *Tu total a pagar es: ${SIMBOLO_MONEDA}${nuevoTotal.toFixed(2)}*\n\n` +
+        `${String.fromCodePoint(0x1F69A)} Tu pedido saldrá pronto a domicilio. Te avisaremos cuando vaya en camino. ¡Gracias! ${EMOJI.fiesta}`;
+    } else {
+      mensaje =
+        `¡Hola ${nombre}! Tu pedido *${folio}* ya está listo para recoger. ${EMOJI.caja}\n\n` +
+        `*Artículos incluidos:*\n${listaSurtidos}\n` +
+        infoFaltantes +
+        `\n${EMOJI.dinero} *Tu total a pagar es: ${SIMBOLO_MONEDA}${nuevoTotal.toFixed(2)}*\n\n` +
+        `${EMOJI.festejo} Puedes pasar a recogerlo cuando gustes. ¡Te esperamos!`;
+    }
 
   } else {
     switch (estado) {
@@ -142,7 +152,12 @@ export function notificarCliente(pedido, articulosSurtidos = null) {
         mensaje = `¡Hola ${nombre}! ${EMOJI.mono} Te confirmamos que ya estamos preparando tu pedido *${folio}*. En cuanto esté listo te avisamos. ¡Pronto la fiesta! ${EMOJI.globo}`;
         break;
       case 'Listo para Entrega':
-        mensaje = `¡Buenas noticias ${nombre}! ${EMOJI.fiesta} Tu pedido *${folio}* ya está listo. Puedes pasar a recogerlo o en breve saldrá a domicilio. ¡A celebrar! ${EMOJI.festejo}`;
+        mensaje = esEnvio
+          ? `¡Buenas noticias ${nombre}! ${EMOJI.fiesta} Tu pedido *${folio}* ya está listo y saldrá pronto a domicilio. ¡Nos vemos pronto! ${String.fromCodePoint(0x1F69A)}`
+          : `¡Buenas noticias ${nombre}! ${EMOJI.fiesta} Tu pedido *${folio}* ya está listo para recoger. Puedes pasar cuando gustes. ¡Te esperamos! ${EMOJI.festejo}`;
+        break;
+      case 'Enviado':
+        mensaje = `¡Hola ${nombre}! ${String.fromCodePoint(0x1F69A)} Tu pedido *${folio}* ya salió de la tienda y va en camino hacia ti. Pronto lo tendrás. ¡Que lo disfrutes! ${EMOJI.globo}`;
         break;
       case 'Cancelado':
         mensaje = `Hola ${nombre}, lamentamos informarte que tu pedido *${folio}* ha sido cancelado. ${EMOJI.cruz}\n\nSi tienes dudas, no dudes en escribirnos. ¡Esperamos verte pronto! ${EMOJI.globo}`;

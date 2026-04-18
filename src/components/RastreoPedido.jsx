@@ -31,6 +31,14 @@ function usePasos() {
       color:     '#22c55e',
       colorLight:'#dcfce7',
     },
+    {
+      estado:    'Enviado',
+      emoji:     '🚚',
+      label:     'Enviado',
+      sublabel:  'Tu pedido va en camino',
+      color:     '#3b82f6',
+      colorLight:'#dbeafe',
+    },
   ];
 }
 
@@ -65,10 +73,11 @@ function Stepper({ estadoActual }) {
         <div
           className="absolute top-5 left-0 h-1 rounded-full mx-[10%] transition-all duration-700"
           style={{
-            background: 'linear-gradient(90deg, #ef4444, #eab308, #22c55e)',
+            background: 'linear-gradient(90deg, #ef4444, #eab308, #22c55e, #3b82f6)',
             width: indexActual === 0 ? '0%'
-                 : indexActual === 1 ? '50%'
-                 : '83%',
+                 : indexActual === 1 ? '33%'
+                 : indexActual === 2 ? '67%'
+                 : '100%',
           }}
         />
 
@@ -77,7 +86,7 @@ function Stepper({ estadoActual }) {
           const activo     = i === indexActual;
 
           return (
-            <div key={paso.estado} className="relative flex flex-col items-center z-10" style={{ width: '33%' }}>
+            <div key={paso.estado} className="relative flex flex-col items-center z-10" style={{ width: `${100 / PASOS.length}%` }}>
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-lg
                            transition-all duration-500 border-2"
