@@ -8,7 +8,39 @@ import Sidebar from './admin/Sidebar';
 import Topbar from './admin/Topbar';
 import { AdminDataProvider } from '../contexts/AdminDataContext';
 import { BreadcrumbProvider } from '../contexts/BreadcrumbContext';
-import { PermissionsProvider } from '../contexts/PermissionsContext';
+import { PermissionsProvider, usePermissions } from '../contexts/PermissionsContext';
+
+function PermissionsGate({ children, onSignOut }) {
+  const { loading, role } = usePermissions();
+  const { t } = useLanguage();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-admin-bg">
+        <div className="w-8 h-8 rounded-full border-[3px] border-purple-700 border-t-purple-300 animate-spin" />
+      </div>
+    );
+  }
+
+  if (role === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-admin-bg">
+        <div className="text-center space-y-3 p-8 max-w-sm">
+          <p className="text-lg font-bold text-admin-text">{t('admin.users.deactivated.title')}</p>
+          <p className="text-sm text-admin-muted">{t('admin.users.deactivated.desc')}</p>
+          <button
+            onClick={onSignOut}
+            className="text-sm underline text-fiesta-magenta hover:opacity-75 transition-opacity"
+          >
+            {t('login.signOut')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return children;
+}
 
 export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut, children }) {
   const { t } = useLanguage();
@@ -33,6 +65,7 @@ export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut,
 
   return (
     <PermissionsProvider user={user}>
+      <PermissionsGate onSignOut={onSignOut}>
       <AdminDataProvider toast={toast} confirmCancelar={confirmCancelar}>
         <BreadcrumbProvider>
         <div className="min-h-screen bg-admin-bg lg:flex lg:h-screen">
@@ -83,6 +116,7 @@ export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut,
         </div>
         </BreadcrumbProvider>
       </AdminDataProvider>
+      </PermissionsGate>
     </PermissionsProvider>
   );
 }

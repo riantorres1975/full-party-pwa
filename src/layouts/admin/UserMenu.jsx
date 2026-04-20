@@ -12,7 +12,7 @@ export default function UserMenu({ user, onSignOut, temaOscuro, onToggleTema, co
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
   const btnRef = useRef(null);
   const menuRef = useRef(null);
-  const { role } = usePermissions();
+  const { role, profile } = usePermissions();
   const {
     fetchPedidos,
     notificationPermission,
@@ -116,8 +116,8 @@ export default function UserMenu({ user, onSignOut, temaOscuro, onToggleTema, co
         {!collapsed && (
           <>
             <div className="flex-1 flex flex-col items-start min-w-0">
-              <p className="text-xs font-body font-bold text-admin-text truncate max-w-full">{user?.email?.split('@')[0] || 'Admin'}</p>
-              <p className="text-[10px] font-body text-admin-muted truncate max-w-full">{role ? ROLE_LABELS[role] : 'Admin'}</p>
+              <p className="text-xs font-body font-bold text-admin-text truncate max-w-full">{profile?.nombre || user?.email?.split('@')[0] || 'Admin'}</p>
+              <p className="text-[10px] font-body text-admin-muted truncate max-w-full">{role ? ROLE_LABELS[role] : ''}</p>
             </div>
             <ChevronUp
               size={14}

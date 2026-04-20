@@ -433,5 +433,8 @@
   "admin.orders.orderNumber": "Folio",
 
   "common.customer": "Cliente",
-  "common.date": "Fecha"
+  "common.date": "Fecha",
+
+  "admin.users.deactivated.title": "Cuenta desactivada",
+  "admin.users.deactivated.desc": "Tu cuenta ha sido desactivada. Contacta al administrador."
 }

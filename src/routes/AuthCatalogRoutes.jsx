@@ -79,6 +79,9 @@ export default function AuthCatalogRoutes() {
       );
     }
 
+    // ADMIN_EMAILS: fallback de emergencia. Solo bloquea si la variable está
+    // definida Y el email no está en la lista. En producción normal debe estar
+    // vacía — el control de acceso real lo hace PermissionsContext con profiles.
     const emailUsuario = user?.email?.toLowerCase() || '';
     if (ADMIN_EMAILS.length > 0 && !ADMIN_EMAILS.includes(emailUsuario)) {
       return (
