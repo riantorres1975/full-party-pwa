@@ -70,52 +70,54 @@ export default function InventarioPage() {
 
   return (
     <div>
-      <PageHeader
-        title={t('inventario.title')}
-        subtitle={t('inventario.subtitle')}
-        actions={
-          <Link
-            to="/admin/catalogo"
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-body font-bold text-admin-muted hover:text-admin-text hover:bg-admin-elevated transition-colors"
-          >
-            <ExternalLink size={14} />
-            {t('inventario.verCatalogo')}
-          </Link>
-        }
-      />
-
-      {/* Alertas de stock */}
-      {(counts.sinStock > 0 || counts.bajo > 0) && (
-        <div className="flex flex-wrap gap-3 mb-5">
-          {counts.sinStock > 0 && (
-            <button
-              onClick={() => setFiltro('sinStock')}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-body font-bold hover:bg-red-500/15 transition-colors"
+      <div className="sticky top-0 z-10 bg-admin-bg pb-4">
+        <PageHeader
+          title={t('inventario.title')}
+          subtitle={t('inventario.subtitle')}
+          actions={
+            <Link
+              to="/admin/catalogo"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-body font-bold text-admin-muted hover:text-admin-text hover:bg-admin-elevated transition-colors"
             >
-              {counts.sinStock} {t('inventario.estado.sinStock')}
-            </button>
-          )}
-          {counts.bajo > 0 && (
-            <button
-              onClick={() => setFiltro('bajo')}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-body font-bold hover:bg-amber-500/15 transition-colors"
-            >
-              {counts.bajo} {t('inventario.estado.bajo')}
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={t('inventario.buscar')}
-          className="flex-1 px-3 py-2 rounded-lg border border-admin-border bg-admin-bg text-admin-text text-sm font-body focus:outline-none focus:ring-2 focus:ring-fiesta-magenta/40"
+              <ExternalLink size={14} />
+              {t('inventario.verCatalogo')}
+            </Link>
+          }
         />
-        <InventarioFilters active={filtro} onChange={setFiltro} />
+
+        {/* Alertas de stock */}
+        {(counts.sinStock > 0 || counts.bajo > 0) && (
+          <div className="flex flex-wrap gap-3 mb-4">
+            {counts.sinStock > 0 && (
+              <button
+                onClick={() => setFiltro('sinStock')}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-body font-bold hover:bg-red-500/15 transition-colors"
+              >
+                {counts.sinStock} {t('inventario.estado.sinStock')}
+              </button>
+            )}
+            {counts.bajo > 0 && (
+              <button
+                onClick={() => setFiltro('bajo')}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-body font-bold hover:bg-amber-500/15 transition-colors"
+              >
+                {counts.bajo} {t('inventario.estado.bajo')}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Toolbar */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t('inventario.buscar')}
+            className="flex-1 px-3 py-2 rounded-lg border border-admin-border bg-admin-bg text-admin-text text-sm font-body focus:outline-none focus:ring-2 focus:ring-fiesta-magenta/40"
+          />
+          <InventarioFilters active={filtro} onChange={setFiltro} />
+        </div>
       </div>
 
       {/* Tabla */}
