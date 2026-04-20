@@ -15,6 +15,7 @@ const PedidosPage = lazy(() => import('../pages/admin/PedidosPage'));
 const CatalogoPage = lazy(() => import('../pages/admin/CatalogoPage'));
 const ClientesPage = lazy(() => import('../pages/admin/clientes/ClientesPage'));
 const UsuariosPage = lazy(() => import('../pages/admin/usuarios/UsuariosPage'));
+const RegistroPage = lazy(() => import('../pages/admin/registro/RegistroPage'));
 
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 
@@ -31,6 +32,7 @@ export default function AuthCatalogRoutes() {
   const navigate = useNavigate();
 
   const esRutaAdmin = location.pathname.startsWith('/admin');
+  const esRutaRegistro = location.pathname === '/admin/registro';
 
   useEffect(() => {
     document.body.classList.add('catalogo');
@@ -59,6 +61,21 @@ export default function AuthCatalogRoutes() {
 
     requestAnimationFrame(revealApp);
   }, [esRutaAdmin, cargandoSesion]);
+
+  // Ruta pública de registro con token — sin guards, sin sesión requerida
+  if (esRutaRegistro) {
+    return (
+      <ToastProvider>
+        <Suspense fallback={
+          <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0f0320, #2d1055)' }}>
+            <div className="w-8 h-8 rounded-full border-[3px] border-purple-700 border-t-purple-300 animate-spin" />
+          </div>
+        }>
+          <RegistroPage />
+        </Suspense>
+      </ToastProvider>
+    );
+  }
 
   if (esRutaAdmin && cargandoSesion) {
     return (
@@ -114,6 +131,7 @@ export default function AuthCatalogRoutes() {
           }
         >
           <Routes>
+            <Route path="registro" element={<RegistroPage />} />
             <Route
               path="/*"
               element={
