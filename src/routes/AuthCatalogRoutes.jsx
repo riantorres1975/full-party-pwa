@@ -16,6 +16,7 @@ const CatalogoPage = lazy(() => import('../pages/admin/CatalogoPage'));
 const ClientesPage = lazy(() => import('../pages/admin/clientes/ClientesPage'));
 const UsuariosPage = lazy(() => import('../pages/admin/usuarios/UsuariosPage'));
 const RegistroPage = lazy(() => import('../pages/admin/registro/RegistroPage'));
+const InventarioPage = lazy(() => import('../pages/admin/inventario/InventarioPage'));
 
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 
@@ -161,6 +162,11 @@ export default function AuthCatalogRoutes() {
                     <Route path="usuarios" element={
                       <ProtectedRoute permission="usuarios.view" fallback="/admin/pedidos">
                         <UsuariosPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="inventario" element={
+                      <ProtectedRoute permission="catalogo.edit" fallback="/admin/pedidos">
+                        <InventarioPage />
                       </ProtectedRoute>
                     } />
                     <Route path="*" element={<AdminIndexRedirect />} />
