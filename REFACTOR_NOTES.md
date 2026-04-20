@@ -1142,3 +1142,97 @@ Todas las nuevas keys tienen traducción EN también.
 ✅ Topbar más limpio, menor visual weight  
 ✅ Build sin errores  
 ✅ Listos para branch aparte
+
+---
+
+## Pulido visual final de Pedidos
+
+### 1. Altura Kanban (tercera corrección)
+**Archivo:** `src/pages/admin/pedidos/components/ColumnaKanban.jsx`
+
+**Cambio definitivo:**
+- Estructura: `flex flex-col` con `minHeight: 220` y `maxHeight: calc(100dvh - 380px)`
+- Contenedor de tarjetas: `flex-1 overflow-y-auto p-2 space-y-2`
+- Empty state: "Sin pedidos" centrado en gris claro
+- Border: `border border-admin-border` + `rounded-lg` (no rounded-2xl)
+
+**Resultado:** Columnas respetan altura mínima, scrollean internamente si hay muchos pedidos, nunca exceden viewport.
+
+### 2. Pills de estado mejorados
+**Archivo:** `src/pages/admin/pedidos/components/PedidosHistorial.jsx`
+
+**Patrón de contraste:**
+- **Inactivo:** `bg-admin-elevated text-admin-text-secondary border border-admin-border`
+- **Activo:** 
+  - "Todos": `bg-fiesta-magenta text-white`
+  - "Enviado": `bg-blue-500 text-white`
+  - "Cancelado": `bg-gray-500 text-white`
+- Transición suave en hover
+
+**Resultado:** Contraste legible, diferenciación clara entre activo e inactivo.
+
+### 3. Pills de date range consistentes
+**Archivo:** `src/pages/admin/pedidos/components/PedidosHistorial.jsx`
+
+**Cambio:** Mismo patrón que estado pills
+- Inactivo: `bg-admin-elevated text-admin-text-secondary border border-admin-border`
+- Activo: `bg-fiesta-magenta text-white`
+
+### 4. Botón Exportar CSV alineado a la derecha
+**Archivo:** `src/pages/admin/pedidos/components/PedidosHistorial.jsx`
+
+**Cambio:** Date range y Export button en mismo flex container
+- Date range pills: `flex flex-wrap gap-2`
+- Export button: `ml-auto` o contenedor con `justify-between`
+- Resultado: Pills a la izquierda, botón a la derecha
+
+### 5. Teléfono sin aspecto de link
+**Archivo:** `src/pages/admin/pedidos/components/PedidosHistorial.jsx`
+
+**Cambio:** `text-admin-text-secondary` en lugar de `text-admin-muted` o azul
+- Teléfono mascarado pero normal, sin colores de interacción
+
+### 6. Columna Acciones con menú kebab
+**Archivo:** `src/pages/admin/pedidos/components/PedidosHistorial.jsx`
+
+**Nueva columna 7 en DataTable:**
+- Icono: Three dots vertical (More Vertical from lucide)
+- Click abre dropdown/popover con opciones:
+  - **Ver detalle** — Abre ModalDetallePedido
+  - **Copiar teléfono** — Copia al clipboard
+  - **WhatsApp** (con permission `pedidos.notify`) — Abre wa.me link
+  - **Cancelar** (con permission `pedidos.cancel`, solo si no está cancelado) — Cancela pedido
+
+**Componente:** `AccionesMenu` inline en el mismo archivo
+
+### 7. Hover y click en filas
+**Archivo:** `src/pages/admin/pedidos/components/PedidosHistorial.jsx`
+
+**Cambios en DataTable:**
+- `onRowClick` ya estaba configurado → Abre ModalDetallePedido
+- Verifica que filas tengan cursor pointer y hover visual
+
+**Resultado:** Click en cualquier punto de la fila abre detalle, igual que desde Kanban.
+
+### 8. Validación DataTable pageSize
+**Archivo:** `src/components/admin/DataTable/DataTable.jsx`
+
+**Verificación:**
+- `pageSize: 25` por default en props `pagination`
+- Paginación aparece cuando datos > pageSize
+- Hoy oculta porque hay <25 filas — se verá cuando crezca
+
+### Archivos modificados en pulido visual
+- `src/pages/admin/pedidos/components/ColumnaKanban.jsx` (altura definitiva)
+- `src/pages/admin/pedidos/components/PedidosHistorial.jsx` (pills, acciones, teléfono, menú kebab)
+
+### Estado final post-pulido
+✅ Kanban altura correcta (220px min, calc(100dvh-380px) max)  
+✅ Pills estado y date range con contraste mejorado  
+✅ Export CSV alineado a derecha  
+✅ Teléfono sin aspecto de link  
+✅ Menú kebab con acciones contextuales (Ver, Copiar, WhatsApp, Cancelar)  
+✅ Click en fila abre modal igual que en Kanban  
+✅ Responsiveness mantenida  
+✅ Build sin errores  
+✅ Listo para push a rama
