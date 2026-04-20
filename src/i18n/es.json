@@ -474,5 +474,33 @@
   "usuarios.invite.loginUrl": "URL de acceso",
 
   "usuarios.pending.title": "Invitaciones pendientes",
-  "usuarios.pending.empty": "Sin invitaciones pendientes"
+  "usuarios.pending.empty": "Sin invitaciones pendientes",
+
+  "admin.users.invite.linkReady": "Link de invitación listo",
+  "admin.users.invite.linkCopied": "Link copiado al portapapeles",
+  "admin.users.invite.linkMessage": "Comparte este link con la persona invitada. Al abrirlo podrá crear su contraseña y acceder con el rol {role}. El link expira en 7 días.",
+  "admin.users.invite.emailExists": "Este usuario ya tiene cuenta",
+  "admin.users.invite.alreadyPending": "Ya hay una invitación pendiente para este email",
+  "admin.users.invite.resend": "Reenviar link",
+  "admin.users.invite.cancel": "Cancelar invitación",
+
+  "admin.users.pending.title": "Invitaciones pendientes",
+  "admin.users.pending.empty": "Sin invitaciones pendientes",
+  "admin.users.pending.invitedAgo": "Invitado hace {time}",
+  "admin.users.pending.expiresIn": "Expira en {time}",
+
+  "registro.title": "Crear cuenta",
+  "registro.subtitle": "Completa tus datos para acceder al panel",
+  "registro.email": "Correo",
+  "registro.nombre": "Nombre",
+  "registro.password": "Contraseña",
+  "registro.confirmPassword": "Confirmar contraseña",
+  "registro.passwordMismatch": "Las contraseñas no coinciden",
+  "registro.passwordTooShort": "Mínimo 8 caracteres",
+  "registro.submit": "Crear cuenta",
+  "registro.invalidToken": "Invitación inválida o expirada",
+  "registro.invalidTokenDesc": "Pide a un administrador que te envíe una nueva invitación.",
+  "registro.welcome": "Bienvenido {nombre}",
+  "registro.goHome": "Ir al inicio",
+  "registro.checkEmail": "Revisa tu correo para confirmar tu cuenta"
 }

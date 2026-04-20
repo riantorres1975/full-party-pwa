@@ -2040,3 +2040,37 @@ Sigue existiendo sin modificaciones. Las RLS de `productos` y `pedidos` siguen u
 - Edge Function para envío real de invitaciones por email (hoy se muestra el link manualmente).
 - Último login del usuario: Supabase lo guarda en `auth.users.last_sign_in_at`; exponer via RPC o vista para mostrarlo en el drawer.
 - Eliminar usuario completo: requiere `supabase.auth.admin.deleteUser()` desde backend (service role) o desde Supabase Dashboard.
+
+---
+
+## Hotfix Fase 4: Flujo real de invitación con registro público
+
+### Problema resuelto
+El flujo anterior solo guardaba en `profiles_pending` y mandaba al usuario al login, donde no podía entrar porque no tenía cuenta en `auth.users`.
+
+### Flujo nuevo
+1. Admin invita email + rol → genera UUID token → guarda en `profiles_pending` con `expires_at = now() + 7 días`.
+2. Admin copia link `{origin}/admin/registro?token={uuid}` y lo comparte manualmente.
+3. Invitado abre link → `RegistroPage` llama RPC `get_invite_by_token(token)` → si vigente muestra formulario.
+4. Invitado completa nombre + contraseña → `supabase.auth.signUp()` → trigger `handle_new_user` crea profile con el rol de la invitación → redirige a `/admin`.
+
+### Archivos SQL nuevos
+- `supabase_invites_migration.sql` — ALTER TABLE + RPCs + trigger actualizado.
+  - `get_invite_by_token(UUID)` — accesible sin auth (rol anon), retorna solo filas vigentes.
+  - `check_email_exists(TEXT)` — accesible solo para autenticados, consulta `auth.users`.
+
+### Seguridad de la policy de lectura pública
+`profiles_pending` tiene policy `TO anon USING (expires_at > now())`. Un atacante puede hacer SELECT y obtener filas vigentes, pero necesita adivinar el token UUID v4 (~2^122 combinaciones). En la práctica imposible. Para mayor seguridad en el futuro: mover a RPC con rate limiting.
+
+### Ruta pública /admin/registro
+`AuthCatalogRoutes` detecta `esRutaRegistro = pathname === '/admin/registro'` y renderiza `RegistroPage` directamente, sin pasar por ningún guard de sesión (spinner de `cargandoSesion`, check de `ADMIN_EMAILS`, ni `AdminLayout`).
+
+### Confirm email de Supabase
+`supabase.auth.signUp()` requiere que **"Confirm email" esté DESACTIVADO** en Supabase Dashboard → Authentication → Providers → Email para crear sesión inmediata. Si está activado, `data.session` será `null` y `RegistroPage` muestra pantalla "Revisa tu correo" en lugar de redirigir.
+
+### Validación de email existente
+El hook `useInvitarUsuario` llama RPC `check_email_exists` antes de crear la invitación. Si el email ya tiene cuenta en `auth.users`, muestra error sin insertar en `profiles_pending`. Si ya hay invitación vigente, ofrece "Reenviar" (regenera token + expiración).
+
+### Pendientes
+- Rate limiting en `get_invite_by_token` para prevenir enumeración masiva.
+- Email transaccional real con Resend/SendGrid desde Edge Function (hoy el link se copia manualmente).

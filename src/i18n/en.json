@@ -474,5 +474,33 @@
   "usuarios.invite.loginUrl": "Access URL",
 
   "usuarios.pending.title": "Pending invitations",
-  "usuarios.pending.empty": "No pending invitations"
+  "usuarios.pending.empty": "No pending invitations",
+
+  "admin.users.invite.linkReady": "Invitation link ready",
+  "admin.users.invite.linkCopied": "Link copied to clipboard",
+  "admin.users.invite.linkMessage": "Share this link with the invited person. They can create their password and access with the {role} role. The link expires in 7 days.",
+  "admin.users.invite.emailExists": "This user already has an account",
+  "admin.users.invite.alreadyPending": "There is already a pending invitation for this email",
+  "admin.users.invite.resend": "Resend link",
+  "admin.users.invite.cancel": "Cancel invitation",
+
+  "admin.users.pending.title": "Pending invitations",
+  "admin.users.pending.empty": "No pending invitations",
+  "admin.users.pending.invitedAgo": "Invited {time} ago",
+  "admin.users.pending.expiresIn": "Expires in {time}",
+
+  "registro.title": "Create account",
+  "registro.subtitle": "Complete your details to access the panel",
+  "registro.email": "Email",
+  "registro.nombre": "Name",
+  "registro.password": "Password",
+  "registro.confirmPassword": "Confirm password",
+  "registro.passwordMismatch": "Passwords do not match",
+  "registro.passwordTooShort": "Minimum 8 characters",
+  "registro.submit": "Create account",
+  "registro.invalidToken": "Invalid or expired invitation",
+  "registro.invalidTokenDesc": "Ask an administrator to send you a new invitation.",
+  "registro.welcome": "Welcome {nombre}",
+  "registro.goHome": "Go to home",
+  "registro.checkEmail": "Check your email to confirm your account"
 }
