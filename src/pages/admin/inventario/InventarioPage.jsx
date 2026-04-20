@@ -137,137 +137,130 @@ export default function InventarioPage() {
           <p className="font-body text-xs">{t('inventario.vacio.desc')}</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-admin-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm font-body">
-              <thead>
-                <tr className="border-b border-admin-border bg-admin-elevated">
-                  <th className="text-left px-3 sm:px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">
-                    {t('inventario.col.producto')}
-                  </th>
-                  <th className="text-left px-3 sm:px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide hidden sm:table-cell">
-                    {t('inventario.col.estado')}
-                  </th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide hidden sm:table-cell">
-                    {t('inventario.col.ilimitado')}
-                  </th>
-                  <th className="text-center px-2 sm:px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">
-                    {t('inventario.col.stockActual')}
-                  </th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide hidden sm:table-cell">
-                    {t('inventario.col.stockMinimo')}
-                  </th>
-                  <th className="text-center px-2 sm:px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">
-                    {t('inventario.col.activo')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((p) => {
-                  const status = getStatus(p);
-                  return (
-                    <tr
-                      key={p.id}
-                      className="border-b border-admin-border last:border-0 hover:bg-admin-elevated/40 transition-colors"
+        <>
+          {/* ── Mobile: lista de tarjetas ── */}
+          <div className="sm:hidden rounded-xl border border-admin-border divide-y divide-admin-border overflow-hidden">
+            {filtered.map((p) => {
+              const status = getStatus(p);
+              return (
+                <div key={p.id} className="flex items-center gap-3 px-3 py-3 bg-admin-bg hover:bg-admin-elevated/40 transition-colors">
+                  {/* Imagen */}
+                  {p.imagen_url ? (
+                    <img src={p.imagen_url} alt={p.nombre} className="w-10 h-10 rounded-lg object-cover shrink-0 bg-admin-elevated" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-admin-elevated flex items-center justify-center shrink-0">
+                      <Package size={14} className="text-admin-muted" />
+                    </div>
+                  )}
+
+                  {/* Nombre + estado */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-admin-text text-sm leading-tight truncate">{p.nombre}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {p.categoria && <span className="text-xs text-admin-muted truncate">{p.categoria}</span>}
+                      <StockBadge status={status} t={t} />
+                    </div>
+                  </div>
+
+                  {/* Controles */}
+                  <div className="flex items-center gap-3 shrink-0">
+                    <StockCell
+                      value={p.stock_actual}
+                      field="stock_actual"
+                      disabled={p.stock_ilimitado || !canEdit}
+                      onCommit={(v) => updateStock(p.id, { stock_actual: v })}
+                    />
+                    <button
+                      onClick={() => canEdit && updateStock(p.id, { activo: !p.activo })}
+                      disabled={!canEdit}
+                      className={`relative w-10 h-5 rounded-full transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed shrink-0
+                        ${p.activo ? 'bg-emerald-500' : 'bg-admin-border'}`}
+                      aria-label={t('inventario.col.activo')}
                     >
-                      {/* Producto */}
-                      <td className="px-3 sm:px-4 py-3">
-                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                          {p.imagen_url ? (
-                            <img
-                              src={p.imagen_url}
-                              alt={p.nombre}
-                              className="w-9 h-9 rounded-lg object-cover shrink-0 bg-admin-elevated"
-                            />
-                          ) : (
-                            <div className="w-9 h-9 rounded-lg bg-admin-elevated flex items-center justify-center shrink-0">
-                              <Package size={14} className="text-admin-muted" />
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <p className="font-bold text-admin-text truncate text-sm">{p.nombre}</p>
-                            {p.categoria && (
-                              <p className="text-xs text-admin-muted truncate">{p.categoria}</p>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Estado */}
-                      <td className="px-3 sm:px-4 py-3 hidden sm:table-cell">
-                        <StockBadge status={status} t={t} />
-                      </td>
-
-                      {/* Toggle ilimitado */}
-                      <td className="px-4 py-3 text-center hidden sm:table-cell">
-                        <button
-                          onClick={() => canEdit && updateStock(p.id, { stock_ilimitado: !p.stock_ilimitado })}
-                          disabled={!canEdit}
-                          className={`relative w-10 h-5 rounded-full transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed
-                            ${p.stock_ilimitado ? 'bg-fiesta-magenta' : 'bg-admin-border'}`}
-                          aria-label={t('inventario.col.ilimitado')}
-                        >
-                          <span className={`block w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform
-                            ${p.stock_ilimitado ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                        </button>
-                      </td>
-
-                      {/* Stock actual */}
-                      <td className="px-2 sm:px-4 py-3">
-                        <div className="flex justify-center">
-                          <span className="sm:hidden">
-                            <StockCell
-                              value={p.stock_actual}
-                              field="stock_actual"
-                              disabled={p.stock_ilimitado || !canEdit}
-                              onCommit={(v) => updateStock(p.id, { stock_actual: v })}
-                              compact
-                            />
-                          </span>
-                          <span className="hidden sm:block">
-                            <StockCell
-                              value={p.stock_actual}
-                              field="stock_actual"
-                              disabled={p.stock_ilimitado || !canEdit}
-                              onCommit={(v) => updateStock(p.id, { stock_actual: v })}
-                            />
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Stock mínimo */}
-                      <td className="px-4 py-3 hidden sm:table-cell">
-                        <div className="flex justify-center">
-                          <StockCell
-                            value={p.stock_minimo}
-                            field="stock_minimo"
-                            disabled={p.stock_ilimitado || !canEdit}
-                            min={1}
-                            onCommit={(v) => updateStock(p.id, { stock_minimo: v })}
-                          />
-                        </div>
-                      </td>
-
-                      {/* Activo */}
-                      <td className="px-2 sm:px-4 py-3 text-center">
-                        <button
-                          onClick={() => canEdit && updateStock(p.id, { activo: !p.activo })}
-                          disabled={!canEdit}
-                          className={`relative w-10 h-5 rounded-full transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed
-                            ${p.activo ? 'bg-emerald-500' : 'bg-admin-border'}`}
-                          aria-label={t('inventario.col.activo')}
-                        >
-                          <span className={`block w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform
-                            ${p.activo ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      <span className={`block w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform
+                        ${p.activo ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+
+          {/* ── Desktop: tabla completa ── */}
+          <div className="hidden sm:block rounded-xl border border-admin-border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm font-body">
+                <thead>
+                  <tr className="border-b border-admin-border bg-admin-elevated">
+                    <th className="text-left px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">{t('inventario.col.producto')}</th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">{t('inventario.col.estado')}</th>
+                    <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">{t('inventario.col.ilimitado')}</th>
+                    <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">{t('inventario.col.stockActual')}</th>
+                    <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">{t('inventario.col.stockMinimo')}</th>
+                    <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">{t('inventario.col.activo')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((p) => {
+                    const status = getStatus(p);
+                    return (
+                      <tr key={p.id} className="border-b border-admin-border last:border-0 hover:bg-admin-elevated/40 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            {p.imagen_url ? (
+                              <img src={p.imagen_url} alt={p.nombre} className="w-9 h-9 rounded-lg object-cover shrink-0 bg-admin-elevated" />
+                            ) : (
+                              <div className="w-9 h-9 rounded-lg bg-admin-elevated flex items-center justify-center shrink-0">
+                                <Package size={14} className="text-admin-muted" />
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="font-bold text-admin-text truncate text-sm">{p.nombre}</p>
+                              {p.categoria && <p className="text-xs text-admin-muted truncate">{p.categoria}</p>}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3"><StockBadge status={status} t={t} /></td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => canEdit && updateStock(p.id, { stock_ilimitado: !p.stock_ilimitado })}
+                            disabled={!canEdit}
+                            className={`relative w-10 h-5 rounded-full transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed
+                              ${p.stock_ilimitado ? 'bg-fiesta-magenta' : 'bg-admin-border'}`}
+                            aria-label={t('inventario.col.ilimitado')}
+                          >
+                            <span className={`block w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform ${p.stock_ilimitado ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                          </button>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-center">
+                            <StockCell value={p.stock_actual} field="stock_actual" disabled={p.stock_ilimitado || !canEdit} onCommit={(v) => updateStock(p.id, { stock_actual: v })} />
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-center">
+                            <StockCell value={p.stock_minimo} field="stock_minimo" disabled={p.stock_ilimitado || !canEdit} min={1} onCommit={(v) => updateStock(p.id, { stock_minimo: v })} />
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => canEdit && updateStock(p.id, { activo: !p.activo })}
+                            disabled={!canEdit}
+                            className={`relative w-10 h-5 rounded-full transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed
+                              ${p.activo ? 'bg-emerald-500' : 'bg-admin-border'}`}
+                            aria-label={t('inventario.col.activo')}
+                          >
+                            <span className={`block w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform ${p.activo ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
