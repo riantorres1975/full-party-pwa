@@ -13,6 +13,7 @@ export default function Sidebar({ user, collapsed, onToggle, onSignOut, temaOscu
   const canViewCatalog = usePermission('catalogo.view');
   const canViewReports = usePermission('reportes.view');
   const canViewClients = usePermission('clientes.view');
+  const canViewUsers = usePermission('usuarios.view');
 
   const disabledTooltip = t('admin.comingSoon');
 
@@ -117,11 +118,11 @@ export default function Sidebar({ user, collapsed, onToggle, onSignOut, temaOscu
         {/* CONFIGURACIÓN */}
         <SidebarSection label={t('admin.section.settings')} collapsed={collapsed}>
           <SidebarItem
-            href="#"
+            href="/admin/usuarios"
             icon={Users}
             label={t('admin.nav.users')}
-            disabled
-            tooltip={disabledTooltip}
+            disabled={!canViewUsers}
+            tooltip={!canViewUsers ? t('admin.noPermission') : undefined}
             collapsed={collapsed}
           />
           <SidebarItem

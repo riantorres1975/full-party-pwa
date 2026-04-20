@@ -2000,3 +2000,43 @@ ALTER TABLE public.pedidos
 
 **Archivo modificado:**
 - `src/pages/admin/clientes/components/ClienteDetalleDrawer.jsx`
+
+---
+
+# Fase 4: Roles reales + Gestión de usuarios
+
+## Cambios de arquitectura
+
+### Cómo se obtiene el rol ahora
+`PermissionsContext` hace un fetch async a `public.profiles` al montar, usando el `user.id` de la sesión Supabase. Si el fetch falla o no existe el registro, falla cerrado a `ROLES.VIEWER`. Si `activo = false`, el rol queda en `null` y se muestra la pantalla "Cuenta desactivada".
+
+### Matriz de permisos
+Sin cambios. `src/lib/permissions.js` ya tenía `usuarios.view` y `usuarios.manage` correctamente asignados solo a `admin`.
+
+### ADMIN_EMAILS
+La variable `VITE_ADMIN_EMAILS` sigue existiendo en `AuthCatalogRoutes.jsx` como fallback de emergencia. Solo actúa si está definida y no vacía. En producción normal debe estar vacía; el control de acceso real lo hace `PermissionsContext` + `profiles`.
+
+### Tabla admins
+Sigue existiendo sin modificaciones. Las RLS de `productos` y `pedidos` siguen usando `admins` para compatibilidad con código existente.
+
+## Archivos nuevos
+- `supabase_profiles_migration.sql` — migración completa con `profiles`, `profiles_pending`, triggers y `has_role()`
+- `src/components/admin/RoleBadge.jsx` — badge reutilizable por rol
+- `src/pages/admin/usuarios/UsuariosPage.jsx`
+- `src/pages/admin/usuarios/hooks/useUsuarios.js`
+- `src/pages/admin/usuarios/hooks/useInvitarUsuario.js`
+- `src/pages/admin/usuarios/components/ChangeRoleDropdown.jsx`
+- `src/pages/admin/usuarios/components/UsuarioDetalleDrawer.jsx`
+- `src/pages/admin/usuarios/components/InvitarUsuarioModal.jsx`
+
+## Archivos eliminados
+- `src/components/AdminPedidos.jsx` — código muerto (1264 líneas, cero imports externos)
+
+## Keys i18n agregadas
+`admin.nav.users`, `admin.users.*`, `usuarios.*` — ver `es.json` y `en.json`.
+
+## Pendientes Fase 5
+- Migrar RLS de `productos` y `pedidos` para usar `has_role(ARRAY['admin','manager'])` en lugar de la tabla `admins`.
+- Edge Function para envío real de invitaciones por email (hoy se muestra el link manualmente).
+- Último login del usuario: Supabase lo guarda en `auth.users.last_sign_in_at`; exponer via RPC o vista para mostrarlo en el drawer.
+- Eliminar usuario completo: requiere `supabase.auth.admin.deleteUser()` desde backend (service role) o desde Supabase Dashboard.
