@@ -433,5 +433,8 @@
   "admin.orders.orderNumber": "Order #",
 
   "common.customer": "Customer",
-  "common.date": "Date"
+  "common.date": "Date",
+
+  "admin.users.deactivated.title": "Account deactivated",
+  "admin.users.deactivated.desc": "Your account has been deactivated. Please contact the administrator."
 }
