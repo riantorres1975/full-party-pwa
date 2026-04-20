@@ -17,6 +17,9 @@
   "common.notAvailable": "No disponible",
   "common.followUs": "Síguenos",
   "common.viewOnMaps": "Ver en Google Maps →",
+  "common.more": "Más",
+  "common.lightMode": "Modo claro",
+  "common.darkMode": "Modo oscuro",
 
   "header.subtitle": "Globos · Decoración · Fiestas",
   "header.install": "Instalar",
@@ -163,6 +166,7 @@
   "admin.nav.reports": "Reportes",
   "admin.nav.users": "Usuarios y roles",
   "admin.nav.store": "Tienda",
+  "admin.nav.settings": "Configuración",
   "admin.nav.logout": "Salir",
   "admin.comingSoon": "Próximamente",
   "admin.noPermission": "No tienes permisos para acceder",
