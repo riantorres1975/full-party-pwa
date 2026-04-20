@@ -103,7 +103,7 @@ export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut,
 
             {/* Page content */}
             <main id="admin-main" className="flex-1 min-w-0 lg:overflow-y-auto">
-              <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 lg:p-5 lg:max-w-none">
+              <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 lg:p-5 lg:max-w-none pb-20 lg:pb-0">
                 {children}
               </div>
             </main>
