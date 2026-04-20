@@ -11,7 +11,7 @@ export default function DataTableHeader({
   allIds,
 }) {
   return (
-    <thead className="hidden lg:table-header-group border-b border-admin-border-soft bg-admin-elevated">
+    <thead className="border-b border-admin-border-soft bg-admin-elevated">
       <tr>
         {selectable && (
           <th className="px-4 py-3 w-12">
@@ -25,18 +25,19 @@ export default function DataTableHeader({
           </th>
         )}
         {columns.map(col => {
-          const isSorted = sortKey === col.key;
+          const colKey = col.key ?? col.id;
+          const isSorted = sortKey === colKey;
           const isAsc = isSorted && sortDir === 'asc';
           const isDesc = isSorted && sortDir === 'desc';
 
           return (
             <th
-              key={col.key}
-              onClick={() => col.sortable && onSort(col.key)}
+              key={colKey}
+              onClick={() => col.sortable && onSort(colKey)}
               className={`px-4 py-3 text-left text-sm font-body font-bold text-admin-text ${
                 col.sortable ? 'cursor-pointer hover:bg-admin-muted transition-colors' : ''
               }`}
-              style={{ textAlign: col.align || 'left' }}
+              style={{ textAlign: col.align || col.alignment || 'left' }}
             >
               <div className="flex items-center gap-2">
                 {col.label}

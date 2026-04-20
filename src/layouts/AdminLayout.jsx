@@ -34,7 +34,7 @@ export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut,
     <PermissionsProvider user={user}>
       <AdminDataProvider toast={toast} confirmCancelar={confirmCancelar}>
         <BreadcrumbProvider>
-        <div className="min-h-screen bg-admin-bg lg:flex lg:h-screen lg:overflow-hidden">
+        <div className="min-h-screen bg-admin-bg lg:flex lg:h-screen">
           <ConfirmModal
             open={cancelConfirmOpen}
             {...cancelConfig}
@@ -48,7 +48,10 @@ export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut,
           </a>
 
           {/* Sidebar — desktop only */}
-          <aside className="hidden lg:flex lg:flex-col lg:h-full lg:w-56 lg:flex-shrink-0 lg:border-r border-admin-border" style={{ backgroundColor: 'var(--admin-card)' }}>
+          <aside
+            className={`hidden lg:flex lg:flex-col lg:h-full lg:flex-shrink-0 lg:border-r border-admin-border transition-[width] duration-200 ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-56'}`}
+            style={{ backgroundColor: 'var(--admin-card)' }}
+          >
             <Sidebar
               user={user}
               collapsed={sidebarCollapsed}
