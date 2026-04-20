@@ -11,7 +11,6 @@ export default function GestorPrecios({ precios, setPrecios }) {
   const listaPrecios = Array.isArray(precios) ? precios : [];
   const primeraFila = listaPrecios[0] ?? null;
   const primeraCompleta = !!primeraFila &&
-    String(primeraFila.etiqueta ?? '').trim().length > 0 &&
     Number(primeraFila.cantidad_minima) > 0 &&
     Number(primeraFila.precio) > 0;
 
@@ -59,7 +58,7 @@ export default function GestorPrecios({ precios, setPrecios }) {
       ...prev,
       {
         id: generarIdPrecio(),
-        etiqueta: '',
+        etiqueta: `Precio ${prev.length + 1}`,
         cantidad_minima: '',
         precio: '',
       },
@@ -94,14 +93,9 @@ export default function GestorPrecios({ precios, setPrecios }) {
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                 Etiqueta
               </label>
-              <input
-                type="text"
-                value={item.etiqueta}
-                onChange={e => handleChangePrecio(item.id, 'etiqueta', e.target.value)}
-                placeholder="Ej. Caja x12"
-                maxLength={80}
-                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all"
-              />
+              <div className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-bold text-gray-600">
+                {item.etiqueta || `Precio ${index + 1}`}
+              </div>
             </div>
 
             <div>
