@@ -106,11 +106,11 @@ export default function Sidebar({ user, collapsed, onToggle, onSignOut, temaOscu
         {/* ANÁLISIS */}
         <SidebarSection label={t('admin.section.analytics')} collapsed={collapsed}>
           <SidebarItem
-            href="#"
+            href="/admin/reportes"
             icon={BarChart3}
             label={t('admin.nav.reports')}
-            disabled
-            tooltip={disabledTooltip}
+            disabled={!canViewReports}
+            tooltip={!canViewReports ? t('admin.noPermission') : undefined}
             collapsed={collapsed}
           />
         </SidebarSection>
