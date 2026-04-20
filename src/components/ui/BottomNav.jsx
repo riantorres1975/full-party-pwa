@@ -1,18 +1,39 @@
 import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ClipboardList, LayoutGrid, LogOut, MoreVertical, Home, Users, Settings, Sun, Moon } from 'lucide-react';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useTheme } from '../../hooks/useTheme';
 import { usePermission } from '../../hooks/usePermission';
+import { useAdminData } from '../../contexts/AdminDataContext';
 import ConfirmModal from './ConfirmModal';
 
-export default function BottomNav({ active, onChange, badge = 0, onSignOut }) {
+const ROUTE_MAP = {
+  pedidos: '/admin/pedidos',
+  catalogo: '/admin/catalogo',
+  dashboard: '/admin/dashboard',
+  clientes: '/admin/clientes',
+  settings: '/admin/configuracion',
+};
+
+export default function BottomNav({ onSignOut }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const { t } = useLanguage();
   const { isDark, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { contadores } = useAdminData();
 
   const canViewDashboard = usePermission('reportes.view');
   const canViewClients = usePermission('clientes.view');
+
+  const badge = contadores?.['Por Surtir'] ?? 0;
+
+  const active = location.pathname.startsWith('/admin/pedidos') ? 'pedidos'
+    : location.pathname.startsWith('/admin/catalogo') ? 'catalogo'
+    : location.pathname.startsWith('/admin/dashboard') ? 'dashboard'
+    : location.pathname.startsWith('/admin/clientes') ? 'clientes'
+    : null;
 
   const MAIN_TABS = [
     { key: 'pedidos', label: t('admin.nav.orders'), icon: ClipboardList },
@@ -23,8 +44,7 @@ export default function BottomNav({ active, onChange, badge = 0, onSignOut }) {
   const MORE_ITEMS = [
     canViewDashboard && { key: 'dashboard', label: t('admin.nav.dashboard'), icon: Home },
     canViewClients && { key: 'clientes', label: t('admin.nav.clients'), icon: Users },
-    { key: 'settings', label: t('admin.nav.settings') || 'Configuración', icon: Settings },
-    { key: 'theme', label: isDark ? t('common.lightMode') || 'Modo claro' : t('common.darkMode') || 'Modo oscuro', icon: isDark ? Sun : Moon },
+    { key: 'theme', label: isDark ? (t('common.lightMode') || 'Modo claro') : (t('common.darkMode') || 'Modo oscuro'), icon: isDark ? Sun : Moon },
     { key: 'salir', label: t('admin.nav.logout'), icon: LogOut },
   ].filter(Boolean);
 
@@ -34,8 +54,8 @@ export default function BottomNav({ active, onChange, badge = 0, onSignOut }) {
       setConfirmOpen(true);
     } else if (key === 'theme') {
       toggleTheme();
-    } else {
-      onChange(key);
+    } else if (ROUTE_MAP[key]) {
+      navigate(ROUTE_MAP[key]);
     }
   };
 
@@ -67,12 +87,12 @@ export default function BottomNav({ active, onChange, badge = 0, onSignOut }) {
           };
 
           return (
-            <div key={key} className="relative">
+            <div key={key} className="relative flex-1">
               <button
                 type="button"
                 onClick={handleClick}
                 aria-current={isActive ? 'page' : undefined}
-                className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-14 transition-colors
+                className={`relative flex flex-col items-center justify-center gap-0.5 w-full h-14 transition-colors
                            ${isActive ? 'text-admin-text' : 'text-admin-muted'}`}
               >
                 <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
@@ -83,7 +103,7 @@ export default function BottomNav({ active, onChange, badge = 0, onSignOut }) {
                   </span>
                 )}
                 {isActive && (
-                  <span className="absolute bottom-0 w-8 h-0.5 rounded-full bg-fiesta-magenta" />
+                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-fiesta-magenta" />
                 )}
               </button>
 
@@ -94,7 +114,7 @@ export default function BottomNav({ active, onChange, badge = 0, onSignOut }) {
                     className="fixed inset-0 z-10"
                     onClick={() => setMoreMenuOpen(false)}
                   />
-                  <div className="absolute bottom-full right-0 mb-2 w-48 bg-admin-card border border-admin-border rounded-lg shadow-lg z-20">
+                  <div className="absolute bottom-full right-2 mb-2 w-48 bg-admin-card border border-admin-border rounded-lg shadow-lg z-20 overflow-hidden">
                     {MORE_ITEMS.map(item => (
                       <button
                         key={item.key}

@@ -74,7 +74,7 @@ export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut,
 
           {/* Bottom nav — mobile only */}
           <div className="lg:hidden">
-            <BottomNav />
+            <BottomNav onSignOut={onSignOut} />
           </div>
         </div>
         </BreadcrumbProvider>

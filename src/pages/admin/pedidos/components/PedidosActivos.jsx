@@ -115,7 +115,7 @@ export default function PedidosActivos({ busquedaInput, setBusquedaInput, busque
       </div>
 
       {/* Desktop Kanban */}
-      <div className="hidden lg:flex justify-center gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin', height: 'calc(100dvh - 380px)', minHeight: 200 }}>
+      <div className="hidden lg:grid grid-cols-3 gap-3 pb-2" style={{ height: 'calc(100dvh - 380px)', minHeight: 200 }}>
         {ESTADOS_ACTIVOS.map(estado => (
           <ColumnaKanban
             key={estado}

@@ -6,7 +6,7 @@ export default function ColumnaKanban({ estado, pedidos, onCardClick }) {
   const { t } = useLanguage();
   const meta = ESTADO_META[estado] ?? ESTADO_META['Por Surtir'];
   return (
-    <div className="flex-shrink-0 w-80 flex flex-col border border-admin-border rounded-lg overflow-hidden"
+    <div className="min-w-0 flex flex-col border border-admin-border rounded-lg overflow-hidden"
          style={{ minHeight: 220, maxHeight: 'calc(100dvh - 380px)' }}>
       <div className="flex items-center justify-between px-4 py-3" style={{ background: meta.color }}>
         <h3 className="text-sm font-body font-black text-white flex items-center gap-2">
