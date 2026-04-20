@@ -1484,3 +1484,102 @@ MORE_ITEMS = [Dashboard, Clientes, Configuración, Tema, Salir]
 - [ ] Desktop (lg+): sin cambios, Kanban horizontal funcional
 - [ ] Filtro búsqueda: funciona en móvil y desktop
 - [ ] Responsiveness en todos los breakpoints: OK
+
+---
+
+## Hotfix UserMenu — recuperar acciones del sidebar viejo
+
+### Problema
+
+El avatar del usuario al pie del sidebar desktop ("tiendaquedetalle117 / Administrador") no abría ningún dropdown al hacer click. Las acciones del sidebar original (cambiar tema, recargar datos, notificaciones, cerrar sesión) estaban disponibles solo vía UserMenu pero el dropdown se renderizaba fuera de la viewport y quedaba clipped por `overflow-hidden` del AdminLayout.
+
+### Root Cause
+
+**`src/layouts/admin/UserMenu.jsx`:** el dropdown usaba `top-full` (abre hacia abajo), pero el UserMenu vive en el footer del sidebar. Al abrir "hacia abajo" el dropdown se extendía debajo del viewport y el `lg:h-screen lg:overflow-hidden` del contenedor padre (AdminLayout) lo recortaba completamente. Resultado: el menú *se abría* pero era invisible.
+
+**`src/components/ui/BottomNav.jsx`:** usaba `isDark` en vez de `isDarkMode` (hook retorna `isDarkMode`). También faltaban items de Recargar/Notificaciones, y era un popover minúsculo en vez de bottom sheet completo.
+
+### Solución Implementada
+
+#### 1. UserMenu desktop — abre hacia arriba
+**Archivo:** `src/layouts/admin/UserMenu.jsx`
+
+- Cambiado `absolute top-full right-0 mt-2` → `absolute bottom-full left-0 right-0 mb-2`
+- Ahora el dropdown se posiciona **encima** del botón trigger, dentro del viewport
+- Ajustado `min-w-[200px]` para asegurar ancho suficiente aunque el sidebar esté colapsado
+
+#### 2. Items completos del UserMenu
+
+| Item | Icono | Comportamiento |
+|------|-------|---------------|
+| Perfil | `<User />` | Disabled + badge "Próximamente" |
+| Cambiar tema | `<Sun />` / `<Moon />` | Toggle dinámico (label cambia según tema actual) |
+| Recargar datos | `<RefreshCw />` | `fetchPedidos()` de AdminDataContext |
+| Notificaciones | `<Bell />` | Toggle switch con estado visual (verde si activo) |
+| — separator — | | |
+| Cerrar sesión | `<LogOut />` | `text-red-500` + hover rojo suave |
+
+#### 3. Comportamiento
+
+- ✅ Click en avatar → toggle dropdown (con `aria-expanded`, `aria-haspopup="menu"`)
+- ✅ Click fuera → cierra (handler en `mousedown`)
+- ✅ Tecla **Escape** → cierra (handler en `keydown`)
+- ✅ ChevronUp rota 180° cuando está abierto para indicar estado
+- ✅ Listeners solo se agregan cuando `isOpen` es true (cleanup correcto)
+
+#### 4. Sidebar adaptación colapsada
+**Archivo:** `src/layouts/admin/Sidebar.jsx`
+
+- Ahora pasa `collapsed={collapsed}` a `<UserMenu>`
+- UserMenu oculta nombre/rol/chevron si `collapsed`, muestra solo el avatar
+- Dropdown sigue funcionando igual en ambos estados
+
+#### 5. BottomNav móvil — bottom sheet completo
+**Archivo:** `src/components/ui/BottomNav.jsx`
+
+- Fix: `isDark` → `isDarkMode` (bug del hook useTheme)
+- Cambiado popover pequeño a **bottom sheet full-width** con backdrop blur
+- Ítems del sheet replican el UserMenu desktop:
+  - Perfil (disabled)
+  - Dashboard / Clientes (con permisos)
+  - Separator
+  - Cambiar tema
+  - Recargar datos
+  - Notificaciones (toggle switch)
+  - Separator
+  - Cerrar sesión (rojo)
+- Handle visual arriba del sheet (drag indicator)
+- Respeta `safe-area-inset-bottom` para iOS notch
+- Icono del botón cambió de `MoreVertical` → `MoreHorizontal` (más comunitario para bottom sheets)
+
+### Archivos Modificados
+
+- `src/layouts/admin/UserMenu.jsx` — rewrite completo (dropdown hacia arriba + items completos)
+- `src/layouts/admin/Sidebar.jsx` — pasa `collapsed` a UserMenu
+- `src/components/ui/BottomNav.jsx` — bottom sheet + fix `isDarkMode`
+- `src/i18n/es.json` — `admin.userMenu.profile`
+- `src/i18n/en.json` — `admin.userMenu.profile`
+
+### Testing Manual Checklist
+
+- [ ] Click en avatar del sidebar desktop → abre dropdown hacia arriba
+- [ ] Cambiar tema → UI responde inmediato + persiste (localStorage)
+- [ ] Recargar datos → fetchPedidos() ejecuta sin recargar página
+- [ ] Notificaciones toggle → switch cambia estado, verde si activo
+- [ ] Cerrar sesión → confirma y redirige a login
+- [ ] Click fuera del dropdown → cierra
+- [ ] Escape → cierra
+- [ ] Sidebar colapsado → solo avatar visible, dropdown funciona igual
+- [ ] Móvil: botón "Más" → abre bottom sheet con items completos
+- [ ] Móvil: tap backdrop → cierra sheet
+- [ ] Tema oscuro funciona en todas las páginas (pedidos, historial, clientes, panel)
+
+### Estado Final
+
+✅ Dropdown desktop abre hacia arriba, visible en viewport  
+✅ Todos los items del sidebar viejo recuperados  
+✅ Escape + click fuera cierran dropdown  
+✅ BottomNav móvil: bottom sheet con items completos  
+✅ Bug `isDark` → `isDarkMode` corregido  
+✅ i18n: 2 keys nuevas (es/en)  
+✅ Build sin errores  

@@ -168,6 +168,7 @@
   "admin.nav.store": "Store",
   "admin.nav.settings": "Settings",
   "admin.nav.logout": "Logout",
+  "admin.userMenu.profile": "Profile",
   "admin.comingSoon": "Coming soon",
   "admin.noPermission": "You don't have permission to access",
   "admin.topbar.search": "Search orders, clients, products...",

@@ -142,6 +142,7 @@ export default function Sidebar({ user, collapsed, onToggle, onSignOut, temaOscu
           onSignOut={onSignOut}
           temaOscuro={temaOscuro}
           onToggleTema={onToggleTema}
+          collapsed={collapsed}
         />
       </div>
     </div>
