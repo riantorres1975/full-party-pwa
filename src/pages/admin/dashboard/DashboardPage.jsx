@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '../../../hooks/useLanguage';
+import { useBreadcrumb } from '../../../contexts/BreadcrumbContext';
 import PageHeader from '../../../components/admin/PageHeader';
 import RangoPeriodoPicker from './components/RangoPeriodoPicker';
 import KpiGrid from './components/KpiGrid';
@@ -10,18 +11,50 @@ import UltimosPedidos from './components/UltimosPedidos';
 import { useDashboardData } from './hooks/useDashboardData';
 
 function getDefaultDates() {
+  const desde = new Date();
+  desde.setHours(0, 0, 0, 0);
   const hasta = new Date();
   hasta.setHours(23, 59, 59, 999);
-  const desde = new Date(hasta);
-  desde.setDate(desde.getDate() - 30);
-  desde.setHours(0, 0, 0, 0);
   return { desde, hasta };
+}
+
+function useIsDesktop() {
+  const getInitial = () => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(min-width: 1024px)').matches;
+  };
+
+  const [isDesktop, setIsDesktop] = useState(getInitial);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const media = window.matchMedia('(min-width: 1024px)');
+    const onChange = (event) => setIsDesktop(event.matches);
+    setIsDesktop(media.matches);
+
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', onChange);
+      return () => media.removeEventListener('change', onChange);
+    }
+
+    media.addListener(onChange);
+    return () => media.removeListener(onChange);
+  }, []);
+
+  return isDesktop;
 }
 
 export default function DashboardPage() {
   const { t } = useLanguage();
-  const [periodo, setPeriodo] = useState('30d');
+  const setBreadcrumb = useBreadcrumb();
+  const isDesktop = useIsDesktop();
+  const [periodo, setPeriodo] = useState('today');
   const [fechas, setFechas] = useState(getDefaultDates());
+
+  useEffect(() => {
+    setBreadcrumb([t('admin.nav.dashboard')]);
+  }, [t, setBreadcrumb]);
 
   const { kpis, kpisAnterior, ventasDiarias, pedidosPorEstado, topProductos, ultimosPedidos, loading, error } = useDashboardData({
     desde: fechas.desde,
@@ -67,43 +100,45 @@ export default function DashboardPage() {
 
         {/* Charts Grid */}
         <div className="mb-8">
-          <div className="lg:grid-cols-3 gap-4 hidden lg:grid">
-            <div className="lg:col-span-2">
-              <VentasChart data={ventasDiarias} loading={loading} />
+          {isDesktop ? (
+            <div className="grid lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2">
+                <VentasChart data={ventasDiarias} loading={loading} />
+              </div>
+              <div className="lg:col-span-1">
+                <PedidosPorEstadoChart data={pedidosPorEstado} loading={loading} />
+              </div>
             </div>
-            <div className="lg:col-span-1">
+          ) : (
+            <div className="space-y-4">
+              <VentasChart data={ventasDiarias} loading={loading} />
               <PedidosPorEstadoChart data={pedidosPorEstado} loading={loading} />
             </div>
-          </div>
-
-          {/* Mobile: stack everything */}
-          <div className="lg:hidden space-y-4">
-            <VentasChart data={ventasDiarias} loading={loading} />
-            <PedidosPorEstadoChart data={pedidosPorEstado} loading={loading} />
-          </div>
+          )}
         </div>
 
         {/* Products + Recent orders */}
         <div className="mb-8">
-          <div className="lg:grid lg:grid-cols-3 gap-4 hidden">
-            <div className="lg:col-span-1">
-              <TopProductos data={topProductos} loading={loading} />
+          {isDesktop ? (
+            <div className="grid lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-1">
+                <TopProductos data={topProductos} loading={loading} />
+              </div>
+              <div className="lg:col-span-2">
+                <UltimosPedidos data={ultimosPedidos} loading={loading} />
+              </div>
             </div>
-            <div className="lg:col-span-2">
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-admin-card border border-admin-border rounded-lg p-4">
+                <h3 className="text-sm font-body font-bold text-admin-text mb-4">
+                  {t('admin.dashboard.chart.top_products')}
+                </h3>
+                <TopProductos data={topProductos} loading={loading} />
+              </div>
               <UltimosPedidos data={ultimosPedidos} loading={loading} />
             </div>
-          </div>
-
-          {/* Mobile */}
-          <div className="lg:hidden space-y-4">
-            <div className="bg-admin-card border border-admin-border rounded-lg p-4">
-              <h3 className="text-sm font-body font-bold text-admin-text mb-4">
-                {t('admin.dashboard.chart.top_products')}
-              </h3>
-              <TopProductos data={topProductos} loading={loading} />
-            </div>
-            <UltimosPedidos data={ultimosPedidos} loading={loading} />
-          </div>
+          )}
         </div>
 
         {/* Footer spacing */}

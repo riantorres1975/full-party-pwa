@@ -19,7 +19,7 @@ export function useClientes() {
       const { data: pedidos, error: err } = await guardedQuery((client) =>
         client
           .from('pedidos')
-          .select('id,cliente_nombre,cliente_telefono,email,tipo_entrega,total,estado,created_at')
+          .select('id,cliente_nombre,cliente_telefono,tipo_entrega,total,estado,created_at')
           .neq('estado', 'Cancelado')
           .order('created_at', { ascending: false })
       );
@@ -38,7 +38,7 @@ export function useClientes() {
             id: telNorm, // usar teléfono normalizado como id
             nombre: pedido.cliente_nombre,
             telefono: pedido.cliente_telefono,
-            email: pedido.email || null,
+            email: null,
             pedidos_total: 0,
             gasto_total: 0,
             ultimo_pedido: pedido.created_at,
@@ -49,25 +49,26 @@ export function useClientes() {
         }
 
         const cliente = clienteMap[telNorm];
+        const pedidoFecha = new Date(pedido.created_at);
+        const ultimoPedidoFecha = new Date(cliente.ultimo_pedido);
+        const primerPedidoFecha = new Date(cliente.primer_pedido);
+        const esMasReciente = pedidoFecha > ultimoPedidoFecha;
+
         cliente.pedidos_total += 1;
         cliente.gasto_total += Number(pedido.total) || 0;
-        cliente.ultimo_pedido = new Date(pedido.created_at) > new Date(cliente.ultimo_pedido)
-          ? pedido.created_at
-          : cliente.ultimo_pedido;
-        cliente.primer_pedido = new Date(pedido.created_at) < new Date(cliente.primer_pedido)
-          ? pedido.created_at
-          : cliente.primer_pedido;
+        if (esMasReciente) {
+          cliente.ultimo_pedido = pedido.created_at;
+          cliente.nombre = pedido.cliente_nombre || cliente.nombre;
+        }
+        if (pedidoFecha < primerPedidoFecha) {
+          cliente.primer_pedido = pedido.created_at;
+        }
 
         // Rastrear método de entrega preferido
         if (pedido.tipo_entrega) {
           cliente.entregas[pedido.tipo_entrega] = (cliente.entregas[pedido.tipo_entrega] || 0) + 1;
         }
 
-        // Actualizar nombre y email con datos más recientes
-        if (new Date(pedido.created_at) > new Date(cliente.ultimo_pedido)) {
-          cliente.nombre = pedido.cliente_nombre;
-          if (pedido.email) cliente.email = pedido.email;
-        }
       });
 
       // Calcular entrega preferida

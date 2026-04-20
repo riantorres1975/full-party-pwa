@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ClipboardList, LayoutGrid, LogOut, MoreHorizontal, Home, Users, Sun, Moon, RefreshCw, Bell, User } from 'lucide-react';
+import { ClipboardList, LayoutGrid, LogOut, MoreHorizontal, Home, Users, Sun, Moon, RefreshCw, Bell, User, Settings } from 'lucide-react';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useTheme } from '../../hooks/useTheme';
 import { usePermission } from '../../hooks/usePermission';
@@ -88,7 +88,7 @@ export default function BottomNav({ onSignOut }) {
     <nav
       className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-admin-card/90 backdrop-blur-lg border-t border-admin-border safe-area-bottom"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
-      aria-label="Navegación principal"
+      aria-label={t('admin.sections')}
     >
       <div className="flex items-center justify-around h-14">
         {MAIN_TABS.map(({ key, label, icon: Icon }) => {
@@ -176,6 +176,18 @@ export default function BottomNav({ onSignOut }) {
                 <span className="flex-1 text-left">{t('admin.nav.clients')}</span>
               </button>
             )}
+
+            <button
+              disabled
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-body font-bold text-admin-inactive cursor-not-allowed rounded-lg"
+              title={t('admin.comingSoon')}
+            >
+              <Settings size={18} />
+              <span className="flex-1 text-left">{t('admin.nav.settings')}</span>
+              <span className="text-[10px] font-body uppercase tracking-wide text-admin-muted">
+                {t('admin.comingSoon')}
+              </span>
+            </button>
 
             <div className="border-t border-admin-border my-1" />
 

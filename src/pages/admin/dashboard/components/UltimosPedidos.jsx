@@ -79,7 +79,7 @@ export default function UltimosPedidos({ data, loading, onRowClick }) {
                   className="border-b border-admin-border-soft hover:bg-admin-elevated transition-colors cursor-pointer"
                 >
                   <td className="px-4 py-3 font-bold text-admin-text">
-                    {pedido.folio || `#${pedido.id.substring(0, 8)}`}
+                    {pedido.folio || t('common.notAvailable')}
                   </td>
                   <td className="px-4 py-3 text-admin-text-secondary text-xs">
                     {pedido.cliente_telefono}
@@ -114,7 +114,7 @@ export default function UltimosPedidos({ data, loading, onRowClick }) {
             >
               <div className="flex justify-between items-start gap-2 mb-1">
                 <span className="font-bold text-admin-text">
-                  {pedido.folio || `#${pedido.id.substring(0, 8)}`}
+                  {pedido.folio || t('common.notAvailable')}
                 </span>
                 <span className="text-xs text-admin-text-secondary">
                   {getRelativeTime(pedido.created_at)}

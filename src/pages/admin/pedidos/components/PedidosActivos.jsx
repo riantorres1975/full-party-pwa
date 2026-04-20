@@ -12,10 +12,11 @@ export default function PedidosActivos({ busquedaInput, setBusquedaInput, busque
   const { t } = useLanguage();
   const [pedidoModal, setPedidoModal] = useState(null);
   const {
-    pedidos, setPedidos, loading,
-    actualizando, filtroEstado, setFiltroEstado,
-    busqueda, notificando,
-    pedidosFiltrados, pedidosPorBusqueda, contadores,
+    setPedidos,
+    actualizando,
+    setFiltroEstado,
+    notificando,
+    pedidosPorBusqueda,
     cambiarEstado, cancelarPedido, notificar,
   } = useAdminData();
 
@@ -88,7 +89,7 @@ export default function PedidosActivos({ busquedaInput, setBusquedaInput, busque
               <div className="p-3 space-y-2">
                 {pedidosDelEstado.length === 0 ? (
                   <div className="py-6 text-center text-xs text-admin-muted">
-                    Sin pedidos
+                    {t('common.noOrders')}
                   </div>
                 ) : (
                   pedidosDelEstado.map(pedido => (

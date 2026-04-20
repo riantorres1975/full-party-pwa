@@ -1583,3 +1583,420 @@ El avatar del usuario al pie del sidebar desktop ("tiendaquedetalle117 / Adminis
 ✅ Bug `isDark` → `isDarkMode` corregido  
 ✅ i18n: 2 keys nuevas (es/en)  
 ✅ Build sin errores  
+
+---
+
+## Hotfix Post-Auditoría — Consistencia e i18n (Abr 2026)
+
+Tras revisar `REFACTOR_NOTES.md` contra la implementación real en rama `feat/admin-panel-refactor-fase-3-4`, se aplicaron correcciones de consistencia, UX y buenas prácticas React.
+
+### 1. Clientes: i18n y modal de detalle restaurado
+
+**Archivo:** `src/pages/admin/clientes/ClientesPage.jsx`
+
+- ✅ Corregidas keys inválidas de i18n:
+  - `admin.clientes.title` → `clientes.title`
+  - `admin.clientes.subtitle` → `clientes.subtitle`
+- ✅ Agregado breadcrumb dinámico con `useBreadcrumb()` (`ADMIN › Clientes`)
+- ✅ Implementado `ModalDetallePedido` al hacer click en pedido desde `ClienteHistorialPedidos`
+  - Antes: se guardaba `pedidoModal` pero nunca se renderizaba
+  - Ahora: click en historial abre modal funcional con mismas acciones de Pedidos
+
+### 2. Hook `useClientes`: fix de cliente más reciente
+
+**Archivo:** `src/pages/admin/clientes/hooks/useClientes.js`
+
+- ✅ Corregida lógica de actualización de `nombre/email` del cliente
+- Root cause: se actualizaba `ultimo_pedido` antes de comparar, impidiendo detectar correctamente el pedido más reciente
+- Ahora:
+  - Se calcula `esMasReciente` primero
+  - Solo entonces se actualizan `ultimo_pedido`, `nombre` y `email`
+  - `primer_pedido` sigue actualizándose por fecha mínima
+
+### 3. DataTable: mejora de buenas prácticas React
+
+**Archivo:** `src/components/admin/DataTable/useDataTable.js`
+
+- ✅ Eliminado side effect dentro de `useMemo` (`setPage`)
+- ✅ Sincronización de página movida a `useEffect`
+- ✅ `setSearch`, `setFilters` y `setSort` ahora reinician página a `0`
+- ✅ Agregado soporte real para callbacks opcionales:
+  - `onSortChange`
+  - `onFilterChange`
+- ✅ Manejo robusto cuando `totalPages === 0`
+
+### 4. Limpieza de hardcoded strings en admin (i18n)
+
+**Archivos principales:**
+- `src/layouts/admin/Topbar.jsx`
+- `src/pages/admin/pedidos/components/PedidosActivos.jsx`
+- `src/pages/admin/pedidos/components/ColumnaKanban.jsx`
+- `src/pages/admin/pedidos/components/TarjetaPedido.jsx`
+- `src/pages/admin/pedidos/components/PedidosHistorial.jsx`
+- `src/pages/admin/clientes/components/ClienteHistorialPedidos.jsx`
+
+**Cambios:**
+- ✅ Reemplazados textos hardcodeados como:
+  - "Sin pedidos"
+  - "Búsqueda próximamente"
+  - "Ver detalle"
+  - "Copiar teléfono"
+  - "Datos copiados"
+  - "Copiar datos para repartidor"
+- ✅ Fechas en Kanban/Historial/ClienteHistorial ahora respetan locale (`es-MX` / `en-US` según idioma activo)
+
+### 5. Pedidos Historial: menú de acciones y export más robustos
+
+**Archivo:** `src/pages/admin/pedidos/components/PedidosHistorial.jsx`
+
+- ✅ Menú kebab con `stopPropagation()` para evitar conflictos con `onRowClick`
+- ✅ Acción "Copiar teléfono" usa icono `Copy` y label i18n
+- ✅ Export CSV ahora internacionalizado:
+  - Headers via `t()`
+  - Fecha según locale activo
+  - Método de entrega traducido (`admin.orders.delivery.home` / `.pickup`)
+
+### 6. Tabs de Pedidos: contadores + validación de URL
+
+**Archivo:** `src/pages/admin/pedidos/components/PedidosTabs.jsx`
+
+- ✅ Tab "Activos" ahora muestra suma de:
+  - Por Surtir + Armando Pedido + Listo para Entrega
+- ✅ Tab "Historial" ahora muestra suma de:
+  - Enviado + Cancelado
+- ✅ `?tab=` sanitizado para evitar estados inválidos
+
+### 7. Dashboard y layout: consistencia adicional
+
+**Archivos:**
+- `src/pages/admin/dashboard/DashboardPage.jsx`
+- `src/pages/admin/dashboard/components/RangoPeriodoPicker.jsx`
+- `src/layouts/AdminLayout.jsx`
+- `src/components/ui/BottomNav.jsx`
+
+**Cambios:**
+- ✅ Dashboard ahora actualiza breadcrumb (`ADMIN › Panel`)
+- ✅ `RangoPeriodoPicker` usa labels i18n para presets (Hoy/7d/30d/90d)
+- ✅ `AdminLayout`:
+  - Elimina import no usado (`Outlet`)
+  - Skip link usa key `admin.skipToContent`
+- ✅ `BottomNav`:
+  - `aria-label` internacionalizado (`admin.sections`)
+  - item "Configuración" agregado como disabled + badge "Próximamente" en menú "Más"
+
+### 8. Nuevas keys i18n agregadas
+
+**Archivos:** `src/i18n/es.json`, `src/i18n/en.json`
+
+```json
+"common.noOrders",
+"admin.topbar.searchSoon",
+"admin.orders.viewDetail",
+"admin.orders.copyPhone",
+"admin.orders.copyDeliveryData",
+"admin.orders.deliveryDataCopied",
+"admin.orders.delivery.home",
+"admin.orders.delivery.pickup"
+```
+
+### 9. Compatibilidad de esquema Supabase (clientes)
+
+**Archivo:** `src/pages/admin/clientes/hooks/useClientes.js`
+
+- ✅ Resuelto error 400 en `/admin/clientes` por columna inexistente
+- Root cause: el query pedía `email` en tabla `pedidos`, pero ese campo no existe en este proyecto
+- Cambio aplicado:
+  - `select('id,cliente_nombre,cliente_telefono,tipo_entrega,total,estado,created_at')`
+  - `cliente.email` queda explícitamente en `null` (UI ya lo maneja condicionalmente)
+
+**Error original:** `column pedidos.email does not exist`
+
+### 10. Clientes: botón "Editar" funcional (sin tabla `clientes`)
+
+**Archivos:**
+- `src/pages/admin/clientes/components/ClienteDetalleDrawer.jsx`
+- `src/pages/admin/clientes/ClientesPage.jsx`
+- `src/i18n/es.json`
+- `src/i18n/en.json`
+
+**Problema:**
+- El botón **Editar** en drawer de clientes estaba deshabilitado (UI visible pero no operativa).
+
+**Solución implementada:**
+- ✅ El botón ahora abre modo edición inline dentro del drawer.
+- ✅ Campos editables: `nombre` y `teléfono`.
+- ✅ Validaciones antes de guardar:
+  - Nombre mínimo 2 caracteres.
+  - Teléfono con validación mexicana (`validarTelefonoMX`).
+- ✅ Persistencia en backend **sin tabla clientes**:
+  - Se actualizan todos los pedidos del cliente (matching por teléfono normalizado) vía `supabase.from('pedidos').update(...).in('id', ids)`.
+- ✅ Actualización de estado local:
+  - `setPedidos` en contexto admin para refresco inmediato.
+  - `refetchClientes()` para recalcular agregados de tabla clientes.
+- ✅ Feedback UX:
+  - Toast de error/éxito.
+  - Estado `Guardando...` con spinner en botón de submit.
+
+**Nuevas keys i18n (clientes edit):**
+- `clientes.edit.title`
+- `clientes.edit.save`
+- `clientes.edit.saving`
+- `clientes.edit.invalidName`
+- `clientes.edit.invalidPhone`
+- `clientes.edit.noOrders`
+- `clientes.edit.success`
+
+### Archivos modificados en este hotfix
+
+- `src/components/admin/DataTable/useDataTable.js`
+- `src/components/ui/BottomNav.jsx`
+- `src/i18n/es.json`
+- `src/i18n/en.json`
+- `src/layouts/AdminLayout.jsx`
+- `src/layouts/admin/Topbar.jsx`
+- `src/pages/admin/clientes/ClientesPage.jsx`
+- `src/pages/admin/clientes/components/ClienteDetalleDrawer.jsx`
+- `src/pages/admin/clientes/components/ClienteHistorialPedidos.jsx`
+- `src/pages/admin/clientes/hooks/useClientes.js`
+- `src/pages/admin/dashboard/DashboardPage.jsx`
+- `src/pages/admin/dashboard/components/RangoPeriodoPicker.jsx`
+- `src/pages/admin/pedidos/components/ColumnaKanban.jsx`
+- `src/pages/admin/pedidos/components/PedidosActivos.jsx`
+- `src/pages/admin/pedidos/components/PedidosHistorial.jsx`
+- `src/pages/admin/pedidos/components/PedidosTabs.jsx`
+- `src/pages/admin/pedidos/components/TarjetaPedido.jsx`
+
+### Estado final post-auditoría
+
+✅ Build de producción pasa (`npm run build`)  
+✅ i18n consistente en componentes activos del admin  
+✅ Clientes: click en historial abre modal real  
+✅ Clientes: botón Editar ya funciona y persiste en pedidos  
+✅ DataTable sin side effects en `useMemo`  
+✅ Breadcrumbs consistentes en Dashboard/Clientes  
+✅ Tabs de Pedidos con contadores reales  
+
+### Nota
+
+`src/components/AdminPedidos.jsx` (archivo legado/deprecado) todavía conserva algunos textos hardcodeados, pero no forma parte del flujo actual de rutas admin.
+
+### 11. Historial: fecha de Enviado/Cancelado estable (FIXED)
+
+**Problema detectado:**
+- En la pestaña de historial, la fecha se resolvía desde `updated_at` para estados `Enviado` y `Cancelado`.
+- Cuando el pedido recibía updates posteriores (por ejemplo `notificado_estado`), la fecha mostrada cambiaba y dejaba de reflejar el momento real del cierre.
+
+**Solución implementada:**
+- `useHistorialPedidos` ahora resuelve la fecha con prioridad:
+  1) `fecha_envio` / `fecha_cancelado` (si existen en BD)
+  2) valor persistido localmente por `pedido.id + estado`
+  3) fallback legacy (`updated_at` / `created_at`)
+- `PedidosHistorial` usa esa fecha unificada en:
+  - Columna de fecha en DataTable
+  - Exportación CSV
+- `usePedidosAdmin` ahora:
+  - Al mover a `Enviado`, intenta persistir `fecha_envio`
+  - Al cancelar, intenta persistir `fecha_cancelado`
+  - Si la BD aún no tiene esas columnas, aplica fallback automático al payload base (sin romper el flujo)
+  - En `fetchPedidos`, intenta `select` con columnas de fecha y cae a selección base si el esquema no las soporta
+
+**Archivos modificados:**
+- `src/pages/admin/pedidos/hooks/useHistorialPedidos.js`
+- `src/pages/admin/pedidos/components/PedidosHistorial.jsx`
+- `src/hooks/usePedidosAdmin.js`
+- `supabase_setup.sql`
+
+**Migración recomendada (para precisión completa cross-device):**
+
+```sql
+ALTER TABLE public.pedidos
+  ADD COLUMN IF NOT EXISTS fecha_envio TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS fecha_cancelado TIMESTAMPTZ;
+```
+
+### 12. Dashboard: warnings de consola + folios consistentes (FIXED)
+
+**Problemas reportados:**
+- Warnings repetidos de Recharts: `width/height should be greater than 0`.
+- En "Últimos pedidos" del dashboard se mostraba fallback tipo `#id` en vez del folio real.
+- Logs repetidos de imagen inválida en Top productos (`storage ... 400`).
+
+**Causas raíz:**
+- Se renderizaban simultáneamente las versiones desktop y mobile de las gráficas (una quedaba oculta por CSS, pero montada), provocando medición en contenedores con tamaño 0.
+- El hook de dashboard no estaba seleccionando `folio` en el query a `pedidos`.
+- Top productos usaba `<img>` directo y al fallar la URL quedaba reintentando en rerenders.
+
+**Solución implementada:**
+- `DashboardPage` ahora monta **solo una** variante (desktop o mobile) usando media query reactiva (`useIsDesktop`), evitando charts ocultos montados.
+- `useDashboardData` ahora selecciona `folio` en ambos queries (periodo actual/anterior) y deja de fabricar folio con `#id`.
+- `UltimosPedidos` muestra `pedido.folio` y usa `common.notAvailable` si faltara.
+- `TopProductos` migrado a `OptimizedImage` para fallback robusto y evitar spam de requests fallidos por imagen rota.
+- En `main.jsx`, el handler global de `beforeinstallprompt` ya no intercepta ruta `/admin`, reduciendo ruido en consola del panel.
+
+**Archivos modificados:**
+- `src/pages/admin/dashboard/DashboardPage.jsx`
+- `src/pages/admin/dashboard/hooks/useDashboardData.js`
+- `src/pages/admin/dashboard/components/UltimosPedidos.jsx`
+- `src/pages/admin/dashboard/components/TopProductos.jsx`
+- `src/main.jsx`
+
+### 13. Dashboard: guard de dimensiones en gráficas Recharts (FIXED)
+
+**Problema residual:**
+- En algunos entornos seguían apareciendo warnings de Recharts `width(-1)` / `height(-1)` durante el primer render.
+
+**Solución implementada:**
+- Se creó `useChartDimensions` para medir tamaño real del contenedor con `ResizeObserver` + `requestAnimationFrame`.
+- `VentasChart` y `PedidosPorEstadoChart` ya no dependen de `ResponsiveContainer`.
+- Ahora renderizan `AreaChart` / `BarChart` solo cuando `width` y `height` son mayores a 0.
+- Mientras el layout se estabiliza, se muestra un placeholder liviano (`animate-pulse`) para evitar mount con dimensiones inválidas.
+
+**Archivos modificados:**
+- `src/pages/admin/dashboard/hooks/useChartDimensions.js`
+- `src/pages/admin/dashboard/components/VentasChart.jsx`
+- `src/pages/admin/dashboard/components/PedidosPorEstadoChart.jsx`
+
+### 14. Dashboard: recuperación de gráficas + rango "Hoy" consistente (FIXED)
+
+**Problemas reportados en QA:**
+- Las dos gráficas del dashboard quedaban en placeholder y no renderizaban.
+- En preset **Hoy** (y de forma intermitente en otros presets), pedidos del día actual no aparecían.
+
+**Causas raíz:**
+- El guard de dimensiones introducido en el hotfix anterior podía quedarse en estado "no listo" según layout inicial.
+- `RangoPeriodoPicker` estaba enviando `hasta` en `00:00:00` para presets, excluyendo prácticamente todo el día actual.
+- Parseo de fechas custom con `new Date('YYYY-MM-DD')` (UTC) generaba desfasajes por zona horaria.
+
+**Solución implementada:**
+- `VentasChart` y `PedidosPorEstadoChart` regresan a `ResponsiveContainer` con contenedor explícito (`h-[240px]`) para render estable.
+- Se elimina el hook experimental `useChartDimensions`.
+- `RangoPeriodoPicker` ahora usa:
+  - `today`: inicio de día → fin de día
+  - `7d`: últimos 7 días inclusivos
+  - `30d`: últimos 30 días inclusivos
+  - `90d`: últimos 90 días inclusivos
+- `DashboardPage` al iniciar en `30d` quedó alineado al mismo criterio inclusivo (resta 29 días desde hoy).
+- En custom range:
+  - Parseo local seguro (`new Date(year, month - 1, day)`)
+  - Normalización con `startOfDay` / `endOfDay`
+- `useDashboardData` ahora normaliza límites del periodo y calcula periodo anterior equivalente **sin solape**.
+- Agrupación de ventas diarias por fecha local (no por split UTC del timestamp).
+
+**Archivos modificados:**
+- `src/pages/admin/dashboard/components/VentasChart.jsx`
+- `src/pages/admin/dashboard/components/PedidosPorEstadoChart.jsx`
+- `src/pages/admin/dashboard/components/RangoPeriodoPicker.jsx`
+- `src/pages/admin/dashboard/hooks/useDashboardData.js`
+- `src/pages/admin/dashboard/hooks/useChartDimensions.js` (eliminado)
+
+### 15. Dashboard: eliminación definitiva de warning Recharts `width(-1)` (FIXED)
+
+**Síntoma residual:**
+- En algunos equipos seguía apareciendo warning de Recharts sobre `width(-1)` / `height(-1)` aunque las gráficas sí se mostraran.
+
+**Causa técnica:**
+- `ResponsiveContainer` puede evaluar dimensiones inválidas en montajes tempranos de layout, incluso con altura visible definida.
+
+**Solución implementada:**
+- Se reemplazó `ResponsiveContainer` por render directo de `AreaChart`/`BarChart` con:
+  - `height` fijo (`240`)
+  - `width` medido del contenedor real
+- Se creó `useChartWidth`:
+  - Mide ancho con `ResizeObserver`
+  - Incluye `warmup` por intervalo corto para evitar estado inicial en 0
+  - Re-renderiza gráficas en resize/orientation
+- Mientras no hay ancho válido, se renderiza placeholder (`animate-pulse`).
+
+**Archivos modificados:**
+- `src/pages/admin/dashboard/hooks/useChartWidth.js`
+- `src/pages/admin/dashboard/components/VentasChart.jsx`
+- `src/pages/admin/dashboard/components/PedidosPorEstadoChart.jsx`
+
+### 16. Dashboard: charts visibles aun con ancho inicial 0 (FIXED)
+
+**Problema observado en producción/local:**
+- Warnings de Recharts desaparecieron, pero las gráficas podían quedarse en placeholder.
+
+**Causa raíz:**
+- En el primer render (cuando `loading` es `true`) el contenedor de la gráfica no existe aún, por lo que el primer ciclo de medición puede arrancar con ancho 0.
+
+**Ajuste aplicado:**
+- `useChartWidth` cambió a callback ref + efecto dependiente del nodo real (`[node]`) para medir cuando el elemento sí existe.
+- `VentasChart` y `PedidosPorEstadoChart` ahora renderizan siempre con un ancho seguro fallback (`320`) mientras llega la medición real.
+
+**Archivos modificados:**
+- `src/pages/admin/dashboard/hooks/useChartWidth.js`
+- `src/pages/admin/dashboard/components/VentasChart.jsx`
+- `src/pages/admin/dashboard/components/PedidosPorEstadoChart.jsx`
+
+### 17. PWA cache bust para asegurar entrega de hotfix (FIXED)
+
+**Problema operativo:**
+- En entornos con Service Worker activo podían quedar chunks viejos en cache tras cambios frecuentes del dashboard.
+
+**Acción aplicada:**
+- Se incrementó la versión de cache principal en SW (`catalogo-v7` → `catalogo-v8`) para forzar activación limpia de assets nuevos.
+
+**Archivo modificado:**
+- `public/sw.js`
+
+### 18. Dashboard UX: miniaturas completas + preset inicial en Hoy (FIXED)
+
+**Solicitudes atendidas:**
+- En Top productos, mostrar la imagen completa sin recortes.
+- Al abrir Dashboard, que el periodo por defecto sea **Hoy**.
+
+**Cambios implementados:**
+- `TopProductos`:
+  - Miniatura con `object-contain` (en lugar de `object-cover`) para evitar crop.
+  - Contenedor con borde + fondo para mantener legibilidad de imágenes transparentes.
+- `DashboardPage`:
+  - Estado inicial de `periodo` actualizado de `30d` → `today`.
+  - `getDefaultDates()` ahora inicializa `desde`/`hasta` al día actual (inicio/fin de día).
+
+**Archivos modificados:**
+- `src/pages/admin/dashboard/components/TopProductos.jsx`
+- `src/pages/admin/dashboard/DashboardPage.jsx`
+
+### 19. Dashboard UX: evitar solape de miniaturas con título en Top productos (FIXED)
+
+**Problema:**
+- Al hacer scroll en Top productos, algunas miniaturas podían pintarse sobre el título sticky.
+
+**Solución aplicada:**
+- Header sticky con `z-index` alto y fondo/borde para mantener separación visual.
+- Ajuste de espaciado (`mb`/`pt`) para separar mejor encabezado y primera fila.
+- Miniatura marcada con `relative z-0` para no superar el stacking del título.
+
+**Archivo modificado:**
+- `src/pages/admin/dashboard/components/TopProductos.jsx`
+
+### 20. Clientes: método de entrega en drawer ahora se actualiza con cambios recientes (FIXED)
+
+**Problema:**
+- En el modal/drawer de cliente, el campo de método de entrega podía quedarse desactualizado cuando el cliente cambiaba de `tienda` a `envio` (o viceversa).
+
+**Causa:**
+- El valor mostrado dependía del agregado `metodo_entrega_preferido` del listado de clientes, no del historial vivo de pedidos que ya está disponible en contexto admin.
+
+**Solución aplicada:**
+- `ClienteDetalleDrawer` ahora calcula el método mostrado desde el **pedido más reciente no cancelado** del cliente (`clientePedidos`), con fallback al valor agregado.
+- Además, el valor se muestra con etiqueta i18n (`Entrega a domicilio` / `Recoger en tienda`) en lugar de crudo (`envio`/`tienda`).
+
+**Archivo modificado:**
+- `src/pages/admin/clientes/components/ClienteDetalleDrawer.jsx`
+
+### 21. Hotfix: crash al abrir drawer de cliente por orden de hooks (FIXED)
+
+**Problema:**
+- Al abrir el modal/drawer de cliente, React lanzaba warning/error de orden de hooks y la vista podía quedarse en blanco.
+
+**Causa:**
+- Se introdujo `useMemo` después de un `return` condicional temprano en `ClienteDetalleDrawer`, rompiendo las reglas de hooks.
+
+**Solución aplicada:**
+- Se eliminó `useMemo` para ese cálculo y se reemplazó por cálculo derivado sin hooks.
+- El método de entrega se sigue resolviendo desde el pedido más reciente no cancelado + fallback al agregado.
+
+**Archivo modificado:**
+- `src/pages/admin/clientes/components/ClienteDetalleDrawer.jsx`

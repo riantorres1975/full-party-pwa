@@ -9,6 +9,10 @@ if (typeof window !== 'undefined' && !window.__fpInstallPromptListenerAttached) 
   window.__fpDeferredInstallPrompt = window.__fpDeferredInstallPrompt || null;
 
   window.addEventListener('beforeinstallprompt', (event) => {
+    const path = window.location.pathname || '/';
+    const esRutaAdmin = path.startsWith('/admin');
+    if (esRutaAdmin) return;
+
     event.preventDefault();
     window.__fpDeferredInstallPrompt = event;
     window.dispatchEvent(new Event('fp-installprompt-ready'));

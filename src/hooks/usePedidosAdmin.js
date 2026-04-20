@@ -5,6 +5,28 @@ import { notificarCliente } from '../utils/whatsapp';
 
 const ESTADOS = ['Por Surtir', 'Armando Pedido', 'Listo para Entrega', 'Enviado'];
 const ESTADOS_CON_CANCELADO = [...ESTADOS, 'Cancelado'];
+const PEDIDOS_SELECT_BASE = 'id,folio,cliente_nombre,cliente_telefono,tipo_entrega,direccion,total,estado,detalles_json,notificado_estado,created_at,updated_at';
+const PEDIDOS_SELECT_CON_FECHAS_HISTORIAL = `${PEDIDOS_SELECT_BASE},fecha_envio,fecha_cancelado`;
+
+function esErrorColumnasFechaHistorial(error) {
+  if (!error) return false;
+  const detalle = `${error.message || ''} ${error.details || ''} ${error.hint || ''}`.toLowerCase();
+  return detalle.includes('fecha_envio') || detalle.includes('fecha_cancelado');
+}
+
+async function actualizarPedidoConFallbackHistorial(pedidoId, payloadConFechas, payloadBase) {
+  let respuesta = await guardedQuery((client) =>
+    client.from('pedidos').update(payloadConFechas).eq('id', pedidoId)
+  );
+
+  if (respuesta.error && esErrorColumnasFechaHistorial(respuesta.error)) {
+    respuesta = await guardedQuery((client) =>
+      client.from('pedidos').update(payloadBase).eq('id', pedidoId)
+    );
+  }
+
+  return respuesta;
+}
 
 export { ESTADOS, ESTADOS_CON_CANCELADO };
 
@@ -81,12 +103,25 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
     // Background refreshes (e.g. returning from another tab) keep showing existing data.
     setPedidos(prev => { if (prev.length === 0) setLoading(true); return prev; });
     setError('');
-    const { data, error: err } = await guardedQuery((client) =>
+
+    let respuesta = await guardedQuery((client) =>
       client
         .from('pedidos')
-        .select('id,folio,cliente_nombre,cliente_telefono,tipo_entrega,direccion,total,estado,detalles_json,notificado_estado,created_at,updated_at')
+        .select(PEDIDOS_SELECT_CON_FECHAS_HISTORIAL)
         .order('created_at', { ascending: false })
     );
+
+    if (respuesta.error && esErrorColumnasFechaHistorial(respuesta.error)) {
+      respuesta = await guardedQuery((client) =>
+        client
+          .from('pedidos')
+          .select(PEDIDOS_SELECT_BASE)
+          .order('created_at', { ascending: false })
+      );
+    }
+
+    const { data, error: err } = respuesta;
+
     if (err) setError(err.message);
     else setPedidos(data ?? []);
     setLoading(false);
@@ -189,11 +224,30 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
       }
     }
     setActualizando(pedidoId);
-    const { error: err } = await guardedQuery((client) =>
-      client.from('pedidos').update({ estado: nuevoEstado, notificado_estado: null }).eq('id', pedidoId)
+    const fechaEnvio = nuevoEstado === 'Enviado' ? new Date().toISOString() : null;
+    const payloadBase = { estado: nuevoEstado, notificado_estado: null };
+    const payloadConFechas = fechaEnvio
+      ? { ...payloadBase, fecha_envio: fechaEnvio }
+      : payloadBase;
+
+    const { error: err } = await actualizarPedidoConFallbackHistorial(
+      pedidoId,
+      payloadConFechas,
+      payloadBase
     );
+
     if (err) toast.error('Error al actualizar: ' + err.message);
-    else setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, estado: nuevoEstado, notificado_estado: null } : p));
+    else {
+      setPedidos(prev => prev.map(p => {
+        if (p.id !== pedidoId) return p;
+        return {
+          ...p,
+          estado: nuevoEstado,
+          notificado_estado: null,
+          ...(fechaEnvio ? { fecha_envio: fechaEnvio } : {}),
+        };
+      }));
+    }
     setActualizando(null);
   }, [toast, pedidos]);
 
@@ -225,14 +279,22 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
       }
     }
 
-    const { error: err } = await guardedQuery((client) =>
-      client.from('pedidos').update({ estado: 'Cancelado', notificado_estado: null }).eq('id', pedido.id)
+    const fechaCancelado = new Date().toISOString();
+    const payloadBase = { estado: 'Cancelado', notificado_estado: null };
+    const payloadConFechas = { ...payloadBase, fecha_cancelado: fechaCancelado };
+
+    const { error: err } = await actualizarPedidoConFallbackHistorial(
+      pedido.id,
+      payloadConFechas,
+      payloadBase
     );
 
     if (err) {
       toast.error('Error al cancelar: ' + err.message);
     } else {
-      setPedidos(prev => prev.map(p => p.id === pedido.id ? { ...p, estado: 'Cancelado', notificado_estado: null } : p));
+      setPedidos(prev => prev.map(p => p.id === pedido.id
+        ? { ...p, estado: 'Cancelado', notificado_estado: null, fecha_cancelado: fechaCancelado }
+        : p));
       toast.success(`Pedido ${pedido.folio} cancelado`);
       notificarCliente({ ...pedido, estado: 'Cancelado' });
       await supabase.from('pedidos').update({ notificado_estado: 'Cancelado' }).eq('id', pedido.id);

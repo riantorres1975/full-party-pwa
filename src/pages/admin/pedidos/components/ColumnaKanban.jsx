@@ -3,7 +3,7 @@ import { maskPhone } from '../../../../utils/formatters';
 import { ESTADO_META, estadoLabel } from '../../../../lib/estadoMeta';
 
 export default function ColumnaKanban({ estado, pedidos, onCardClick }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const meta = ESTADO_META[estado] ?? ESTADO_META['Por Surtir'];
   return (
     <div className="min-w-0 flex flex-col border border-admin-border rounded-lg overflow-hidden"
@@ -19,7 +19,7 @@ export default function ColumnaKanban({ estado, pedidos, onCardClick }) {
       <div className="flex-1 overflow-y-auto p-2 space-y-2 bg-admin-elevated">
         {pedidos.length === 0 ? (
           <div className="h-full flex items-center justify-center text-xs text-admin-muted">
-            Sin pedidos
+            {t('common.noOrders')}
           </div>
         ) : (
           pedidos.map(pedido => (
@@ -36,7 +36,7 @@ export default function ColumnaKanban({ estado, pedidos, onCardClick }) {
               </div>
               <p className="text-xs font-body text-admin-muted truncate">{pedido.cliente_nombre}</p>
               <p className="text-xs font-body text-admin-muted truncate">{maskPhone(pedido.cliente_telefono)}</p>
-              <p className="text-[10px] font-body text-admin-inactive mt-1">{new Date(pedido.created_at).toLocaleDateString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+              <p className="text-[10px] font-body text-admin-inactive mt-1">{new Date(pedido.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
             </button>
           ))
         )}

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Download, MoreVertical, Eye, MessageCircle, Trash2 } from 'lucide-react';
+import { Download, MoreVertical, Eye, MessageCircle, Trash2, Copy } from 'lucide-react';
 import { useLanguage } from '../../../../hooks/useLanguage';
 import { useAdminData } from '../../../../contexts/AdminDataContext';
 import Can from '../../../../components/auth/Can';
@@ -25,6 +25,7 @@ export default function PedidosHistorial() {
     fechaHasta,
     setFechaHasta,
     contadores,
+    getFechaHistorial,
   } = useHistorialPedidos(pedidos);
 
   const columnas = [
@@ -67,10 +68,14 @@ export default function PedidosHistorial() {
       alignment: 'right',
     },
     {
-      id: 'created_at',
+      id: 'fecha_historial',
       label: t('common.date'),
       render: (pedido) => {
-        const fecha = new Date(pedido.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'es-MX', {
+        const fechaHistorial = getFechaHistorial(pedido);
+        if (!fechaHistorial) {
+          return <span className="font-body text-xs text-admin-muted">--</span>;
+        }
+        const fecha = fechaHistorial.toLocaleDateString(lang === 'en' ? 'en-US' : 'es-MX', {
           day: '2-digit',
           month: 'short',
           hour: '2-digit',
@@ -83,18 +88,21 @@ export default function PedidosHistorial() {
     {
       id: 'acciones',
       label: '',
-      render: (pedido) => <AccionesMenu pedido={pedido} onViewDetail={() => setPedidoModal(pedido)} notificar={notificar} cancelarPedido={cancelarPedido} />,
+      render: (pedido) => <AccionesMenu pedido={pedido} onViewDetail={() => setPedidoModal(pedido)} cancelarPedido={cancelarPedido} />,
       width: 50,
       alignment: 'center',
     },
   ];
 
-  function AccionesMenu({ pedido, onViewDetail, notificar, cancelarPedido }) {
+  function AccionesMenu({ pedido, onViewDetail, cancelarPedido }) {
     const [menuAbierto, setMenuAbierto] = useState(false);
     return (
       <div className="relative">
         <button
-          onClick={() => setMenuAbierto(!menuAbierto)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setMenuAbierto(v => !v);
+          }}
           className="p-1 hover:bg-admin-elevated rounded-lg transition-colors"
         >
           <MoreVertical size={16} className="text-admin-muted" />
@@ -102,28 +110,31 @@ export default function PedidosHistorial() {
         {menuAbierto && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setMenuAbierto(false)} />
-            <div className="absolute right-0 mt-1 w-40 bg-admin-card border border-admin-border rounded-lg shadow-lg z-20">
+            <div className="absolute right-0 mt-1 w-44 bg-admin-card border border-admin-border rounded-lg shadow-lg z-20" onClick={(e) => e.stopPropagation()}>
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   onViewDetail();
                   setMenuAbierto(false);
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-xs font-body text-admin-text hover:bg-admin-elevated transition-colors"
               >
-                <Eye size={14} /> Ver detalle
+                <Eye size={14} /> {t('admin.orders.viewDetail')}
               </button>
               <button
-                onClick={() => {
-                  navigator.clipboard.writeText(pedido.cliente_telefono);
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard?.writeText(pedido.cliente_telefono);
                   setMenuAbierto(false);
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-xs font-body text-admin-text hover:bg-admin-elevated transition-colors"
               >
-                <MessageCircle size={14} /> Copiar teléfono
+                <Copy size={14} /> {t('admin.orders.copyPhone')}
               </button>
               <Can permission="pedidos.notify">
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     const url = `https://wa.me/${pedido.cliente_telefono.replace(/\D/g, '')}`;
                     window.open(url, '_blank');
                     setMenuAbierto(false);
@@ -136,13 +147,14 @@ export default function PedidosHistorial() {
               <Can permission="pedidos.cancel">
                 {pedido.estado !== 'Cancelado' && (
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       cancelarPedido(pedido);
                       setMenuAbierto(false);
                     }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-xs font-body text-red-400 hover:bg-red-500/10 transition-colors"
                   >
-                    <Trash2 size={14} /> Cancelar
+                    <Trash2 size={14} /> {t('common.cancel')}
                   </button>
                 )}
               </Can>
@@ -156,15 +168,24 @@ export default function PedidosHistorial() {
   const handleExportCSV = useCallback(() => {
     if (!filtered || filtered.length === 0) return;
 
-    const headers = ['Folio', 'Cliente', 'Teléfono', 'Estado', 'Total', 'Fecha', 'Método de entrega'];
+    const locale = lang === 'en' ? 'en-US' : 'es-MX';
+    const headers = [
+      t('admin.orders.orderNumber'),
+      t('common.customer'),
+      t('common.phone'),
+      t('admin.orders.status'),
+      t('common.total'),
+      t('common.date'),
+      t('common.deliveryMethod'),
+    ];
     const rows = filtered.map(p => [
       p.folio,
       p.cliente_nombre,
       p.cliente_telefono,
       estadoLabel(p.estado, t),
       Number(p.total).toFixed(2),
-      new Date(p.created_at).toLocaleDateString('es-MX'),
-      p.tipo_entrega === 'envio' ? 'Envío a domicilio' : 'Recogida en tienda',
+      (getFechaHistorial(p) || new Date(p.created_at)).toLocaleDateString(locale),
+      p.tipo_entrega === 'envio' ? t('admin.orders.delivery.home') : t('admin.orders.delivery.pickup'),
     ]);
 
     const csv = [
@@ -178,7 +199,7 @@ export default function PedidosHistorial() {
     link.download = `historial-pedidos-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(link.href);
-  }, [filtered, t]);
+  }, [filtered, lang, t, getFechaHistorial]);
 
   return (
     <>

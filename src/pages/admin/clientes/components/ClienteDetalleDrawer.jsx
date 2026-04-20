@@ -1,11 +1,23 @@
-import { X, MessageCircle, Edit2 } from 'lucide-react';
+import { X, MessageCircle, Edit2, Save } from 'lucide-react';
 import { useLanguage } from '../../../../hooks/useLanguage';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Can from '../../../../components/auth/Can';
+import { useToast } from '../../../../components/ui/ToastProvider';
+import { supabase } from '../../../../lib/supabase';
+import { validarTelefonoMX } from '../../../../utils/validarTelefono';
 import ClienteHistorialPedidos from './ClienteHistorialPedidos';
 
-export default function ClienteDetalleDrawer({ cliente, abierto, onClose, pedidos, onPedidoClick }) {
+function normalizarTelefono(telefono = '') {
+  return telefono.replace(/\D/g, '');
+}
+
+export default function ClienteDetalleDrawer({ cliente, abierto, onClose, pedidos, onPedidoClick, onClienteUpdated }) {
   const { t } = useLanguage();
+  const toast = useToast();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editNombre, setEditNombre] = useState('');
+  const [editTelefono, setEditTelefono] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
     if (abierto) {
@@ -21,12 +33,36 @@ export default function ClienteDetalleDrawer({ cliente, abierto, onClose, pedido
     }
   }, [abierto, onClose]);
 
+  useEffect(() => {
+    if (!cliente) return;
+    setEditNombre(cliente.nombre || '');
+    setEditTelefono(cliente.telefono || '');
+    setIsEditing(false);
+    setSavingEdit(false);
+  }, [cliente?.id, cliente?.nombre, cliente?.telefono]);
+
   if (!abierto || !cliente) return null;
 
+  const telefonoClienteNorm = normalizarTelefono(cliente.telefono);
+
   const clientePedidos = pedidos.filter(p =>
-    p.cliente_telefono.replace(/[\s\-\(\)]/g, '') ===
-    cliente.telefono.replace(/[\s\-\(\)]/g, '')
+    normalizarTelefono(p.cliente_telefono) === telefonoClienteNorm
   );
+
+  const ultimoPedidoConMetodo = clientePedidos
+    .filter((pedido) => pedido.estado !== 'Cancelado' && pedido.tipo_entrega)
+    .reduce((ultimo, pedido) => {
+      if (!ultimo) return pedido;
+      return new Date(pedido.created_at) > new Date(ultimo.created_at) ? pedido : ultimo;
+    }, null);
+
+  const metodoEntregaActual = ultimoPedidoConMetodo?.tipo_entrega || cliente.metodo_entrega_preferido || null;
+
+  const metodoEntregaLabel = metodoEntregaActual === 'envio'
+    ? t('admin.orders.delivery.home')
+    : metodoEntregaActual === 'tienda'
+      ? t('admin.orders.delivery.pickup')
+      : metodoEntregaActual;
 
   const ticketPromedio = clientePedidos.length > 0
     ? Math.round(cliente.gasto_total / clientePedidos.length)
@@ -37,9 +73,69 @@ export default function ClienteDetalleDrawer({ cliente, abierto, onClose, pedido
       `Hola ${cliente.nombre}, tienes un pedido en Full Party. ¿Necesitas ayuda?`
     );
     window.open(
-      `https://wa.me/${cliente.telefono.replace(/[\s\-\(\)]/g, '')}?text=${mensaje}`,
+      `https://wa.me/${telefonoClienteNorm}?text=${mensaje}`,
       '_blank'
     );
+  };
+
+  const handleToggleEdit = () => {
+    if (isEditing) {
+      setIsEditing(false);
+      setEditNombre(cliente.nombre || '');
+      setEditTelefono(cliente.telefono || '');
+      return;
+    }
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    const nombreLimpio = editNombre.trim();
+    if (nombreLimpio.length < 2) {
+      toast.error(t('clientes.edit.invalidName'));
+      return;
+    }
+
+    const telefonoLimpio = normalizarTelefono(editTelefono);
+    const validacionTelefono = validarTelefonoMX(telefonoLimpio);
+    if (!validacionTelefono.valido) {
+      toast.error(validacionTelefono.error || t('clientes.edit.invalidPhone'));
+      return;
+    }
+
+    const pedidoIds = pedidos
+      .filter((pedido) => normalizarTelefono(pedido.cliente_telefono) === telefonoClienteNorm)
+      .map((pedido) => pedido.id)
+      .filter(Boolean);
+
+    if (pedidoIds.length === 0) {
+      toast.warning(t('clientes.edit.noOrders'));
+      return;
+    }
+
+    setSavingEdit(true);
+    const { error } = await supabase
+      .from('pedidos')
+      .update({
+        cliente_nombre: nombreLimpio,
+        cliente_telefono: telefonoLimpio,
+      })
+      .in('id', pedidoIds);
+
+    if (error) {
+      toast.error(`Error: ${error.message}`);
+      setSavingEdit(false);
+      return;
+    }
+
+    onClienteUpdated?.({
+      pedidoIds,
+      nombre: nombreLimpio,
+      telefono: telefonoLimpio,
+    });
+
+    toast.success(t('clientes.edit.success', { count: pedidoIds.length }));
+    setIsEditing(false);
+    setSavingEdit(false);
   };
 
   return (
@@ -64,7 +160,7 @@ export default function ClienteDetalleDrawer({ cliente, abierto, onClose, pedido
           <button
             onClick={onClose}
             className="p-1 rounded hover:bg-admin-muted transition-colors"
-            aria-label="Close"
+            aria-label={t('common.close')}
           >
             <X size={20} />
           </button>
@@ -109,13 +205,13 @@ export default function ClienteDetalleDrawer({ cliente, abierto, onClose, pedido
               </div>
             )}
 
-            {cliente.metodo_entrega_preferido && (
+            {metodoEntregaActual && (
               <div>
                 <p className="text-xs font-bold text-admin-text-secondary mb-1">
                   {t('common.deliveryMethod')}
                 </p>
                 <p className="text-sm font-body text-admin-text">
-                  {cliente.metodo_entrega_preferido}
+                  {metodoEntregaLabel}
                 </p>
               </div>
             )}
@@ -157,9 +253,16 @@ export default function ClienteDetalleDrawer({ cliente, abierto, onClose, pedido
           {/* Acciones */}
           <div className="flex gap-2 p-4 border-b border-admin-border-soft">
             <Can permission="clientes.edit" fallback={null}>
-              <button className="flex-1 px-3 py-2 rounded bg-admin-elevated text-admin-text font-bold text-sm hover:bg-admin-muted transition-colors flex items-center justify-center gap-2 cursor-not-allowed opacity-50" disabled>
+              <button
+                onClick={handleToggleEdit}
+                className={`flex-1 px-3 py-2 rounded font-bold text-sm transition-colors flex items-center justify-center gap-2 ${
+                  isEditing
+                    ? 'bg-admin-input text-admin-text border border-admin-border'
+                    : 'bg-admin-elevated text-admin-text hover:bg-admin-muted'
+                }`}
+              >
                 <Edit2 size={16} />
-                {t('common.edit')}
+                {isEditing ? t('common.cancel') : t('common.edit')}
               </button>
             </Can>
             <Can permission="pedidos.notify" fallback={null}>
@@ -171,6 +274,53 @@ export default function ClienteDetalleDrawer({ cliente, abierto, onClose, pedido
               </button>
             </Can>
           </div>
+
+          {isEditing && (
+            <div className="p-4 border-b border-admin-border-soft space-y-3">
+              <p className="text-xs font-bold text-admin-text-secondary uppercase tracking-wide">
+                {t('clientes.edit.title')}
+              </p>
+
+              <div>
+                <label className="block text-xs font-bold text-admin-text-secondary mb-1">
+                  {t('clientes.nombre')}
+                </label>
+                <input
+                  type="text"
+                  value={editNombre}
+                  onChange={(e) => setEditNombre(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-admin-input border border-admin-border text-admin-text text-sm outline-none focus:border-fiesta-magenta"
+                  maxLength={100}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-admin-text-secondary mb-1">
+                  {t('common.phone')}
+                </label>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  value={editTelefono}
+                  onChange={(e) => setEditTelefono(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-admin-input border border-admin-border text-admin-text text-sm outline-none focus:border-fiesta-magenta"
+                  maxLength={14}
+                />
+              </div>
+
+              <button
+                onClick={handleSaveEdit}
+                disabled={savingEdit}
+                className="w-full px-3 py-2 rounded-lg bg-fiesta-magenta text-white font-bold text-sm hover:bg-fiesta-magenta/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+              >
+                {savingEdit
+                  ? <div className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                  : <Save size={16} />
+                }
+                {savingEdit ? t('clientes.edit.saving') : t('clientes.edit.save')}
+              </button>
+            </div>
+          )}
 
           {/* Historial de pedidos */}
           <div className="p-4">

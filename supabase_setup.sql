@@ -78,9 +78,15 @@ CREATE TABLE IF NOT EXISTS public.pedidos (
   estado            TEXT          NOT NULL DEFAULT 'Por Surtir',
   detalles_json     JSONB         NOT NULL,
   notificado_estado TEXT,
+  fecha_envio       TIMESTAMPTZ,
+  fecha_cancelado   TIMESTAMPTZ,
   created_at        TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
   updated_at        TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE public.pedidos
+  ADD COLUMN IF NOT EXISTS fecha_envio TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS fecha_cancelado TIMESTAMPTZ;
 
 ALTER TABLE public.pedidos ENABLE ROW LEVEL SECURITY;
 

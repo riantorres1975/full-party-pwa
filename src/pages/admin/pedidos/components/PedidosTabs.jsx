@@ -7,15 +7,21 @@ import PedidosHistorial from './PedidosHistorial';
 
 export default function PedidosTabs() {
   const { t } = useLanguage();
-  const { setBusqueda } = useAdminData();
+  const { setBusqueda, contadores } = useAdminData();
   const [tabActivo, setTabActivo] = useState('activos');
   const [busquedaInput, setBusquedaInput] = useState('');
   const busquedaDebounced = useDebounce(busquedaInput, 300);
 
+  const activosCount =
+    (contadores['Por Surtir'] || 0) +
+    (contadores['Armando Pedido'] || 0) +
+    (contadores['Listo para Entrega'] || 0);
+  const historialCount = (contadores.Enviado || 0) + (contadores.Cancelado || 0);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab') || 'activos';
-    setTabActivo(tab);
+    setTabActivo(tab === 'historial' ? 'historial' : 'activos');
   }, []);
 
   const cambiarTab = (tab) => {
@@ -37,7 +43,7 @@ export default function PedidosTabs() {
               : 'border-transparent text-admin-muted hover:text-admin-text'
           }`}
         >
-          {t('admin.orders.tabs.active')}
+          {t('admin.orders.tabs.active')} · {activosCount}
         </button>
         <button
           onClick={() => cambiarTab('historial')}
@@ -47,7 +53,7 @@ export default function PedidosTabs() {
               : 'border-transparent text-admin-muted hover:text-admin-text'
           }`}
         >
-          {t('admin.orders.tabs.history')}
+          {t('admin.orders.tabs.history')} · {historialCount}
         </button>
       </div>
 
