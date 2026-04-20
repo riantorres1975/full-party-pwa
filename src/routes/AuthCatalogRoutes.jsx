@@ -1,5 +1,5 @@
 import { useEffect, lazy, Suspense } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom';
 import '../catalog.css'; // Estilos exclusivos del catálogo/admin (dark-mode, etc.)
 import App from '../App';
 import LoginAdmin from '../components/LoginAdmin';
@@ -8,7 +8,14 @@ import { useTheme } from '../hooks/useTheme';
 import { ToastProvider } from '../components/ui/ToastProvider';
 import { useLanguage } from '../hooks/useLanguage';
 
-const AdminPedidos = lazy(() => import('../components/AdminPedidos'));
+const AdminLayout = lazy(() => import('../layouts/AdminLayout'));
+const AdminIndexRedirect = lazy(() => import('../components/admin/AdminIndexRedirect'));
+const DashboardPage = lazy(() => import('../pages/admin/dashboard/DashboardPage'));
+const PedidosPage = lazy(() => import('../pages/admin/PedidosPage'));
+const CatalogoPage = lazy(() => import('../pages/admin/CatalogoPage'));
+const ClientesPage = lazy(() => import('../pages/admin/clientes/ClientesPage'));
+
+import ProtectedRoute from '../components/auth/ProtectedRoute';
 
 const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || '')
   .split(',')
@@ -102,15 +109,39 @@ export default function AuthCatalogRoutes() {
             </div>
           }
         >
-          <AdminPedidos
-            user={user}
-            temaOscuro={isDarkMode}
-            onToggleTema={toggleTheme}
-            onSignOut={async () => {
-              await signOut();
-              navigate('/');
-            }}
-          />
+          <Routes>
+            <Route
+              path="/*"
+              element={
+                <AdminLayout
+                  user={user}
+                  temaOscuro={isDarkMode}
+                  onToggleTema={toggleTheme}
+                  onSignOut={async () => {
+                    await signOut();
+                    navigate('/');
+                  }}
+                >
+                  <Routes>
+                    <Route path="/" element={<AdminIndexRedirect />} />
+                    <Route path="dashboard" element={
+                      <ProtectedRoute permission="reportes.view" fallback="/admin/pedidos">
+                        <DashboardPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="pedidos" element={<PedidosPage />} />
+                    <Route path="catalogo" element={<CatalogoPage />} />
+                    <Route path="clientes" element={
+                      <ProtectedRoute permission="clientes.view" fallback="/admin/pedidos">
+                        <ClientesPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="*" element={<AdminIndexRedirect />} />
+                  </Routes>
+                </AdminLayout>
+              }
+            />
+          </Routes>
         </Suspense>
       </ToastProvider>
     );
