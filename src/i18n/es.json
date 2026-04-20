@@ -436,5 +436,43 @@
   "common.date": "Fecha",
 
   "admin.users.deactivated.title": "Cuenta desactivada",
-  "admin.users.deactivated.desc": "Tu cuenta ha sido desactivada. Contacta al administrador."
+  "admin.users.deactivated.desc": "Tu cuenta ha sido desactivada. Contacta al administrador.",
+
+  "admin.nav.users": "Usuarios y roles",
+  "admin.users.title": "Usuarios y roles",
+  "admin.users.subtitle": "Gestiona los accesos y permisos del equipo",
+  "admin.users.invite": "Invitar usuario",
+  "admin.users.inviteLink": "Comparte este link con el usuario para que se registre",
+  "admin.users.inviteCopied": "Link copiado al portapapeles",
+
+  "usuarios.email": "Email",
+  "usuarios.role": "Rol",
+  "usuarios.status": "Estado",
+  "usuarios.active": "Activo",
+  "usuarios.inactive": "Inactivo",
+  "usuarios.created": "Registrado",
+  "usuarios.buscar": "Buscar por email o nombre...",
+  "usuarios.vacio.titulo": "Sin usuarios",
+  "usuarios.vacio.desc": "No se encontraron usuarios registrados",
+  "usuarios.changeRole": "Cambiar rol",
+  "usuarios.toggleActivo": "Cambiar estado",
+  "usuarios.deleteUser": "Eliminar usuario",
+  "usuarios.selfProtection": "No puedes modificar tu propio rol",
+  "usuarios.deactivateConfirm": "¿Desactivar este usuario?",
+  "usuarios.activateConfirm": "¿Activar este usuario?",
+  "usuarios.roleUpdated": "Rol actualizado",
+  "usuarios.statusUpdated": "Estado actualizado",
+  "usuarios.updateError": "Error al actualizar usuario",
+
+  "usuarios.invite.title": "Invitar usuario",
+  "usuarios.invite.email": "Email",
+  "usuarios.invite.role": "Rol inicial",
+  "usuarios.invite.send": "Enviar invitación",
+  "usuarios.invite.emailInvalid": "Email inválido",
+  "usuarios.invite.success": "Invitación guardada",
+  "usuarios.invite.error": "Error al guardar invitación",
+  "usuarios.invite.loginUrl": "URL de acceso",
+
+  "usuarios.pending.title": "Invitaciones pendientes",
+  "usuarios.pending.empty": "Sin invitaciones pendientes"
 }

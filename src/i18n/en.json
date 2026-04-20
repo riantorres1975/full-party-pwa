@@ -436,5 +436,43 @@
   "common.date": "Date",
 
   "admin.users.deactivated.title": "Account deactivated",
-  "admin.users.deactivated.desc": "Your account has been deactivated. Please contact the administrator."
+  "admin.users.deactivated.desc": "Your account has been deactivated. Please contact the administrator.",
+
+  "admin.nav.users": "Users and roles",
+  "admin.users.title": "Users and roles",
+  "admin.users.subtitle": "Manage team access and permissions",
+  "admin.users.invite": "Invite user",
+  "admin.users.inviteLink": "Share this link with the user so they can register",
+  "admin.users.inviteCopied": "Link copied to clipboard",
+
+  "usuarios.email": "Email",
+  "usuarios.role": "Role",
+  "usuarios.status": "Status",
+  "usuarios.active": "Active",
+  "usuarios.inactive": "Inactive",
+  "usuarios.created": "Registered",
+  "usuarios.buscar": "Search by email or name...",
+  "usuarios.vacio.titulo": "No users",
+  "usuarios.vacio.desc": "No registered users found",
+  "usuarios.changeRole": "Change role",
+  "usuarios.toggleActivo": "Toggle status",
+  "usuarios.deleteUser": "Delete user",
+  "usuarios.selfProtection": "You cannot modify your own role",
+  "usuarios.deactivateConfirm": "Deactivate this user?",
+  "usuarios.activateConfirm": "Activate this user?",
+  "usuarios.roleUpdated": "Role updated",
+  "usuarios.statusUpdated": "Status updated",
+  "usuarios.updateError": "Error updating user",
+
+  "usuarios.invite.title": "Invite user",
+  "usuarios.invite.email": "Email",
+  "usuarios.invite.role": "Initial role",
+  "usuarios.invite.send": "Send invitation",
+  "usuarios.invite.emailInvalid": "Invalid email",
+  "usuarios.invite.success": "Invitation saved",
+  "usuarios.invite.error": "Error saving invitation",
+  "usuarios.invite.loginUrl": "Access URL",
+
+  "usuarios.pending.title": "Pending invitations",
+  "usuarios.pending.empty": "No pending invitations"
 }
