@@ -1236,3 +1236,122 @@ Todas las nuevas keys tienen traducción EN también.
 ✅ Responsiveness mantenida  
 ✅ Build sin errores  
 ✅ Listo para push a rama
+
+---
+
+## Hotfix Picking Mode — Restauración de UI Perdida
+
+### Problema Crítico Identificado
+
+**Síntoma:** Modo picking completamente no funcional. Al abrir modal de detalle y pulsar "Picking" no se podía marcar artículos como encontrados/no encontrados.
+
+**Root cause:** Durante el refactor Fase 2 (componentes separados), `ItemArticulo.jsx` fue completamente reescrito y perdió:
+- ❌ Checkbox para marcar artículos (marcado ↔️ no marcado)
+- ❌ Stepper (+/−) para ajustar cantidades individuales
+- ❌ Color-coding de estados (amber=pending, yellow=partial, emerald=complete)
+- ❌ Diferenciación visual entre modo picking vs vista normal
+
+La versión reducida en Fase 2 solo mostraba imagen + nombre + precio, sin controles interactivos.
+
+### Solución Implementada
+
+**Archivo afectado:** `src/pages/admin/pedidos/components/ItemArticulo.jsx`
+
+**Cambio:** Restaurar el componente a su versión completa pre-refactor con:
+
+1. **Modo picking activado (prop `modoPicking === true`)**:
+   - Renderiza un **layout horizontal compacto** con:
+     - Checkbox personalizado (verde cuando marcado, blanco cuando no)
+     - SVG checkmark icon inside checkbox (solo visible si marcado)
+     - Imagen + nombre (línea clamped a 2)
+     - Mostrar precio con descuento si aplica (verde en chiquito)
+     - Stepper +/− buttons (visible solo si cantidadPedida > 1 y articulo está marcado)
+     - Subtotal a la derecha (dinámico basado en cantidad surtida)
+
+2. **Color-coding por estado**:
+   - `pendientePicking` (cantidadSurtida === 0): `bg-amber-50 border-amber-200`
+   - `parcial` (0 < cantidadSurtida < cantidadPedida): `bg-yellow-50 border-yellow-300`
+   - `completo` (cantidadSurtida === cantidadPedida): `bg-emerald-50 border-emerald-200`
+
+3. **Click handlers**:
+   - Checkbox: `onClick` → `onCantidadChange(marcado ? 0 : cantidadPedida)` (toggle completo)
+   - Botón −: Decrementa cantidad (min 1)
+   - Botón +: Incrementa cantidad (max cantidadPedida)
+
+4. **Vista normal** (cuando `modoPicking === false`):
+   - Rendering simplificado: imagen, nombre + tamaño, subtotal tachado si no encontrado
+   - Sin controles de picking
+
+### Decisiones de Diseño
+
+| Aspecto | Decisión | Razón |
+|---------|----------|-------|
+| **Dos rutas de rendering** | `if (modoPicking)` {...} else {...} | Comportamiento completamente distinto; más legible que merging conditionals |
+| **Checkbox personalizado** | Inline styled, no libería UI | Matching admin theme; controla green/white colores dinámicamente |
+| **Color-coding** | Amarillo para parcial, verde para completo | Diferenciación rápida visual de progreso |
+| **Stepper inline** | Solo para cantidadPedida > 1 Y marcado | Evita clutter; controles solo relevantes cuando hay volumen |
+| **Toggle completo vs stepper** | Checkbox = 0/cantidadPedida completo, stepper = ajuste fino | UX clara: marcar = incluir todo, ajustar = refinar |
+| **Subtotal dinámico** | Basado en `cantidadSurtida` en picking mode | Refleja cantidad actual siendo surtida, no la pedida |
+
+### Estados Calculados
+
+```javascript
+const marcado = cantidadSurtida > 0;              // Checkbox marked?
+const completo = cantidadSurtida === cantidadPedida;  // 100% surtido?
+const parcial = cantidadSurtida > 0 && cantidadSurtida < cantidadPedida;  // Partial?
+const pendientePicking = modoPicking && !marcado;  // Waiting for picking?
+const surtidoPicking = modoPicking && marcado;     // Already marked?
+
+// Precio a mostrar en picking: precio surtido si marcado, aplicado si no
+const precioMostrar = modoPicking && marcado ? precioSurtido : precioAplicado;
+
+// Cantidad para subtotal: en picking, usa cantidad surtida si marcado, pedida si no
+const cantidadParaSubtotal = modoPicking
+  ? (marcado ? cantidadSurtida : cantidadPedida)
+  : (typeof item.cantidad_surtida === 'number' ? cantidadSurtida : cantidadPedida);
+```
+
+### Props del Componente
+
+```javascript
+{
+  item: { nombre, imagen_url, precio, precio_surtido, precio_base, cantidad, cantidad_surtida, tamano },
+  modoPicking: boolean,          // true en modal de picking
+  encontrado: boolean,            // relevante en modo no-picking (tachado si false)
+  onToggle: () => {},            // UNUSED en nueva versión (callback legacy)
+  onCantidadChange: (newQty) => {}, // Llamado por checkbox y stepper
+  esDesktop: boolean
+}
+```
+
+### Archivos Modificados
+
+- `src/pages/admin/pedidos/components/ItemArticulo.jsx` (restaurado de versión completa)
+
+### Testing Manual Requerido
+
+Verificar en `/admin/pedidos`:
+1. ✅ Click en tarjeta Kanban → Abre modal
+2. ✅ En modal, boton "Picking..." → Abre lista en modo picking
+3. ✅ Checkbox vacío → Fondo amber (pending)
+4. ✅ Click checkbox → Marca verde + fondo emerald (completo si cantidad coincide)
+5. ✅ Si cantidadPedida > 1 y marcado: aparecen botones +/−
+6. ✅ Botón − decrements cantidad (amarillo: parcial)
+7. ✅ Botón + increments cantidad (verde de nuevo si alcanza cantidadPedida)
+8. ✅ Subtotal se actualiza dinámicamente según cantidadSurtida
+9. ✅ Botón "Guardar Picking y Pasar a Listo" actualiza estado global
+
+### Criterios de Aceptación
+
+- [x] ItemArticulo renderiza checkbox en picking mode
+- [x] Checkbox toggle cambia cantidad entre 0 y cantidadPedida
+- [x] Color-coding funciona: amber→yellow→emerald
+- [x] Stepper aparece solo para cantidadPedida > 1
+- [x] Subtotal dinámico en picking mode
+- [x] Vista normal (no-picking) sin cambios
+- [x] onCantidadChange callbacks funcionan
+- [x] Modal se cierra después de "Guardar Picking"
+- [x] Build sin errores
+
+### Build Status
+✅ npm run build completado sin errores
