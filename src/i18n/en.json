@@ -17,6 +17,9 @@
   "common.notAvailable": "Not available",
   "common.followUs": "Follow us",
   "common.viewOnMaps": "View on Google Maps →",
+  "common.more": "More",
+  "common.lightMode": "Light mode",
+  "common.darkMode": "Dark mode",
 
   "header.subtitle": "Balloons · Décor · Parties",
   "header.install": "Install",
@@ -163,6 +166,7 @@
   "admin.nav.reports": "Reports",
   "admin.nav.users": "Users and roles",
   "admin.nav.store": "Store",
+  "admin.nav.settings": "Settings",
   "admin.nav.logout": "Logout",
   "admin.comingSoon": "Coming soon",
   "admin.noPermission": "You don't have permission to access",

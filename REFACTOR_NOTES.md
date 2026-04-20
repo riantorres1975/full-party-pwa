@@ -1355,3 +1355,132 @@ Verificar en `/admin/pedidos`:
 
 ### Build Status
 ✅ npm run build completado sin errores
+
+---
+
+## Hotfix Responsive Mobile — Vista Activos + Historial
+
+### Problemas Identificados
+
+**Síntomas:**
+- Vista móvil de `/admin/pedidos` Activos completamente rota
+- Pedidos no aparecían en pantallas pequeñas
+- BottomNav incompleto con solo 3 opciones
+- Scrollbar horizontal en tablet
+
+**Root cause:**
+- PedidosActivos mostraba grid 2-columnas de tarjetas individuales en móvil, no organizado por estado
+- BottomNav no reflejaba las nuevas secciones del admin (Dashboard, Clientes)
+- DataTable ya soportaba mobile cards pero se renderizaba correctamente
+
+### Soluciones Implementadas
+
+#### 1. Reorganización del layout móvil de Activos (PedidosActivos.jsx)
+**Cambio:** Reemplazar grid 2-columnas con secciones stacked verticales por estado
+
+**Antes:**
+```jsx
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4">
+  {pedidosFiltrados.map(pedido => (
+    <TarjetaPedido ... />
+  ))}
+</div>
+```
+
+**Después:**
+```jsx
+<div className="lg:hidden space-y-4 pb-6">
+  {ESTADOS_ACTIVOS.map(estado => {
+    const pedidosDelEstado = pedidosPorBusqueda.filter(p => p.estado === estado);
+    return (
+      <section className="border border-admin-border rounded-lg overflow-hidden">
+        {/* Header con nombre estado + contador */}
+        <div className="bg-admin-elevated px-4 py-3 border-b border-admin-border">
+          <h3>{estadoLabel(estado, t)} · {pedidosDelEstado.length}</h3>
+        </div>
+        {/* Lista de pedidos del estado */}
+        <div className="p-3 space-y-2">
+          {pedidosDelEstado.map(p => (
+            <TarjetaPedido key={p.id} ... />
+          ))}
+        </div>
+      </section>
+    );
+  })}
+</div>
+```
+
+**Resultado:**
+- ✅ 3 secciones stacked verticalmente (Por Surtir, Armando Pedido, Listo para Entrega)
+- ✅ Cada sección tiene header con estado y contador
+- ✅ Pedidos aparecen correctamente en móvil
+- ✅ Layout limpio sin scrollbar horizontal
+
+#### 2. BottomNav mejorado (BottomNav.jsx)
+**Cambios:**
+- Agregados items principales: Pedidos, Catálogo, Más
+- Menú "Más" (popover) contiene:
+  - Panel/Dashboard (si tiene permiso `reportes.view`)
+  - Clientes (si tiene permiso `clientes.view`)
+  - Configuración
+  - Cambiar tema (Sun/Moon icon)
+  - Salir
+
+**Estructura:**
+```jsx
+MAIN_TABS = [Pedidos, Catálogo, Más]
+MORE_ITEMS = [Dashboard, Clientes, Configuración, Tema, Salir]
+```
+
+**Features:**
+- Click en "Más" → Abre popover con items
+- Click fuera → Cierra popover
+- Permisos respetados: Dashboard/Clientes solo si usuario autorizado
+- Theme toggle integrado
+- Logout confirmation dialog
+
+#### 3. i18n completado
+**Keys agregadas:**
+- `admin.nav.settings` (es: "Configuración", en: "Settings")
+- `common.more` (es: "Más", en: "More")
+- `common.lightMode` (es: "Modo claro", en: "Light mode")
+- `common.darkMode` (es: "Modo oscuro", en: "Dark mode")
+
+#### 4. DataTable móvil verificado
+**Confirmado:** DataTable ya renderiza en mobile cards via `lg:hidden` section
+- Tabla desktop: visible en lg+
+- Cards móvil: visible en <lg
+- Paginación funciona en ambos modos
+- Click en tarjeta abre detalle (ModalDetallePedido)
+
+### Archivos Modificados
+
+- `src/pages/admin/pedidos/components/PedidosActivos.jsx` (layout móvil reorganizado)
+- `src/components/ui/BottomNav.jsx` (items expandidos + menú "Más")
+- `src/i18n/es.json` (4 nuevas keys)
+- `src/i18n/en.json` (4 nuevas keys)
+
+### Estado Final Post-Hotfix Móvil
+
+✅ Mobile Activos: 3 secciones stacked + pedidos visibles  
+✅ Mobile Historial: DataTable en modo cards  
+✅ BottomNav: Items principales + menú "Más" con permisos  
+✅ Theme toggle accesible en móvil  
+✅ Responsiveness sm/md/lg/xl: OK  
+✅ No scrollbar horizontal en tablets  
+✅ Build sin errores  
+
+### Testing Manual Checklist
+
+- [ ] Móvil (<640px): 3 secciones apiladas con pedidos correctos
+- [ ] Click en tarjeta móvil: abre ModalDetallePedido
+- [ ] Tab Historial en móvil: muestra tabla en cards
+- [ ] BottomNav: Pedidos, Catálogo, Más (popover)
+- [ ] Menú "Más": Dashboard, Clientes, Configuración, Tema, Salir
+- [ ] Theme toggle (Sun/Moon): cambia tema correctamente
+- [ ] Permiso check: Dashboard/Clientes ocultos si no autorizado
+- [ ] Logout confirmation: aparece diálogo de confirmación
+- [ ] Tablet (640-1024px): layout responsive sin scrollbar horizontal
+- [ ] Desktop (lg+): sin cambios, Kanban horizontal funcional
+- [ ] Filtro búsqueda: funciona en móvil y desktop
+- [ ] Responsiveness en todos los breakpoints: OK

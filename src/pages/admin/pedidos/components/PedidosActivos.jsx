@@ -72,24 +72,46 @@ export default function PedidosActivos({ busquedaInput, setBusquedaInput, busque
         )}
       </div>
 
-      {/* Mobile grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4" aria-live="polite">
-        {pedidosFiltrados.filter(p => ESTADOS_ACTIVOS.includes(p.estado)).map(pedido => (
-          <TarjetaPedido
-            key={pedido.id}
-            pedido={pedido}
-            onCambiarEstado={cambiarEstadoYFiltrar}
-            actualizando={actualizando}
-            notificando={notificando === pedido.id}
-            onNotificar={notificar}
-            onCancelar={cancelarPedido}
-            onPickingListo={(pedidoActualizado) => {
-              setPedidos(prev => prev.map(p => p.id === pedidoActualizado.id ? pedidoActualizado : p));
-              setFiltroEstado('Listo para Entrega');
-            }}
-            esDesktop={false}
-          />
-        ))}
+      {/* Mobile: stacked sections by estado */}
+      <div className="lg:hidden space-y-4 pb-6" aria-live="polite">
+        {ESTADOS_ACTIVOS.map(estado => {
+          const pedidosDelEstado = pedidosPorBusqueda.filter(p => p.estado === estado);
+          return (
+            <section key={estado} className="border border-admin-border rounded-lg overflow-hidden">
+              {/* Estado header */}
+              <div className="bg-admin-elevated px-4 py-3 border-b border-admin-border">
+                <h3 className="text-xs font-body font-bold text-admin-muted uppercase tracking-wider">
+                  {estadoLabel(estado, t)} · {pedidosDelEstado.length}
+                </h3>
+              </div>
+              {/* Pedidos list */}
+              <div className="p-3 space-y-2">
+                {pedidosDelEstado.length === 0 ? (
+                  <div className="py-6 text-center text-xs text-admin-muted">
+                    Sin pedidos
+                  </div>
+                ) : (
+                  pedidosDelEstado.map(pedido => (
+                    <TarjetaPedido
+                      key={pedido.id}
+                      pedido={pedido}
+                      onCambiarEstado={cambiarEstadoYFiltrar}
+                      actualizando={actualizando}
+                      notificando={notificando === pedido.id}
+                      onNotificar={notificar}
+                      onCancelar={cancelarPedido}
+                      onPickingListo={(pedidoActualizado) => {
+                        setPedidos(prev => prev.map(p => p.id === pedidoActualizado.id ? pedidoActualizado : p));
+                        setFiltroEstado('Listo para Entrega');
+                      }}
+                      esDesktop={false}
+                    />
+                  ))
+                )}
+              </div>
+            </section>
+          );
+        })}
       </div>
 
       {/* Desktop Kanban */}
