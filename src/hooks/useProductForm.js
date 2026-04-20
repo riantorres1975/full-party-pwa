@@ -94,8 +94,8 @@ export function useProductForm(producto = null) {
         if (value.length > 200) return 'Máximo 200 caracteres.';
         return '';
       case 'precio':
-        if (value === '' || value == null) return 'El precio es obligatorio.';
-        if (Number(value) < 0) return 'No puede ser negativo.';
+        if (!mayoreoActivo && (value === '' || value == null)) return 'El precio es obligatorio.';
+        if (value !== '' && Number(value) < 0) return 'No puede ser negativo.';
         return '';
       case 'stockActual':
         if (!stockIlimitado && (value === '' || Number(value) < 0)) return 'Stock inválido.';
@@ -202,31 +202,26 @@ export function useProductForm(producto = null) {
       };
     });
 
-    if (mayoreoActivo) {
-      if (filasMayoreo.length === 0 || filasMayoreo.every(f => f.vacia)) {
-        throw new Error('Define al menos el precio base (Precio 1) para activar mayoreo.');
-      }
-      const filaInvalida = filasMayoreo.find(f => {
-        if (f.vacia) return false;
-        return !Number.isFinite(f.precioEscala) || f.precioEscala <= 0 ||
-          (f.idx > 0 && (!Number.isFinite(f.cantidadMinima) || f.cantidadMinima <= 1));
-      });
-      if (filaInvalida) {
-        throw new Error(`Revisa la escala ${filaInvalida.idx + 1}: precio mayor a 0 y cantidad mayor a 1.`);
-      }
+    const filaInvalida = filasMayoreo.find(f => {
+      if (f.vacia) return false;
+      return !Number.isFinite(f.precioEscala) || f.precioEscala <= 0 ||
+        (f.idx > 0 && (!Number.isFinite(f.cantidadMinima) || f.cantidadMinima <= 1));
+    });
+    if (filaInvalida) {
+      throw new Error(`Revisa el precio ${filaInvalida.idx + 1}: precio mayor a 0 y cantidad mayor a 1.`);
     }
 
     const preciosParaGuardar = filasMayoreo
       .filter(f => !f.vacia)
       .map(f => ({ etiqueta: f.etiqueta, cantidad_minima: f.cantidadMinima, precio: f.precioEscala }));
 
-    // El precio base siempre se deriva de Precio 1 cuando mayoreo está activo
-    const precioBaseNum = mayoreoActivo && preciosParaGuardar.length > 0
+    // Precio base siempre viene de Precio 1 (primera fila)
+    const precioBaseNum = preciosParaGuardar.length > 0
       ? preciosParaGuardar[0].precio
       : Math.max(0, Number(precio) || 0);
 
-    const preciosMayoreoFinal = mayoreoActivo
-      ? (preciosParaGuardar.length > 0 ? preciosParaGuardar : [{ etiqueta: 'Precio 1', cantidad_minima: 1, precio: precioBaseNum }])
+    const preciosMayoreoFinal = preciosParaGuardar.length > 0
+      ? preciosParaGuardar
       : [{ etiqueta: 'Precio 1', cantidad_minima: 1, precio: precioBaseNum }];
 
     return {

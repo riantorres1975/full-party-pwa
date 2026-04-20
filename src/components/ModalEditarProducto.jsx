@@ -379,40 +379,8 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
           </div>
 
           <div className="bg-admin-elevated border border-admin-border rounded-xl p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-body font-black text-ink-800">{t('product.wholesalePrices')}</p>
-                <p className="text-xs font-body text-ink-500">{t('admin.edit.wholesaleHelp')}</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={mayoreoActivo}
-                  onChange={e => {
-                    const activo = e.target.checked;
-                    setMayoreoActivo(activo);
-                    if (activo) {
-                      setPreciosMayoreo(prev => {
-                        const first = Array.isArray(prev) && prev.length > 0 ? prev[0] : null;
-                        const precioBase = Number(precio) || '';
-                        if (!first || !Number(first.precio)) {
-                          return [{ id: Date.now(), etiqueta: 'Precio 1', cantidad_minima: 1, precio: precioBase }, ...(Array.isArray(prev) ? prev.slice(1) : [])];
-                        }
-                        return prev;
-                      });
-                    }
-                  }}
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-300/50 rounded-full peer peer-checked:after:translate-x-[100%] after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-pink-400" />
-              </label>
-            </div>
-
-            {mayoreoActivo && (
-              <div className="mt-4 animate-fade-in">
-                <GestorPrecios precios={preciosMayoreo} setPrecios={setPreciosMayoreo} />
-              </div>
-            )}
+            <p className="text-sm font-body font-black text-ink-800 mb-4">{t('product.wholesalePrices')}</p>
+            <GestorPrecios precios={preciosMayoreo} setPrecios={setPreciosMayoreo} />
           </div>
 
           <div className="flex gap-3 pt-1">

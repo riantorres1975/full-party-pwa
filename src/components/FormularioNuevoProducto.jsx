@@ -367,39 +367,8 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                 </div>
 
                 <div className="col-span-full bg-gray-50 rounded-2xl p-5 border border-gray-100">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-900">{t('product.wholesalePrices')}</h4>
-                      <p className="text-xs font-medium text-gray-500">
-                        {t('admin.form.wholesaleHelp')}
-                      </p>
-                    </div>
-                    <Toggle
-                      id="toggle-mayoreo"
-                      checked={mayoreoActivo}
-                      onChange={() => {
-                        const activo = !mayoreoActivo;
-                        setMayoreoActivo(activo);
-                        if (activo) {
-                          setPreciosMayoreo(prev => {
-                            const first = Array.isArray(prev) && prev.length > 0 ? prev[0] : null;
-                            const precioBase = Number(precio) || '';
-                            // Si el primer precio no tiene precio, pre-poblar con el precio base actual
-                            if (!first || !Number(first.precio)) {
-                              return [{ id: Date.now(), etiqueta: 'Precio 1', cantidad_minima: 1, precio: precioBase }, ...(Array.isArray(prev) ? prev.slice(1) : [])];
-                            }
-                            return prev;
-                          });
-                        }
-                      }}
-                    />
-                  </div>
-
-                  {mayoreoActivo && (
-                    <div className="mt-4 animate-fade-in">
-                      <GestorPrecios precios={preciosMayoreo} setPrecios={setPreciosMayoreo} />
-                    </div>
-                  )}
+                  <h4 className="text-sm font-bold text-gray-900 mb-4">{t('product.wholesalePrices')}</h4>
+                  <GestorPrecios precios={preciosMayoreo} setPrecios={setPreciosMayoreo} />
                 </div>
                 
               </div>
