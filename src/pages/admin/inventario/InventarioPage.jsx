@@ -142,13 +142,13 @@ export default function InventarioPage() {
             <table className="w-full text-sm font-body">
               <thead>
                 <tr className="border-b border-admin-border bg-admin-elevated">
-                  <th className="text-left px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">
+                  <th className="text-left px-3 sm:px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">
                     {t('inventario.col.producto')}
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">
+                  <th className="text-left px-3 sm:px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">
                     {t('inventario.col.estado')}
                   </th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">
+                  <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide hidden sm:table-cell">
                     {t('inventario.col.ilimitado')}
                   </th>
                   <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">
@@ -171,8 +171,8 @@ export default function InventarioPage() {
                       className="border-b border-admin-border last:border-0 hover:bg-admin-elevated/40 transition-colors"
                     >
                       {/* Producto */}
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3 min-w-0">
+                      <td className="px-3 sm:px-4 py-3">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                           {p.imagen_url ? (
                             <img
                               src={p.imagen_url}
@@ -194,12 +194,12 @@ export default function InventarioPage() {
                       </td>
 
                       {/* Estado */}
-                      <td className="px-4 py-3">
+                      <td className="px-3 sm:px-4 py-3">
                         <StockBadge status={status} t={t} />
                       </td>
 
                       {/* Toggle ilimitado */}
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-3 text-center hidden sm:table-cell">
                         <button
                           onClick={() => canEdit && updateStock(p.id, { stock_ilimitado: !p.stock_ilimitado })}
                           disabled={!canEdit}
