@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ClipboardList, LayoutGrid, LogOut, MoreHorizontal, Home, Users, Sun, Moon, RefreshCw, Bell, User, Settings, Package } from 'lucide-react';
+import { ClipboardList, LayoutGrid, LogOut, MoreHorizontal, Home, Users, Sun, Moon, RefreshCw, Bell, User, Settings, Package, BarChart3 } from 'lucide-react';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useTheme } from '../../hooks/useTheme';
 import { usePermission } from '../../hooks/usePermission';
@@ -13,6 +13,7 @@ const ROUTE_MAP = {
   dashboard: '/admin/dashboard',
   clientes: '/admin/clientes',
   inventario: '/admin/inventario',
+  reportes: '/admin/reportes',
 };
 
 export default function BottomNav({ onSignOut }) {
@@ -33,6 +34,7 @@ export default function BottomNav({ onSignOut }) {
   const canViewDashboard = usePermission('reportes.view');
   const canViewClients = usePermission('clientes.view');
   const canViewInventario = usePermission('catalogo.edit');
+  const canViewReportes = usePermission('reportes.view');
 
   const badge = contadores?.['Por Surtir'] ?? 0;
   const notificationsEnabled = notificationPermission === 'granted';
@@ -42,6 +44,7 @@ export default function BottomNav({ onSignOut }) {
     : location.pathname.startsWith('/admin/dashboard') ? 'dashboard'
     : location.pathname.startsWith('/admin/clientes') ? 'clientes'
     : location.pathname.startsWith('/admin/inventario') ? 'inventario'
+    : location.pathname.startsWith('/admin/reportes') ? 'reportes'
     : null;
 
   const MAIN_TABS = [
@@ -186,6 +189,15 @@ export default function BottomNav({ onSignOut }) {
               >
                 <Package size={18} />
                 <span className="flex-1 text-left">{t('admin.nav.inventory')}</span>
+              </button>
+            )}
+            {canViewReportes && (
+              <button
+                onClick={() => handleMenuClick('reportes')}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-body font-bold text-admin-text hover:bg-admin-elevated transition-colors rounded-lg"
+              >
+                <BarChart3 size={18} />
+                <span className="flex-1 text-left">{t('admin.nav.reports')}</span>
               </button>
             )}
 
