@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Minus, Plus } from 'lucide-react';
 
-export default function StockCell({ value, field, onCommit, disabled = false, min = 0 }) {
+export default function StockCell({ value, field, onCommit, disabled = false, min = 0, compact = false }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(value));
   const inputRef = useRef(null);
@@ -21,6 +21,33 @@ export default function StockCell({ value, field, onCommit, disabled = false, mi
 
   if (disabled) {
     return <span className="text-admin-muted text-sm font-body">—</span>;
+  }
+
+  if (compact) {
+    return editing ? (
+      <input
+        ref={inputRef}
+        type="number"
+        value={draft}
+        min={min}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit();
+          if (e.key === 'Escape') { setDraft(String(value)); setEditing(false); }
+        }}
+        className="w-12 text-center text-sm font-body font-bold text-admin-text bg-admin-bg border border-fiesta-magenta/50 rounded-md px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-fiesta-magenta/40"
+        autoFocus
+      />
+    ) : (
+      <button
+        onClick={() => { setDraft(String(value)); setEditing(true); }}
+        className="w-12 text-center text-sm font-body font-bold text-admin-text hover:bg-admin-elevated rounded-md px-1 py-0.5 transition-colors"
+        title="Click para editar"
+      >
+        {value}
+      </button>
+    );
   }
 
   return (

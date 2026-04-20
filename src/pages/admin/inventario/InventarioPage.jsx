@@ -145,19 +145,19 @@ export default function InventarioPage() {
                   <th className="text-left px-3 sm:px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">
                     {t('inventario.col.producto')}
                   </th>
-                  <th className="text-left px-3 sm:px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">
+                  <th className="text-left px-3 sm:px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide hidden sm:table-cell">
                     {t('inventario.col.estado')}
                   </th>
                   <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide hidden sm:table-cell">
                     {t('inventario.col.ilimitado')}
                   </th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">
+                  <th className="text-center px-2 sm:px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">
                     {t('inventario.col.stockActual')}
                   </th>
                   <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide hidden sm:table-cell">
                     {t('inventario.col.stockMinimo')}
                   </th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">
+                  <th className="text-center px-2 sm:px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">
                     {t('inventario.col.activo')}
                   </th>
                 </tr>
@@ -194,7 +194,7 @@ export default function InventarioPage() {
                       </td>
 
                       {/* Estado */}
-                      <td className="px-3 sm:px-4 py-3">
+                      <td className="px-3 sm:px-4 py-3 hidden sm:table-cell">
                         <StockBadge status={status} t={t} />
                       </td>
 
@@ -213,14 +213,25 @@ export default function InventarioPage() {
                       </td>
 
                       {/* Stock actual */}
-                      <td className="px-4 py-3">
+                      <td className="px-2 sm:px-4 py-3">
                         <div className="flex justify-center">
-                          <StockCell
-                            value={p.stock_actual}
-                            field="stock_actual"
-                            disabled={p.stock_ilimitado || !canEdit}
-                            onCommit={(v) => updateStock(p.id, { stock_actual: v })}
-                          />
+                          <span className="sm:hidden">
+                            <StockCell
+                              value={p.stock_actual}
+                              field="stock_actual"
+                              disabled={p.stock_ilimitado || !canEdit}
+                              onCommit={(v) => updateStock(p.id, { stock_actual: v })}
+                              compact
+                            />
+                          </span>
+                          <span className="hidden sm:block">
+                            <StockCell
+                              value={p.stock_actual}
+                              field="stock_actual"
+                              disabled={p.stock_ilimitado || !canEdit}
+                              onCommit={(v) => updateStock(p.id, { stock_actual: v })}
+                            />
+                          </span>
                         </div>
                       </td>
 
@@ -238,7 +249,7 @@ export default function InventarioPage() {
                       </td>
 
                       {/* Activo */}
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-2 sm:px-4 py-3 text-center">
                         <button
                           onClick={() => canEdit && updateStock(p.id, { activo: !p.activo })}
                           disabled={!canEdit}
