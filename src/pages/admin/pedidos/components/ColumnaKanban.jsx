@@ -6,14 +6,8 @@ export default function ColumnaKanban({ estado, pedidos, onCardClick }) {
   const { t } = useLanguage();
   const meta = ESTADO_META[estado] ?? ESTADO_META['Por Surtir'];
   return (
-    <div className="flex-shrink-0 w-80 flex flex-col rounded-2xl overflow-hidden border-2" style={{
-      borderColor: meta.bg,
-      background: meta.bg,
-      minHeight: '220px',
-      maxHeight: 'calc(100dvh - 380px)',
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
+    <div className="flex-shrink-0 w-80 flex flex-col border border-admin-border rounded-lg overflow-hidden"
+         style={{ minHeight: 220, maxHeight: 'calc(100dvh - 380px)' }}>
       <div className="flex items-center justify-between px-4 py-3" style={{ background: meta.color }}>
         <h3 className="text-sm font-body font-black text-white flex items-center gap-2">
           <meta.icon size={16} /> {estadoLabel(estado, t)}
@@ -22,17 +16,17 @@ export default function ColumnaKanban({ estado, pedidos, onCardClick }) {
           {pedidos.length}
         </span>
       </div>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }} className="bg-admin-elevated space-y-3">
+      <div className="flex-1 overflow-y-auto p-2 space-y-2 bg-admin-elevated">
         {pedidos.length === 0 ? (
-          <div className="h-full flex items-center justify-center">
-            <p className="text-sm font-body text-admin-muted">Sin pedidos</p>
+          <div className="h-full flex items-center justify-center text-xs text-admin-muted">
+            Sin pedidos
           </div>
         ) : (
           pedidos.map(pedido => (
             <button
               key={pedido.id}
               onClick={() => onCardClick(pedido)}
-              className="w-full text-left p-3 rounded-xl bg-admin-card border border-admin-border hover:border-admin-border-soft transition-all hover:shadow-card"
+              className="w-full text-left p-3 rounded-lg bg-admin-card border border-admin-border hover:bg-admin-elevated hover:border-admin-border-soft transition-all cursor-pointer"
             >
               <div className="flex items-start justify-between gap-2 mb-1">
                 <p className="font-body font-bold text-sm text-admin-text">{pedido.folio}</p>

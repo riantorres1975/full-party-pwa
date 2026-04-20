@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Download } from 'lucide-react';
+import { Download, MoreVertical, Eye, MessageCircle, Trash2 } from 'lucide-react';
 import { useLanguage } from '../../../../hooks/useLanguage';
 import { useAdminData } from '../../../../contexts/AdminDataContext';
 import Can from '../../../../components/auth/Can';
@@ -42,7 +42,7 @@ export default function PedidosHistorial() {
     {
       id: 'cliente_telefono',
       label: t('common.phone'),
-      render: (pedido) => <span className="font-body text-sm text-admin-muted">{maskPhone(pedido.cliente_telefono)}</span>,
+      render: (pedido) => <span className="font-body text-sm text-admin-text-secondary">{maskPhone(pedido.cliente_telefono)}</span>,
       width: 120,
     },
     {
@@ -80,7 +80,78 @@ export default function PedidosHistorial() {
       },
       width: 140,
     },
+    {
+      id: 'acciones',
+      label: '',
+      render: (pedido) => <AccionesMenu pedido={pedido} onViewDetail={() => setPedidoModal(pedido)} notificar={notificar} cancelarPedido={cancelarPedido} />,
+      width: 50,
+      alignment: 'center',
+    },
   ];
+
+  function AccionesMenu({ pedido, onViewDetail, notificar, cancelarPedido }) {
+    const [menuAbierto, setMenuAbierto] = useState(false);
+    return (
+      <div className="relative">
+        <button
+          onClick={() => setMenuAbierto(!menuAbierto)}
+          className="p-1 hover:bg-admin-elevated rounded-lg transition-colors"
+        >
+          <MoreVertical size={16} className="text-admin-muted" />
+        </button>
+        {menuAbierto && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setMenuAbierto(false)} />
+            <div className="absolute right-0 mt-1 w-40 bg-admin-card border border-admin-border rounded-lg shadow-lg z-20">
+              <button
+                onClick={() => {
+                  onViewDetail();
+                  setMenuAbierto(false);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-body text-admin-text hover:bg-admin-elevated transition-colors"
+              >
+                <Eye size={14} /> Ver detalle
+              </button>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(pedido.cliente_telefono);
+                  setMenuAbierto(false);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-body text-admin-text hover:bg-admin-elevated transition-colors"
+              >
+                <MessageCircle size={14} /> Copiar teléfono
+              </button>
+              <Can permission="pedidos.notify">
+                <button
+                  onClick={() => {
+                    const url = `https://wa.me/${pedido.cliente_telefono.replace(/\D/g, '')}`;
+                    window.open(url, '_blank');
+                    setMenuAbierto(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-body text-admin-text hover:bg-admin-elevated transition-colors"
+                >
+                  <MessageCircle size={14} /> WhatsApp
+                </button>
+              </Can>
+              <Can permission="pedidos.cancel">
+                {pedido.estado !== 'Cancelado' && (
+                  <button
+                    onClick={() => {
+                      cancelarPedido(pedido);
+                      setMenuAbierto(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-body text-red-400 hover:bg-red-500/10 transition-colors"
+                  >
+                    <Trash2 size={14} /> Cancelar
+                  </button>
+                )}
+              </Can>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
 
   const handleExportCSV = useCallback(() => {
     if (!filtered || filtered.length === 0) return;
@@ -128,62 +199,74 @@ export default function PedidosHistorial() {
       )}
 
       {/* Filters */}
-      <div className="bg-admin-card rounded-2xl border border-admin-border p-4 sm:p-5 space-y-4 shadow-card">
+      <div className="space-y-4">
         {/* Estado pills */}
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setEstadoFiltro('todos')}
             className={`px-3 py-1.5 rounded-full text-xs font-body font-bold transition-all ${
               estadoFiltro === 'todos'
-                ? 'bg-admin-text text-white'
-                : 'bg-admin-border text-admin-text hover:bg-admin-border-soft'
+                ? 'bg-fiesta-magenta text-white'
+                : 'bg-admin-elevated text-admin-text-secondary border border-admin-border hover:bg-admin-border-soft'
             }`}
           >
             {t('common.all')} · {contadores.Enviado + contadores.Cancelado}
           </button>
           <button
             onClick={() => setEstadoFiltro('Enviado')}
-            className={`px-3 py-1.5 rounded-full text-xs font-body font-bold transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-full text-xs font-body font-bold transition-all ${
               estadoFiltro === 'Enviado'
                 ? 'bg-blue-500 text-white'
-                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                : 'bg-admin-elevated text-admin-text-secondary border border-admin-border hover:bg-admin-border-soft'
             }`}
           >
             {t('admin.orders.sent')} · {contadores.Enviado}
           </button>
           <button
             onClick={() => setEstadoFiltro('Cancelado')}
-            className={`px-3 py-1.5 rounded-full text-xs font-body font-bold transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-full text-xs font-body font-bold transition-all ${
               estadoFiltro === 'Cancelado'
                 ? 'bg-gray-500 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-admin-elevated text-admin-text-secondary border border-admin-border hover:bg-admin-border-soft'
             }`}
           >
             {t('admin.orders.status.cancelled')} · {contadores.Cancelado}
           </button>
         </div>
 
-        {/* Date range */}
-        <div className="flex flex-wrap gap-2">
-          {[
-            { value: 7, label: '7d' },
-            { value: 30, label: '30d' },
-            { value: 90, label: '90d' },
-            { value: 'all', label: t('admin.orders.filter.all') },
-            { value: 'custom', label: t('admin.orders.filter.custom') },
-          ].map(opt => (
+        {/* Date range + Export */}
+        <div className="flex flex-wrap items-center gap-2 justify-between">
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: 7, label: '7d' },
+              { value: 30, label: '30d' },
+              { value: 90, label: '90d' },
+              { value: 'all', label: t('admin.orders.filter.all') },
+              { value: 'custom', label: t('admin.orders.filter.custom') },
+            ].map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setRangoFecha(opt.value)}
+                className={`px-3 py-1.5 rounded-full text-xs font-body font-bold transition-all ${
+                  rangoFecha === opt.value
+                    ? 'bg-fiesta-magenta text-white'
+                    : 'bg-admin-elevated text-admin-text-secondary border border-admin-border hover:bg-admin-border-soft'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <Can permission="reportes.export">
             <button
-              key={opt.value}
-              onClick={() => setRangoFecha(opt.value)}
-              className={`px-3 py-1.5 rounded-full text-xs font-body font-bold transition-all ${
-                rangoFecha === opt.value
-                  ? 'bg-purple-500 text-white'
-                  : 'bg-admin-border text-admin-text hover:bg-admin-border-soft'
-              }`}
+              onClick={handleExportCSV}
+              disabled={filtered.length === 0}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 text-white text-xs font-body font-bold hover:bg-blue-600 disabled:bg-admin-border disabled:text-admin-muted transition-all active:scale-95"
             >
-              {opt.label}
+              <Download size={14} />
+              {t('admin.orders.history.export')}
             </button>
-          ))}
+          </Can>
         </div>
 
         {/* Custom date inputs */}
@@ -193,30 +276,18 @@ export default function PedidosHistorial() {
               type="date"
               value={fechaDesde ? new Date(fechaDesde).toISOString().split('T')[0] : ''}
               onChange={e => setFechaDesde(e.target.value ? new Date(e.target.value) : null)}
-              className="px-3 py-2 rounded-xl bg-admin-input border border-admin-border text-admin-text text-xs font-body focus:border-fiesta-magenta outline-none"
+              className="px-3 py-2 rounded-lg bg-admin-input border border-admin-border text-admin-text text-xs font-body focus:border-fiesta-magenta outline-none"
               placeholder={t('admin.orders.filter.dateFrom')}
             />
             <input
               type="date"
               value={fechaHasta ? new Date(fechaHasta).toISOString().split('T')[0] : ''}
               onChange={e => setFechaHasta(e.target.value ? new Date(e.target.value) : null)}
-              className="px-3 py-2 rounded-xl bg-admin-input border border-admin-border text-admin-text text-xs font-body focus:border-fiesta-magenta outline-none"
+              className="px-3 py-2 rounded-lg bg-admin-input border border-admin-border text-admin-text text-xs font-body focus:border-fiesta-magenta outline-none"
               placeholder={t('admin.orders.filter.dateTo')}
             />
           </div>
         )}
-
-        {/* Export button */}
-        <Can permission="reportes.export">
-          <button
-            onClick={handleExportCSV}
-            disabled={filtered.length === 0}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500 text-white text-xs font-body font-bold hover:bg-blue-600 disabled:bg-admin-border disabled:text-admin-muted transition-all active:scale-95"
-          >
-            <Download size={14} />
-            {t('admin.orders.history.export')}
-          </button>
-        </Can>
       </div>
 
       {/* DataTable */}
