@@ -32,10 +32,10 @@ function parsearPreciosMayoreo(producto) {
     .filter(item => item.id != null);
 
   if (normalizados.length > 0) return normalizados;
-  return [{ id: Date.now(), etiqueta: '', cantidad_minima: '', precio: '' }];
+  return [{ id: Date.now(), etiqueta: 'Precio 1', cantidad_minima: '', precio: '' }];
 }
 
-const emptyRow = () => ({ id: Date.now(), etiqueta: '', cantidad_minima: '', precio: '' });
+const emptyRow = () => ({ id: Date.now(), etiqueta: 'Precio 1', cantidad_minima: '', precio: '' });
 
 /**
  * Hook compartido para los formularios de crear y editar producto.
@@ -193,25 +193,25 @@ export function useProductForm(producto = null) {
 
     const precioBaseNum = Math.max(0, Number(precio) || 0);
     const filasMayoreo = (preciosMayoreo || []).map((item, idx) => {
-      const etiqueta = String(item?.etiqueta ?? '').trim();
+      const etiqueta = String(item?.etiqueta ?? '').trim() || `Precio ${idx + 1}`;
       const cantidadMinima = Number(item?.cantidad_minima);
       const precioEscala = Number(item?.precio);
       return {
         idx, etiqueta, cantidadMinima, precioEscala,
-        vacia: !etiqueta && item?.cantidad_minima === '' && item?.precio === '',
+        vacia: item?.cantidad_minima === '' && item?.precio === '',
       };
     });
 
     if (mayoreoActivo) {
       if (filasMayoreo.length === 0 || filasMayoreo.every(f => f.vacia)) {
-        throw new Error('Activa mayoreo solo si capturas al menos una escala con etiqueta, cantidad y precio.');
+        throw new Error('Activa mayoreo solo si capturas al menos una escala con cantidad y precio.');
       }
       const filaInvalida = filasMayoreo.find(f => {
         if (f.vacia) return true;
-        return !f.etiqueta || !Number.isFinite(f.cantidadMinima) || f.cantidadMinima <= 0 || !Number.isFinite(f.precioEscala) || f.precioEscala <= 0;
+        return !Number.isFinite(f.cantidadMinima) || f.cantidadMinima <= 0 || !Number.isFinite(f.precioEscala) || f.precioEscala <= 0;
       });
       if (filaInvalida) {
-        throw new Error(`Revisa la escala ${filaInvalida.idx + 1}: etiqueta obligatoria y valores mayores a 0.`);
+        throw new Error(`Revisa la escala ${filaInvalida.idx + 1}: cantidad y precio deben ser mayores a 0.`);
       }
     }
 
