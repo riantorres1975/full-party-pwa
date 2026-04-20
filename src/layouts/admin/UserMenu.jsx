@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { LogOut, RefreshCw, Bell, User, Sun, Moon, ChevronUp } from 'lucide-react';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useAdminData } from '../../contexts/AdminDataContext';
@@ -8,6 +9,8 @@ import { ROLE_LABELS } from '../../lib/roles';
 export default function UserMenu({ user, onSignOut, temaOscuro, onToggleTema, collapsed }) {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+  const btnRef = useRef(null);
   const menuRef = useRef(null);
   const { role } = usePermissions();
   const {
@@ -17,22 +20,51 @@ export default function UserMenu({ user, onSignOut, temaOscuro, onToggleTema, co
     testNotification,
   } = useAdminData();
 
+  useLayoutEffect(() => {
+    if (!isOpen || !btnRef.current) return;
+    const rect = btnRef.current.getBoundingClientRect();
+    if (collapsed) {
+      // Opens to the right of the avatar, bottom-aligned
+      setCoords({
+        top: rect.bottom - 8,
+        left: rect.right + 8,
+        width: 220,
+        anchor: 'right',
+      });
+    } else {
+      // Opens upward, aligned with the button
+      setCoords({
+        top: rect.top - 8,
+        left: rect.left,
+        width: rect.width,
+        anchor: 'up',
+      });
+    }
+  }, [isOpen, collapsed]);
+
   useEffect(() => {
+    if (!isOpen) return;
     function handleClickOutside(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target) &&
+        btnRef.current && !btnRef.current.contains(e.target)
+      ) {
         setIsOpen(false);
       }
     }
     function handleEscape(e) {
       if (e.key === 'Escape') setIsOpen(false);
     }
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleEscape);
+    function handleResize() {
+      setIsOpen(false);
     }
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    window.addEventListener('resize', handleResize);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('resize', handleResize);
     };
   }, [isOpen]);
 
@@ -40,7 +72,6 @@ export default function UserMenu({ user, onSignOut, temaOscuro, onToggleTema, co
 
   const handleToggleNotifications = async () => {
     if (notificationsEnabled) {
-      // Already enabled — show test notification
       await testNotification();
     } else {
       const permission = await requestNotificationPermission();
@@ -61,14 +92,23 @@ export default function UserMenu({ user, onSignOut, temaOscuro, onToggleTema, co
           ? t('admin.notifications.unsupported')
           : t('admin.notifications.enable');
 
+  const menuStyle = coords.anchor === 'up'
+    ? { position: 'fixed', bottom: `calc(100vh - ${coords.top}px)`, left: coords.left, minWidth: Math.max(coords.width, 220) }
+    : { position: 'fixed', top: coords.top, left: coords.left, width: coords.width, transform: 'translateY(-100%)' };
+
   return (
-    <div className="relative" ref={menuRef}>
-      {/* Avatar trigger — full width */}
+    <div className="relative">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        ref={btnRef}
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsOpen((v) => !v);
+        }}
         aria-expanded={isOpen}
         aria-haspopup="menu"
-        className={`w-full flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-admin-elevated transition-colors ${isOpen ? 'bg-admin-elevated' : ''}`}
+        className={`w-full flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-admin-elevated transition-colors cursor-pointer ${isOpen ? 'bg-admin-elevated' : ''}`}
       >
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-fiesta-magenta to-fiesta-cyan flex items-center justify-center text-white text-xs font-body font-bold shrink-0">
           {user?.email?.charAt(0).toUpperCase() || 'A'}
@@ -87,13 +127,13 @@ export default function UserMenu({ user, onSignOut, temaOscuro, onToggleTema, co
         )}
       </button>
 
-      {/* Dropdown menu — opens UPWARD since UserMenu is at sidebar footer */}
-      {isOpen && (
+      {isOpen && createPortal(
         <div
+          ref={menuRef}
           role="menu"
-          className="absolute bottom-full left-0 right-0 mb-2 min-w-[200px] bg-admin-card border border-admin-border rounded-xl shadow-elevated z-50 py-1 overflow-hidden"
+          style={{ ...menuStyle, zIndex: 9999 }}
+          className="bg-admin-card border border-admin-border rounded-xl shadow-elevated py-1 overflow-hidden"
         >
-          {/* Perfil (disabled — Próximamente) */}
           <button
             disabled
             title={t('admin.comingSoon')}
@@ -106,7 +146,6 @@ export default function UserMenu({ user, onSignOut, temaOscuro, onToggleTema, co
             </span>
           </button>
 
-          {/* Cambiar tema */}
           <button
             onClick={() => { onToggleTema?.(); }}
             className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-body font-bold text-admin-text hover:bg-admin-elevated transition-colors"
@@ -117,19 +156,14 @@ export default function UserMenu({ user, onSignOut, temaOscuro, onToggleTema, co
             </span>
           </button>
 
-          {/* Recargar datos */}
           <button
-            onClick={() => {
-              fetchPedidos();
-              setIsOpen(false);
-            }}
+            onClick={() => { fetchPedidos(); setIsOpen(false); }}
             className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-body font-bold text-admin-text hover:bg-admin-elevated transition-colors"
           >
             <RefreshCw size={14} />
             <span className="flex-1 text-left">{t('admin.reloadData')}</span>
           </button>
 
-          {/* Notificaciones */}
           <button
             onClick={handleToggleNotifications}
             className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-body font-bold text-admin-text hover:bg-admin-elevated transition-colors"
@@ -147,21 +181,17 @@ export default function UserMenu({ user, onSignOut, temaOscuro, onToggleTema, co
             </span>
           </button>
 
-          {/* Separador */}
           <div className="border-t border-admin-border my-1" />
 
-          {/* Cerrar sesión */}
           <button
-            onClick={() => {
-              onSignOut?.();
-              setIsOpen(false);
-            }}
+            onClick={() => { onSignOut?.(); setIsOpen(false); }}
             className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-body font-bold text-red-500 hover:bg-red-500/10 transition-colors"
           >
             <LogOut size={14} />
             <span className="flex-1 text-left">{t('login.signOut')}</span>
           </button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

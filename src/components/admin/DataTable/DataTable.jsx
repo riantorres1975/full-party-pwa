@@ -134,6 +134,7 @@ export default function DataTable({
             isSelected={selection.has(row[rowKey])}
             onToggle={toggleRow}
             onRowClick={onRowClick}
+            variant="card"
           />
         ))}
       </div>
