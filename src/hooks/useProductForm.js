@@ -191,27 +191,28 @@ export function useProductForm(producto = null) {
       urlFinal = getProductPlaceholderUrl(nombre, '1200x1200');
     }
 
-    const precioBaseNum = Math.max(0, Number(precio) || 0);
     const filasMayoreo = (preciosMayoreo || []).map((item, idx) => {
       const etiqueta = String(item?.etiqueta ?? '').trim() || `Precio ${idx + 1}`;
-      const cantidadMinima = Number(item?.cantidad_minima);
+      // Primera fila siempre tiene cantidad_minima = 1
+      const cantidadMinima = idx === 0 ? 1 : Number(item?.cantidad_minima);
       const precioEscala = Number(item?.precio);
       return {
         idx, etiqueta, cantidadMinima, precioEscala,
-        vacia: item?.cantidad_minima === '' && item?.precio === '',
+        vacia: item?.precio === '',
       };
     });
 
     if (mayoreoActivo) {
       if (filasMayoreo.length === 0 || filasMayoreo.every(f => f.vacia)) {
-        throw new Error('Activa mayoreo solo si capturas al menos una escala con cantidad y precio.');
+        throw new Error('Define al menos el precio base (Precio 1) para activar mayoreo.');
       }
       const filaInvalida = filasMayoreo.find(f => {
-        if (f.vacia) return true;
-        return !Number.isFinite(f.cantidadMinima) || f.cantidadMinima <= 0 || !Number.isFinite(f.precioEscala) || f.precioEscala <= 0;
+        if (f.vacia) return false;
+        return !Number.isFinite(f.precioEscala) || f.precioEscala <= 0 ||
+          (f.idx > 0 && (!Number.isFinite(f.cantidadMinima) || f.cantidadMinima <= 1));
       });
       if (filaInvalida) {
-        throw new Error(`Revisa la escala ${filaInvalida.idx + 1}: cantidad y precio deben ser mayores a 0.`);
+        throw new Error(`Revisa la escala ${filaInvalida.idx + 1}: precio mayor a 0 y cantidad mayor a 1.`);
       }
     }
 
@@ -219,14 +220,19 @@ export function useProductForm(producto = null) {
       .filter(f => !f.vacia)
       .map(f => ({ etiqueta: f.etiqueta, cantidad_minima: f.cantidadMinima, precio: f.precioEscala }));
 
+    // El precio base siempre se deriva de Precio 1 cuando mayoreo está activo
+    const precioBaseNum = mayoreoActivo && preciosParaGuardar.length > 0
+      ? preciosParaGuardar[0].precio
+      : Math.max(0, Number(precio) || 0);
+
     const preciosMayoreoFinal = mayoreoActivo
-      ? (preciosParaGuardar.length > 0 ? preciosParaGuardar : [{ etiqueta: '1 Pieza', cantidad_minima: 1, precio: precioBaseNum }])
-      : [{ etiqueta: '1 Pieza', cantidad_minima: 1, precio: precioBaseNum }];
+      ? (preciosParaGuardar.length > 0 ? preciosParaGuardar : [{ etiqueta: 'Precio 1', cantidad_minima: 1, precio: precioBaseNum }])
+      : [{ etiqueta: 'Precio 1', cantidad_minima: 1, precio: precioBaseNum }];
 
     return {
       nombre: toTitleCase(nombre),
       descripcion,
-      precio,
+      precio: precioBaseNum,
       categoria: categoriaFinal || null,
       marca: marcaFinal || null,
       tamano: tamanoFinal || null,

@@ -193,30 +193,32 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                   )}
                 </div>
 
-                <div className="col-span-full md:col-span-2">
-                  <label htmlFor="fp-precio" className="block text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">
-                    {t('admin.form.retailPrice')} *
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 font-bold text-sm">{SIMBOLO_MONEDA}</span>
-                    <input
-                      id="fp-precio"
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      step="0.01"
-                      value={precio}
-                      onChange={e => setPrecio(e.target.value)}
-                      onBlur={() => handleBlur('precio')}
-                      placeholder="0.00"
-                      required
-                      className={`w-full bg-ink-50 border rounded-lg pl-8 pr-3 py-2 text-sm font-medium text-ink-900 focus:bg-white focus:border-ink-400 focus:outline-none focus:ring-1 focus:ring-ink-200 transition-all shadow-sm ${touched.precio && fieldErrors.precio ? 'border-red-400' : 'border-transparent'}`}
-                    />
+                {!mayoreoActivo && (
+                  <div className="col-span-full md:col-span-2">
+                    <label htmlFor="fp-precio" className="block text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">
+                      {t('admin.form.retailPrice')} *
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 font-bold text-sm">{SIMBOLO_MONEDA}</span>
+                      <input
+                        id="fp-precio"
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="0.01"
+                        value={precio}
+                        onChange={e => setPrecio(e.target.value)}
+                        onBlur={() => handleBlur('precio')}
+                        placeholder="0.00"
+                        required
+                        className={`w-full bg-ink-50 border rounded-lg pl-8 pr-3 py-2 text-sm font-medium text-ink-900 focus:bg-white focus:border-ink-400 focus:outline-none focus:ring-1 focus:ring-ink-200 transition-all shadow-sm ${touched.precio && fieldErrors.precio ? 'border-red-400' : 'border-transparent'}`}
+                      />
+                    </div>
+                    {touched.precio && fieldErrors.precio && (
+                      <p className="text-[10px] text-red-500 font-medium mt-0.5">{fieldErrors.precio}</p>
+                    )}
                   </div>
-                  {touched.precio && fieldErrors.precio && (
-                    <p className="text-[10px] text-red-500 font-medium mt-0.5">{fieldErrors.precio}</p>
-                  )}
-                </div>
+                )}
 
                 {/* Fila 2 */}
                 <div className="col-span-full">
@@ -380,8 +382,11 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                         setMayoreoActivo(activo);
                         if (activo) {
                           setPreciosMayoreo(prev => {
-                            if (!Array.isArray(prev) || prev.length === 0) {
-                              return [{ id: Date.now(), etiqueta: '', cantidad_minima: '', precio: '' }];
+                            const first = Array.isArray(prev) && prev.length > 0 ? prev[0] : null;
+                            const precioBase = Number(precio) || '';
+                            // Si el primer precio no tiene precio, pre-poblar con el precio base actual
+                            if (!first || !Number(first.precio)) {
+                              return [{ id: Date.now(), etiqueta: 'Precio 1', cantidad_minima: 1, precio: precioBase }, ...(Array.isArray(prev) ? prev.slice(1) : [])];
                             }
                             return prev;
                           });

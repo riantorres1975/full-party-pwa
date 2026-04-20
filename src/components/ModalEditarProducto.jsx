@@ -123,25 +123,27 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-body font-black text-ink-600 mb-1.5 pl-1">
-                {t('admin.edit.price', { symbol: SIMBOLO_MONEDA })}
-              </label>
-              <input
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="0.01"
-                value={precio}
-                onChange={e => setPrecio(e.target.value)}
-                onBlur={() => handleBlur('precio')}
-                required
-                className={`${inputBase} ${touched.precio && fieldErrors.precio ? '!border-red-400' : ''}`}
-              />
-              {touched.precio && fieldErrors.precio && (
-                <p className="text-[10px] text-red-500 font-medium mt-0.5 pl-1">{fieldErrors.precio}</p>
-              )}
-            </div>
+            {!mayoreoActivo && (
+              <div>
+                <label className="block text-xs font-body font-black text-ink-600 mb-1.5 pl-1">
+                  {t('admin.edit.price', { symbol: SIMBOLO_MONEDA })}
+                </label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="0.01"
+                  value={precio}
+                  onChange={e => setPrecio(e.target.value)}
+                  onBlur={() => handleBlur('precio')}
+                  required
+                  className={`${inputBase} ${touched.precio && fieldErrors.precio ? '!border-red-400' : ''}`}
+                />
+                {touched.precio && fieldErrors.precio && (
+                  <p className="text-[10px] text-red-500 font-medium mt-0.5 pl-1">{fieldErrors.precio}</p>
+                )}
+              </div>
+            )}
             <div>
               <label
                 htmlFor="modal-fp-cat"
@@ -392,8 +394,10 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
                     setMayoreoActivo(activo);
                     if (activo) {
                       setPreciosMayoreo(prev => {
-                        if (!Array.isArray(prev) || prev.length === 0) {
-                          return [{ id: Date.now(), etiqueta: '', cantidad_minima: '', precio: '' }];
+                        const first = Array.isArray(prev) && prev.length > 0 ? prev[0] : null;
+                        const precioBase = Number(precio) || '';
+                        if (!first || !Number(first.precio)) {
+                          return [{ id: Date.now(), etiqueta: 'Precio 1', cantidad_minima: 1, precio: precioBase }, ...(Array.isArray(prev) ? prev.slice(1) : [])];
                         }
                         return prev;
                       });
