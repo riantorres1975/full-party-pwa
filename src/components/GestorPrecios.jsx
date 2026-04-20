@@ -11,7 +11,6 @@ export default function GestorPrecios({ precios, setPrecios }) {
   const listaPrecios = Array.isArray(precios) ? precios : [];
   const primeraFila = listaPrecios[0] ?? null;
   const primeraCompleta = !!primeraFila &&
-    Number(primeraFila.cantidad_minima) > 0 &&
     Number(primeraFila.precio) > 0;
 
   const normalizarEntero = (valor) => {
@@ -102,16 +101,22 @@ export default function GestorPrecios({ precios, setPrecios }) {
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                 Cantidad minima
               </label>
-              <input
-                type="number"
-                min="1"
-                step="1"
-                value={item.cantidad_minima}
-                onChange={e => handleChangePrecio(item.id, 'cantidad_minima', e.target.value)}
-                onFocus={e => e.target.select()}
-                placeholder="Ej. 12"
-                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all"
-              />
+              {index === 0 ? (
+                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-bold text-gray-400 select-none">
+                  1 <span className="text-[10px] font-medium">(precio base)</span>
+                </div>
+              ) : (
+                <input
+                  type="number"
+                  min="2"
+                  step="1"
+                  value={item.cantidad_minima}
+                  onChange={e => handleChangePrecio(item.id, 'cantidad_minima', e.target.value)}
+                  onFocus={e => e.target.select()}
+                  placeholder="Ej. 12"
+                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all"
+                />
+              )}
             </div>
 
             <div>
