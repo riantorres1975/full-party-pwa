@@ -6,7 +6,21 @@
       "Bash(where supabase:*)",
       "Bash(npx which:*)",
       "Bash(command -v supabase)",
-      "Bash(npx supabase:*)"
+      "Bash(npx supabase:*)",
+      "Bash(cmd.exe /c \"cd /d \\\\\"c:\\\\Users\\\\river\\\\OneDrive\\\\Escritorio\\\\full-party-pwa\\\\\" && npm run dev\")",
+      "Bash(cmd.exe /c \"cd /d \\\\\"c:\\\\Users\\\\river\\\\OneDrive\\\\Escritorio\\\\full-party-pwa\\\\\" && npm run dev 2>&1\")",
+      "Bash(cmd.exe /c \"where node && node --version && npm --version\")",
+      "Bash(cmd.exe /c \"node --version\")",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" --version)",
+      "Bash(npm install *)",
+      "Read(//c/Program Files/nodejs//**)",
+      "Read(//c/Users/river/scoop/apps/**)",
+      "Bash(export PATH=\"/c/Program Files/nodejs:$PATH\")",
+      "Bash(npx kill-port *)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(cat components/AdminPedidos.jsx)",
+      "Read(//tmp/**)",
+      "Bash(git add *)"
     ]
   }
 }

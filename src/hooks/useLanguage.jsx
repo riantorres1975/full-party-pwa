@@ -12,8 +12,7 @@ export function LanguageProvider({ children }) {
       const saved = localStorage.getItem('fp-lang');
       if (saved === 'en' || saved === 'es') return saved;
     } catch {}
-    const browserLang = navigator.language?.slice(0, 2);
-    return browserLang === 'en' ? 'en' : 'es';
+    return 'es';
   });
 
   useEffect(() => {
