@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
 import BottomNav from '../components/ui/BottomNav';
 import { useToast } from '../components/ui/ToastProvider';
 import { useConfirm } from '../hooks/useConfirm';
+import { useLanguage } from '../hooks/useLanguage';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import Sidebar from './admin/Sidebar';
 import Topbar from './admin/Topbar';
@@ -11,6 +11,7 @@ import { BreadcrumbProvider } from '../contexts/BreadcrumbContext';
 import { PermissionsProvider } from '../contexts/PermissionsContext';
 
 export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut, children }) {
+  const { t } = useLanguage();
   const toast = useToast();
   const { isOpen: cancelConfirmOpen, config: cancelConfig, confirm: confirmCancelar, onConfirm: onConfirmCancelar, onCancel: onCancelCancelar } = useConfirm();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -44,7 +45,7 @@ export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut,
 
           {/* Skip link */}
           <a href="#admin-main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-admin-card focus:text-admin-text focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-elevated focus:text-sm focus:font-body focus:font-bold">
-            Saltar al contenido
+            {t('admin.skipToContent')}
           </a>
 
           {/* Sidebar — desktop only */}

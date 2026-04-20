@@ -1,6 +1,7 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from 'recharts';
 import { useTheme } from '../../../../hooks/useTheme';
 import { useLanguage } from '../../../../hooks/useLanguage';
+import { useChartWidth } from '../hooks/useChartWidth';
 
 const ESTADO_COLORS = {
   'Por Surtir': '#ef4444',
@@ -13,6 +14,8 @@ const ESTADO_COLORS = {
 export default function PedidosPorEstadoChart({ data, loading }) {
   const { isDarkMode } = useTheme();
   const { t } = useLanguage();
+  const { containerRef, width } = useChartWidth();
+  const chartWidth = width > 0 ? width : 320;
 
   if (loading) {
     return (
@@ -52,8 +55,8 @@ export default function PedidosPorEstadoChart({ data, loading }) {
       <h3 className="text-sm font-body font-bold text-admin-text mb-4">
         {t('admin.dashboard.chart.orders_by_status')}
       </h3>
-      <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-        <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 40 }}>
+      <div ref={containerRef} className="h-[240px] w-full">
+        <BarChart width={chartWidth} height={240} data={data} margin={{ top: 10, right: 30, left: 0, bottom: 40 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
           <XAxis
             dataKey="estado"
@@ -77,7 +80,7 @@ export default function PedidosPorEstadoChart({ data, loading }) {
             ))}
           </Bar>
         </BarChart>
-      </ResponsiveContainer>
+      </div>
     </div>
   );
 }

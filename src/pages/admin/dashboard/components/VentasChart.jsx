@@ -1,10 +1,13 @@
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { useTheme } from '../../../../hooks/useTheme';
 import { useLanguage } from '../../../../hooks/useLanguage';
+import { useChartWidth } from '../hooks/useChartWidth';
 
 export default function VentasChart({ data, loading }) {
   const { isDarkMode } = useTheme();
   const { t } = useLanguage();
+  const { containerRef, width } = useChartWidth();
+  const chartWidth = width > 0 ? width : 320;
 
   if (loading) {
     return (
@@ -47,8 +50,8 @@ export default function VentasChart({ data, loading }) {
       <h3 className="text-sm font-body font-bold text-admin-text mb-4">
         {t('admin.dashboard.chart.sales')}
       </h3>
-      <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-        <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+      <div ref={containerRef} className="h-[240px] w-full">
+        <AreaChart width={chartWidth} height={240} data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
           <XAxis
             dataKey="fecha"
@@ -68,7 +71,7 @@ export default function VentasChart({ data, loading }) {
             isAnimationActive={true}
           />
         </AreaChart>
-      </ResponsiveContainer>
+      </div>
     </div>
   );
 }

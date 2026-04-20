@@ -9,6 +9,9 @@ export default function Topbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef(null);
+  const shortcutLabel = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
+    ? 'Cmd+K'
+    : 'Ctrl+K';
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -60,7 +63,7 @@ export default function Topbar() {
             <button
               onClick={() => setSearchOpen(!searchOpen)}
               className="p-2 rounded-lg text-admin-muted hover:text-admin-text hover:bg-admin-elevated transition-colors"
-              title={`${t('admin.topbar.search')} (Cmd+K)`}
+              title={`${t('admin.topbar.search')} (${shortcutLabel})`}
             >
               <Search size={20} />
             </button>
@@ -84,7 +87,7 @@ export default function Topbar() {
                     />
                   </div>
                   <div className="mt-3 text-xs font-body text-admin-muted text-center">
-                    Búsqueda próximamente
+                    {t('admin.topbar.searchSoon')}
                   </div>
                 </div>
               </>

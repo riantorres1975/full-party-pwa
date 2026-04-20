@@ -223,6 +223,8 @@ export const categorias = [
 | `estado` | TEXT | Ver tabla de estados |
 | `detalles_json` | JSONB | Snapshot del carrito con precio aplicado por línea |
 | `notificado_estado` | TEXT | Último estado notificado al cliente (sincronizado por Realtime) |
+| `fecha_envio` | TIMESTAMPTZ | Fecha real de cierre cuando el pedido pasa a `Enviado` |
+| `fecha_cancelado` | TIMESTAMPTZ | Fecha real de cierre cuando el pedido pasa a `Cancelado` |
 | `created_at` | TIMESTAMPTZ | Auto |
 | `updated_at` | TIMESTAMPTZ | Auto via trigger |
 
@@ -241,6 +243,13 @@ export const categorias = [
 > ALTER TABLE public.pedidos DROP CONSTRAINT pedidos_estado_check;
 > ALTER TABLE public.pedidos ADD CONSTRAINT pedidos_estado_check
 >   CHECK (estado IN ('Por Surtir','Armando Pedido','Listo para Entrega','Enviado','Cancelado'));
+> ```
+
+> **Nota:** para bases existentes se recomienda agregar también las columnas de fecha estable para historial:
+> ```sql
+> ALTER TABLE public.pedidos
+>   ADD COLUMN IF NOT EXISTS fecha_envio TIMESTAMPTZ,
+>   ADD COLUMN IF NOT EXISTS fecha_cancelado TIMESTAMPTZ;
 > ```
 
 ### `configuracion`
@@ -308,11 +317,14 @@ El cliente ingresa su folio o teléfono y ve un stepper animado de 4 pasos: Por 
 **Pedidos:**
 - Lista en tiempo real vía Realtime (nuevos pedidos aparecen solos, actualizaciones se propagan a todas las sesiones)
 - Buscador por folio, nombre o teléfono
-- **Tablero Kanban en desktop**: 5 columnas (Por Surtir · Armando Pedido · Listo para Entrega · Enviado · Cancelado) — cada columna es scrollable, siempre visibles independientemente del filtro activo
+- Vista separada en tabs **Activos** e **Historial**
+- **Activos (Kanban):** 3 columnas (Por Surtir · Armando Pedido · Listo para Entrega)
+- **Historial (DataTable):** estados Enviado/Cancelado con filtros, rango de fecha y export CSV
 - Click en cualquier card abre modal con el detalle completo del pedido
 - Cambio de estado con actualización optimista
 - Notificación al cliente por WhatsApp sincronizada entre sesiones (se desactiva tras enviar, se reactiva al cambiar estado)
 - Mensaje de WhatsApp adaptado según tipo de entrega (envío a domicilio vs recoger en tienda)
+- Fechas de historial estables con `fecha_envio`/`fecha_cancelado` cuando están disponibles
 - Botón **"Copiar datos para repartidor"** en pedidos con envío listos: copia nombre, teléfono, dirección y total al portapapeles
 
 **Picking (modo "Armando Pedido"):**
@@ -328,7 +340,7 @@ El cliente ingresa su folio o teléfono y ve un stepper animado de 4 pasos: Por 
 - Requiere confirmación antes de cancelar
 - Notifica al cliente por WhatsApp
 - Si el pedido ya estaba en "Listo para Entrega", restaura el stock automáticamente
-- La tarjeta queda en solo lectura con badge "Cancelado"
+- El pedido pasa al tab Historial con estado "Cancelado"
 
 **Mensajes de WhatsApp por estado:**
 
@@ -359,6 +371,20 @@ El cliente ingresa su folio o teléfono y ve un stepper animado de 4 pasos: Por 
 - Gestión de categorías, marcas y tamaños: renombrar y eliminar en cascada desde modales
 - Editor de anuncio: textarea con máx 200 caracteres, toggle activo/inactivo, guarda en tabla `configuracion`
 
+### Dashboard (`/admin/dashboard`)
+
+- KPIs de ingresos, pedidos, ticket promedio y clientes únicos
+- Presets de periodo (`Hoy`, `7 días`, `30 días`, `90 días`, `Personalizado`), por defecto `Hoy`
+- Gráficas de ventas por día y pedidos por estado
+- Módulos de top productos y últimos pedidos con folio real
+
+### Clientes (`/admin/clientes`)
+
+- Tabla agregada por cliente (pedidos, gasto total, último pedido)
+- Drawer de detalle con historial de pedidos clickable
+- Edición inline de nombre/teléfono (persistida sobre pedidos existentes)
+- Método de entrega mostrado desde el pedido más reciente no cancelado
+
 ### PWA
 
 - Instalable en Android e iOS
@@ -383,8 +409,16 @@ El cliente ingresa su folio o teléfono y ve un stepper animado de 4 pasos: Por 
 | `/` | Landing Page pública | Libre |
 | `/catalogo` | Catálogo de productos | Libre |
 | `/catalogo/:categoria` | Catálogo filtrado | Libre |
-| `/admin` | Pedidos | Requiere sesión + email en `VITE_ADMIN_EMAILS` |
+| `/admin` | Redirect a `dashboard` o `pedidos` según permisos | Requiere sesión + email en `VITE_ADMIN_EMAILS` |
+| `/admin/dashboard` | Dashboard admin | Requiere sesión + permiso `reportes.view` |
+| `/admin/pedidos` | Pedidos admin | Requiere sesión + email en `VITE_ADMIN_EMAILS` |
 | `/admin/catalogo` | Catálogo admin | Requiere sesión + email en `VITE_ADMIN_EMAILS` |
+| `/admin/clientes` | Clientes admin | Requiere sesión + permiso `clientes.view` |
+| `/sucursales` | Página de sucursales | Libre |
+| `/como-funciona` | Página informativa de compra | Libre |
+| `/destacados` | Categorías destacadas | Libre |
+| `/blog` | Blog | Libre |
+| `/blog/:slug` | Artículo del blog | Libre |
 
 Routing con React Router DOM v7 (BrowserRouter). El archivo `vercel.json` incluye el rewrite SPA necesario para que las rutas funcionen en Vercel.
 

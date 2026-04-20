@@ -88,7 +88,7 @@ export default function TarjetaPedido({ pedido, onCambiarEstado, actualizando, n
           }`}
         >
           {copiado ? <Check size={15} /> : <Copy size={15} />}
-          {copiado ? 'Datos copiados' : 'Copiar datos para repartidor'}
+          {copiado ? t('admin.orders.deliveryDataCopied') : t('admin.orders.copyDeliveryData')}
         </button>
       )}
 

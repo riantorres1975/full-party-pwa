@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 
 export function useDataTable({ data = [], pageSize = 25, onSortChange, onFilterChange }) {
   const [sortKey, setSortKey] = useState(null);
@@ -10,6 +10,7 @@ export function useDataTable({ data = [], pageSize = 25, onSortChange, onFilterC
 
   // Cyclical sort: none -> asc -> desc -> none
   const setSort = useCallback((key) => {
+    setPage(0);
     if (sortKey === key) {
       if (sortDir === 'asc') setSortDir('desc');
       else if (sortDir === 'desc') {
@@ -39,6 +40,28 @@ export function useDataTable({ data = [], pageSize = 25, onSortChange, onFilterC
   }, []);
 
   const clearSelection = useCallback(() => setSelection(new Set()), []);
+
+  const setSearchValue = useCallback((value) => {
+    setPage(0);
+    setSearch(value);
+  }, []);
+
+  const setFiltersValue = useCallback((value) => {
+    setPage(0);
+    setFilters(value);
+  }, []);
+
+  useEffect(() => {
+    if (typeof onSortChange === 'function') {
+      onSortChange({ key: sortKey, direction: sortKey ? sortDir : null });
+    }
+  }, [sortKey, sortDir, onSortChange]);
+
+  useEffect(() => {
+    if (typeof onFilterChange === 'function') {
+      onFilterChange({ search, filters });
+    }
+  }, [search, filters, onFilterChange]);
 
   // Process: filter (search + custom filters) -> sort -> paginate
   const processedData = useMemo(() => {
@@ -81,11 +104,12 @@ export function useDataTable({ data = [], pageSize = 25, onSortChange, onFilterC
     }
 
     // Pagination
-    const totalPages = Math.ceil(result.length / pageSize);
-    const safePage = Math.min(page, totalPages - 1);
-    if (safePage !== page) setPage(safePage);
+    const totalPages = result.length === 0 ? 0 : Math.ceil(result.length / pageSize);
+    const safePage = totalPages === 0 ? 0 : Math.min(page, totalPages - 1);
 
-    const paginated = result.slice(safePage * pageSize, (safePage + 1) * pageSize);
+    const paginated = totalPages === 0
+      ? []
+      : result.slice(safePage * pageSize, (safePage + 1) * pageSize);
 
     return {
       all: result,
@@ -95,6 +119,12 @@ export function useDataTable({ data = [], pageSize = 25, onSortChange, onFilterC
       total: result.length,
     };
   }, [data, search, filters, sortKey, sortDir, page, pageSize]);
+
+  useEffect(() => {
+    if (page !== processedData.currentPage) {
+      setPage(processedData.currentPage);
+    }
+  }, [page, processedData.currentPage]);
 
   return {
     // State
@@ -107,12 +137,12 @@ export function useDataTable({ data = [], pageSize = 25, onSortChange, onFilterC
 
     // Setters
     setSort,
-    setSearch,
+    setSearch: setSearchValue,
     setPage,
     toggleRow,
     toggleAll,
     clearSelection,
-    setFilters,
+    setFilters: setFiltersValue,
 
     // Computed
     processedData,
