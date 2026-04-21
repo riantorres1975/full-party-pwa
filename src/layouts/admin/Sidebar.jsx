@@ -126,11 +126,11 @@ export default function Sidebar({ user, collapsed, onToggle, onSignOut, temaOscu
             collapsed={collapsed}
           />
           <SidebarItem
-            href="#"
+            href="/admin/tienda"
             icon={Settings}
             label={t('admin.nav.store')}
-            disabled
-            tooltip={disabledTooltip}
+            disabled={!canViewUsers}
+            tooltip={!canViewUsers ? t('admin.noPermission') : undefined}
             collapsed={collapsed}
           />
         </SidebarSection>
