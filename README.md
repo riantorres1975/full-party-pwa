@@ -328,13 +328,14 @@ El cliente ingresa su folio o teléfono y ve un stepper animado de 4 pasos: Por 
 - Botón **"Copiar datos para repartidor"** en pedidos con envío listos: copia nombre, teléfono, dirección y total al portapapeles
 
 **Picking (modo "Armando Pedido"):**
-- Fila compacta: checkbox · imagen · nombre · controles +/− · subtotal en una sola línea
-- Controles +/− integrados en la fila, solo visibles cuando la cantidad es >1 y el artículo está marcado
-- Progress bar que avanza al surtir
-- Artículos pendientes se muestran primero, los surtidos al final
-- Si se desmarca un artículo se marca como faltante y se actualiza `activo = false` en el catálogo
-- Panel de totales dinámico con descuento por faltantes
-- Botón "Pasar a Listo" hace todo en un solo UPDATE: cambia estado, guarda total ajustado, persiste `encontrado` por artículo y abre WhatsApp con detalle
+- **Modo guiado mobile-first:** muestra 1 producto activo a la vez para surtir más rápido
+- Auto-avance al siguiente pendiente al confirmar completo, parcial o no surtido
+- Feedback inmediato `✓ Guardado` antes del salto de producto
+- Reglas de acción por cantidad: solo 1 CTA principal visible por paso (completo/parcial/no surtido)
+- Progress bar + texto `Paso X de Y` sin contadores duplicados
+- Vista secundaria **"Ver todos los productos"** en formato resumen compacto (escaneable, con estado y subtotal por fila)
+- Bloque final con total ajustado por faltantes y CTA principal para cerrar picking
+- Al confirmar cierre: cambia estado, guarda total ajustado, persiste cantidades surtidas y abre WhatsApp con detalle
 
 **Cancelación:**
 - Requiere confirmación antes de cancelar
