@@ -18,11 +18,13 @@ React 18 + Vite 7 + Tailwind CSS + Supabase (PostgreSQL, Auth, Storage, Realtime
 
 ### Routing
 
-Hash-based routing in `src/AppRouter.jsx` — no router library. Two routes:
-- `/` → public catalog (`App.jsx`)
-- `/#/admin` → admin dashboard (lazy-loaded `AdminPedidos.jsx`)
+React Router DOM v7 (BrowserRouter) in `src/AppRouter.jsx`. Main routes:
+- `/` → Landing Page (`LandingPage.jsx`)
+- `/catalogo` → public catalog (`App.jsx`)
+- `/admin/*` → admin panel (lazy-loaded, multiple sub-routes)
+- `/registro` → public registration by invite token
 
-Admin access is gated by Supabase Auth session + `VITE_ADMIN_EMAILS` allowlist.
+Admin access gated by Supabase Auth session + RBAC via `PermissionsContext` (reads role from `profiles` table). `VITE_ADMIN_EMAILS` is a secondary allowlist. `vercel.json` includes the SPA rewrite so all routes resolve to `index.html`.
 
 ### Data flow
 
