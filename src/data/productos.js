@@ -28,6 +28,36 @@ export function registrarCategoria(categoriaTexto) {
   return limpia;
 }
 
+export function actualizarCategoria(categoriaActual, categoriaNueva) {
+  const actual = String(categoriaActual || '').trim();
+  const nueva = String(categoriaNueva || '').trim();
+  if (!actual || !nueva) return null;
+
+  const idx = categorias.findIndex(c => String(c.id || '').trim() === actual);
+  if (idx < 0) return null;
+
+  const existente = categorias.find(c =>
+    String(c.id || '').trim().toLowerCase() === nueva.toLowerCase() ||
+    String(c.label || '').trim().toLowerCase() === nueva.toLowerCase()
+  );
+
+  if (existente && String(existente.id || '').trim() !== actual) {
+    return existente.id;
+  }
+
+  categorias[idx] = { id: nueva, label: nueva };
+  return nueva;
+}
+
+export function eliminarCategoria(categoriaId) {
+  const id = String(categoriaId || '').trim();
+  if (!id) return false;
+  const idx = categorias.findIndex(c => String(c.id || '').trim() === id);
+  if (idx < 0) return false;
+  categorias.splice(idx, 1);
+  return true;
+}
+
 export function registrarMarca(marcaTexto) {
   const limpia = String(marcaTexto || '').trim();
   if (!limpia) return null;
@@ -39,6 +69,30 @@ export function registrarMarca(marcaTexto) {
   return limpia;
 }
 
+export function actualizarMarca(marcaActual, marcaNueva) {
+  const actual = String(marcaActual || '').trim();
+  const nueva = String(marcaNueva || '').trim();
+  if (!actual || !nueva) return null;
+
+  const idx = marcas.findIndex(m => String(m || '').trim() === actual);
+  if (idx < 0) return null;
+
+  const existente = marcas.find(m => String(m || '').trim().toLowerCase() === nueva.toLowerCase());
+  if (existente && String(existente || '').trim() !== actual) return existente;
+
+  marcas[idx] = nueva;
+  return nueva;
+}
+
+export function eliminarMarca(marcaId) {
+  const id = String(marcaId || '').trim();
+  if (!id) return false;
+  const idx = marcas.findIndex(m => String(m || '').trim() === id);
+  if (idx < 0) return false;
+  marcas.splice(idx, 1);
+  return true;
+}
+
 export function registrarTamano(tamanoTexto) {
   const limpia = String(tamanoTexto || '').trim();
   if (!limpia) return null;
@@ -48,6 +102,30 @@ export function registrarTamano(tamanoTexto) {
 
   tamanios.push(limpia);
   return limpia;
+}
+
+export function actualizarTamano(tamanoActual, tamanoNuevo) {
+  const actual = String(tamanoActual || '').trim();
+  const nuevo = String(tamanoNuevo || '').trim();
+  if (!actual || !nuevo) return null;
+
+  const idx = tamanios.findIndex(t => String(t || '').trim() === actual);
+  if (idx < 0) return null;
+
+  const existente = tamanios.find(t => String(t || '').trim().toLowerCase() === nuevo.toLowerCase());
+  if (existente && String(existente || '').trim() !== actual) return existente;
+
+  tamanios[idx] = nuevo;
+  return nuevo;
+}
+
+export function eliminarTamano(tamanoId) {
+  const id = String(tamanoId || '').trim();
+  if (!id) return false;
+  const idx = tamanios.findIndex(t => String(t || '').trim() === id);
+  if (idx < 0) return false;
+  tamanios.splice(idx, 1);
+  return true;
 }
 
 export const marcas = [];

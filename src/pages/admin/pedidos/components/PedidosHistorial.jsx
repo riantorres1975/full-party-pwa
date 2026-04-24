@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Download, MoreVertical, Eye, MessageCircle, Trash2, Copy } from 'lucide-react';
+import { Download, MoreVertical, Eye, MessageCircle, Trash2, Copy, Truck, Store, CheckCircle, Smartphone, Banknote, CreditCard, MoreHorizontal } from 'lucide-react';
 import { useLanguage } from '../../../../hooks/useLanguage';
 import { useAdminData } from '../../../../contexts/AdminDataContext';
 import Can from '../../../../components/auth/Can';
@@ -7,7 +7,74 @@ import { DataTable } from '../../../../components/admin/DataTable';
 import { useHistorialPedidos } from '../hooks/useHistorialPedidos';
 import { maskPhone } from '../../../../utils/formatters';
 import { ESTADO_META, estadoLabel } from '../../../../lib/estadoMeta';
+import { SIMBOLO_MONEDA } from '../../../../data/productos';
 import ModalDetallePedido from './ModalDetallePedido';
+
+const METODOS_ICONO = { transferencia: Smartphone, efectivo: Banknote, tarjeta: CreditCard, otro: MoreHorizontal };
+
+function TarjetaHistorial({ pedido, onTap, getFechaHistorial, lang }) {
+  const meta = ESTADO_META[pedido.estado] ?? ESTADO_META['Enviado'];
+  const MetodoIcon = pedido.metodo_pago ? (METODOS_ICONO[pedido.metodo_pago] || MoreHorizontal) : null;
+  const fechaHistorial = getFechaHistorial(pedido);
+  const fechaStr = fechaHistorial
+    ? fechaHistorial.toLocaleDateString(lang === 'en' ? 'en-US' : 'es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+    : '—';
+
+  return (
+    <button
+      onClick={onTap}
+      className="w-full text-left bg-admin-card rounded-2xl border border-admin-border overflow-hidden active:scale-[0.98] transition-all shadow-card"
+    >
+      {/* Banda de color */}
+      <div className="h-1 w-full" style={{ background: meta.color }} />
+
+      <div className="px-3 py-2.5 flex items-center gap-3">
+        {/* Ícono de estado */}
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: meta.bg }}
+        >
+          <meta.icon size={16} style={{ color: meta.color }} />
+        </div>
+
+        {/* Info principal */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-body font-black text-sm text-admin-text">{pedido.folio}</span>
+            <span className="text-[11px] font-body text-admin-muted">{fechaStr}</span>
+          </div>
+          <p className="text-xs font-body text-admin-muted truncate">{pedido.cliente_nombre}</p>
+          <div className="flex items-center gap-2 mt-0.5">
+            {pedido.tipo_entrega === 'envio'
+              ? <Truck size={10} className="text-admin-muted flex-shrink-0" />
+              : <Store size={10} className="text-admin-muted flex-shrink-0" />
+            }
+            <span className="text-[11px] font-body text-admin-muted">{maskPhone(pedido.cliente_telefono)}</span>
+          </div>
+        </div>
+
+        {/* Total + pago */}
+        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+          <span className="font-body font-black text-base" style={{ color: meta.color }}>
+            {SIMBOLO_MONEDA}{Number(pedido.total).toFixed(0)}
+          </span>
+          {pedido.pago_estado === 'confirmado' ? (
+            <span
+              className="flex items-center gap-0.5 text-[10px] font-body font-bold px-1.5 py-0.5 rounded-lg"
+              style={{ background: '#16a34a15', color: '#16a34a' }}
+            >
+              <CheckCircle size={9} />
+              {MetodoIcon ? <MetodoIcon size={9} /> : null}
+              Pagado
+            </span>
+          ) : (
+            <span className="text-[10px] font-body text-admin-muted">Sin pago</span>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}
 
 export default function PedidosHistorial() {
   const { t, lang } = useLanguage();
@@ -311,17 +378,36 @@ export default function PedidosHistorial() {
         )}
       </div>
 
-      {/* DataTable */}
-      <DataTable
-        columns={columnas}
-        data={filtered}
-        loading={false}
-        onRowClick={(pedido) => setPedidoModal(pedido)}
-        emptyState={{
-          title: t('admin.orders.history.empty.title'),
-          description: t('admin.orders.history.empty.desc'),
-        }}
-      />
+      {/* Mobile: tarjetas compactas */}
+      <div className="lg:hidden space-y-2 mt-2">
+        {filtered.length === 0 ? (
+          <p className="text-center text-sm text-admin-muted py-10">{t('admin.orders.history.empty.title')}</p>
+        ) : (
+          filtered.map(pedido => (
+            <TarjetaHistorial
+              key={pedido.id}
+              pedido={pedido}
+              onTap={() => setPedidoModal(pedido)}
+              getFechaHistorial={getFechaHistorial}
+              lang={lang}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Desktop: tabla */}
+      <div className="hidden lg:block">
+        <DataTable
+          columns={columnas}
+          data={filtered}
+          loading={false}
+          onRowClick={(pedido) => setPedidoModal(pedido)}
+          emptyState={{
+            title: t('admin.orders.history.empty.title'),
+            description: t('admin.orders.history.empty.desc'),
+          }}
+        />
+      </div>
     </>
   );
 }
