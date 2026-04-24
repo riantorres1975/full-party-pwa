@@ -3,9 +3,10 @@ import { Search } from 'lucide-react';
 import { useAdminData } from '../../../../contexts/AdminDataContext';
 import { useBreadcrumb } from '../../../../contexts/BreadcrumbContext';
 import { useLanguage } from '../../../../hooks/useLanguage';
-import { ESTADOS_ACTIVOS, estadoLabel } from '../../../../lib/estadoMeta';
+import { ESTADOS_ACTIVOS, ESTADO_META, estadoLabel } from '../../../../lib/estadoMeta';
 import ColumnaKanban from './ColumnaKanban';
 import TarjetaPedido from './TarjetaPedido';
+import TarjetaPedidoMobile from './TarjetaPedidoMobile';
 import ModalDetallePedido from './ModalDetallePedido';
 
 export default function PedidosActivos({ busquedaInput, setBusquedaInput, busquedaDebounced, setBusqueda }) {
@@ -17,7 +18,7 @@ export default function PedidosActivos({ busquedaInput, setBusquedaInput, busque
     setFiltroEstado,
     notificando,
     pedidosPorBusqueda,
-    cambiarEstado, cancelarPedido, notificar,
+    cambiarEstado, cancelarPedido, notificar, confirmarPagoPedido,
   } = useAdminData();
 
   useEffect(() => { setBusqueda(busquedaDebounced); }, [busquedaDebounced, setBusqueda]);
@@ -42,6 +43,7 @@ export default function PedidosActivos({ busquedaInput, setBusquedaInput, busque
           notificando={notificando}
           onNotificar={notificar}
           onCancelar={cancelarPedido}
+          onConfirmarPago={confirmarPagoPedido}
           setPedidos={setPedidos}
           setFiltroEstado={setFiltroEstado}
         />
@@ -73,43 +75,48 @@ export default function PedidosActivos({ busquedaInput, setBusquedaInput, busque
         )}
       </div>
 
-      {/* Mobile: stacked sections by estado */}
-      <div className="lg:hidden space-y-4 pb-6" aria-live="polite">
+      {/* Mobile: secciones compactas por estado */}
+      <div className="lg:hidden space-y-3 pb-6" aria-live="polite">
         {ESTADOS_ACTIVOS.map(estado => {
+          const meta = ESTADO_META[estado];
           const pedidosDelEstado = pedidosPorBusqueda.filter(p => p.estado === estado);
           return (
-            <section key={estado} className="border border-admin-border rounded-lg overflow-hidden">
-              {/* Estado header */}
-              <div className="bg-admin-elevated px-4 py-3 border-b border-admin-border">
-                <h3 className="text-xs font-body font-bold text-admin-muted uppercase tracking-wider">
-                  {estadoLabel(estado, t)} · {pedidosDelEstado.length}
+            <section key={estado}>
+              {/* Header con color del estado */}
+              <div
+                className="flex items-center justify-between px-3 py-2 rounded-xl mb-2"
+                style={{ background: meta.bg, border: `1px solid ${meta.color}33` }}
+              >
+                <h3 className="text-xs font-body font-black flex items-center gap-1.5" style={{ color: meta.color }}>
+                  <meta.icon size={13} />
+                  {estadoLabel(estado, t)}
                 </h3>
+                <span
+                  className="text-xs font-body font-black px-2 py-0.5 rounded-full"
+                  style={{ background: meta.color, color: 'white' }}
+                >
+                  {pedidosDelEstado.length}
+                </span>
               </div>
-              {/* Pedidos list */}
-              <div className="p-3 space-y-2">
-                {pedidosDelEstado.length === 0 ? (
-                  <div className="py-6 text-center text-xs text-admin-muted">
-                    {t('common.noOrders')}
-                  </div>
-                ) : (
-                  pedidosDelEstado.map(pedido => (
-                    <TarjetaPedido
+
+              {pedidosDelEstado.length === 0 ? (
+                <p className="text-center text-xs text-admin-muted py-3">{t('common.noOrders')}</p>
+              ) : (
+                <div className="space-y-2">
+                  {pedidosDelEstado.map(pedido => (
+                    <TarjetaPedidoMobile
                       key={pedido.id}
                       pedido={pedido}
-                      onCambiarEstado={cambiarEstadoYFiltrar}
                       actualizando={actualizando}
-                      notificando={notificando === pedido.id}
+                      notificando={notificando}
+                      onCambiarEstado={cambiarEstadoYFiltrar}
                       onNotificar={notificar}
-                      onCancelar={cancelarPedido}
-                      onPickingListo={(pedidoActualizado) => {
-                        setPedidos(prev => prev.map(p => p.id === pedidoActualizado.id ? pedidoActualizado : p));
-                        setFiltroEstado('Listo para Entrega');
-                      }}
-                      esDesktop={false}
+                      onConfirmarPago={confirmarPagoPedido}
+                      onTap={() => setPedidoModal(pedido)}
                     />
-                  ))
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </section>
           );
         })}

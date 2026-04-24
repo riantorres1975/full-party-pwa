@@ -74,11 +74,11 @@ export default function Sidebar({ user, collapsed, onToggle, onSignOut, temaOscu
             collapsed={collapsed}
           />
           <SidebarItem
-            href="#"
+            href="/admin/pagos"
             icon={CreditCard}
             label={t('admin.nav.payments')}
-            disabled
-            tooltip={disabledTooltip}
+            disabled={!canViewClients}
+            tooltip={!canViewClients ? t('admin.noPermission') : undefined}
             collapsed={collapsed}
           />
         </SidebarSection>

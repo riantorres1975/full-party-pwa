@@ -3,21 +3,21 @@ import {
   categorias,
   marcas,
   tamanios,
-  SIMBOLO_MONEDA,
   registrarCategoria,
   registrarMarca,
   registrarTamano,
+  actualizarCategoria,
+  actualizarMarca,
+  actualizarTamano,
+  eliminarCategoria,
+  eliminarMarca,
+  eliminarTamano,
 } from '../data/productos';
 import { insertarProducto } from '../lib/productosAdmin';
 import SelectCategoria from './SelectCategoria';
 import GestorPrecios from './GestorPrecios';
 import Toggle from './ui/Toggle';
-import {
-  useProductForm,
-  CATEGORIA_NUEVA_ID,
-  MARCA_NUEVA_ID,
-  TAMANO_NUEVO_ID,
-} from '../hooks/useProductForm';
+import { useProductForm } from '../hooks/useProductForm';
 import { useLanguage } from '../hooks/useLanguage';
 
 
@@ -27,9 +27,9 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
   const form = useProductForm(null);
   const {
     nombre, setNombre, descripcion, setDescripcion,
-    categoria, setCategoria, categoriaNueva, setCategoriaNueva,
-    marca, setMarca, marcaNueva, setMarcaNueva,
-    tamano, setTamano, tamanoNuevo, setTamanoNuevo,
+    categoria, setCategoria,
+    marca, setMarca,
+    tamano, setTamano,
     disponible, setDisponible, esNuevo, setEsNuevo,
     imagenUrl, setImagenUrl, archivo, setArchivo, fileRef,
     stockIlimitado, setStockIlimitado, stockActual, setStockActual,
@@ -50,9 +50,9 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
       const payload = await buildPayload();
       await insertarProducto(payload);
 
-      if (categoria === CATEGORIA_NUEVA_ID && payload.categoria) registrarCategoria(payload.categoria);
-      if (marca === MARCA_NUEVA_ID && payload.marca) registrarMarca(payload.marca);
-      if (tamano === TAMANO_NUEVO_ID && payload.tamano) registrarTamano(payload.tamano);
+      if (payload.categoria) registrarCategoria(payload.categoria);
+      if (payload.marca) registrarMarca(payload.marca);
+      if (payload.tamano) registrarTamano(payload.tamano);
 
       setExito(true);
       reset();
@@ -219,26 +219,13 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                   <SelectCategoria
                     id="fp-cat"
                     value={categoria}
-                    onChange={value => {
-                      setCategoria(value);
-                      if (value !== CATEGORIA_NUEVA_ID) setCategoriaNueva('');
-                    }}
-                    lista={[
-                      ...categorias,
-                       { id: CATEGORIA_NUEVA_ID, label: t('admin.form.addNewOption') },
-                    ]}
+                    onChange={setCategoria}
+                    lista={categorias}
+                    onCreateOption={registrarCategoria}
+                    onRenameOption={actualizarCategoria}
+                    onDeleteOption={eliminarCategoria}
+                    searchPlaceholder="Buscar o agregar categoría"
                   />
-                  {categoria === CATEGORIA_NUEVA_ID && (
-                    <input
-                      type="text"
-                      value={categoriaNueva}
-                      onChange={e => setCategoriaNueva(e.target.value)}
-                      placeholder="Ej. Novedades"
-                      className="w-full mt-2 bg-ink-50 border border-transparent rounded-lg px-3 py-2 text-sm font-medium text-ink-900 focus:border-ink-400 focus:ring-1 focus:ring-ink-200"
-                      maxLength={80}
-                      autoFocus
-                    />
-                  )}
                 </div>
 
                 <div className="col-span-full md:col-span-2">
@@ -248,26 +235,17 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                   <SelectCategoria
                     id="fp-marca"
                     value={marca}
-                    onChange={value => {
-                      setMarca(value);
-                      if (value !== MARCA_NUEVA_ID) setMarcaNueva('');
-                    }}
+                    onChange={setMarca}
                     lista={[
                        { id: '', label: t('admin.catalog.noBrand') },
                       ...marcas.map(m => ({ id: m, label: m })),
-                       { id: MARCA_NUEVA_ID, label: t('admin.form.addNewOption') },
                     ]}
+                    onCreateOption={registrarMarca}
+                    onRenameOption={actualizarMarca}
+                    onDeleteOption={eliminarMarca}
+                    isOptionEditable={(item) => item.id !== ''}
+                    searchPlaceholder="Buscar o agregar marca"
                   />
-                  {marca === MARCA_NUEVA_ID && (
-                    <input
-                      type="text"
-                      value={marcaNueva}
-                      onChange={e => setMarcaNueva(e.target.value)}
-                      placeholder="Nueva marca"
-                      className="w-full mt-2 bg-ink-50 border border-transparent rounded-lg px-3 py-2 text-sm font-medium focus:border-ink-400 focus:ring-1 focus:ring-ink-200"
-                      autoFocus
-                    />
-                  )}
                 </div>
 
                 <div className="col-span-full md:col-span-2">
@@ -277,26 +255,17 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                   <SelectCategoria
                     id="fp-tamano"
                     value={tamano}
-                    onChange={value => {
-                      setTamano(value);
-                      if (value !== TAMANO_NUEVO_ID) setTamanoNuevo('');
-                    }}
+                    onChange={setTamano}
                     lista={[
                        { id: '', label: t('admin.catalog.noSize') },
                       ...tamanios.map(t => ({ id: t, label: t })),
-                       { id: TAMANO_NUEVO_ID, label: t('admin.form.addNewOption') },
                     ]}
+                    onCreateOption={registrarTamano}
+                    onRenameOption={actualizarTamano}
+                    onDeleteOption={eliminarTamano}
+                    isOptionEditable={(item) => item.id !== ''}
+                    searchPlaceholder="Buscar o agregar tamaño"
                   />
-                  {tamano === TAMANO_NUEVO_ID && (
-                     <input
-                      type="text"
-                      value={tamanoNuevo}
-                      onChange={e => setTamanoNuevo(e.target.value)}
-                      placeholder="Nuevo tamaño"
-                      className="w-full mt-2 bg-ink-50 border border-transparent rounded-lg px-3 py-2 text-sm font-medium focus:border-ink-400 focus:ring-1 focus:ring-ink-200"
-                      autoFocus
-                    />
-                  )}
                 </div>
 
                 {/* Fila 5: Inventario */}

@@ -5,7 +5,7 @@ import { notificarCliente } from '../utils/whatsapp';
 
 const ESTADOS = ['Por Surtir', 'Armando Pedido', 'Listo para Entrega', 'Enviado'];
 const ESTADOS_CON_CANCELADO = [...ESTADOS, 'Cancelado'];
-const PEDIDOS_SELECT_BASE = 'id,folio,cliente_nombre,cliente_telefono,tipo_entrega,direccion,total,estado,detalles_json,notificado_estado,created_at,updated_at';
+const PEDIDOS_SELECT_BASE = 'id,folio,cliente_nombre,cliente_telefono,tipo_entrega,direccion,total,estado,pago_estado,metodo_pago,detalles_json,notificado_estado,created_at,updated_at';
 const PEDIDOS_SELECT_CON_FECHAS_HISTORIAL = `${PEDIDOS_SELECT_BASE},fecha_envio,fecha_cancelado`;
 
 function esErrorColumnasFechaHistorial(error) {
@@ -212,6 +212,23 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
     }
   }, [pedidosFiltrados, pedidoSeleccionadoId]);
 
+  // ── Confirmar pago de un pedido ────────────────────────────────
+  const confirmarPagoPedido = useCallback(async (pedidoId, { metodo_pago } = {}) => {
+    const { error: err } = await supabase
+      .from('pedidos')
+      .update({ pago_estado: 'confirmado', metodo_pago: metodo_pago || null, pago_fecha: new Date().toISOString() })
+      .eq('id', pedidoId);
+    if (err) {
+      toast.error('Error al confirmar pago: ' + err.message);
+      return false;
+    }
+    setPedidos(prev => prev.map(p =>
+      p.id === pedidoId ? { ...p, pago_estado: 'confirmado', metodo_pago: metodo_pago || p.metodo_pago } : p
+    ));
+    toast.success('Pago confirmado');
+    return true;
+  }, [toast]);
+
   // ── Cambiar estado (solo avance secuencial) ────────────────────
   const cambiarEstado = useCallback(async (pedidoId, nuevoEstado) => {
     const pedido = pedidos.find(p => p.id === pedidoId);
@@ -220,6 +237,10 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
       const idxNuevo  = ESTADOS.indexOf(nuevoEstado);
       if (idxNuevo !== idxActual + 1) {
         toast.error('Solo puedes avanzar al siguiente estado');
+        return;
+      }
+      if (nuevoEstado === 'Enviado' && pedido.pago_estado !== 'confirmado') {
+        toast.error('Confirma el pago antes de marcar como Enviado');
         return;
       }
     }
@@ -322,7 +343,7 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
     pedidoSeleccionadoId, setPedidoSeleccionadoId,
     fetchPedidos, pedidosFiltrados, contadores,
     pedidoSeleccionado, pedidosPorBusqueda,
-    cambiarEstado, cancelarPedido, notificar,
+    cambiarEstado, cancelarPedido, notificar, confirmarPagoPedido,
     notificationPermission, requestNotificationPermission, testNotification,
   };
 }
