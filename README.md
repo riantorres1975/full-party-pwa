@@ -13,7 +13,7 @@ PWA para tienda de artículos de fiesta. El cliente navega el catálogo, arma su
 | Tailwind CSS | 3.4 | Estilos |
 | Supabase JS | 2.98 | Base de datos, Auth y Realtime |
 | lucide-react | latest | Íconos |
-| React Router DOM | 7 | Routing por pathname (BrowserRouter) |
+| React Router DOM | 7 | Routing BrowserRouter (pathname) |
 | Service Worker | — | PWA, cache offline |
 
 ---
@@ -33,62 +33,95 @@ PWA para tienda de artículos de fiesta. El cliente navega el catálogo, arma su
 │
 └── src/
     ├── main.jsx                ← entry point + registro SW
-    ├── AppRouter.jsx           ← BrowserRouter + Routes
+    ├── AppRouter.jsx           ← BrowserRouter + Routes + meta SEO
     ├── App.jsx                 ← catálogo público
     │
     ├── lib/
     │   ├── supabase.js         ← cliente singleton
     │   ├── supabaseGuard.js    ← manejo de sesión expirada
-    │   └── configAdmin.js      ← lectura/escritura de configuracion
+    │   ├── configAdmin.js      ← lectura/escritura de configuracion
+    │   ├── permissions.js      ← definición de permisos por recurso
+    │   ├── roles.js            ← roles disponibles (owner, admin, staff…)
+    │   └── estadoMeta.js       ← colores y etiquetas de estado de pedido
     │
     ├── data/
-    │   └── productos.js        ← categorías, marcas, tamaños y moneda
+    │   └── articulos.js        ← categorías, marcas, tamaños y moneda
+    │
+    ├── contexts/
+    │   ├── AdminDataContext.jsx ← datos compartidos del panel admin
+    │   ├── BreadcrumbContext.jsx← breadcrumb global
+    │   └── PermissionsContext.jsx← rol y permisos del usuario activo
     │
     ├── hooks/
     │   ├── useAuth.js          ← login/logout
     │   ├── useCarrito.js       ← carrito con localStorage y mayoreo
     │   ├── useLanguage.jsx     ← i18n ES/EN
+    │   ├── usePermission.js    ← can(action, resource) basado en PermissionsContext
     │   ├── useConfirm.js       ← modal de confirmación
     │   ├── useDebounce.js      ← debounce para búsquedas
     │   ├── useInfiniteScroll.js← carga progresiva
     │   ├── usePedido.js        ← crear y buscar pedidos
-    │   ├── usePedidosAdmin.js  ← panel de pedidos completo
-    │   ├── useProductForm.js   ← formulario crear/editar producto
     │   ├── useProductos.js     ← productos con Realtime
     │   ├── useAnuncio.js       ← leer anuncio activo
+    │   ├── useTheme.js         ← dark/light mode
     │   └── usePWA.js           ← prompt de instalación
     │
     ├── utils/
     │   ├── precios.js          ← precio por mayoreo
     │   ├── validarTelefono.js  ← ladas mexicanas (IFT)
-    │   └── whatsapp.js         ← genera mensaje de WhatsApp
+    │   ├── whatsapp.js         ← genera mensaje de WhatsApp
+    │   ├── formatters.js       ← formato de moneda, fecha, etc.
+    │   ├── imagenes.js         ← optimización de imágenes en cliente
+    │   └── normalizar.js       ← normalización de texto para búsquedas
     │
-    ├── i18n/
-    │   ├── es.json             ← textos en español
-    │   └── en.json             ← textos en inglés
+    ├── layouts/
+    │   └── admin/
+    │       ├── SidebarItem.jsx
+    │       ├── SidebarSection.jsx
+    │       ├── Topbar.jsx
+    │       └── UserMenu.jsx
     │
-    ├── __tests__/
-    │   └── seguridad.test.mjs  ← 52 tests de seguridad
+    ├── pages/
+    │   ├── LandingPage.jsx
+    │   ├── Sucursales.jsx
+    │   ├── ComoFunciona.jsx
+    │   ├── Destacados.jsx
+    │   ├── Blog.jsx
+    │   ├── BlogArticulo.jsx
+    │   └── admin/
+    │       ├── PedidosPage.jsx
+    │       ├── CatalogoPage.jsx
+    │       ├── dashboard/      ← KPIs, gráficas, top productos
+    │       ├── pedidos/        ← Kanban, historial, picking, modal detalle
+    │       ├── clientes/       ← tabla, drawer de historial, edición inline
+    │       ├── inventario/     ← control de stock en tiempo real
+    │       ├── usuarios/       ← gestión de roles e invitaciones
+    │       ├── reportes/       ← analítica anual de ventas
+    │       ├── tienda/         ← configuración de datos de la tienda
+    │       ├── pagos/          ← flujo de confirmación de pagos
+    │       └── registro/       ← página pública de registro por token
     │
     └── components/
         ├── Header.jsx
         ├── LanguageToggle.jsx
+        ├── ThemeToggle.jsx
         ├── BuscadorFiltros.jsx
+        ├── SidebarFiltrosDesktop.jsx
         ├── ModalFiltros.jsx
         ├── ProductGrid.jsx
         ├── ProductCard.jsx
+        ├── OptimizedImage.jsx
         ├── ProductosSkeleton.jsx
         ├── FloatingCartButton.jsx
         ├── CarritoDrawer.jsx
+        ├── ProductoDetalleModal.jsx
         ├── RastreoPedido.jsx
         ├── RedesSociales.jsx
         ├── LoginAdmin.jsx
-        ├── AdminPedidos.jsx
         ├── AdminCatalogo.jsx
-        ├── FormularioNuevoProducto.jsx
-        ├── ModalEditarProducto.jsx
-        ├── GestorPrecios.jsx
-        ├── SelectCategoria.jsx
+        ├── SiteLayout.jsx
+        ├── admin/              ← PageHeader, StatsCard, EmptyState, RoleBadge, DataTable
+        ├── auth/               ← ProtectedRoute, Can (componente de permisos)
         └── ui/
             ├── Toggle.jsx
             ├── ToastProvider.jsx
@@ -223,6 +256,8 @@ export const categorias = [
 | `estado` | TEXT | Ver tabla de estados |
 | `detalles_json` | JSONB | Snapshot del carrito con precio aplicado por línea |
 | `notificado_estado` | TEXT | Último estado notificado al cliente (sincronizado por Realtime) |
+| `fecha_envio` | TIMESTAMPTZ | Fecha real de cierre cuando el pedido pasa a `Enviado` |
+| `fecha_cancelado` | TIMESTAMPTZ | Fecha real de cierre cuando el pedido pasa a `Cancelado` |
 | `created_at` | TIMESTAMPTZ | Auto |
 | `updated_at` | TIMESTAMPTZ | Auto via trigger |
 
@@ -241,6 +276,13 @@ export const categorias = [
 > ALTER TABLE public.pedidos DROP CONSTRAINT pedidos_estado_check;
 > ALTER TABLE public.pedidos ADD CONSTRAINT pedidos_estado_check
 >   CHECK (estado IN ('Por Surtir','Armando Pedido','Listo para Entrega','Enviado','Cancelado'));
+> ```
+
+> **Nota:** para bases existentes se recomienda agregar también las columnas de fecha estable para historial:
+> ```sql
+> ALTER TABLE public.pedidos
+>   ADD COLUMN IF NOT EXISTS fecha_envio TIMESTAMPTZ,
+>   ADD COLUMN IF NOT EXISTS fecha_cancelado TIMESTAMPTZ;
 > ```
 
 ### `configuracion`
@@ -301,34 +343,46 @@ El cliente ingresa su folio o teléfono y ve un stepper animado de 4 pasos: Por 
 ### Panel de administración (`/admin`)
 
 **Layout:**
-- Desktop: sidebar con avatar, nav con badges, quick stats, toggle de tema
-- Móvil: bottom navigation con 3 tabs (Pedidos, Catálogo, Cuenta)
+- Desktop: sidebar colapsable con avatar, nav con badges y secciones, toggle de tema
+- Móvil: bottom navigation con tabs (Pedidos, Catálogo, Cuenta)
 - Panel bilingüe ES/EN
+- Breadcrumb dinámico por página
+
+**Roles y permisos (RBAC):**
+- Roles definidos en `src/lib/roles.js`: `owner`, `admin`, `staff`, etc.
+- Permisos granulares en `src/lib/permissions.js` por recurso y acción
+- `PermissionsContext` carga el rol real desde la tabla `profiles` en Supabase
+- Hook `usePermission(action, resource)` y componente `<Can>` para control declarativo
+- `<ProtectedRoute>` redirige si falta sesión o permiso
 
 **Pedidos:**
 - Lista en tiempo real vía Realtime (nuevos pedidos aparecen solos, actualizaciones se propagan a todas las sesiones)
 - Buscador por folio, nombre o teléfono
-- **Tablero Kanban en desktop**: 5 columnas (Por Surtir · Armando Pedido · Listo para Entrega · Enviado · Cancelado) — cada columna es scrollable, siempre visibles independientemente del filtro activo
+- Vista separada en tabs **Activos** e **Historial**
+- **Activos (Kanban):** 3 columnas (Por Surtir · Armando Pedido · Listo para Entrega)
+- **Historial (DataTable):** estados Enviado/Cancelado con filtros, rango de fecha y export CSV
 - Click en cualquier card abre modal con el detalle completo del pedido
 - Cambio de estado con actualización optimista
 - Notificación al cliente por WhatsApp sincronizada entre sesiones (se desactiva tras enviar, se reactiva al cambiar estado)
 - Mensaje de WhatsApp adaptado según tipo de entrega (envío a domicilio vs recoger en tienda)
+- Fechas de historial estables con `fecha_envio`/`fecha_cancelado` cuando están disponibles
 - Botón **"Copiar datos para repartidor"** en pedidos con envío listos: copia nombre, teléfono, dirección y total al portapapeles
 
 **Picking (modo "Armando Pedido"):**
-- Fila compacta: checkbox · imagen · nombre · controles +/− · subtotal en una sola línea
-- Controles +/− integrados en la fila, solo visibles cuando la cantidad es >1 y el artículo está marcado
-- Progress bar que avanza al surtir
-- Artículos pendientes se muestran primero, los surtidos al final
-- Si se desmarca un artículo se marca como faltante y se actualiza `activo = false` en el catálogo
-- Panel de totales dinámico con descuento por faltantes
-- Botón "Pasar a Listo" hace todo en un solo UPDATE: cambia estado, guarda total ajustado, persiste `encontrado` por artículo y abre WhatsApp con detalle
+- **Modo guiado mobile-first:** muestra 1 producto activo a la vez para surtir más rápido
+- Auto-avance al siguiente pendiente al confirmar completo, parcial o no surtido
+- Feedback inmediato `✓ Guardado` antes del salto de producto
+- Reglas de acción por cantidad: solo 1 CTA principal visible por paso (completo/parcial/no surtido)
+- Progress bar + texto `Paso X de Y` sin contadores duplicados
+- Vista secundaria **"Ver todos los productos"** en formato resumen compacto (escaneable, con estado y subtotal por fila)
+- Bloque final con total ajustado por faltantes y CTA principal para cerrar picking
+- Al confirmar cierre: cambia estado, guarda total ajustado, persiste cantidades surtidas y abre WhatsApp con detalle
 
 **Cancelación:**
 - Requiere confirmación antes de cancelar
 - Notifica al cliente por WhatsApp
 - Si el pedido ya estaba en "Listo para Entrega", restaura el stock automáticamente
-- La tarjeta queda en solo lectura con badge "Cancelado"
+- El pedido pasa al tab Historial con estado "Cancelado"
 
 **Mensajes de WhatsApp por estado:**
 
@@ -359,6 +413,58 @@ El cliente ingresa su folio o teléfono y ve un stepper animado de 4 pasos: Por 
 - Gestión de categorías, marcas y tamaños: renombrar y eliminar en cascada desde modales
 - Editor de anuncio: textarea con máx 200 caracteres, toggle activo/inactivo, guarda en tabla `configuracion`
 
+### Dashboard (`/admin/dashboard`)
+
+- KPIs de ingresos, pedidos, ticket promedio y clientes únicos
+- Presets de periodo (`Hoy`, `7 días`, `30 días`, `90 días`, `Personalizado`), por defecto `Hoy`
+- Gráficas de ventas por día y pedidos por estado
+- Módulos de top productos y últimos pedidos con folio real
+
+### Clientes (`/admin/clientes`)
+
+- Tabla agregada por cliente (pedidos, gasto total, último pedido)
+- Drawer de detalle con historial de pedidos clickable
+- Edición inline de nombre/teléfono (persistida sobre pedidos existentes)
+- Método de entrega mostrado desde el pedido más reciente no cancelado
+
+### Inventario (`/admin/inventario`)
+
+- Tabla de stock en tiempo real con actualización optimista
+- Columnas: producto, categoría, stock actual, mínimo, estado (OK / Bajo / Agotado)
+- Filtros por estado de stock y búsqueda por nombre
+- Edición inline de stock actual y mínimo por fila
+- Layout responsivo: tabla completa en desktop, 3 columnas en móvil
+- Sticky headers y filtros al hacer scroll
+
+### Usuarios (`/admin/usuarios`)
+
+- Lista de usuarios con rol, estado y fecha de ingreso
+- Invitación por email: genera un token y envía el link de registro
+- Bandeja de invitaciones pendientes
+- Cambio de rol desde dropdown (owner, admin, staff…)
+- Drawer de detalle por usuario con historial de actividad
+- Flujo de registro público en `/registro?token=…` con contraseña propia
+
+### Reportes (`/admin/reportes`)
+
+- Analítica anual: ventas mensuales, ranking de productos, clientes frecuentes y tipo de entrega
+- Tarjetas de resumen con totales del año seleccionado
+- Selector de año para comparar periodos históricos
+
+### Tienda (`/admin/tienda`)
+
+- Configuración de datos de la tienda: nombre, WhatsApp, sucursales, redes sociales
+- Cambios persistidos en tabla `configuracion` de Supabase
+- Actualización en vivo sin necesidad de redesplegar
+
+### Pagos (`/admin/pagos`)
+
+- Lista de pedidos pendientes de confirmación de pago
+- Filtros por estado (pendiente / confirmado) y periodo (hoy / semana / mes / todo)
+- KPIs: total cobrado, pedidos pendientes, monto pendiente
+- Modal de confirmación con detalle del pedido y método de pago
+- Registro del método (efectivo, transferencia, tarjeta…)
+
 ### PWA
 
 - Instalable en Android e iOS
@@ -382,9 +488,23 @@ El cliente ingresa su folio o teléfono y ve un stepper animado de 4 pasos: Por 
 |---|---|---|
 | `/` | Landing Page pública | Libre |
 | `/catalogo` | Catálogo de productos | Libre |
-| `/catalogo/:categoria` | Catálogo filtrado | Libre |
-| `/admin` | Pedidos | Requiere sesión + email en `VITE_ADMIN_EMAILS` |
-| `/admin/catalogo` | Catálogo admin | Requiere sesión + email en `VITE_ADMIN_EMAILS` |
+| `/catalogo/:categoria` | Catálogo filtrado por categoría | Libre |
+| `/sucursales` | Página de sucursales | Libre |
+| `/como-funciona` | Guía de compra | Libre |
+| `/destacados` | Categorías destacadas | Libre |
+| `/blog` | Blog | Libre |
+| `/blog/:slug` | Artículo del blog | Libre |
+| `/registro` | Registro por token de invitación | Libre (token requerido) |
+| `/admin` | Redirect automático según permisos | Requiere sesión |
+| `/admin/dashboard` | KPIs y gráficas | `reportes.view` |
+| `/admin/pedidos` | Kanban + historial + picking | Sesión activa |
+| `/admin/catalogo` | Gestión de productos | Sesión activa |
+| `/admin/clientes` | Tabla de clientes | `clientes.view` |
+| `/admin/inventario` | Control de stock en tiempo real | Sesión activa |
+| `/admin/usuarios` | Roles e invitaciones | `usuarios.view` |
+| `/admin/reportes` | Analítica anual de ventas | `reportes.view` |
+| `/admin/tienda` | Configuración de datos de la tienda | `tienda.edit` |
+| `/admin/pagos` | Flujo de confirmación de pagos | Sesión activa |
 
 Routing con React Router DOM v7 (BrowserRouter). El archivo `vercel.json` incluye el rewrite SPA necesario para que las rutas funcionen en Vercel.
 

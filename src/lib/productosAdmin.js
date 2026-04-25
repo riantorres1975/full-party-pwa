@@ -382,11 +382,11 @@ export async function actualizarProducto(id, {
   if (row.stock_actual === null) delete row.stock_actual;
   if (row.stock_minimo === null) delete row.stock_minimo;
 
-  let { data, error } = await supabase.from('productos').update(row).eq('id', id).select().single();
+  let { error } = await supabase.from('productos').update(row).eq('id', id);
 
   if (error && row.familia_mayoreo && errorColumnaFamiliaMayoreoInexistente(error)) {
     const { familia_mayoreo: _omitFamiliaMayoreo, precios_mayoreo: _omitPreciosMayoreo, ...rowSinMayoreo } = row;
-    ({ data, error } = await supabase.from('productos').update(rowSinMayoreo).eq('id', id).select().single());
+    ({ error } = await supabase.from('productos').update(rowSinMayoreo).eq('id', id));
   }
 
   if (error && row.precios_mayoreo && errorColumnaPreciosMayoreoInexistente(error)) {
@@ -395,7 +395,7 @@ export async function actualizarProducto(id, {
 
   if (error && errorColumnaEsNuevoInexistente(error)) {
     const { es_nuevo: _omitEsNuevo, ...rowSinEsNuevo } = row;
-    ({ data, error } = await supabase.from('productos').update(rowSinEsNuevo).eq('id', id).select().single());
+    ({ error } = await supabase.from('productos').update(rowSinEsNuevo).eq('id', id));
   }
 
   await throwIfSessionError(error);
@@ -405,7 +405,7 @@ export async function actualizarProducto(id, {
     throw new Error('No se pudo actualizar el producto. Intenta de nuevo.');
   }
 
-  return data;
+  return { id, ...row };
 }
 
 /** Solo cambia disponibilidad (activo) — útil para toggles en inventario. */
@@ -446,12 +446,10 @@ export async function eliminarTamano(nombre) {
 }
 
 export async function actualizarDisponibilidadProducto(id, activo) {
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('productos')
     .update({ activo: !!activo })
-    .eq('id', id)
-    .select()
-    .single();
+    .eq('id', id);
 
   await throwIfSessionError(error);
 
@@ -460,7 +458,7 @@ export async function actualizarDisponibilidadProducto(id, activo) {
     throw new Error('No se pudo actualizar la disponibilidad.');
   }
 
-  return data;
+  return { id, activo: !!activo };
 }
 
 export async function eliminarProducto(id) {

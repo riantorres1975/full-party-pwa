@@ -32,10 +32,10 @@ function parsearPreciosMayoreo(producto) {
     .filter(item => item.id != null);
 
   if (normalizados.length > 0) return normalizados;
-  return [{ id: Date.now(), etiqueta: '', cantidad_minima: '', precio: '' }];
+  return [{ id: Date.now(), etiqueta: 'Precio 1', cantidad_minima: '', precio: '' }];
 }
 
-const emptyRow = () => ({ id: Date.now(), etiqueta: '', cantidad_minima: '', precio: '' });
+const emptyRow = () => ({ id: Date.now(), etiqueta: 'Precio 1', cantidad_minima: '', precio: '' });
 
 /**
  * Hook compartido para los formularios de crear y editar producto.
@@ -94,8 +94,8 @@ export function useProductForm(producto = null) {
         if (value.length > 200) return 'Máximo 200 caracteres.';
         return '';
       case 'precio':
-        if (value === '' || value == null) return 'El precio es obligatorio.';
-        if (Number(value) < 0) return 'No puede ser negativo.';
+        if (!mayoreoActivo && (value === '' || value == null)) return 'El precio es obligatorio.';
+        if (value !== '' && Number(value) < 0) return 'No puede ser negativo.';
         return '';
       case 'stockActual':
         if (!stockIlimitado && (value === '' || Number(value) < 0)) return 'Stock inválido.';
@@ -191,42 +191,43 @@ export function useProductForm(producto = null) {
       urlFinal = getProductPlaceholderUrl(nombre, '1200x1200');
     }
 
-    const precioBaseNum = Math.max(0, Number(precio) || 0);
     const filasMayoreo = (preciosMayoreo || []).map((item, idx) => {
-      const etiqueta = String(item?.etiqueta ?? '').trim();
-      const cantidadMinima = Number(item?.cantidad_minima);
+      const etiqueta = String(item?.etiqueta ?? '').trim() || `Precio ${idx + 1}`;
+      // Primera fila siempre tiene cantidad_minima = 1
+      const cantidadMinima = idx === 0 ? 1 : Number(item?.cantidad_minima);
       const precioEscala = Number(item?.precio);
       return {
         idx, etiqueta, cantidadMinima, precioEscala,
-        vacia: !etiqueta && item?.cantidad_minima === '' && item?.precio === '',
+        vacia: item?.precio === '',
       };
     });
 
-    if (mayoreoActivo) {
-      if (filasMayoreo.length === 0 || filasMayoreo.every(f => f.vacia)) {
-        throw new Error('Activa mayoreo solo si capturas al menos una escala con etiqueta, cantidad y precio.');
-      }
-      const filaInvalida = filasMayoreo.find(f => {
-        if (f.vacia) return true;
-        return !f.etiqueta || !Number.isFinite(f.cantidadMinima) || f.cantidadMinima <= 0 || !Number.isFinite(f.precioEscala) || f.precioEscala <= 0;
-      });
-      if (filaInvalida) {
-        throw new Error(`Revisa la escala ${filaInvalida.idx + 1}: etiqueta obligatoria y valores mayores a 0.`);
-      }
+    const filaInvalida = filasMayoreo.find(f => {
+      if (f.vacia) return false;
+      return !Number.isFinite(f.precioEscala) || f.precioEscala <= 0 ||
+        (f.idx > 0 && (!Number.isFinite(f.cantidadMinima) || f.cantidadMinima <= 1));
+    });
+    if (filaInvalida) {
+      throw new Error(`Revisa el precio ${filaInvalida.idx + 1}: precio mayor a 0 y cantidad mayor a 1.`);
     }
 
     const preciosParaGuardar = filasMayoreo
       .filter(f => !f.vacia)
       .map(f => ({ etiqueta: f.etiqueta, cantidad_minima: f.cantidadMinima, precio: f.precioEscala }));
 
-    const preciosMayoreoFinal = mayoreoActivo
-      ? (preciosParaGuardar.length > 0 ? preciosParaGuardar : [{ etiqueta: '1 Pieza', cantidad_minima: 1, precio: precioBaseNum }])
-      : [{ etiqueta: '1 Pieza', cantidad_minima: 1, precio: precioBaseNum }];
+    // Precio base siempre viene de Precio 1 (primera fila)
+    const precioBaseNum = preciosParaGuardar.length > 0
+      ? preciosParaGuardar[0].precio
+      : Math.max(0, Number(precio) || 0);
+
+    const preciosMayoreoFinal = preciosParaGuardar.length > 0
+      ? preciosParaGuardar
+      : [{ etiqueta: 'Precio 1', cantidad_minima: 1, precio: precioBaseNum }];
 
     return {
       nombre: toTitleCase(nombre),
       descripcion,
-      precio,
+      precio: precioBaseNum,
       categoria: categoriaFinal || null,
       marca: marcaFinal || null,
       tamano: tamanoFinal || null,

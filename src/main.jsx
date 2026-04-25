@@ -9,6 +9,10 @@ if (typeof window !== 'undefined' && !window.__fpInstallPromptListenerAttached) 
   window.__fpDeferredInstallPrompt = window.__fpDeferredInstallPrompt || null;
 
   window.addEventListener('beforeinstallprompt', (event) => {
+    const path = window.location.pathname || '/';
+    const esRutaAdmin = path.startsWith('/admin');
+    if (esRutaAdmin) return;
+
     event.preventDefault();
     window.__fpDeferredInstallPrompt = event;
     window.dispatchEvent(new Event('fp-installprompt-ready'));
@@ -20,48 +24,63 @@ if (typeof window !== 'undefined' && !window.__fpInstallPromptListenerAttached) 
   });
 }
 
-// Registrar Service Worker (PWA)
+// Registrar Service Worker (PWA) solo en produccion
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/sw.js')
-      .then((registration) => {
-        // Si hay un SW esperando, activarlo inmediatamente
-        if (registration.waiting) {
-          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-        }
+  if (import.meta.env.PROD) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then((registration) => {
+          // Si hay un SW esperando, activarlo inmediatamente
+          if (registration.waiting) {
+            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
 
-        registration.addEventListener('updatefound', () => {
-          const newWorker = registration.installing;
-          if (!newWorker) return;
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            if (!newWorker) return;
 
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // Auto-aplicar: activar el nuevo SW sin esperar clic del usuario
-              newWorker.postMessage({ type: 'SKIP_WAITING' });
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // Auto-aplicar: activar el nuevo SW sin esperar clic del usuario
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
+              }
+            });
+          });
+
+          // When the new SW takes control, reload to use fresh assets
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            window.location.reload();
+          });
+
+          // Escuchar mensaje del SW cuando detecta chunks faltantes (nueva versión)
+          navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data?.type === 'FORCE_RELOAD') {
+              window.location.reload();
             }
           });
-        });
 
-        // When the new SW takes control, reload to use fresh assets
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          window.location.reload();
-        });
+          // Chequear actualizaciones cada 5 minutos (en vez de cada 24h por defecto)
+          setInterval(() => {
+            registration.update().catch(() => {});
+          }, 5 * 60 * 1000);
+        })
+        .catch(() => {});
+    });
+  } else {
+    // Evita comportamiento offline del SW durante desarrollo local
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.getRegistrations()
+        .then((registrations) => Promise.all(registrations.map((reg) => reg.unregister())))
+        .catch(() => {});
 
-        // Escuchar mensaje del SW cuando detecta chunks faltantes (nueva versión)
-        navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data?.type === 'FORCE_RELOAD') {
-            window.location.reload();
-          }
-        });
-
-        // Chequear actualizaciones cada 5 minutos (en vez de cada 24h por defecto)
-        setInterval(() => {
-          registration.update().catch(() => {});
-        }, 5 * 60 * 1000);
-      })
-      .catch(() => {});
-  });
+      if ('caches' in window) {
+        caches.keys()
+          .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+          .catch(() => {});
+      }
+    });
+  }
 }
 
 // Auto-reload si ocurre un error cargando modulos (e.g. nueva version en Vercel)

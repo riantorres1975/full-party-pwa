@@ -1,5 +1,5 @@
 import { useEffect, lazy, Suspense } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom';
 import '../catalog.css'; // Estilos exclusivos del catálogo/admin (dark-mode, etc.)
 import App from '../App';
 import LoginAdmin from '../components/LoginAdmin';
@@ -8,7 +8,20 @@ import { useTheme } from '../hooks/useTheme';
 import { ToastProvider } from '../components/ui/ToastProvider';
 import { useLanguage } from '../hooks/useLanguage';
 
-const AdminPedidos = lazy(() => import('../components/AdminPedidos'));
+const AdminLayout = lazy(() => import('../layouts/AdminLayout'));
+const AdminIndexRedirect = lazy(() => import('../components/admin/AdminIndexRedirect'));
+const DashboardPage = lazy(() => import('../pages/admin/dashboard/DashboardPage'));
+const PedidosPage = lazy(() => import('../pages/admin/PedidosPage'));
+const CatalogoPage = lazy(() => import('../pages/admin/CatalogoPage'));
+const ClientesPage = lazy(() => import('../pages/admin/clientes/ClientesPage'));
+const UsuariosPage = lazy(() => import('../pages/admin/usuarios/UsuariosPage'));
+const RegistroPage = lazy(() => import('../pages/admin/registro/RegistroPage'));
+const InventarioPage = lazy(() => import('../pages/admin/inventario/InventarioPage'));
+const ReportesPage = lazy(() => import('../pages/admin/reportes/ReportesPage'));
+const TiendaPage = lazy(() => import('../pages/admin/tienda/TiendaPage'));
+const PagosPage = lazy(() => import('../pages/admin/pagos/PagosPage'));
+
+import ProtectedRoute from '../components/auth/ProtectedRoute';
 
 const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || '')
   .split(',')
@@ -23,6 +36,7 @@ export default function AuthCatalogRoutes() {
   const navigate = useNavigate();
 
   const esRutaAdmin = location.pathname.startsWith('/admin');
+  const esRutaRegistro = location.pathname === '/admin/registro';
 
   useEffect(() => {
     document.body.classList.add('catalogo');
@@ -52,6 +66,21 @@ export default function AuthCatalogRoutes() {
     requestAnimationFrame(revealApp);
   }, [esRutaAdmin, cargandoSesion]);
 
+  // Ruta pública de registro con token — sin guards, sin sesión requerida
+  if (esRutaRegistro) {
+    return (
+      <ToastProvider>
+        <Suspense fallback={
+          <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0f0320, #2d1055)' }}>
+            <div className="w-8 h-8 rounded-full border-[3px] border-purple-700 border-t-purple-300 animate-spin" />
+          </div>
+        }>
+          <RegistroPage />
+        </Suspense>
+      </ToastProvider>
+    );
+  }
+
   if (esRutaAdmin && cargandoSesion) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1a0733, #3d1a6e)' }}>
@@ -72,6 +101,9 @@ export default function AuthCatalogRoutes() {
       );
     }
 
+    // ADMIN_EMAILS: fallback de emergencia. Solo bloquea si la variable está
+    // definida Y el email no está en la lista. En producción normal debe estar
+    // vacía — el control de acceso real lo hace PermissionsContext con profiles.
     const emailUsuario = user?.email?.toLowerCase() || '';
     if (ADMIN_EMAILS.length > 0 && !ADMIN_EMAILS.includes(emailUsuario)) {
       return (
@@ -102,15 +134,65 @@ export default function AuthCatalogRoutes() {
             </div>
           }
         >
-          <AdminPedidos
-            user={user}
-            temaOscuro={isDarkMode}
-            onToggleTema={toggleTheme}
-            onSignOut={async () => {
-              await signOut();
-              navigate('/');
-            }}
-          />
+          <Routes>
+            <Route path="registro" element={<RegistroPage />} />
+            <Route
+              path="/*"
+              element={
+                <AdminLayout
+                  user={user}
+                  temaOscuro={isDarkMode}
+                  onToggleTema={toggleTheme}
+                  onSignOut={async () => {
+                    await signOut();
+                    navigate('/');
+                  }}
+                >
+                  <Routes>
+                    <Route path="/" element={<AdminIndexRedirect />} />
+                    <Route path="dashboard" element={
+                      <ProtectedRoute permission="reportes.view" fallback="/admin/pedidos">
+                        <DashboardPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="pedidos" element={<PedidosPage />} />
+                    <Route path="catalogo" element={<CatalogoPage />} />
+                    <Route path="clientes" element={
+                      <ProtectedRoute permission="clientes.view" fallback="/admin/pedidos">
+                        <ClientesPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="usuarios" element={
+                      <ProtectedRoute permission="usuarios.view" fallback="/admin/pedidos">
+                        <UsuariosPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="inventario" element={
+                      <ProtectedRoute permission="catalogo.edit" fallback="/admin/pedidos">
+                        <InventarioPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="reportes" element={
+                      <ProtectedRoute permission="reportes.view" fallback="/admin/pedidos">
+                        <ReportesPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="pagos" element={
+                      <ProtectedRoute permission="pagos.view" fallback="/admin/pedidos">
+                        <PagosPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="tienda" element={
+                      <ProtectedRoute permission="usuarios.view" fallback="/admin/pedidos">
+                        <TiendaPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="*" element={<AdminIndexRedirect />} />
+                  </Routes>
+                </AdminLayout>
+              }
+            />
+          </Routes>
         </Suspense>
       </ToastProvider>
     );

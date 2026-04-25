@@ -3,21 +3,21 @@ import {
   categorias,
   marcas,
   tamanios,
-  SIMBOLO_MONEDA,
   registrarCategoria,
   registrarMarca,
   registrarTamano,
+  actualizarCategoria,
+  actualizarMarca,
+  actualizarTamano,
+  eliminarCategoria,
+  eliminarMarca,
+  eliminarTamano,
 } from '../data/productos';
 import { insertarProducto } from '../lib/productosAdmin';
 import SelectCategoria from './SelectCategoria';
 import GestorPrecios from './GestorPrecios';
 import Toggle from './ui/Toggle';
-import {
-  useProductForm,
-  CATEGORIA_NUEVA_ID,
-  MARCA_NUEVA_ID,
-  TAMANO_NUEVO_ID,
-} from '../hooks/useProductForm';
+import { useProductForm } from '../hooks/useProductForm';
 import { useLanguage } from '../hooks/useLanguage';
 
 
@@ -26,15 +26,15 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
   const { t } = useLanguage();
   const form = useProductForm(null);
   const {
-    nombre, setNombre, descripcion, setDescripcion, precio, setPrecio,
-    categoria, setCategoria, categoriaNueva, setCategoriaNueva,
-    marca, setMarca, marcaNueva, setMarcaNueva,
-    tamano, setTamano, tamanoNuevo, setTamanoNuevo,
+    nombre, setNombre, descripcion, setDescripcion,
+    categoria, setCategoria,
+    marca, setMarca,
+    tamano, setTamano,
     disponible, setDisponible, esNuevo, setEsNuevo,
     imagenUrl, setImagenUrl, archivo, setArchivo, fileRef,
     stockIlimitado, setStockIlimitado, stockActual, setStockActual,
     stockMinimo, setStockMinimo,
-    mayoreoActivo, setMayoreoActivo, preciosMayoreo, setPreciosMayoreo,
+    preciosMayoreo, setPreciosMayoreo,
     enviando, setEnviando, error, setError, exito, setExito,
     previewSrc, dragHover, onDragOver, onDragLeave, onDrop, onFileChange,
     touched, fieldErrors, handleBlur,
@@ -50,9 +50,9 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
       const payload = await buildPayload();
       await insertarProducto(payload);
 
-      if (categoria === CATEGORIA_NUEVA_ID && payload.categoria) registrarCategoria(payload.categoria);
-      if (marca === MARCA_NUEVA_ID && payload.marca) registrarMarca(payload.marca);
-      if (tamano === TAMANO_NUEVO_ID && payload.tamano) registrarTamano(payload.tamano);
+      if (payload.categoria) registrarCategoria(payload.categoria);
+      if (payload.marca) registrarMarca(payload.marca);
+      if (payload.tamano) registrarTamano(payload.tamano);
 
       setExito(true);
       reset();
@@ -193,30 +193,6 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                   )}
                 </div>
 
-                <div className="col-span-full md:col-span-2">
-                  <label htmlFor="fp-precio" className="block text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-1">
-                    {t('admin.form.retailPrice')} *
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 font-bold text-sm">{SIMBOLO_MONEDA}</span>
-                    <input
-                      id="fp-precio"
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      step="0.01"
-                      value={precio}
-                      onChange={e => setPrecio(e.target.value)}
-                      onBlur={() => handleBlur('precio')}
-                      placeholder="0.00"
-                      required
-                      className={`w-full bg-ink-50 border rounded-lg pl-8 pr-3 py-2 text-sm font-medium text-ink-900 focus:bg-white focus:border-ink-400 focus:outline-none focus:ring-1 focus:ring-ink-200 transition-all shadow-sm ${touched.precio && fieldErrors.precio ? 'border-red-400' : 'border-transparent'}`}
-                    />
-                  </div>
-                  {touched.precio && fieldErrors.precio && (
-                    <p className="text-[10px] text-red-500 font-medium mt-0.5">{fieldErrors.precio}</p>
-                  )}
-                </div>
 
                 {/* Fila 2 */}
                 <div className="col-span-full">
@@ -243,26 +219,13 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                   <SelectCategoria
                     id="fp-cat"
                     value={categoria}
-                    onChange={value => {
-                      setCategoria(value);
-                      if (value !== CATEGORIA_NUEVA_ID) setCategoriaNueva('');
-                    }}
-                    lista={[
-                      ...categorias,
-                       { id: CATEGORIA_NUEVA_ID, label: t('admin.form.addNewOption') },
-                    ]}
+                    onChange={setCategoria}
+                    lista={categorias}
+                    onCreateOption={registrarCategoria}
+                    onRenameOption={actualizarCategoria}
+                    onDeleteOption={eliminarCategoria}
+                    searchPlaceholder="Buscar o agregar categoría"
                   />
-                  {categoria === CATEGORIA_NUEVA_ID && (
-                    <input
-                      type="text"
-                      value={categoriaNueva}
-                      onChange={e => setCategoriaNueva(e.target.value)}
-                      placeholder="Ej. Novedades"
-                      className="w-full mt-2 bg-ink-50 border border-transparent rounded-lg px-3 py-2 text-sm font-medium text-ink-900 focus:border-ink-400 focus:ring-1 focus:ring-ink-200"
-                      maxLength={80}
-                      autoFocus
-                    />
-                  )}
                 </div>
 
                 <div className="col-span-full md:col-span-2">
@@ -272,26 +235,17 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                   <SelectCategoria
                     id="fp-marca"
                     value={marca}
-                    onChange={value => {
-                      setMarca(value);
-                      if (value !== MARCA_NUEVA_ID) setMarcaNueva('');
-                    }}
+                    onChange={setMarca}
                     lista={[
                        { id: '', label: t('admin.catalog.noBrand') },
                       ...marcas.map(m => ({ id: m, label: m })),
-                       { id: MARCA_NUEVA_ID, label: t('admin.form.addNewOption') },
                     ]}
+                    onCreateOption={registrarMarca}
+                    onRenameOption={actualizarMarca}
+                    onDeleteOption={eliminarMarca}
+                    isOptionEditable={(item) => item.id !== ''}
+                    searchPlaceholder="Buscar o agregar marca"
                   />
-                  {marca === MARCA_NUEVA_ID && (
-                    <input
-                      type="text"
-                      value={marcaNueva}
-                      onChange={e => setMarcaNueva(e.target.value)}
-                      placeholder="Nueva marca"
-                      className="w-full mt-2 bg-ink-50 border border-transparent rounded-lg px-3 py-2 text-sm font-medium focus:border-ink-400 focus:ring-1 focus:ring-ink-200"
-                      autoFocus
-                    />
-                  )}
                 </div>
 
                 <div className="col-span-full md:col-span-2">
@@ -301,26 +255,17 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                   <SelectCategoria
                     id="fp-tamano"
                     value={tamano}
-                    onChange={value => {
-                      setTamano(value);
-                      if (value !== TAMANO_NUEVO_ID) setTamanoNuevo('');
-                    }}
+                    onChange={setTamano}
                     lista={[
                        { id: '', label: t('admin.catalog.noSize') },
                       ...tamanios.map(t => ({ id: t, label: t })),
-                       { id: TAMANO_NUEVO_ID, label: t('admin.form.addNewOption') },
                     ]}
+                    onCreateOption={registrarTamano}
+                    onRenameOption={actualizarTamano}
+                    onDeleteOption={eliminarTamano}
+                    isOptionEditable={(item) => item.id !== ''}
+                    searchPlaceholder="Buscar o agregar tamaño"
                   />
-                  {tamano === TAMANO_NUEVO_ID && (
-                     <input
-                      type="text"
-                      value={tamanoNuevo}
-                      onChange={e => setTamanoNuevo(e.target.value)}
-                      placeholder="Nuevo tamaño"
-                      className="w-full mt-2 bg-ink-50 border border-transparent rounded-lg px-3 py-2 text-sm font-medium focus:border-ink-400 focus:ring-1 focus:ring-ink-200"
-                      autoFocus
-                    />
-                  )}
                 </div>
 
                 {/* Fila 5: Inventario */}
@@ -365,36 +310,8 @@ export default function FormularioNuevoProducto({ onProductoCreado, isModal = fa
                 </div>
 
                 <div className="col-span-full bg-gray-50 rounded-2xl p-5 border border-gray-100">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-900">{t('product.wholesalePrices')}</h4>
-                      <p className="text-xs font-medium text-gray-500">
-                        {t('admin.form.wholesaleHelp')}
-                      </p>
-                    </div>
-                    <Toggle
-                      id="toggle-mayoreo"
-                      checked={mayoreoActivo}
-                      onChange={() => {
-                        const activo = !mayoreoActivo;
-                        setMayoreoActivo(activo);
-                        if (activo) {
-                          setPreciosMayoreo(prev => {
-                            if (!Array.isArray(prev) || prev.length === 0) {
-                              return [{ id: Date.now(), etiqueta: '', cantidad_minima: '', precio: '' }];
-                            }
-                            return prev;
-                          });
-                        }
-                      }}
-                    />
-                  </div>
-
-                  {mayoreoActivo && (
-                    <div className="mt-4 animate-fade-in">
-                      <GestorPrecios precios={preciosMayoreo} setPrecios={setPreciosMayoreo} />
-                    </div>
-                  )}
+                  <h4 className="text-sm font-bold text-gray-900 mb-4">{t('product.wholesalePrices')}</h4>
+                  <GestorPrecios precios={preciosMayoreo} setPrecios={setPreciosMayoreo} />
                 </div>
                 
               </div>
