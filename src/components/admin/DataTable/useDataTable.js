@@ -1,6 +1,38 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { fuzzySearchByText } from '../../../utils/fuzzySearch';
 
-export function useDataTable({ data = [], pageSize = 25, onSortChange, onFilterChange }) {
+function getByPath(row, path) {
+  return String(path || '')
+    .split('.')
+    .filter(Boolean)
+    .reduce((value, key) => (value == null ? value : value[key]), row);
+}
+
+function valueToSearchText(value) {
+  if (value == null) return '';
+  if (Array.isArray(value)) return value.map(valueToSearchText).join(' ');
+  if (typeof value === 'object') return Object.values(value).map(valueToSearchText).join(' ');
+  return String(value);
+}
+
+function getSearchableKeys(columns) {
+  if (!Array.isArray(columns) || columns.length === 0) return [];
+  const explicit = columns.filter(col => col.searchable === true).map(col => col.key).filter(Boolean);
+  if (explicit.length > 0) return explicit;
+  return columns
+    .filter(col => col.searchable !== false && !String(col.key || '').startsWith('_'))
+    .map(col => col.key)
+    .filter(Boolean);
+}
+
+function getRowSearchText(row, searchableKeys) {
+  const values = searchableKeys.length > 0
+    ? searchableKeys.map(key => getByPath(row, key))
+    : Object.values(row);
+  return values.map(valueToSearchText).join(' ');
+}
+
+export function useDataTable({ data = [], columns = [], pageSize = 25, onSortChange, onFilterChange }) {
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState('asc'); // 'asc' | 'desc' | null
   const [search, setSearch] = useState('');
@@ -67,13 +99,14 @@ export function useDataTable({ data = [], pageSize = 25, onSortChange, onFilterC
   const processedData = useMemo(() => {
     let result = [...data];
 
-    // Search filter (simple substring match on all string fields)
+    // Search filter: fuzzy matching across searchable columns.
     if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(row =>
-        Object.values(row).some(v =>
-          v != null && String(v).toLowerCase().includes(q)
-        )
+      const searchableKeys = getSearchableKeys(columns);
+      result = fuzzySearchByText(
+        result,
+        search,
+        row => getRowSearchText(row, searchableKeys),
+        { threshold: 0.38 }
       );
     }
 
@@ -118,7 +151,7 @@ export function useDataTable({ data = [], pageSize = 25, onSortChange, onFilterC
       currentPage: safePage,
       total: result.length,
     };
-  }, [data, search, filters, sortKey, sortDir, page, pageSize]);
+  }, [data, columns, search, filters, sortKey, sortDir, page, pageSize]);
 
   useEffect(() => {
     if (page !== processedData.currentPage) {

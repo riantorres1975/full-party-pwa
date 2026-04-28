@@ -12,6 +12,7 @@ PWA para tienda de artículos de fiesta. El cliente navega el catálogo, arma su
 | Vite | 7.3 | Bundler y dev server |
 | Tailwind CSS | 3.4 | Estilos |
 | Supabase JS | 2.98 | Base de datos, Auth y Realtime |
+| Fuse.js | 7.3 | Búsqueda fuzzy en catálogo y panel admin |
 | lucide-react | latest | Íconos |
 | React Router DOM | 7 | Routing BrowserRouter (pathname) |
 | Service Worker | — | PWA, cache offline |
@@ -67,12 +68,13 @@ PWA para tienda de artículos de fiesta. El cliente navega el catálogo, arma su
     │   └── usePWA.js           ← prompt de instalación
     │
     ├── utils/
+    │   ├── fuzzySearch.js       ← búsqueda fuzzy reutilizable con Fuse.js
     │   ├── precios.js          ← precio por mayoreo
     │   ├── validarTelefono.js  ← ladas mexicanas (IFT)
     │   ├── whatsapp.js         ← genera mensaje de WhatsApp
     │   ├── formatters.js       ← formato de moneda, fecha, etc.
     │   ├── imagenes.js         ← optimización de imágenes en cliente
-    │   └── normalizar.js       ← normalización de texto para búsquedas
+    │   └── normalizar.js       ← normalización de nombres a Title Case
     │
     ├── layouts/
     │   └── admin/
@@ -314,7 +316,7 @@ Lectura pública. Solo admins pueden escribir. Se usa para el sistema de anuncio
 
 - Grid responsivo: 1 columna en móvil, hasta 6 en desktop con sidebar de filtros
 - Dark mode desde el header
-- Búsqueda en tiempo real por nombre, descripción, marca y tamaño
+- Búsqueda fuzzy en tiempo real por nombre, descripción, categoría, marca y tamaño con tolerancia a errores y acentos
 - Filtros por categoría, marca y tamaño (AND entre dimensiones, OR dentro de cada una)
 - Infinite scroll adaptativo — móvil inicia con 4 y agrega 6; desktop inicia con 12 y agrega 12
 - Imágenes optimizadas con lazy loading y fallback robusto (si falta URL o falla la carga)
@@ -357,7 +359,7 @@ El cliente ingresa su folio o teléfono y ve un stepper animado de 4 pasos: Por 
 
 **Pedidos:**
 - Lista en tiempo real vía Realtime (nuevos pedidos aparecen solos, actualizaciones se propagan a todas las sesiones)
-- Buscador por folio, nombre o teléfono
+- Buscador fuzzy por folio, nombre, teléfono, estado o método de pago
 - Vista separada en tabs **Activos** e **Historial**
 - **Activos (Kanban):** 3 columnas (Por Surtir · Armando Pedido · Listo para Entrega)
 - **Historial (DataTable):** estados Enviado/Cancelado con filtros, rango de fecha y export CSV
@@ -410,6 +412,7 @@ El cliente ingresa su folio o teléfono y ve un stepper animado de 4 pasos: Por 
 - Edición completa en modal
 - Eliminar producto con confirmación
 - Filtros: Todos / Stock Bajo / Nuevos
+- Búsqueda fuzzy por nombre, descripción, categoría, marca y tamaño
 - Gestión de categorías, marcas y tamaños: renombrar y eliminar en cascada desde modales
 - Editor de anuncio: textarea con máx 200 caracteres, toggle activo/inactivo, guarda en tabla `configuracion`
 
@@ -431,7 +434,7 @@ El cliente ingresa su folio o teléfono y ve un stepper animado de 4 pasos: Por 
 
 - Tabla de stock en tiempo real con actualización optimista
 - Columnas: producto, categoría, stock actual, mínimo, estado (OK / Bajo / Agotado)
-- Filtros por estado de stock y búsqueda por nombre
+- Filtros por estado de stock y búsqueda fuzzy por nombre, categoría, marca y tamaño
 - Edición inline de stock actual y mínimo por fila
 - Layout responsivo: tabla completa en desktop, 3 columnas en móvil
 - Sticky headers y filtros al hacer scroll
@@ -460,6 +463,7 @@ El cliente ingresa su folio o teléfono y ve un stepper animado de 4 pasos: Por 
 ### Pagos (`/admin/pagos`)
 
 - Lista de pedidos pendientes de confirmación de pago
+- Búsqueda fuzzy en tabla compartida por folio, cliente, teléfono y campos visibles
 - Filtros por estado (pendiente / confirmado) y periodo (hoy / semana / mes / todo)
 - KPIs: total cobrado, pedidos pendientes, monto pendiente
 - Modal de confirmación con detalle del pedido y método de pago

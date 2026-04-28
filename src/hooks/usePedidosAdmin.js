@@ -2,11 +2,19 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { guardedQuery } from '../lib/supabaseGuard';
 import { notificarCliente } from '../utils/whatsapp';
+import { fuzzySearch } from '../utils/fuzzySearch';
 
 const ESTADOS = ['Por Surtir', 'Armando Pedido', 'Listo para Entrega', 'Enviado'];
 const ESTADOS_CON_CANCELADO = [...ESTADOS, 'Cancelado'];
 const PEDIDOS_SELECT_BASE = 'id,folio,cliente_nombre,cliente_telefono,tipo_entrega,direccion,total,estado,pago_estado,metodo_pago,detalles_json,notificado_estado,created_at,updated_at';
 const PEDIDOS_SELECT_CON_FECHAS_HISTORIAL = `${PEDIDOS_SELECT_BASE},fecha_envio,fecha_cancelado`;
+const PEDIDO_SEARCH_KEYS = [
+  { name: 'folio', weight: 0.35 },
+  { name: 'cliente_nombre', weight: 0.3 },
+  { name: 'cliente_telefono', weight: 0.2 },
+  { name: 'estado', weight: 0.1 },
+  { name: 'metodo_pago', weight: 0.05 },
+];
 
 function esErrorColumnasFechaHistorial(error) {
   if (!error) return false;
@@ -172,26 +180,16 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
 
   // ── Filtrado (memoizado) ──────────────────────────────────────
   const pedidosFiltrados = useMemo(() => {
-    return pedidos.filter(p => {
-      const coincideEstado = filtroEstado === 'todos' || p.estado === filtroEstado;
-      const q = busqueda.toLowerCase();
-      const coincideBusqueda = !busqueda ||
-        p.folio.toLowerCase().includes(q) ||
-        p.cliente_nombre.toLowerCase().includes(q) ||
-        p.cliente_telefono.includes(q);
-      return coincideEstado && coincideBusqueda;
-    });
+    const porEstado = filtroEstado === 'todos'
+      ? pedidos
+      : pedidos.filter(p => p.estado === filtroEstado);
+
+    return fuzzySearch(porEstado, busqueda, PEDIDO_SEARCH_KEYS, { threshold: 0.38 });
   }, [pedidos, filtroEstado, busqueda]);
 
   // Solo búsqueda, sin filtro de estado — para el tablero Kanban
   const pedidosPorBusqueda = useMemo(() => {
-    if (!busqueda) return pedidos;
-    const q = busqueda.toLowerCase();
-    return pedidos.filter(p =>
-      p.folio.toLowerCase().includes(q) ||
-      p.cliente_nombre.toLowerCase().includes(q) ||
-      p.cliente_telefono.includes(q)
-    );
+    return fuzzySearch(pedidos, busqueda, PEDIDO_SEARCH_KEYS, { threshold: 0.38 });
   }, [pedidos, busqueda]);
 
   // ── Contadores (memoizado) ────────────────────────────────────

@@ -8,6 +8,14 @@ import PageHeader from '../../../components/admin/PageHeader';
 import StockCell from './components/StockCell';
 import InventarioFilters from './components/InventarioFilters';
 import { useInventario } from './hooks/useInventario';
+import { fuzzySearch } from '../../../utils/fuzzySearch';
+
+const INVENTARIO_SEARCH_KEYS = [
+  { name: 'nombre', weight: 0.55 },
+  { name: 'categoria', weight: 0.2 },
+  { name: 'marca', weight: 0.15 },
+  { name: 'tamano', weight: 0.1 },
+];
 
 const STOCK_STATUS = {
   ilimitado: { label: 'inventario.estado.ilimitado', cls: 'bg-admin-elevated text-admin-muted' },
@@ -49,11 +57,7 @@ export default function InventarioPage() {
     let list = productos;
 
     if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter((p) =>
-        p.nombre?.toLowerCase().includes(q) ||
-        p.categoria?.toLowerCase().includes(q)
-      );
+      list = fuzzySearch(list, search, INVENTARIO_SEARCH_KEYS, { threshold: 0.38 });
     }
 
     if (filtro !== 'todos') {

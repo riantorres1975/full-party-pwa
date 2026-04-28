@@ -43,6 +43,7 @@ export default function DataTable({
     totalResults,
   } = useDataTable({
     data,
+    columns,
     pageSize: pagination.pageSize,
   });
 

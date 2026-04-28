@@ -28,6 +28,15 @@ import { useToast } from './ui/ToastProvider';
 import { useConfirm } from '../hooks/useConfirm';
 import { useDebounce } from '../hooks/useDebounce';
 import { useLanguage } from '../hooks/useLanguage';
+import { fuzzySearch } from '../utils/fuzzySearch';
+
+const PRODUCT_SEARCH_KEYS = [
+  { name: 'nombre', weight: 0.5 },
+  { name: 'descripcion', weight: 0.2 },
+  { name: 'categoria', weight: 0.15 },
+  { name: 'marca', weight: 0.1 },
+  { name: 'tamano', weight: 0.05 },
+];
 
 function MiniaturaProducto({ url, nombre }) {
   const [fallo, setFallo] = useState(false);
@@ -363,16 +372,10 @@ export default function AdminCatalogo() {
       lista = productosNuevos;
     }
 
-    const q = busqueda.trim().toLowerCase();
+    const q = busqueda.trim();
     if (!q) return lista;
-    
-    return lista.filter(p => {
-      const n = (p.nombre || '').toLowerCase();
-      const m = (p.marca || '').toLowerCase();
-      const t = (p.tamano || '').toLowerCase();
-      const c = (p.categoria || '').toLowerCase();
-      return n.includes(q) || m.includes(q) || t.includes(q) || c.includes(q);
-    });
+
+    return fuzzySearch(lista, q, PRODUCT_SEARCH_KEYS, { threshold: 0.38 });
   }, [productos, busqueda, filtroActivo, productosEnAlerta, productosNuevos]);
 
   async function handleToggleDisponibilidad(p) {

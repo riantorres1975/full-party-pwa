@@ -16,6 +16,15 @@ import FloatingCartButton from './components/FloatingCartButton';
 import RastreoPedido      from './components/RastreoPedido';
 import RedesSociales      from './components/RedesSociales';
 import SidebarFiltrosDesktop from './components/SidebarFiltrosDesktop';
+import { fuzzySearch } from './utils/fuzzySearch';
+
+const PRODUCT_SEARCH_KEYS = [
+  { name: 'nombre', weight: 0.5 },
+  { name: 'descripcion', weight: 0.2 },
+  { name: 'categoria', weight: 0.15 },
+  { name: 'marca', weight: 0.1 },
+  { name: 'tamano', weight: 0.05 },
+];
 
 export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   // Data from Supabase
@@ -70,14 +79,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     setActiveFilters({ categorias: [], marcas: [], tamanios: [] });
 
   const filteredProducts = useMemo(() => {
-    const filtered = productos.filter(p => {
-      const query = searchQuery.toLowerCase();
-      const matchesText = !searchQuery ||
-        p.nombre.toLowerCase().includes(query) ||
-        p.descripcion?.toLowerCase().includes(query) ||
-        p.marca?.toLowerCase().includes(query)  ||
-        p.tamano?.toLowerCase().includes(query);
-
+    const base = productos.filter(p => {
       const matchesCategory =
         activeFilters.categorias.length === 0 || activeFilters.categorias.includes(p.categoria);
       const matchesBrand =
@@ -85,10 +87,15 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
       const matchesSize =
         activeFilters.tamanios.length === 0 || (p.tamano && activeFilters.tamanios.includes(p.tamano));
 
-      return matchesText && matchesCategory && matchesBrand && matchesSize;
+      return matchesCategory && matchesBrand && matchesSize;
     });
 
-    return [...filtered].sort((a, b) => {
+    const query = searchQuery.trim();
+    if (query) {
+      return fuzzySearch(base, query, PRODUCT_SEARCH_KEYS, { threshold: 0.38 });
+    }
+
+    return [...base].sort((a, b) => {
       const aNuevo = a.es_nuevo === true ? 1 : 0;
       const bNuevo = b.es_nuevo === true ? 1 : 0;
       if (aNuevo !== bNuevo) return bNuevo - aNuevo;
