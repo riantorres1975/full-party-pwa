@@ -3,40 +3,26 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   ShoppingBag, MessageCircle, MapPin, Star, Package,
   Sparkles, ArrowRight, Menu, X, Navigation, Clock,
-  ChevronLeft, ChevronRight, ChevronDown,
 } from 'lucide-react';
 import './LandingPage.css';
 import { useProductos } from '../hooks/useProductos';
 import OptimizedImage from '../components/OptimizedImage';
-
-// ════════════════════════════════════════════════════════════
-// 1. PALETA — colores pasteles festivos del logo Full Party
-// ════════════════════════════════════════════════════════════
-const C = {
-  pink:    '#F472B6',   // Rosa pastel — protagonista
-  purple:  '#C084FC',   // Morado suave
-  green:   '#34D399',   // Verde menta
-  orange:  '#FB923C',   // Naranja cálido
-  cyan:    '#22D3EE',   // Turquesa brillante
-  blue:    '#818CF8',   // Azul indigo
-  yellow:  '#FDE047',   // Amarillo — estrellas
-  // Fondos de sección (tintes muy suaves)
-  bgHero:     '#FEFAFF',
-  bgBenefits: '#FEF3FF',
-  bgSteps:    '#F5F3FF',
-  bgReviews:  '#FFF5F9',
-  bgBranches: '#F0FFFE',
-  // Texto
-  textHead:  '#2D0D5A',   // Morado muy oscuro — excelente contraste
-  textBody:  '#5B3080',   // Morado medio legible
-  textMuted: '#7B4FA6',   // Lavanda oscura — WCAG AA sobre fondos claros
-  surfaceLavender: '#F5EEFF',
-  borderSoft: '#EDE0F8',
-  infoBlue: '#0369A1',
-  accentDeep: '#7C3AED',
-  pinkDeep: '#BE185D',
-  shadowLavender: 'rgba(192,132,252,0.1)',
-};
+import { C } from '../styles/tokens';
+import Reveal from '../components/landing/Reveal';
+import GradCard from '../components/landing/GradCard';
+import StarRating from '../components/landing/StarRating';
+import { WaIcon, FbIcon, TikTokIcon } from '../components/icons/SocialIcons';
+import Balloon from '../components/landing/Balloon';
+import SectionTitle from '../components/landing/SectionTitle';
+import ColorLetters from '../components/landing/ColorLetters';
+import BranchTyper from '../components/landing/BranchTyper';
+import FaqItem from '../components/landing/FaqItem';
+import Button from '../components/ui/Button';
+import ReviewsCarousel from '../components/landing/ReviewsCarousel';
+import GaleriaCard from '../components/landing/GaleriaCard';
+import SucursalIllustration from '../components/landing/SucursalIllustration';
+import BrandCard from '../components/landing/BrandCard';
+import NovedadesCarrusel from '../components/landing/NovedadesCarrusel';
 
 // ════════════════════════════════════════════════════════════
 // 2. CONFIGURACIÓN — env vars y constantes globales
@@ -63,25 +49,11 @@ const ENV = {
 };
 
 const WA_HREF  = `https://wa.me/${ENV.waNumber}?text=${encodeURIComponent('Hola, me interesa hacer un pedido por mayoreo 🎉')}`;
-const TYPING   = { typeSpeed: 85, eraseSpeed: 48, holdMs: 2400, pauseMs: 380 };
-const REVIEW_INTERVAL_MS = 5000;
 
 /** GA4: registra un evento si gtag está disponible */
 const trackEvent = (name, params = {}) => {
   if (typeof window.gtag === 'function') window.gtag('event', name, params);
 };
-
-// ════════════════════════════════════════════════════════════
-// 3. DATOS DE CONTENIDO
-// ════════════════════════════════════════════════════════════
-
-const BRANCH_NAMES = [ENV.suc1.nombre, ENV.suc2.nombre];
-
-// Colores de letras inspirados en el logo (cíclicos por posición)
-const LETTER_COLORS = [C.pink, C.purple, C.green, C.orange, C.cyan, C.blue, C.yellow];
-
-// Emojis para la explosión de confeti al cambiar de sucursal
-const BURST_EMOJIS = ['🎉', '🎊', '✨', '⭐', '🌟', '🎈', '🎀', '🎁'];
 
 const NAV_LINKS = [
   { label: 'Inicio',        href: 'top',            hash: false },
@@ -323,817 +295,6 @@ const PARTICLES = [
   { id:  8, top: 47, left:  3, size:  8, color: C.blue,    dur: 10, delay: 0.8, shape: 'square'  },
   { id:  9, top: 92, left: 54, size:  5, color: C.purple,  dur:  7, delay: 1.2, shape: 'circle'  },
 ];
-
-// ════════════════════════════════════════════════════════════
-// 4. HOOKS
-// ════════════════════════════════════════════════════════════
-
-/** Typewriter que cicla entre palabras: escribe → pausa → borra → repite */
-function useTypingCycle(words, opts = TYPING) {
-  const { typeSpeed, eraseSpeed, holdMs, pauseMs } = opts;
-  const [suffix, setSuffix] = useState(words[0]);
-  const [phase,  setPhase]  = useState('hold');
-  const [idx,    setIdx]    = useState(0);
-
-  useEffect(() => {
-    let t;
-    if (phase === 'hold') {
-      t = setTimeout(() => setPhase('erasing'), holdMs);
-    } else if (phase === 'erasing') {
-      if (suffix.length > 0) {
-        t = setTimeout(() => setSuffix(s => s.slice(0, -1)), eraseSpeed);
-      } else {
-        setIdx(i => (i + 1) % words.length);
-        setPhase('pause');
-      }
-    } else if (phase === 'pause') {
-      t = setTimeout(() => setPhase('typing'), pauseMs);
-    } else if (phase === 'typing') {
-      const target = words[idx];
-      if (suffix.length < target.length) {
-        t = setTimeout(() => setSuffix(target.slice(0, suffix.length + 1)), typeSpeed);
-      } else {
-        setPhase('hold');
-      }
-    }
-    return () => clearTimeout(t);
-  }, [phase, suffix, idx]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  return { suffix, showCursor: phase !== 'hold' };
-}
-
-/** IntersectionObserver para animaciones de entrada al hacer scroll */
-function useReveal(threshold = 0.12) {
-  const ref = useRef(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
-      { threshold },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [threshold]);
-  return [ref, visible];
-}
-
-// ════════════════════════════════════════════════════════════
-// 5. COMPONENTES REUTILIZABLES
-// ════════════════════════════════════════════════════════════
-
-/** Envuelve hijos con fade-in + slide al entrar en viewport */
-function Reveal({ children, delay = 0, direction = 'up', className = '' }) {
-  const [ref, visible] = useReveal();
-  const ty = direction === 'up' ? 28 : direction === 'down' ? -28 : 0;
-  const tx = direction === 'left' ? 28 : direction === 'right' ? -28 : 0;
-  return (
-    <div
-      ref={ref}
-      className={className}
-      style={{
-        opacity:    visible ? 1 : 0,
-        transform:  visible ? 'translate(0,0)' : `translate(${tx}px,${ty}px)`,
-        transition: `opacity 0.6s ease ${delay}s, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-/** Tarjeta con borde gradiente — hover gestionado por CSS (var --hover-shadow) */
-function GradCard({ children, gradient, hoverColor = 'rgba(0,0,0,0.1)', className = '' }) {
-  return (
-    <div
-      className={`lp-card ${className}`}
-      style={{
-        background:       `linear-gradient(white, white) padding-box, ${gradient} border-box`,
-        border:           '2px solid transparent',
-        borderRadius:     '1rem',
-        boxShadow:        '0 2px 12px rgba(0,0,0,0.07)',
-        '--hover-shadow': `0 16px 40px ${hoverColor}`,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-/** Estrellas de calificación */
-function StarRating({ count = 5 }) {
-  return (
-    <div className="flex gap-0.5" role="img" aria-label={`${count} de 5 estrellas`}>
-      {Array.from({ length: count }).map((_, i) => (
-        <Star key={i} size={16} fill={C.yellow} stroke="none" aria-hidden="true" />
-      ))}
-    </div>
-  );
-}
-
-/** Ícono SVG oficial de WhatsApp */
-function WaIcon({ size = 20 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
-    </svg>
-  );
-}
-
-/** Ícono SVG de Facebook */
-function FbIcon({ size = 20 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
-    </svg>
-  );
-}
-
-/** Ícono SVG de TikTok */
-function TikTokIcon({ size = 20 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/>
-    </svg>
-  );
-}
-
-/** Globo SVG decorativo */
-function Balloon({ color, size = 48, rotate = 0 }) {
-  return (
-    <svg
-      width={size}
-      height={size * 1.35}
-      viewBox="0 0 60 81"
-      fill="none"
-      aria-hidden="true"
-      style={{ transform: `rotate(${rotate}deg)` }}
-    >
-      <ellipse cx="30" cy="30" rx="22" ry="26" fill={color} opacity="0.85" />
-      <ellipse cx="22" cy="22" rx="6"  ry="7"  fill="white" opacity="0.22" />
-      <path d="M30 56 Q28 62 32 66 Q28 68 30 74" stroke={color} strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.65" />
-      <circle cx="30" cy="57" r="2" fill={color} opacity="0.55" />
-    </svg>
-  );
-}
-
-/** Título de sección reutilizable */
-function SectionTitle({ title, subtitle }) {
-  return (
-    <div className="text-center mb-12">
-      <h2 className="font-display text-3xl sm:text-4xl mb-2" style={{ color: C.textHead }}>{title}</h2>
-      <p className="text-sm" style={{ color: C.textMuted }}>{subtitle}</p>
-    </div>
-  );
-}
-
-/**
- * Cada carácter de `text` con un color diferente del logo,
- * ciclando por LETTER_COLORS según la posición del carácter.
- */
-function ColorLetters({ text }) {
-  return (
-    <>
-      {[...text].map((char, i) => (
-        <span
-          key={i}
-          style={{ color: char === ' ' ? 'inherit' : LETTER_COLORS[i % LETTER_COLORS.length] }}
-        >
-          {char === ' ' ? '\u00A0' : char}
-        </span>
-      ))}
-    </>
-  );
-}
-
-/** Nombre de tienda animado con efecto typewriter y explosión de confeti */
-function BranchTyper() {
-  const { suffix, showCursor } = useTypingCycle(BRANCH_NAMES);
-  const [burst, setBurst]     = useState([]);
-  const prevLenRef            = useRef(0);
-
-  // Dispara confeti cada vez que empieza a escribirse una nueva sucursal
-  useEffect(() => {
-    if (prevLenRef.current === 0 && suffix.length === 1) {
-      const particles = Array.from({ length: 8 }, (_, i) => {
-        const angle = (i / 8) * 360;
-        const dist  = 55 + (i % 3) * 22;
-        return {
-          id:    i,
-          emoji: BURST_EMOJIS[i],
-          bx:    Math.cos((angle * Math.PI) / 180) * dist,
-          by:    Math.sin((angle * Math.PI) / 180) * dist - 10,
-          br:    i * 45 + 15,
-        };
-      });
-      setBurst(particles);
-      const t = setTimeout(() => setBurst([]), 850);
-      return () => clearTimeout(t);
-    }
-    prevLenRef.current = suffix.length;
-  }, [suffix.length]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  return (
-    <div className="relative font-display leading-tight text-center select-none">
-
-      {/* ── Partículas de confeti ── */}
-      {burst.map(p => (
-        <span
-          key={p.id}
-          className="lp-burst-particle absolute pointer-events-none"
-          aria-hidden="true"
-          style={{
-            left:      '50%',
-            top:       '40%',
-            fontSize:  '1.3rem',
-            '--bx':    `${p.bx}px`,
-            '--by':    `${p.by}px`,
-            '--br':    `${p.br}deg`,
-            zIndex:    20,
-          }}
-        >
-          {p.emoji}
-        </span>
-      ))}
-
-      {/* Línea 1 — "Full Party" grande y estático */}
-      <div className="text-5xl sm:text-6xl lg:text-7xl">
-        <ColorLetters text="Full Party" />
-      </div>
-
-      {/* Línea 2 — "Suc. " fijo + nombre escrito letra a letra */}
-      <div
-        className="flex items-center justify-center text-2xl sm:text-3xl lg:text-4xl mt-2"
-        style={{ minHeight: '1.25em' }}
-      >
-        <span className="font-display" style={{ color: C.textBody }}>Suc.&nbsp;</span>
-        <ColorLetters text={suffix} />
-        <span
-          className="cursor-blink inline-block rounded-sm self-center ml-0.5"
-          style={{ width: 2, height: '0.8em', background: C.pink, opacity: showCursor ? 1 : 0 }}
-        />
-      </div>
-    </div>
-  );
-}
-
-/** Ítem de FAQ con acordeón */
-function FaqItem({ pregunta, respuesta }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="border-b" style={{ borderColor: `${C.purple}22` }}>
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="w-full text-left flex items-center justify-between py-4 gap-4"
-        style={{ color: C.textHead }}
-        aria-expanded={open}
-      >
-        <span className="font-bold text-sm">{pregunta}</span>
-        <ChevronDown
-          size={16}
-          className="lp-faq-chevron flex-shrink-0"
-          data-open={String(open)}
-          style={{ color: C.pink }}
-          aria-hidden="true"
-        />
-      </button>
-      {open && (
-        <p className="pb-4 text-sm leading-relaxed" style={{ color: C.textBody }}>
-          {respuesta}
-        </p>
-      )}
-    </div>
-  );
-}
-
-/** Carrusel automático de reseñas estilo Google Maps */
-function ReviewsCarousel({ resenas }) {
-  const [idx,    setIdx]    = useState(0);
-  const [animCls, setAnimCls] = useState('review-enter');
-  const [paused, setPaused] = useState(false);
-
-  const goTo = useCallback((nextIdx) => {
-    setAnimCls('review-exit');
-    setTimeout(() => {
-      setIdx(nextIdx);
-      setAnimCls('review-enter');
-    }, 320);
-  }, []);
-
-  useEffect(() => {
-    if (paused) return;
-    const t = setInterval(() => {
-      goTo((idx + 1) % resenas.length);
-    }, REVIEW_INTERVAL_MS);
-    return () => clearInterval(t);
-  }, [idx, resenas.length, goTo, paused]);
-
-  const r = resenas[idx];
-
-  return (
-    <div
-      className="max-w-2xl mx-auto"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
-      <div className="lp-review-stage">
-        {/* Tarjeta de reseña activa */}
-        <div
-          key={r.id}
-          className={`${animCls} lp-review-card rounded-3xl p-7 bg-white text-left`}
-          style={{ boxShadow: `0 4px 24px ${r.color}22, 0 1px 6px rgba(0,0,0,0.06)`, border: `1.5px solid ${r.color}22` }}
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          {/* Header */}
-          <div className="flex items-center gap-4 mb-4">
-            <div
-              className="w-12 h-12 rounded-full flex items-center justify-center font-display text-lg text-white flex-shrink-0"
-              style={{ background: `linear-gradient(135deg, ${r.color}, ${C.purple})` }}
-              aria-hidden="true"
-            >
-              {r.inicial}
-            </div>
-            <div className="min-w-0">
-              <p className="font-black text-sm truncate" style={{ color: C.textHead }}>{r.nombre}</p>
-              <div className="flex items-center gap-2 mt-0.5">
-                <StarRating count={r.stars} />
-                <span className="text-xs" style={{ color: C.textMuted }}>{r.fecha}</span>
-              </div>
-            </div>
-            {/* Google logo */}
-            <div className="ml-auto flex-shrink-0">
-              <span className="text-xs font-black tracking-tight" style={{
-                background:            'linear-gradient(90deg, #4285F4, #EA4335, #FBBC05, #34A853)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor:  'transparent',
-                backgroundClip:       'text',
-              }} aria-label="Google">Google</span>
-            </div>
-          </div>
-
-          {/* Texto */}
-          <p className="text-sm leading-relaxed" style={{ color: C.textBody }}>
-            "{r.texto}"
-          </p>
-        </div>
-      </div>
-
-      {/* Controles: prev · dots · next */}
-      <div className="flex items-center justify-center gap-2 mt-5">
-        <button
-          onClick={() => goTo((idx - 1 + resenas.length) % resenas.length)}
-          aria-label="Reseña anterior"
-          className="w-8 h-8 rounded-full flex items-center justify-center transition-colors lp-scale-hover"
-          style={{ background: `${C.pink}18`, color: C.pink }}
-        >
-          <ChevronLeft size={16} />
-        </button>
-
-        {resenas.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => goTo(i)}
-            aria-label={`Ver reseña ${i + 1}`}
-            aria-current={i === idx ? 'true' : undefined}
-            className="transition-all duration-300 rounded-full"
-            style={{
-              width:      i === idx ? 20 : 8,
-              height:     8,
-              background: i === idx ? C.pink : `${C.pink}44`,
-            }}
-          />
-        ))}
-
-        <button
-          onClick={() => goTo((idx + 1) % resenas.length)}
-          aria-label="Siguiente reseña"
-          className="w-8 h-8 rounded-full flex items-center justify-center transition-colors lp-scale-hover"
-          style={{ background: `${C.pink}18`, color: C.pink }}
-        >
-          <ChevronRight size={16} />
-        </button>
-      </div>
-
-      {/* Rating global */}
-      <div className="flex items-center justify-center gap-2 mt-4">
-        <StarRating count={5} />
-        <span className="font-black text-sm" style={{ color: C.textHead }}>4.9</span>
-        <span className="text-xs" style={{ color: C.textMuted }}>· {resenas.length} reseñas en Google Maps</span>
-      </div>
-    </div>
-  );
-}
-
-/** Tarjeta de galería con flotación, zoom e iluminación en CSS puro */
-function GaleriaCard({ img, cliente, evento, emoji, color, accent, floatDur = 5, floatDelay = 0 }) {
-  return (
-    <div
-      className="lp-galeria-card"
-      style={{
-        aspectRatio:    '4/5',
-        '--gal-shadow': `0 24px 48px ${color}40`,
-      }}
-    >
-      {/* Envoltorio que recibe la animación de flotación */}
-      <div
-        className="lp-galeria-float w-full h-full relative"
-        style={{
-          '--float-dur':   `${floatDur}s`,
-          '--float-delay': `${floatDelay}s`,
-        }}
-      >
-        {img ? (
-          <img
-            src={img}
-            alt={`Decoración de ${cliente} — ${evento}`}
-            loading="lazy"
-          />
-        ) : (
-          /* Placeholder festivo */
-          <div
-            className="w-full h-full flex flex-col items-center justify-center gap-3 select-none"
-            style={{ background: `linear-gradient(145deg, ${color}22, ${accent}18)`, border: `2px dashed ${color}44` }}
-          >
-            <span className="absolute top-3 right-3 text-lg opacity-40" aria-hidden="true">✨</span>
-            <span className="absolute bottom-5 left-3 text-lg opacity-30" aria-hidden="true">🎊</span>
-            <span className="absolute top-7 left-5 text-sm opacity-25"  aria-hidden="true">⭐</span>
-            <div
-              className="w-16 h-16 rounded-full flex items-center justify-center text-3xl"
-              style={{ background: `${color}20`, border: `2px solid ${color}33` }}
-            >
-              {emoji}
-            </div>
-            <p className="font-display text-xs text-center px-3" style={{ color }}>
-              Comparte tu fiesta
-            </p>
-          </div>
-        )}
-
-        {/* Overlay con nombre y tipo de evento */}
-        <div
-          className="lp-galeria-overlay absolute inset-0 flex flex-col justify-end p-4 z-10"
-          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 58%)' }}
-        >
-          <span
-            className="text-xs font-black px-2.5 py-1 rounded-full self-start mb-1.5"
-            style={{ background: `${color}CC`, color: 'white' }}
-          >
-            {evento}
-          </span>
-          <p className="text-white font-bold text-xs">{cliente}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/** Ilustración SVG festiva para el encabezado de la tarjeta de sucursal */
-function SucursalIllustration({ color, accent, id }) {
-  const gid = `sg-${id}`;
-  return (
-    <svg
-      viewBox="0 0 300 150"
-      className="w-full h-full"
-      preserveAspectRatio="xMidYMid slice"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id={gid} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%"   stopColor={color}  stopOpacity="0.22" />
-          <stop offset="100%" stopColor={accent} stopOpacity="0.14" />
-        </linearGradient>
-      </defs>
-
-      {/* Fondo */}
-      <rect width="300" height="150" fill={`url(#${gid})`} />
-
-      {/* Cuerda de guirnalda */}
-      <path d="M0,22 Q75,36 150,22 Q225,8 300,22"
-        fill="none" stroke={color} strokeWidth="1.4" opacity="0.4" />
-
-      {/* Banderines triangulares */}
-      {[12,48,84,120,156,192,228,264].map((x, i) => (
-        <polygon
-          key={i}
-          points={`${x},22 ${x+20},22 ${x+10},40`}
-          fill={i % 2 === 0 ? color : accent}
-          opacity="0.55"
-        />
-      ))}
-
-      {/* Globo izquierdo */}
-      <ellipse cx="32" cy="95" rx="18" ry="22" fill={color}  opacity="0.38" />
-      <ellipse cx="26" cy="87" rx="5"  ry="6"  fill="white"  opacity="0.22" />
-      <path d="M32,117 Q30,126 34,130 Q30,132 32,138"
-        stroke={color} strokeWidth="1.3" strokeLinecap="round" fill="none" opacity="0.38" />
-
-      {/* Globo derecho */}
-      <ellipse cx="268" cy="90" rx="18" ry="22" fill={accent} opacity="0.38" />
-      <ellipse cx="262" cy="82" rx="5"  ry="6"  fill="white"  opacity="0.22" />
-      <path d="M268,112 Q266,121 270,125 Q266,127 268,133"
-        stroke={accent} strokeWidth="1.3" strokeLinecap="round" fill="none" opacity="0.38" />
-
-      {/* Confeti — círculos */}
-      {[
-        [65, 55, 5, color, 0.45], [240, 50, 6, accent, 0.4],
-        [50, 115, 4, accent, 0.38], [255, 118, 5, color, 0.4],
-        [190, 48, 3.5, color, 0.5], [110, 130, 4, accent, 0.35],
-      ].map(([x, y, r, c, op], i) => (
-        <circle key={i} cx={x} cy={y} r={r} fill={c} opacity={op} />
-      ))}
-
-      {/* Confeti — rombos */}
-      {[
-        [85, 105, color, 0.38], [215, 112, accent, 0.35],
-        [160, 135, color, 0.3], [280, 60, accent, 0.4],
-        [20, 60, color, 0.35],
-      ].map(([x, y, c, op], i) => (
-        <rect key={i} x={x-5} y={y-5} width="10" height="10"
-          fill={c} opacity={op} transform={`rotate(45,${x},${y})`} />
-      ))}
-
-      {/* Estrellas */}
-      {[[70, 42], [232, 40], [95, 135], [205, 130]].map(([x, y], i) => (
-        <text key={i} x={x} y={y} fontSize="13"
-          fill={i % 2 === 0 ? color : accent} opacity="0.6" textAnchor="middle">★</text>
-      ))}
-
-      {/* Círculo central (fondo del ícono) */}
-      <circle cx="150" cy="90" r="36" fill="white" opacity="0.5" />
-      <circle cx="150" cy="90" r="26" fill="white" opacity="0.45" />
-
-      {/* Pin de mapa estilizado */}
-      <path
-        d="M150,68 C139,68 130,77 130,88 C130,103 150,115 150,115 C150,115 170,103 170,88 C170,77 161,68 150,68 Z"
-        fill={color} opacity="0.85"
-      />
-      <circle cx="150" cy="88" r="7" fill="white" opacity="0.95" />
-    </svg>
-  );
-}
-
-/** Tarjeta de marca con efecto gris → color gestionado por estado */
-function BrandCard({ nombre, desc, color, emoji }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <div
-      className="rounded-2xl p-5 flex flex-col items-center gap-3 text-center bg-white lp-card"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        border:      `2px solid ${hovered ? color : '#E9DEFF'}`,
-        boxShadow:   hovered ? `0 12px 32px ${color}28` : '0 2px 10px rgba(0,0,0,0.05)',
-        filter:      hovered ? 'none' : 'grayscale(30%)',
-        transition:  'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-        transform:   hovered ? 'translateY(-5px) scale(1.03)' : 'translateY(0) scale(1)',
-      }}
-    >
-      <div
-        className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl transition-all duration-300"
-        style={{ background: hovered ? `${color}18` : C.surfaceLavender, border: `2px solid ${hovered ? color : '#E9DEFF'}` }}
-      >
-        <span style={{ filter: hovered ? 'none' : 'saturate(0.5)' }}>{emoji}</span>
-      </div>
-      <p className="font-display text-sm transition-colors duration-300" style={{ color: hovered ? C.textHead : '#7A6090' }}>{nombre}</p>
-      <p className="text-xs transition-colors duration-300"              style={{ color: hovered ? C.textMuted : '#BBA8D4' }}>{desc}</p>
-    </div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════
-// 6. CARRUSEL DE NOVEDADES
-// ════════════════════════════════════════════════════════════
-const MAX_NOVEDADES = 12;
-const CARRUSEL_INTERVAL = 3800;
-const CARD_GAP = 16;
-const MXN_COMPACT = new Intl.NumberFormat('es-MX', {
-  style: 'currency',
-  currency: 'MXN',
-  maximumFractionDigits: 0,
-});
-
-function NovedadesCarrusel({ novedades }) {
-  const containerRef  = useRef(null);
-  const [idx, setIdx] = useState(0);
-  const [animating, setAnimating] = useState(true);
-  const [paused, setPaused] = useState(false);
-  const [cols, setCols]     = useState(4);
-  const [cardW, setCardW]   = useState(0);
-
-  // Calcula ancho de card y columnas según el contenedor real
-  useEffect(() => {
-    function measure() {
-      if (!containerRef.current) return;
-      const w = containerRef.current.offsetWidth;
-      const c = w >= 900 ? 4 : w >= 620 ? 3 : 2;
-      setCols(c);
-      setCardW((w - CARD_GAP * (c - 1)) / c);
-    }
-    measure();
-    const ro = new ResizeObserver(measure);
-    if (containerRef.current) ro.observe(containerRef.current);
-    return () => ro.disconnect();
-  }, []);
-
-  const realLen = novedades.length;
-  const hasOverflow = realLen > cols;
-  const items = useMemo(() => {
-    if (!hasOverflow) return novedades;
-    return [...novedades, ...novedades.slice(0, cols)];
-  }, [novedades, cols, hasOverflow]);
-
-  const goNext = useCallback(() => {
-    if (!hasOverflow) {
-      setIdx(i => (i + 1) % Math.max(realLen, 1));
-      return;
-    }
-    setAnimating(true);
-    setIdx(i => i + 1);
-  }, [hasOverflow, realLen]);
-
-  const goPrev = useCallback(() => {
-    if (!hasOverflow) {
-      setIdx(i => (i - 1 + Math.max(realLen, 1)) % Math.max(realLen, 1));
-      return;
-    }
-    setAnimating(true);
-    setIdx(i => Math.max(0, i - 1));
-  }, [hasOverflow, realLen]);
-
-  // Cuando el rail llega a los clones, salta sin transición al índice real
-  const handleTransitionEnd = useCallback(() => {
-    if (!hasOverflow) return;
-    if (idx >= realLen) {
-      setAnimating(false);
-      setIdx(idx % realLen);
-    }
-  }, [idx, realLen, hasOverflow]);
-
-  // Re-activa transición tras el salto instantáneo
-  useEffect(() => {
-    if (!animating) {
-      const t = setTimeout(() => setAnimating(true), 30);
-      return () => clearTimeout(t);
-    }
-  }, [animating]);
-
-  // Auto-avance
-  useEffect(() => {
-    if (paused || !hasOverflow) return;
-    const t = setInterval(goNext, CARRUSEL_INTERVAL);
-    return () => clearInterval(t);
-  }, [paused, hasOverflow, goNext]);
-
-  const translateX = -(idx * (cardW + CARD_GAP));
-  const dotIdx     = idx % realLen;
-
-  if (realLen === 0) return null;
-
-  return (
-    <div
-      className="lp-novedades-shell"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
-      {/* Rail deslizante */}
-      <div ref={containerRef} className="overflow-hidden">
-        <div
-          className="flex"
-          style={{
-            gap:       CARD_GAP,
-            transform: cardW ? `translateX(${translateX}px)` : 'none',
-            transition: animating ? 'transform 0.55s cubic-bezier(0.25, 1, 0.5, 1)' : 'none',
-            willChange: 'transform',
-          }}
-          onTransitionEnd={handleTransitionEnd}
-        >
-          {items.map((p, i) => (
-            <Link
-              key={`${p.id}-${i}`}
-              to="/catalogo"
-              className="lp-novedad-card group flex flex-col flex-shrink-0"
-              style={{
-                width: cardW || `calc(${100 / cols}% - ${CARD_GAP}px)`,
-                animationDelay: `${(i % cols) * 70}ms`,
-              }}
-              aria-label={`Ver ${p.nombre} en el catálogo`}
-            >
-
-              {/* Imagen */}
-              <div
-                className="lp-novedad-media relative flex items-center justify-center overflow-hidden"
-              >
-                <div className="lp-novedad-glow" aria-hidden="true" />
-                <OptimizedImage
-                  src={p.imagen_url}
-                  alt={p.nombre}
-                  aspectClass="w-full h-full aspect-auto"
-                  className="lp-novedad-img w-full h-full"
-                  style={{ objectFit: 'contain', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.10))' }}
-                />
-                {/* Badge Nuevo */}
-                <span
-                  className="lp-pill-nuevo absolute top-2.5 left-2.5 text-[10px] font-black px-2.5 py-1 rounded-full text-white flex items-center gap-1"
-                  style={{
-                    background: `linear-gradient(135deg, ${C.pink}, ${C.purple})`,
-                    boxShadow:  `0 2px 8px ${C.pink}55`,
-                  }}
-                >
-                  <Sparkles size={9} aria-hidden="true" /> Nuevo
-                </span>
-                <span
-                  className="absolute top-2.5 right-2.5 text-[10px] font-black px-2 py-1 rounded-full"
-                  style={{
-                    color: C.textHead,
-                    background: 'rgba(255,255,255,0.88)',
-                    border: `1px solid ${C.purple}30`,
-                    backdropFilter: 'blur(3px)',
-                  }}
-                >
-                  Mayoreo
-                </span>
-                {/* Brillo en hover */}
-                <div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none rounded-xl"
-                  style={{ background: `radial-gradient(circle at 50% 50%, ${C.pink}12, transparent 70%)` }}
-                />
-              </div>
-
-              {/* Info */}
-              <div
-                className="p-3.5 flex flex-col flex-1"
-                style={{ borderTop: `1px solid ${C.pink}20` }}
-              >
-                <p className="text-[10px] font-black uppercase tracking-wider mb-0.5" style={{ color: C.purple }}>
-                  {p.categoria || 'Artículo'}
-                </p>
-                <h3 className="font-display text-xs leading-snug flex-1 line-clamp-2" style={{ color: C.textHead }}>
-                  {p.nombre}
-                </h3>
-                {Number.isFinite(Number(p.precio)) && Number(p.precio) > 0 && (
-                  <span
-                    className="mt-2 inline-flex items-center w-fit text-[11px] font-black px-2 py-1 rounded-lg"
-                    style={{
-                      color: '#b42372',
-                      background: `linear-gradient(135deg, ${C.pink}18, ${C.purple}16)`,
-                      border: `1px solid ${C.pink}30`,
-                    }}
-                  >
-                    Desde {MXN_COMPACT.format(Number(p.precio))}
-                  </span>
-                )}
-                <span
-                  className="mt-2.5 inline-flex items-center gap-1 text-[10px] font-black group-hover:gap-2 transition-all"
-                  style={{ color: C.pink }}
-                >
-                  Ver en catálogo <ArrowRight size={10} aria-hidden="true" />
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Controles */}
-      {hasOverflow && (
-        <div className="flex items-center justify-center gap-3 mt-5">
-          <button onClick={goPrev} aria-label="Anterior"
-            className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110"
-            style={{ background: 'white', color: C.pink, boxShadow: `0 2px 12px ${C.pink}30`, border: `1.5px solid ${C.pink}40` }}>
-            <ChevronLeft size={17} />
-          </button>
-
-          <div className="flex gap-1.5">
-            {novedades.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => { setAnimating(true); setIdx(i); }}
-                aria-label={`Producto ${i + 1}`}
-                className="rounded-full transition-all duration-300"
-                style={{
-                  width:      i === dotIdx ? 22 : 7,
-                  height:     7,
-                  background: i === dotIdx ? `linear-gradient(90deg, ${C.pink}, ${C.purple})` : `${C.pink}40`,
-                  boxShadow:  i === dotIdx ? `0 2px 6px ${C.pink}55` : 'none',
-                }}
-              />
-            ))}
-          </div>
-
-          <button onClick={goNext} aria-label="Siguiente"
-            className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-110"
-            style={{ background: 'white', color: C.pink, boxShadow: `0 2px 12px ${C.pink}30`, border: `1.5px solid ${C.pink}40` }}>
-            <ChevronRight size={17} />
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════
 // 7. COMPONENTE PRINCIPAL
 // ════════════════════════════════════════════════════════════
 export default function LandingPage() {
@@ -1141,7 +302,7 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const { productos } = useProductos();
   const novedades = useMemo(
-    () => productos.filter(p => p.es_nuevo === true && p.activo !== false).slice(0, MAX_NOVEDADES),
+    () => productos.filter(p => p.es_nuevo === true && p.activo !== false).slice(0, 12),
     [productos],
   );
 
@@ -1241,16 +402,19 @@ export default function LandingPage() {
                   {l.label}
                 </button>
               ))}
-              <a
+              <Button
+                variant="primary"
+                size="sm"
+                as="a"
                 href={WA_HREF}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="ml-2 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-black text-white lp-scale-hover whitespace-nowrap"
-                style={{ background: `linear-gradient(135deg, ${C.pink}, ${C.purple})` }}
+                iconLeft={<WaIcon size={13} />}
+                className="ml-2 whitespace-nowrap"
                 onClick={() => trackEvent('nav_whatsapp_click')}
               >
-                <WaIcon size={13} /> WhatsApp
-              </a>
+                WhatsApp
+              </Button>
             </div>
 
             {/* Hamburger */}
@@ -1278,16 +442,20 @@ export default function LandingPage() {
                   {l.label}
                 </button>
               ))}
-              <a
+              <Button
+                variant="primary"
+                size="md"
+                as="a"
                 href={WA_HREF}
                 target="_blank"
                 rel="noopener noreferrer"
+                iconLeft={<WaIcon size={14} />}
+                fullWidth
+                className="mt-1"
                 onClick={() => { setMenuOpen(false); trackEvent('nav_whatsapp_click'); }}
-                className="mt-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-black text-white"
-                style={{ background: `linear-gradient(135deg, ${C.pink}, ${C.purple})` }}
               >
-                <WaIcon size={14} /> Contactar por WhatsApp
-              </a>
+                Contactar por WhatsApp
+              </Button>
             </div>
           )}
         </nav>
@@ -1318,7 +486,7 @@ export default function LandingPage() {
             </Reveal>
 
             {/* Nombre animado de sucursal */}
-            <div className="mb-8"><BranchTyper /></div>
+            <div className="mb-8"><BranchTyper branchNames={[ENV.suc1.nombre, ENV.suc2.nombre]} /></div>
 
             <Reveal delay={0.1}>
               <h1
@@ -1345,23 +513,31 @@ export default function LandingPage() {
 
             <Reveal delay={0.26}>
               <div className="w-full max-w-[340px] mx-auto sm:max-w-none flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button
+                <Button
+                  variant="primary"
+                  size="xl"
+                  pulse
+                  fullWidth
                   onClick={irAlCatalogo}
-                  className="btn-pink-pulse w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-5 rounded-2xl font-black text-lg text-white lp-scale-hover"
-                  style={{ background: `linear-gradient(135deg, ${C.pink}, ${C.purple})` }}
+                  iconLeft={<ShoppingBag size={22} aria-hidden="true" />}
+                  className="sm:w-auto"
                 >
-                  <ShoppingBag size={22} aria-hidden="true" /> Ver Catálogo Digital
-                </button>
-                <a
+                  Ver Catálogo Digital
+                </Button>
+                <Button
+                  variant="outline"
+                  size="xl"
+                  as="a"
                   href={WA_HREF}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-5 rounded-2xl font-black text-base bg-white lp-scale-hover whitespace-nowrap"
-                  style={{ color: C.accentDeep, border: `2px solid ${C.purple}30`, boxShadow: `0 2px 12px ${C.shadowLavender}` }}
+                  iconLeft={<WaIcon size={18} />}
+                  fullWidth
+                  className="sm:w-auto whitespace-nowrap"
                   onClick={() => trackEvent('hero_whatsapp_click')}
                 >
-                  <WaIcon size={18} /> Escribir al WhatsApp
-                </a>
+                  Escribir al WhatsApp
+                </Button>
               </div>
             </Reveal>
 
@@ -1613,16 +789,18 @@ export default function LandingPage() {
                     Comparte tu foto por WhatsApp y aparece aquí 🎉
                   </p>
                 </div>
-                <a
+                <Button
+                  variant="primary"
+                  size="sm"
+                  as="a"
                   href={`https://wa.me/${ENV.waNumber}?text=${encodeURIComponent('¡Hola! Quiero compartir la foto de mi decoración con productos Full Party 🎉')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm text-white lp-scale-hover"
-                  style={{ background: `linear-gradient(135deg, ${C.pink}, ${C.purple})` }}
+                  iconLeft={<WaIcon size={14} />}
                   onClick={() => trackEvent('galeria_compartir_click')}
                 >
-                  <WaIcon size={14} /> Compartir mi foto
-                </a>
+                  Compartir mi foto
+                </Button>
               </div>
             </Reveal>
           </div>
@@ -1708,16 +886,21 @@ export default function LandingPage() {
 
                         {/* Redes sociales de la sucursal */}
                         {facebook && (
-                          <a
+                          <Button
+                            variant="facebook"
+                            size="sm"
+                            as="a"
                             href={facebook}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mt-2 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-black lp-scale-hover"
+                            iconLeft={<FbIcon size={14} />}
+                            fullWidth
+                            className="mt-2"
                             style={{ background: '#1877F214', color: '#1877F2', border: '1px solid #1877F233' }}
                             onClick={() => trackEvent('facebook_click', { sucursal: nombre })}
                           >
-                            <FbIcon size={14} /> Facebook
-                          </a>
+                            Facebook
+                          </Button>
                         )}
                       </div>
                     </div>
@@ -1747,23 +930,26 @@ export default function LandingPage() {
                   Escríbenos por WhatsApp o explora el catálogo. Atención personalizada para distribuidores y organizadores de eventos.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  <button
+                  <Button
+                    variant="primary"
+                    size="lg"
                     onClick={irAlCatalogo}
-                    className="flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-white lp-scale-hover"
-                    style={{ background: `linear-gradient(135deg, ${C.pink}, ${C.purple})`, boxShadow: `0 8px 24px ${C.pink}44` }}
+                    iconLeft={<ShoppingBag size={18} aria-hidden="true" />}
                   >
-                    <ShoppingBag size={18} aria-hidden="true" /> Explorar Catálogo
-                  </button>
-                  <a
+                    Explorar Catálogo
+                  </Button>
+                  <Button
+                    variant="whatsapp"
+                    size="lg"
+                    as="a"
                     href={WA_HREF}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-white lp-scale-hover"
-                    style={{ background: 'linear-gradient(135deg, #25d366, #128c7e)', boxShadow: '0 8px 24px rgba(37,211,102,0.35)' }}
+                    iconLeft={<WaIcon size={18} />}
                     onClick={() => trackEvent('cta_whatsapp_click')}
                   >
-                    <WaIcon size={18} /> Contactar por WhatsApp
-                  </a>
+                    Contactar por WhatsApp
+                  </Button>
                 </div>
               </div>
             </Reveal>
@@ -1797,55 +983,63 @@ export default function LandingPage() {
               </p>
               {/* Botones de redes sociales */}
               <div className="flex flex-wrap gap-2 mt-4">
-                <a
+                <Button
+                  variant="whatsapp"
+                  size="sm"
+                  as="a"
                   href={WA_HREF}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black text-white lp-scale-hover"
-                  style={{ background: 'linear-gradient(135deg, #25d366, #128c7e)' }}
+                  iconLeft={<WaIcon size={12} />}
                   onClick={() => trackEvent('footer_whatsapp_click')}
                   aria-label="WhatsApp"
                 >
-                  <WaIcon size={12} /> WhatsApp
-                </a>
+                  WhatsApp
+                </Button>
                 {ENV.suc1.facebook && (
-                  <a
+                  <Button
+                    variant="facebook"
+                    size="sm"
+                    as="a"
                     href={ENV.suc1.facebook}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black text-white lp-scale-hover"
-                    style={{ background: '#1251AE' }}
+                    iconLeft={<FbIcon size={12} />}
                     onClick={() => trackEvent('footer_facebook_suc1_click')}
-                    aria-label="Facebook Suc. Francisco Villa"
+                    aria-label={`Facebook Suc. ${ENV.suc1.nombre}`}
                   >
-                    <FbIcon size={12} /> Suc. {ENV.suc1.nombre}
-                  </a>
+                    Suc. {ENV.suc1.nombre}
+                  </Button>
                 )}
                 {ENV.suc2.facebook && (
-                  <a
+                  <Button
+                    variant="facebook"
+                    size="sm"
+                    as="a"
                     href={ENV.suc2.facebook}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black text-white lp-scale-hover"
-                    style={{ background: '#1251AE' }}
+                    iconLeft={<FbIcon size={12} />}
                     onClick={() => trackEvent('footer_facebook_suc2_click')}
-                    aria-label="Facebook Suc. Sol Naciente"
+                    aria-label={`Facebook Suc. ${ENV.suc2.nombre}`}
                   >
-                    <FbIcon size={12} /> Suc. {ENV.suc2.nombre}
-                  </a>
+                    Suc. {ENV.suc2.nombre}
+                  </Button>
                 )}
                 {ENV.tiktok && (
-                  <a
+                  <Button
+                    variant="tiktok"
+                    size="sm"
+                    as="a"
                     href={ENV.tiktok}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black text-white lp-scale-hover"
-                    style={{ background: '#010101' }}
+                    iconLeft={<TikTokIcon size={12} />}
                     onClick={() => trackEvent('footer_tiktok_click')}
                     aria-label="TikTok"
                   >
-                    <TikTokIcon size={12} /> TikTok
-                  </a>
+                    TikTok
+                  </Button>
                 )}
               </div>
             </div>

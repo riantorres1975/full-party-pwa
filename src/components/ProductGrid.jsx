@@ -27,7 +27,7 @@ export default function ProductGrid({ productos, getCantidad, onAgregar, onReduc
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(195px,1fr))] gap-2.5 sm:gap-3 lg:gap-4 p-3 sm:p-4 lg:p-0 animate-fade-in">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(195px,1fr))] gap-2.5 sm:gap-3 lg:gap-4 p-3 sm:p-4 lg:p-0 animate-fade-in">
         {visibles.map((producto, index) => (
           <ProductCard
             key={producto.id}

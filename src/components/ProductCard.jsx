@@ -3,6 +3,8 @@ import { SIMBOLO_MONEDA } from '../data/productos';
 import { obtenerPrecioAplicable } from '../utils/precios';
 import { useLanguage } from '../hooks/useLanguage';
 import OptimizedImage from './OptimizedImage';
+import Badge from './ui/Badge';
+import Button from './ui/Button';
 
 function ProductCardInner({
   producto,
@@ -73,18 +75,13 @@ function ProductCardInner({
 
           {agotado && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-              <span className="bg-ink-900/80 text-white text-[11px] font-body font-black
-                               px-3 py-1.5 rounded-full backdrop-blur-sm tracking-wide">
-                {t('product.soldOut')}
-              </span>
+              <Badge variant="soldOut" size="md">{t('product.soldOut')}</Badge>
             </div>
           )}
 
           {stockBajo && (
-            <div className="absolute bottom-2 left-2 text-[9px] font-body font-black
-                            px-2 py-0.5 rounded-full text-white"
-                 style={{ background: 'linear-gradient(135deg, #f97316, #dc2626)' }}>
-              {t('product.lastItems', { count: producto.stock_actual })}
+            <div className="absolute bottom-2 left-2">
+              <Badge variant="warning" size="sm">{t('product.lastItems', { count: producto.stock_actual })}</Badge>
             </div>
           )}
 
@@ -97,11 +94,9 @@ function ProductCardInner({
             </div>
           )}
 
-          {producto.es_nuevo === true && !agotado && (
-            <div className="absolute top-2 left-2 text-[9px] font-body font-black uppercase tracking-wider
-                            px-2 py-0.5 rounded-full text-white animate-pulse"
-                 style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)', animationDuration: '2.5s' }}>
-              {t('common.new')}
+          {esNuevo && (
+            <div className="absolute top-2 left-2">
+              <Badge variant="new" size="sm" pulse>{t('common.new')}</Badge>
             </div>
           )}
         </div>
@@ -124,10 +119,7 @@ function ProductCardInner({
                         style={{ color: '#16a34a' }}>
                     {SIMBOLO_MONEDA}{precioAplicable.toFixed(2)}
                   </span>
-                  <span className="text-[9px] font-body font-black px-1.5 py-0.5 rounded-full text-white"
-                        style={{ background: 'linear-gradient(135deg, #16a34a, #059669)' }}>
-                    −{Math.round((1 - precioAplicable / precioBase) * 100)}%
-                  </span>
+                  <Badge variant="discount" size="sm">−{Math.round((1 - precioAplicable / precioBase) * 100)}%</Badge>
                 </div>
                 <span className="text-[10px] text-ink-400 line-through font-body font-medium">
                   {SIMBOLO_MONEDA}{precioBase.toFixed(2)}
@@ -156,11 +148,9 @@ function ProductCardInner({
 
       <div className="px-2 pb-2 sm:px-3 sm:pb-3">
         {agotado ? (
-          <div className="w-full py-1.5 px-3 rounded-xl text-center
-                          text-[11px] font-body font-black text-ink-400
-                          bg-ink-100">
+          <Button variant="ghost" size="sm" fullWidth disabled>
             {t('common.notAvailable')}
-          </div>
+          </Button>
         ) : enCarrito ? (
           <div className="flex items-center justify-between w-full">
             <button
@@ -194,20 +184,16 @@ function ProductCardInner({
             </button>
           </div>
         ) : (
-          <button
-            onClick={() => !maxStockAlcanzado && onAgregar(producto)}
+          <Button
+            variant="primary"
+            size="sm"
+            fullWidth
             disabled={maxStockAlcanzado}
-            className={`w-full text-white text-[11px] sm:text-[12px] font-body font-black
-                       py-1.5 px-2.5 sm:py-2 sm:px-3 rounded-xl transition-all duration-200
-                       ${maxStockAlcanzado ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'}`}
-            style={{
-              background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
-              boxShadow: maxStockAlcanzado ? 'none' : '0 2px 10px rgba(168,85,247,0.25)',
-            }}
+            onClick={() => !maxStockAlcanzado && onAgregar(producto)}
             aria-label={t('product.addAriaLabel', { name: producto.nombre })}
           >
             {maxStockAlcanzado ? t('product.maxLimit') : t('product.add')}
-          </button>
+          </Button>
         )}
       </div>
     </article>

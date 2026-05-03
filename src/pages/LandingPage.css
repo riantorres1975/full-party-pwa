@@ -2,36 +2,6 @@
    LandingPage.css — Animaciones y utilidades de la Landing
    ═══════════════════════════════════════════════════════════ */
 
-/* ── Accesibilidad: focus ring global ─────────────────────── */
-*:focus-visible {
-  outline: 3px solid #F472B6;
-  outline-offset: 3px;
-}
-
-/* ── Utilidad: visually hidden (screen-reader only) ───────── */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
-}
-.sr-only.focus\:not-sr-only:focus,
-.sr-only:focus {
-  position: fixed;
-  width: auto;
-  height: auto;
-  padding: 0.5rem 1rem;
-  margin: 0;
-  overflow: visible;
-  clip: auto;
-  white-space: normal;
-}
-
 /* ── Partículas de confeti ─────────────────────────────────── */
 @media (prefers-reduced-motion: no-preference) {
   @keyframes floatDrift {
