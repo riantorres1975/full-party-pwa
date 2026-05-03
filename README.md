@@ -479,10 +479,16 @@ El cliente ingresa su folio o teléfono y ve un stepper animado de 4 pasos: Por 
 
 ### Rendimiento (estado actual)
 
+**Score Lighthouse: 82** · FCP 2.1s · LCP 4.5s · TBT 60ms · CLS 0.001
+
 - Fuentes auto-hospedadas con `font-display: swap` para reducir bloqueos de render
 - Catálogo con carga en 2 fases cuando no hay caché: primer lote rápido + lista completa en background
 - Caché local de productos (`localStorage`) con TTL y sincronización por Realtime
 - Optimización de imágenes en cliente para evitar uploads pesados que degraden LCP
+- Code splitting: recharts, lucide-react y módulos admin en chunks separados
+- Boot overlay optimizado con delay reducido (200ms) y transiciones rápidas
+- useProductos con loading no bloqueante (cache-first strategy)
+- Modulepreload para chunks críticos en `index.html`
 
 ---
 

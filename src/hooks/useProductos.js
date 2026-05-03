@@ -70,7 +70,7 @@ function registrarMetadatosProductos(lista) {
 export function useProductos() {
   const [cacheSeed] = useState(() => readProductosCache());
   const [productos, setProductos] = useState(cacheSeed);
-  const [loading,   setLoading]   = useState(cacheSeed.length === 0);
+  const [loading,   setLoading]   = useState(false);
   const [error,     setError]     = useState(null);
   const [tick,      setTick]      = useState(0); // dispara refetch
 

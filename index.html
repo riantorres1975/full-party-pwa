@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#fbf7f3" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="description" content="Distribuidora de artículos para fiesta en Uruapan, Michoacán. +500 productos: globos Glomex, cortinas de lluvia, guirnaldas, velas, sets y accesorios. Mayoreo y menudeo. Envíos a todo México. Pedidos por WhatsApp." />
     <meta name="keywords" content="globos uruapan, globos al mayoreo uruapan, globos de latex uruapan, globos foil uruapan, globos de personajes uruapan, cortinas de lluvia uruapan, guirnaldas uruapan, velas para fiesta, sets de globos, globos glomex michoacan, distribuidora articulos fiesta uruapan, full party uruapan, glomex decoratex sempertex, globos cumpleanos uruapan, decoracion fiesta michoacan, globos graduacion, globos dia de las madres, letras foil, brillo para globos, accesorios globos" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
@@ -44,11 +45,13 @@
     <meta property="og:title" content="<%- NOMBRE_NEGOCIO %> — Artículos para Fiesta al Mayoreo en Uruapan" />
     <meta property="og:description" content="+500 productos: globos Glomex, cortinas de lluvia, guirnaldas, velas y sets. Mayoreo y menudeo. Envíos a todo México. Pedidos por WhatsApp." />
     <meta property="og:image" content="<%- SITE_URL %>/og-image.jpg" />
+    <meta property="og:image:width" content="1536" />
+    <meta property="og:image:height" content="1024" />
+    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:alt" content="<%- NOMBRE_NEGOCIO %> - Catalogo digital mayoreo de articulos para fiesta" />
     <meta property="og:url" content="<%- SITE_URL %>/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="<%- NOMBRE_NEGOCIO %>" />
-    <meta property="fb:app_id" content="TU_APP_ID_AQUI" />
     <meta property="og:locale" content="es_MX" />
 
     <!-- Twitter Card -->
@@ -57,6 +60,8 @@
     <meta name="twitter:description" content="+500 productos: globos, cortinas de lluvia, guirnaldas y más. Envíos a todo México. Pedidos por WhatsApp." />
     <meta name="twitter:image" content="<%- SITE_URL %>/og-image.jpg" />
     <meta name="twitter:image:alt" content="<%- NOMBRE_NEGOCIO %> - Catalogo digital mayoreo de articulos para fiesta" />
+    <meta name="twitter:site" content="@fullpartyuruapan" />
+    <meta name="twitter:creator" content="@fullpartyuruapan" />
 
     <!-- Canonical -->
     <link rel="canonical" href="<%- SITE_URL %>/" />
@@ -187,6 +192,7 @@
       body.fp-app-ready #fp-boot-overlay {
         opacity: 0;
         pointer-events: none;
+        transition: opacity 180ms ease;
       }
 
       html.fp-skip-boot #fp-boot-overlay {
@@ -251,6 +257,10 @@
         50% { transform: translateY(-6px); }
       }
     </style>
+
+    <!-- Preload de chunks críticos para mejorar LCP -->
+    <link rel="modulepreload" href="/src/main.jsx">
+    <link rel="modulepreload" href="/src/AppRouter.jsx">
 
     <!-- Google Analytics 4 (carga diferida post-LCP para no bloquear el render) -->
     <script>
@@ -495,7 +505,7 @@
         // Fallback: revelar app pronto si algo falla durante el arranque.
         setTimeout(function () {
           window.__fpMarkAppReady();
-        }, 450);
+        }, 200);
       })();
     </script>
     <script type="module" src="/src/main.jsx"></script>
