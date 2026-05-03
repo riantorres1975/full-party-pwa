@@ -340,7 +340,7 @@ Lectura pública. Solo admins pueden escribir. Se usa para el sistema de anuncio
 
 ### Rastreo de pedidos
 
-El cliente ingresa su folio o teléfono y ve un stepper animado de 4 pasos: Por Surtir → Armando Pedido → Listo para Entrega → Enviado. La barra de progreso se colorea proporcionalmente. Si el pedido está cancelado muestra una pantalla especial.
+El cliente ingresa su folio y ve un stepper animado de 4 pasos: Por Surtir → Armando Pedido → Listo para Entrega → Enviado. La barra de progreso se colorea proporcionalmente. Si el pedido está cancelado muestra una pantalla especial. La búsqueda está restringida solo a folio por privacidad.
 
 ### Panel de administración (`/admin`)
 
@@ -579,13 +579,13 @@ npm run lighthouse # auditoría Lighthouse (requiere build + preview corriendo)
 
 - Row Level Security en todas las tablas
 - RBAC por email con `VITE_ADMIN_EMAILS`
-- Rate limiting: 5 pedidos/30min en cliente + trigger en BD (10 pedidos/30min por teléfono)
+- Rate limiting: 5 pedidos/30min en cliente (localStorage) + trigger en BD (10 pedidos/30min por teléfono + anti-duplicados)
+- Búsqueda pública de pedidos restringida solo a folio (no expone datos por teléfono)
 - Validación de 190+ ladas mexicanas reales
 - Honeypot anti-bot en el formulario de pedido
 - Subida de imágenes con validación de MIME, extensión, tamaño y magic bytes
 - Auto-logout cuando el JWT expira
-- 52 tests de seguridad automatizados
-- CI/CD con `npm audit` + build + tests en cada push a GitHub
+- Console.log eliminados en build de producción (terser drop_console)
 
 ---
 
