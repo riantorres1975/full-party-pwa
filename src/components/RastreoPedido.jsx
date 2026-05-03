@@ -208,6 +208,22 @@ function TarjetaPedido({ pedido }) {
 }
 
 // ── Componente principal ─────────────────────────────────────────────────────
+const TRACKING_MAX_SEARCHES = 10;
+const TRACKING_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+
+function checkTrackingRateLimit() {
+  try {
+    const raw = localStorage.getItem('fp_tracking_ts');
+    const timestamps = raw ? JSON.parse(raw) : [];
+    const ahora = Date.now();
+    const recent = timestamps.filter(t => ahora - t < TRACKING_WINDOW_MS);
+    if (recent.length >= TRACKING_MAX_SEARCHES) return false;
+    recent.push(ahora);
+    localStorage.setItem('fp_tracking_ts', JSON.stringify(recent));
+    return true;
+  } catch { return true; }
+}
+
 export default function RastreoPedido({ onCerrar }) {
   const [query,    setQuery]   = useState('');
   const [pedidos,  setPedidos] = useState(null);
@@ -220,12 +236,17 @@ export default function RastreoPedido({ onCerrar }) {
     const q = query.trim();
     if (!q || enCooldown) return;
 
+    if (!checkTrackingRateLimit()) {
+      setErrorMsg(t('tracking.rateLimitError'));
+      return;
+    }
+
     setEnCooldown(true);
-    setTimeout(() => setEnCooldown(false), 3000);
+    setTimeout(() => setEnCooldown(false), 2000);
 
     setErrorMsg('');
     const { pedidos: resultado, error } = await buscarPedido(q);
-    if (error) { setErrorMsg(t('tracking.searchError')); return; }
+    if (error) { setErrorMsg(error); return; }
     setPedidos(resultado);
   };
 

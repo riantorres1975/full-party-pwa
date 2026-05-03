@@ -14,13 +14,13 @@ const WINDOW_MS = 30 * 60 * 1000; // 30 minutes
 
 function checkRateLimit() {
   try {
-    const raw = sessionStorage.getItem('fp_order_ts');
+    const raw = localStorage.getItem('fp_order_ts');
     const timestamps = raw ? JSON.parse(raw) : [];
     const ahora = Date.now();
     const recentOrders = timestamps.filter(t => ahora - t < WINDOW_MS);
     if (recentOrders.length >= MAX_ORDERS_PER_SESSION) return false;
     recentOrders.push(ahora);
-    sessionStorage.setItem('fp_order_ts', JSON.stringify(recentOrders));
+    localStorage.setItem('fp_order_ts', JSON.stringify(recentOrders));
     return true;
   } catch { return true; }
 }

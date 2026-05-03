@@ -61,24 +61,27 @@ export function usePedido() {
   }
 
   /**
-   * Busca pedidos por folio exacto o por número de teléfono.
-   * query: string — si empieza con "FP-" busca por folio, si no por teléfono.
+   * Busca pedidos por folio exacto.
+   * Solo se permite búsqueda por folio (no por teléfono) para proteger la privacidad de clientes.
+   * query: string — debe empezar con "FP-"
    */
   async function buscarPedido(query) {
     setBuscando(true);
     try {
-      const esFolio = query.trim().toUpperCase().startsWith('FP-');
+      const folio = query.trim().toUpperCase();
+      if (!folio.startsWith('FP-')) {
+        return { pedidos: [], error: 'Ingresa un folio válido (ej. FP-00001).' };
+      }
+
       const { data, error } = await supabase
         .from('pedidos')
         .select('folio, cliente_nombre, estado, total, tipo_entrega, created_at, updated_at, detalles_json')
-        .eq(esFolio ? 'folio' : 'cliente_telefono', esFolio ? query.trim().toUpperCase() : query.trim())
-        .order('created_at', { ascending: false })
+        .eq('folio', folio)
         .limit(5);
 
       if (error) throw error;
       return { pedidos: data ?? [], error: null };
     } catch (err) {
-      console.error('[usePedido] buscarPedido:', err.message);
       return { pedidos: [], error: 'No se pudo buscar el pedido. Intenta de nuevo.' };
     } finally {
       setBuscando(false);
