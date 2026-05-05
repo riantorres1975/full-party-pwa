@@ -252,32 +252,32 @@ const FAQS = [
 const GALERIA = [
   {
     id: 1,
-    img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/ejemplo_landigpage.jpg',
+    img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/15%20anos.png',
     cliente: 'Sofía M.',   evento: 'XV Años',     emoji: '🎀', color: C.pink,   accent: C.purple,
   },
   {
     id: 2,
-    img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/ejemplo_landigpage.jpg',
+    img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/cumpleanos.png',
     cliente: 'Lupita R.',  evento: 'Cumpleaños',  emoji: '🎂', color: C.orange, accent: C.yellow,
   },
   {
     id: 3,
-    img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/ejemplo_landigpage.jpg',
+    img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/babyshower.png',
     cliente: 'Ana G.',     evento: 'Baby Shower', emoji: '🍼', color: C.cyan,   accent: C.blue,
   },
   {
     id: 4,
-    img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/ejemplo_landigpage.jpg',
+    img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/boda.png',
     cliente: 'Karen V.',   evento: 'Boda',        emoji: '💍', color: C.purple, accent: C.pink,
   },
   {
     id: 5,
-    img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/ejemplo_landigpage.jpg',
+    img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/graduacion.png',
     cliente: 'Fernanda L.', evento: 'Graduación', emoji: '🎓', color: C.green,  accent: C.cyan,
   },
   {
     id: 6,
-    img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/ejemplo_landigpage.jpg',
+    img: 'https://byvjdsqduapzfhdkdwcw.supabase.co/storage/v1/object/public/productos-imagenes/fiesta.png',
     cliente: 'Tú',         evento: '¡Tu fiesta!', emoji: '🎉', color: C.pink,   accent: C.orange,
   },
 ];
@@ -357,24 +357,24 @@ export default function LandingPage() {
 
         {/* ══ NAV ════════════════════════════════════════ */}
         <nav
-          className="sticky top-0 z-50 bg-white border-b"
+          className="lp-main-nav sticky top-0 z-50 bg-white border-b"
           style={{ borderColor: C.borderSoft, boxShadow: `0 2px 16px ${C.shadowLavender}` }}
           aria-label="Navegación principal"
         >
-          <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
+          <div className="lp-main-nav-inner max-w-6xl mx-auto px-5 flex items-center justify-between">
             {/* Logo */}
-            <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="flex items-center gap-3 min-w-0">
               <img
                 src="/icons/icon-64.png"
                 alt={`${ENV.negocio} logo`}
                 width="44"
                 height="44"
-                className="w-11 h-11 rounded-xl"
+                className="w-11 h-11 rounded-xl flex-shrink-0"
                 style={{ boxShadow: `0 4px 12px ${C.pink}44` }}
               />
-              <div className="leading-none">
+              <div className="lp-main-nav-brand min-w-0 leading-none">
                 <span
-                  className="font-display text-2xl block"
+                  className="lp-main-nav-title font-display text-2xl block"
                   style={{
                     background:            `linear-gradient(135deg, ${C.pink}, ${C.purple})`,
                     WebkitBackgroundClip: 'text',
@@ -419,7 +419,7 @@ export default function LandingPage() {
 
             {/* Hamburger */}
             <button
-              className="lg:hidden p-2 rounded-xl"
+              className="lg:hidden p-2 rounded-xl flex-shrink-0"
               style={{ background: C.surfaceLavender, color: C.purple }}
               onClick={() => setMenuOpen(v => !v)}
               aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
@@ -465,85 +465,82 @@ export default function LandingPage() {
 
         {/* ══ HERO ═══════════════════════════════════════ */}
         <section
-          className="relative px-5 pt-16 pb-28 text-center max-w-4xl mx-auto overflow-visible"
+          className="lp-hero relative px-5 pt-16 pb-24 text-center overflow-visible"
           aria-labelledby="hero-heading"
         >
           {/* Globos decorativos */}
-          <div className="hidden sm:block absolute left-0  top-12 balloon-sway   pointer-events-none" style={{ zIndex: 0 }} aria-hidden="true"><Balloon color={C.pink}   size={55} rotate={-8} /></div>
-          <div className="hidden sm:block absolute left-8  top-32 balloon-sway-r pointer-events-none" style={{ zIndex: 0 }} aria-hidden="true"><Balloon color={C.orange} size={38} rotate={5}  /></div>
-          <div className="hidden sm:block absolute right-0 top-8  balloon-sway-r pointer-events-none" style={{ zIndex: 0 }} aria-hidden="true"><Balloon color={C.purple} size={58} rotate={10} /></div>
-          <div className="hidden sm:block absolute right-10 top-36 balloon-sway  pointer-events-none" style={{ zIndex: 0 }} aria-hidden="true"><Balloon color={C.cyan}   size={36} rotate={-5} /></div>
+          <div className="hidden sm:block absolute left-[7%] top-16 balloon-sway pointer-events-none" style={{ zIndex: 0 }} aria-hidden="true"><Balloon color={C.pink} size={62} rotate={-8} /></div>
+          <div className="hidden sm:block absolute left-[12%] bottom-24 balloon-sway-r pointer-events-none" style={{ zIndex: 0 }} aria-hidden="true"><Balloon color={C.yellow} size={48} rotate={5} /></div>
+          <div className="hidden sm:block absolute right-[8%] top-10 balloon-sway-r pointer-events-none" style={{ zIndex: 0 }} aria-hidden="true"><Balloon color={C.cyan} size={76} rotate={10} /></div>
+          <div className="hidden sm:block absolute right-[11%] bottom-24 balloon-sway pointer-events-none" style={{ zIndex: 0 }} aria-hidden="true"><Balloon color={C.green} size={54} rotate={-5} /></div>
 
-          <div className="relative" style={{ zIndex: 1 }}>
+          <div className="relative max-w-4xl mx-auto" style={{ zIndex: 1 }}>
+            <h1 id="hero-heading" className="sr-only">
+              Full Party Uruapan - mayoreo y menudeo de articulos para fiesta
+            </h1>
             <Reveal>
               <span
-                className="inline-flex items-center gap-2 text-xs font-black px-5 py-2 rounded-full mb-8"
-                style={{ background: `${C.pink}18`, color: C.pinkDeep, border: `1px solid ${C.pink}35` }}
+                className="lp-hero-kicker inline-flex items-center gap-2 text-xs font-black px-5 py-2 rounded-full mb-7"
+                style={{ background: 'rgba(255,255,255,0.72)', color: C.textMuted, border: `1px solid ${C.purple}55` }}
               >
-                <Sparkles size={12} aria-hidden="true" />
-                Distribuidora Mayoreo · Uruapan, Michoacán
+                +500 PRODUCTOS · MAYOREO Y MENUDEO
               </span>
             </Reveal>
 
             {/* Nombre animado de sucursal */}
-            <div className="mb-8"><BranchTyper branchNames={[ENV.suc1.nombre, ENV.suc2.nombre]} /></div>
-
-            <Reveal delay={0.1}>
-              <h1
-                id="hero-heading"
-                className="lp-hero-title font-display text-5xl sm:text-6xl lg:text-7xl leading-tight mb-6 hero-glow"
-                style={{
-                  background:            `linear-gradient(135deg, ${C.pink} 0%, ${C.purple} 50%, ${C.cyan} 100%)`,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor:  'transparent',
-                  backgroundClip:       'text',
-                  letterSpacing:        '-0.5px',
-                }}
-              >
-                MAYOREO DE<br />ARTÍCULOS<br />PARA FIESTA
-              </h1>
-            </Reveal>
+            <div className="mb-6"><BranchTyper branchNames={[ENV.suc1.nombre, ENV.suc2.nombre]} /></div>
 
             <Reveal delay={0.18}>
-              <p className="text-base sm:text-lg leading-relaxed mb-10 max-w-xl mx-auto" style={{ color: C.textBody }}>
-                +500 productos para decoradores, revendedores y organizadores de eventos.
-                Globos Glomex, cortinas de lluvia, guirnaldas, velas, sets y más — con precios de mayoreo y envíos a todo México.
+              <p className="lp-hero-copy text-base sm:text-lg leading-relaxed mb-7 max-w-2xl mx-auto" style={{ color: C.textBody }}>
+                Distribuidora de globos, cortinas, guirnaldas y todo para tu fiesta en Uruapan.
+                Arma tu pedido y envíalo por WhatsApp en un toque, sin llamadas ni esperas.
               </p>
             </Reveal>
 
             <Reveal delay={0.26}>
-              <div className="w-full max-w-[340px] mx-auto sm:max-w-none flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="lp-hero-actions w-full max-w-[340px] mx-auto sm:max-w-none flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Button
                   variant="primary"
-                  size="xl"
+                  size="lg"
                   pulse
                   fullWidth
                   onClick={irAlCatalogo}
-                  iconLeft={<ShoppingBag size={22} aria-hidden="true" />}
-                  className="sm:w-auto"
+                  iconRight={<ArrowRight size={16} aria-hidden="true" />}
+                  className="lp-hero-primary max-w-full sm:w-auto"
                 >
-                  Ver Catálogo Digital
+                  Ver Catálogo
                 </Button>
                 <Button
                   variant="outline"
-                  size="xl"
+                  size="lg"
                   as="a"
                   href={WA_HREF}
                   target="_blank"
                   rel="noopener noreferrer"
                   iconLeft={<WaIcon size={18} />}
                   fullWidth
-                  className="sm:w-auto whitespace-nowrap"
+                  className="lp-hero-whatsapp max-w-full sm:w-auto whitespace-nowrap"
                   onClick={() => trackEvent('hero_whatsapp_click')}
                 >
-                  Escribir al WhatsApp
+                  Pedir por WhatsApp
                 </Button>
+              </div>
+            </Reveal>
+
+            <Reveal delay={0.35}>
+              <div className="lp-hero-proof mt-6 mx-auto inline-flex flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-full px-5 py-3 text-xs font-black" style={{ color: C.textBody }}>
+                <span className="text-yellow-400 tracking-[0.12em]">★★★★★</span>
+                <span>4.9 · Google Maps</span>
+                <span className="lp-proof-separator" aria-hidden="true" />
+                <span>🚚 Envíos a todo México</span>
+                <span className="lp-proof-separator" aria-hidden="true" />
+                <span>📍 2 sucursales en Uruapan</span>
               </div>
             </Reveal>
 
             {/* Stats */}
             <Reveal delay={0.35}>
-              <div className="mt-14 flex flex-wrap justify-center gap-10">
+              <div className="hidden mt-14 flex-wrap justify-center gap-10">
                 {[
                   { value: '500+', label: 'Productos',  color: C.pink   },
                   { value: '12+',  label: 'Categorías', color: C.purple },

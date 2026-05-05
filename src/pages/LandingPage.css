@@ -230,6 +230,89 @@
 }
 .lp-scale-hover:hover { transform: scale(1.05); }
 
+.lp-hero {
+  min-height: calc(100vh - 4.5rem);
+  padding-top: 3rem;
+  padding-bottom: 4.25rem;
+  border-top: 2px solid rgba(192, 132, 252, 0.28);
+  border-bottom: 2px solid rgba(34, 211, 238, 0.16);
+  background:
+    radial-gradient(circle at 50% 24%, rgba(255, 255, 255, 0.95), transparent 32%),
+    radial-gradient(circle at 18% 72%, rgba(244, 114, 182, 0.08), transparent 26%),
+    radial-gradient(circle at 84% 74%, rgba(34, 211, 238, 0.07), transparent 28%);
+}
+
+.lp-hero-kicker {
+  letter-spacing: 0.18em;
+  box-shadow: 0 10px 30px rgba(192, 132, 252, 0.1);
+}
+
+.lp-branch-lockup {
+  margin-bottom: -0.35rem;
+}
+
+.lp-branch-logo {
+  filter: drop-shadow(0 18px 30px rgba(192, 132, 252, 0.18));
+}
+
+.lp-branch-welcome {
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.lp-hero-copy {
+  text-wrap: balance;
+  margin-top: -0.25rem;
+}
+
+.lp-hero-primary,
+.lp-hero-whatsapp {
+  min-width: 190px;
+  min-height: 52px;
+  border-radius: 999px !important;
+}
+
+.lp-hero-whatsapp {
+  border-color: #22c55e !important;
+  color: #13783b !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+}
+
+.lp-hero-proof {
+  border: 1px solid rgba(192, 132, 252, 0.24);
+  background: rgba(255, 255, 255, 0.66);
+  box-shadow: 0 12px 30px rgba(86, 26, 122, 0.07);
+  backdrop-filter: blur(10px);
+}
+
+.lp-proof-separator {
+  width: 1px;
+  height: 16px;
+  background: rgba(192, 132, 252, 0.36);
+}
+
+.lp-main-nav {
+  overflow: visible;
+}
+
+.lp-main-nav-inner {
+  min-height: 4.5rem;
+  padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
+  padding-bottom: 0.75rem;
+}
+
+.lp-main-nav-brand {
+  max-width: min(15rem, calc(100vw - 7.5rem));
+}
+
+.lp-main-nav-title {
+  line-height: 1.12;
+  padding-top: 0.1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .lp-nav-link {
   border-radius: 0.75rem;
   font-weight: 900;
@@ -237,6 +320,67 @@
   transition: background 0.2s ease, color 0.2s ease;
 }
 .lp-nav-link:hover { background: rgba(192, 132, 252, 0.12); }
+
+@media (max-width: 640px) {
+  .lp-main-nav-inner {
+    min-height: 4.25rem;
+  }
+
+  .lp-main-nav-title {
+    font-size: clamp(1.1rem, 5.8vw, 1.5rem);
+  }
+
+  .lp-hero-title {
+    font-size: clamp(2.35rem, 10.6vw, 2.65rem) !important;
+    line-height: 1.18 !important;
+    overflow-wrap: normal;
+  }
+
+  .lp-hero-actions {
+    width: min(340px, calc(100vw - 2.5rem)) !important;
+    max-width: min(340px, calc(100vw - 2.5rem)) !important;
+  }
+
+  .lp-hero-actions > * {
+    min-width: 0;
+  }
+
+  .lp-hero {
+    min-height: auto;
+    padding-top: 3rem;
+    padding-bottom: 4.5rem;
+  }
+
+  .lp-hero-kicker {
+    letter-spacing: 0.1em;
+    font-size: 0.66rem;
+  }
+
+  .lp-branch-logo {
+    font-size: clamp(3.4rem, 16vw, 4.9rem) !important;
+  }
+
+  .lp-branch-welcome {
+    white-space: normal;
+    flex-wrap: wrap;
+    font-size: clamp(1.5rem, 7vw, 2rem) !important;
+  }
+
+  .lp-hero-primary,
+  .lp-hero-whatsapp {
+    width: 100%;
+  }
+
+  .lp-hero-proof {
+    border-radius: 1.25rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .lp-proof-separator {
+    display: none;
+  }
+}
 
 /* ── Tarjeta de categoría: hover con CSS custom props ──────── */
 .lp-cat-card {

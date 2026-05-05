@@ -13,6 +13,10 @@
       (function () {
         var pathname = window.location.pathname || '';
         var isCatalogOrAdmin = pathname.startsWith('/catalogo') || pathname.startsWith('/admin');
+        var isLandingTop = pathname === '/' && !window.location.hash;
+        if (isLandingTop && 'scrollRestoration' in history) {
+          history.scrollRestoration = 'manual';
+        }
         if (isCatalogOrAdmin) {
           document.documentElement.classList.add('fp-catalog-immediate');
         } else {
@@ -493,6 +497,9 @@
 
         var pathname = window.location.pathname || '';
         var isCatalogOrAdmin = pathname.startsWith('/catalogo') || pathname.startsWith('/admin');
+        if (pathname === '/' && !window.location.hash) {
+          window.scrollTo(0, 0);
+        }
         // El logo ahora usa src directo, no data-src
         if (!isCatalogOrAdmin) {
           window.__fpMarkAppReady();

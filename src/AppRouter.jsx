@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense } from 'react';
+import { useEffect, useLayoutEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import { LanguageProvider } from './hooks/useLanguage';
@@ -88,6 +88,32 @@ function RouterEffects() {
   const location = useLocation();
   const navigate = useNavigate();
   const esRutaLanding = location.pathname === '/';
+
+  useEffect(() => {
+    if (!('scrollRestoration' in window.history)) return undefined;
+    const previous = window.history.scrollRestoration;
+    window.history.scrollRestoration = 'manual';
+
+    return () => {
+      window.history.scrollRestoration = previous;
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!esRutaLanding || location.hash) return;
+
+    const resetScroll = () => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+
+    resetScroll();
+    requestAnimationFrame(resetScroll);
+    const timeoutId = setTimeout(resetScroll, 120);
+
+    return () => clearTimeout(timeoutId);
+  }, [esRutaLanding, location.hash, location.key]);
 
   // PWA instalada: redirigir al catálogo si se abre en modo standalone
   useEffect(() => {
