@@ -465,7 +465,7 @@ export default function LandingPage() {
 
         {/* ══ HERO ═══════════════════════════════════════ */}
         <section
-          className="lp-hero relative px-5 pt-16 pb-24 text-center overflow-visible"
+          className="lp-hero relative px-5 pt-16 pb-12 text-center overflow-visible"
           aria-labelledby="hero-heading"
         >
           {/* Globos decorativos */}

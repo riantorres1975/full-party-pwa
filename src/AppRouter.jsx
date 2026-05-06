@@ -20,7 +20,7 @@ const SITE_NAME   = 'Full Party Uruapan';
 const SITE_URL    = 'https://www.fullpartyuruapan.com.mx';
 
 const PAGE_META = {
-  '/':        {
+  '/': {
     title:       `${SITE_NAME} — Artículos para Fiesta al Mayoreo en Uruapan`,
     description: 'Distribuidora de artículos para fiesta en Uruapan, Michoacán. +500 productos: globos Glomex, cortinas de lluvia, guirnaldas, velas y sets. Mayoreo y menudeo. Envíos a todo México.',
     canonical:   `${SITE_URL}/`,
@@ -30,7 +30,87 @@ const PAGE_META = {
     description: 'Explora +500 productos al mayoreo: globos de látex Glomex, globos foil, cortinas de lluvia, guirnaldas, velas, sets y accesorios. Precios escalonados y envíos a todo México.',
     canonical:   `${SITE_URL}/catalogo`,
   },
-  '/admin':   {
+  '/catalogo/globos-latex': {
+    title:       `Globos de Látex al Mayoreo en Uruapan | ${SITE_NAME}`,
+    description: 'Globos de látex Glomex, Decoratex y Sempertex al mayoreo. Tamaños 5", 11" y 16". Precios escalonados por volumen, envíos a todo México desde Uruapan.',
+    canonical:   `${SITE_URL}/catalogo/globos-latex`,
+  },
+  '/catalogo/globos-numero': {
+    title:       `Globos de Número al Mayoreo Uruapan | ${SITE_NAME}`,
+    description: 'Globos número foil y látex al mayoreo. Dígitos del 0 al 9 en dorado, plateado y colores metalizados. Precios de mayoreo, envíos a toda la república.',
+    canonical:   `${SITE_URL}/catalogo/globos-numero`,
+  },
+  '/catalogo/globos-foil': {
+    title:       `Globos Foil Metalizados al Mayoreo | ${SITE_NAME}`,
+    description: 'Globos foil metalizados al mayoreo: redondos, corazón, estrella y más. Precios escalonados para decoradores y revendedores. Envíos a México desde Uruapan.',
+    canonical:   `${SITE_URL}/catalogo/globos-foil`,
+  },
+  '/catalogo/letras-foil': {
+    title:       `Letras Foil al Mayoreo en Uruapan | ${SITE_NAME}`,
+    description: 'Letras foil metalizadas al mayoreo. Alfabeto completo en dorado, plateado y colores. Perfectas para arcos y decoraciones de fiesta. Envíos a todo México.',
+    canonical:   `${SITE_URL}/catalogo/letras-foil`,
+  },
+  '/catalogo/globos-personajes': {
+    title:       `Globos de Personajes al Mayoreo Uruapan | ${SITE_NAME}`,
+    description: 'Globos de personajes de moda al mayoreo: superhéroes, princesas, animales y más. Catálogo actualizado constantemente. Envíos a todo México desde Uruapan.',
+    canonical:   `${SITE_URL}/catalogo/globos-personajes`,
+  },
+  '/catalogo/globos-cumpleanos': {
+    title:       `Globos de Cumpleaños al Mayoreo Uruapan | ${SITE_NAME}`,
+    description: 'Globos para cumpleaños al mayoreo: Happy Birthday, números, personajes y kits completos. Precios escalonados por volumen en Uruapan, Michoacán.',
+    canonical:   `${SITE_URL}/catalogo/globos-cumpleanos`,
+  },
+  '/catalogo/globos-graduacion': {
+    title:       `Globos de Graduación al Mayoreo Uruapan | ${SITE_NAME}`,
+    description: 'Globos y decoración para graduaciones al mayoreo. Birretes, diplomas y kits de temporada. Precios mayoreo para revendedores. Envíos a todo México.',
+    canonical:   `${SITE_URL}/catalogo/globos-graduacion`,
+  },
+  '/catalogo/globos-helio': {
+    title:       `Globos para Helio al Mayoreo Uruapan | ${SITE_NAME}`,
+    description: 'Globos aptos para helio al mayoreo: látex de alta calidad y foil metalizados. Para decoradores y revendedores. Envíos a toda la república desde Uruapan.',
+    canonical:   `${SITE_URL}/catalogo/globos-helio`,
+  },
+  '/catalogo/sets-globos': {
+    title:       `Sets de Globos al Mayoreo Uruapan | ${SITE_NAME}`,
+    description: 'Sets y kits de globos al mayoreo listos para decorar fiestas y eventos. Combos de 5 piezas, arcos y racimos. Precios mayoreo en Uruapan, envíos a México.',
+    canonical:   `${SITE_URL}/catalogo/sets-globos`,
+  },
+  '/catalogo/guirnaldas': {
+    title:       `Guirnaldas Decorativas al Mayoreo Uruapan | ${SITE_NAME}`,
+    description: 'Guirnaldas de papel, tela y plástico al mayoreo para fiestas y eventos. Gran variedad de colores y estilos. Mayoreo y menudeo en Uruapan, Michoacán.',
+    canonical:   `${SITE_URL}/catalogo/guirnaldas`,
+  },
+  '/catalogo/cortinas-lluvia': {
+    title:       `Cortinas de Lluvia al Mayoreo Uruapan | ${SITE_NAME}`,
+    description: 'Cortinas de lluvia metalizadas al mayoreo: flecos, panel backdrop y más. Todos los colores. Precios escalonados para decoradores en Uruapan y envíos a México.',
+    canonical:   `${SITE_URL}/catalogo/cortinas-lluvia`,
+  },
+  '/catalogo/velas': {
+    title:       `Velas para Fiesta al Mayoreo Uruapan | ${SITE_NAME}`,
+    description: 'Velas para pastel al mayoreo: números, letras, espirales y más. Para cumpleaños, XV años y bodas. Precios mayoreo en Uruapan, Michoacán.',
+    canonical:   `${SITE_URL}/catalogo/velas`,
+  },
+  '/catalogo/accesorios-globos': {
+    title:       `Accesorios para Globos al Mayoreo Uruapan | ${SITE_NAME}`,
+    description: 'Accesorios para globos al mayoreo: brillo Mega Shine, varillas, cintas, bases y bombas. Todo para decoradores profesionales en Uruapan. Envíos a México.',
+    canonical:   `${SITE_URL}/catalogo/accesorios-globos`,
+  },
+  '/catalogo/letras-led': {
+    title:       `Letras LED para Eventos al Mayoreo Uruapan | ${SITE_NAME}`,
+    description: 'Letras LED luminosas al mayoreo para bodas, XV años y eventos. Decoración impactante con iluminación. Venta en Uruapan con envíos a toda la república.',
+    canonical:   `${SITE_URL}/catalogo/letras-led`,
+  },
+  '/catalogo/globos-revelacion': {
+    title:       `Globos Revelación de Sexo al Mayoreo Uruapan | ${SITE_NAME}`,
+    description: 'Globos para revelación de sexo al mayoreo: bazucas con confeti rosa/azul y globos sorpresa. Para gender reveal en Uruapan y envíos a todo México.',
+    canonical:   `${SITE_URL}/catalogo/globos-revelacion`,
+  },
+  '/catalogo/bazucas-confeti': {
+    title:       `Bazucas de Confeti al Mayoreo Uruapan | ${SITE_NAME}`,
+    description: 'Bazucas de confeti al mayoreo para fiestas y eventos especiales. Confeti metálico, papel y biodegradable. Precios de mayoreo en Uruapan, Michoacán.',
+    canonical:   `${SITE_URL}/catalogo/bazucas-confeti`,
+  },
+  '/admin': {
     title:       `Administración | ${SITE_NAME}`,
     description: null,
     canonical:   null,
@@ -42,7 +122,7 @@ const PAGE_META = {
   },
   '/como-funciona': {
     title:       `¿Cómo hacer un pedido? | ${SITE_NAME}`,
-    description: 'Aprende cómo pedir al mayoreo en Full Party Uruapan en 4 pasos: navega el catálogo, agrega al carrito, revisa y envía por WhatsApp. Atención personalizada para decoradores y revendedores.',
+    description: 'Aprende cómo pedir al mayoreo en Full Party Uruapan en 4 pasos: navega el catálogo, agrega al carrito, revisa y envía por WhatsApp. Atención para decoradores y revendedores.',
     canonical:   `${SITE_URL}/como-funciona`,
   },
   '/destacados': {
@@ -69,6 +149,9 @@ function setPageMeta({ title, description, canonical }) {
   const ogDesc = document.querySelector('meta[property="og:description"]');
   if (ogDesc && description) ogDesc.setAttribute('content', description);
 
+  const ogUrl = document.querySelector('meta[property="og:url"]');
+  if (ogUrl && canonical) ogUrl.setAttribute('content', canonical);
+
   const twTitle = document.querySelector('meta[name="twitter:title"]');
   if (twTitle && title) twTitle.setAttribute('content', title);
 
@@ -82,6 +165,15 @@ function setPageMeta({ title, description, canonical }) {
     document.head.appendChild(canonicalEl);
   }
   if (canonical) canonicalEl.href = canonical;
+
+  let hreflangEl = document.querySelector('link[rel="alternate"][hreflang="es-MX"]');
+  if (!hreflangEl) {
+    hreflangEl = document.createElement('link');
+    hreflangEl.rel = 'alternate';
+    hreflangEl.hreflang = 'es-MX';
+    document.head.appendChild(hreflangEl);
+  }
+  if (canonical) hreflangEl.href = canonical;
 }
 
 function RouterEffects() {

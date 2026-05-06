@@ -396,7 +396,6 @@
 @supports (content-visibility: auto) {
   .lp-below-fold {
     content-visibility: auto;
-    contain-intrinsic-size: 1px 920px;
   }
 }
 
