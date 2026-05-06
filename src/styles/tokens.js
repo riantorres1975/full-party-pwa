@@ -26,10 +26,10 @@ export const colors = {
 
   // Superficies
   bgHero:     '#FEFAFF',
-  bgBenefits: '#FEF3FF',
+  bgBenefits: '#FDF9FF',
   bgSteps:    '#F7F5FF',
-  bgReviews:  '#FFF5F9',
-  bgBranches: '#F0FFFE',
+  bgReviews:  '#FEFAFF',
+  bgBranches: '#F5FFFE',
   cream:      '#fff8fe',
   surfaceLavender: '#F5EEFF',
 

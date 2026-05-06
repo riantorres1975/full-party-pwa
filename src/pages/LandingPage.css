@@ -231,9 +231,8 @@
 .lp-scale-hover:hover { transform: scale(1.05); }
 
 .lp-hero {
-  min-height: calc(100vh - 4.5rem);
   padding-top: 3rem;
-  padding-bottom: 4.25rem;
+  padding-bottom: 2.5rem;
   border-top: 2px solid rgba(192, 132, 252, 0.28);
   border-bottom: 2px solid rgba(34, 211, 238, 0.16);
   background:
