@@ -434,17 +434,7 @@ export default function LandingPage() {
   }, [navigate]);
 
   return (
-    <div id="top" className="relative min-h-screen font-body overflow-x-hidden" style={{
-      background: `
-        radial-gradient(ellipse 55% 28% at 8%   4%,  rgba(255,  61, 172, 0.13) 0%, transparent 100%),
-        radial-gradient(ellipse 50% 24% at 92%  6%,  rgba(  0, 212, 255, 0.11) 0%, transparent 100%),
-        radial-gradient(ellipse 45% 20% at 88% 38%,  rgba(168,  85, 247, 0.08) 0%, transparent 100%),
-        radial-gradient(ellipse 42% 18% at  4% 62%,  rgba(251, 146,  60, 0.09) 0%, transparent 100%),
-        radial-gradient(ellipse 50% 22% at 50% 88%,  rgba( 52, 211, 153, 0.08) 0%, transparent 100%),
-        radial-gradient(ellipse 38% 16% at 96% 78%,  rgba(244, 114, 182, 0.09) 0%, transparent 100%),
-        #FEFAFF
-      `.replace(/\s+/g, ' '),
-    }}>
+    <div id="top" className="lp-page-shell relative min-h-screen font-body overflow-x-hidden">
 
       {/* ── Saltar al contenido principal ───────────────── */}
       <a
