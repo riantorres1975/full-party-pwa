@@ -18,6 +18,7 @@ export default function NovedadesCarrusel({ novedades }) {
   const [idx, setIdx] = useState(0);
   const [animating, setAnimating] = useState(true);
   const [paused, setPaused] = useState(false);
+  const [inView, setInView] = useState(false);
   const [cols, setCols]     = useState(4);
   const [cardW, setCardW]   = useState(0);
 
@@ -34,6 +35,20 @@ export default function NovedadesCarrusel({ novedades }) {
     const ro = new ResizeObserver(measure);
     if (containerRef.current) ro.observe(containerRef.current);
     return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!containerRef.current || !('IntersectionObserver' in window)) {
+      setInView(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { rootMargin: '160px 0px' },
+    );
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
   }, []);
 
   const realLen = novedades.length;
@@ -80,10 +95,10 @@ export default function NovedadesCarrusel({ novedades }) {
 
   // Auto-avance
   useEffect(() => {
-    if (paused || !hasOverflow) return;
+    if (paused || !hasOverflow || !inView) return;
     const t = setInterval(goNext, CARRUSEL_INTERVAL);
     return () => clearInterval(t);
-  }, [paused, hasOverflow, goNext]);
+  }, [paused, hasOverflow, inView, goNext]);
 
   const translateX = -(idx * (cardW + CARD_GAP));
   const dotIdx     = idx % realLen;

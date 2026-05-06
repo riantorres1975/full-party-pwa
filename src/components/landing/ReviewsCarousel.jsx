@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { C } from '../../styles/tokens';
 import StarRating from './StarRating';
@@ -7,9 +7,11 @@ const REVIEW_INTERVAL_MS = 5000;
 
 /** Carrusel automático de reseñas estilo Google Maps */
 export default function ReviewsCarousel({ resenas }) {
+  const rootRef = useRef(null);
   const [idx,    setIdx]    = useState(0);
   const [animCls, setAnimCls] = useState('review-enter');
   const [paused, setPaused] = useState(false);
+  const [inView, setInView] = useState(false);
 
   const goTo = useCallback((nextIdx) => {
     setAnimCls('review-exit');
@@ -20,17 +22,32 @@ export default function ReviewsCarousel({ resenas }) {
   }, []);
 
   useEffect(() => {
-    if (paused) return;
+    if (!rootRef.current || !('IntersectionObserver' in window)) {
+      setInView(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { rootMargin: '160px 0px' },
+    );
+    observer.observe(rootRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (paused || !inView) return;
     const t = setInterval(() => {
       goTo((idx + 1) % resenas.length);
     }, REVIEW_INTERVAL_MS);
     return () => clearInterval(t);
-  }, [idx, resenas.length, goTo, paused]);
+  }, [idx, resenas.length, goTo, paused, inView]);
 
   const r = resenas[idx];
 
   return (
     <div
+      ref={rootRef}
       className="max-w-2xl mx-auto"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}

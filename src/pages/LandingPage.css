@@ -99,6 +99,15 @@
   box-shadow: 0 18px 40px rgba(68, 24, 108, 0.16), 0 6px 22px rgba(244, 114, 182, 0.22);
 }
 
+.lp-novedad-skeleton {
+  min-height: 230px;
+  border-radius: 1.15rem;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.98), rgba(253,249,255,0.96)),
+    linear-gradient(135deg, rgba(244, 114, 182, 0.12), rgba(34, 211, 238, 0.1));
+  border: 1px solid rgba(203, 156, 245, 0.22);
+}
+
 .lp-novedad-media {
   position: relative;
   aspect-ratio: 4 / 3;
@@ -357,12 +366,13 @@
 
   .lp-branch-logo {
     font-size: clamp(3.4rem, 16vw, 4.9rem) !important;
+    filter: none;
   }
 
   .lp-branch-welcome {
-    white-space: normal;
-    flex-wrap: wrap;
-    font-size: clamp(1.5rem, 7vw, 2rem) !important;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+    font-size: clamp(1.05rem, 5.35vw, 1.55rem) !important;
   }
 
   .lp-hero-primary,
@@ -374,10 +384,22 @@
     border-radius: 1.25rem;
     padding-left: 1rem;
     padding-right: 1rem;
+    backdrop-filter: none;
   }
 
   .lp-proof-separator {
     display: none;
+  }
+
+  .btn-pink-pulse,
+  .wa-pulse,
+  .lp-novedades-shell::before,
+  .lp-novedad-card,
+  .lp-novedad-glow,
+  .lp-pill-nuevo,
+  .lp-pill-nuevo::after,
+  .lp-galeria-float {
+    animation: none !important;
   }
 }
 

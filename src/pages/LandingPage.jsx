@@ -1,28 +1,53 @@
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { lazy, Suspense, useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ShoppingBag, MessageCircle, MapPin, Star, Package,
   Sparkles, ArrowRight, Menu, X, Navigation, Clock,
 } from 'lucide-react';
 import './LandingPage.css';
-import { useProductos } from '../hooks/useProductos';
-import OptimizedImage from '../components/OptimizedImage';
 import { C } from '../styles/tokens';
 import Reveal from '../components/landing/Reveal';
 import GradCard from '../components/landing/GradCard';
-import StarRating from '../components/landing/StarRating';
 import { WaIcon, FbIcon, TikTokIcon } from '../components/icons/SocialIcons';
 import Balloon from '../components/landing/Balloon';
 import SectionTitle from '../components/landing/SectionTitle';
-import ColorLetters from '../components/landing/ColorLetters';
 import BranchTyper from '../components/landing/BranchTyper';
 import FaqItem from '../components/landing/FaqItem';
 import Button from '../components/ui/Button';
 import ReviewsCarousel from '../components/landing/ReviewsCarousel';
 import GaleriaCard from '../components/landing/GaleriaCard';
-import SucursalIllustration from '../components/landing/SucursalIllustration';
 import BrandCard from '../components/landing/BrandCard';
-import NovedadesCarrusel from '../components/landing/NovedadesCarrusel';
+
+const NovedadesSection = lazy(() => import('../components/landing/NovedadesSection'));
+
+function NovedadesPlaceholder() {
+  return (
+    <section className="lp-below-fold px-5 pt-8 pb-14" style={{ background: C.bgHero }} aria-hidden="true">
+      <div className="max-w-[1100px] mx-auto">
+        <div className="flex items-center justify-between mb-7 flex-wrap gap-3">
+          <div>
+            <span
+              className="inline-flex items-center gap-1.5 text-xs font-black px-3 py-1.5 rounded-full mb-2"
+              style={{ background: `linear-gradient(135deg, ${C.pink}30, ${C.purple}25)`, color: C.pink, border: `1px solid ${C.pink}33` }}
+            >
+              <Sparkles size={11} aria-hidden="true" /> Recién llegados
+            </span>
+            <h2 className="font-display text-2xl sm:text-3xl" style={{ color: C.textHead }}>
+              Novedades
+            </h2>
+          </div>
+        </div>
+        <div className="lp-novedades-shell">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[0, 1, 2, 3].map((item) => (
+              <div key={item} className={`lp-novedad-skeleton ${item > 1 ? 'hidden sm:block' : ''}`} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 // ════════════════════════════════════════════════════════════
 // 2. CONFIGURACIÓN — env vars y constantes globales
@@ -299,12 +324,32 @@ const PARTICLES = [
 // ════════════════════════════════════════════════════════════
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [loadNovedades, setLoadNovedades] = useState(false);
   const navigate = useNavigate();
-  const { productos } = useProductos();
-  const novedades = useMemo(
-    () => productos.filter(p => p.es_nuevo === true && p.activo !== false).slice(0, 12),
-    [productos],
-  );
+
+  useEffect(() => {
+    if (loadNovedades) return undefined;
+
+    let loaded = false;
+    const load = () => {
+      if (loaded) return;
+      loaded = true;
+      setLoadNovedades(true);
+    };
+
+    const timeoutId = window.setTimeout(load, 1800);
+    const idleId = window.requestIdleCallback?.(load, { timeout: 1300 });
+
+    window.addEventListener('scroll', load, { once: true, passive: true });
+    window.addEventListener('pointerdown', load, { once: true, passive: true });
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      if (idleId !== undefined) window.cancelIdleCallback?.(idleId);
+      window.removeEventListener('scroll', load);
+      window.removeEventListener('pointerdown', load);
+    };
+  }, [loadNovedades]);
 
   const handleNav = useCallback((link) => {
     setMenuOpen(false);
@@ -568,38 +613,13 @@ export default function LandingPage() {
         </section>
 
         {/* ══ NOVEDADES ═══════════════════════════════════ */}
-        {novedades.length > 0 && (
-          <section className="lp-below-fold px-5 pt-8 pb-14" style={{ background: C.bgHero }}>
-            <div className="max-w-[1100px] mx-auto">
-              <Reveal>
-                <div className="flex items-center justify-between mb-7 flex-wrap gap-3">
-                  <div>
-                    <span
-                      className="inline-flex items-center gap-1.5 text-xs font-black px-3 py-1.5 rounded-full mb-2"
-                      style={{ background: `linear-gradient(135deg, ${C.pink}30, ${C.purple}25)`, color: C.pink, border: `1px solid ${C.pink}33` }}
-                    >
-                      <Sparkles size={11} aria-hidden="true" /> Recién llegados
-                    </span>
-                    <h2 className="font-display text-2xl sm:text-3xl" style={{ color: C.textHead }}>
-                      Novedades
-                    </h2>
-                  </div>
-                  <Link
-                    to="/catalogo"
-                    className="text-xs font-black flex items-center gap-1 hover:gap-2 transition-all"
-                    style={{ color: C.pink }}
-                  >
-                    Ver todo el catálogo <ArrowRight size={12} aria-hidden="true" />
-                  </Link>
-                </div>
-              </Reveal>
-              <Reveal delay={0.1}>
-                <NovedadesCarrusel novedades={novedades} />
-              </Reveal>
-            </div>
-          </section>
-        )}
-
+        <Suspense fallback={<NovedadesPlaceholder />}>
+          {loadNovedades ? (
+            <NovedadesSection />
+          ) : (
+            <NovedadesPlaceholder />
+          )}
+        </Suspense>
         {/* ══ BENEFICIOS ══════════════════════════════════ */}
         <section className="lp-below-fold px-5 py-16" style={{ background: C.bgBenefits }}>
           <div className="max-w-5xl mx-auto">
