@@ -388,8 +388,6 @@
 
 /* ── Transiciones reutilizables ────────────────────────────── */
 @media (min-width: 641px) {
-  .btn-pink-pulse,
-  .wa-pulse,
   .lp-novedades-shell::before,
   .lp-novedad-glow,
   .lp-pill-nuevo,
