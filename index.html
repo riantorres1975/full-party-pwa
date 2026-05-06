@@ -63,9 +63,7 @@
     <meta name="twitter:site" content="@fullpartyuruapan" />
     <meta name="twitter:creator" content="@fullpartyuruapan" />
 
-    <!-- Canonical -->
-    <link rel="canonical" href="<%- SITE_URL %>/" />
-    <link rel="alternate" href="<%- SITE_URL %>/" hreflang="es-MX" />
+    <!-- Canonical: inyectado dinámicamente por AppRouter por ruta -->
     <% if (SUPABASE_ORIGIN) { %>
     <link rel="preconnect" href="<%- SUPABASE_ORIGIN %>" crossorigin>
     <link rel="dns-prefetch" href="<%- SUPABASE_ORIGIN %>">
