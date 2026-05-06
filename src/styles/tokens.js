@@ -27,7 +27,7 @@ export const colors = {
   // Superficies
   bgHero:     '#FEFAFF',
   bgBenefits: '#FEF3FF',
-  bgSteps:    '#F5F3FF',
+  bgSteps:    '#F7F5FF',
   bgReviews:  '#FFF5F9',
   bgBranches: '#F0FFFE',
   cream:      '#fff8fe',
