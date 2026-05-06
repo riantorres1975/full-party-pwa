@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useEffect, useCallback } from 'react';
+import { lazy, Suspense, useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ShoppingBag, MessageCircle, MapPin, Star, Package,
@@ -22,20 +22,31 @@ const NovedadesSection = lazy(() => import('../components/landing/NovedadesSecti
 
 function NovedadesPlaceholder() {
   return (
-    <section className="lp-below-fold px-5 pt-8 pb-14" style={{ background: C.bgHero }} aria-hidden="true">
+    <section className="lp-below-fold lp-novedades-section px-5 pt-8 pb-16" style={{ background: C.bgHero }} aria-hidden="true">
       <div className="max-w-[1100px] mx-auto">
-        <div className="flex items-center justify-between mb-7 flex-wrap gap-3">
-          <div>
+        <div className="lp-novedades-heading mb-7">
+          <div className="min-w-0">
             <span
-              className="inline-flex items-center gap-1.5 text-xs font-black px-3 py-1.5 rounded-full mb-2"
+              className="lp-novedades-eyebrow inline-flex items-center gap-1.5 text-xs font-black px-3 py-1.5 rounded-full mb-3"
               style={{ background: `linear-gradient(135deg, ${C.pink}30, ${C.purple}25)`, color: C.pink, border: `1px solid ${C.pink}33` }}
             >
               <Sparkles size={11} aria-hidden="true" /> Recién llegados
             </span>
-            <h2 className="font-display text-2xl sm:text-3xl" style={{ color: C.textHead }}>
-              Novedades
-            </h2>
+            <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
+              <h2 className="font-display text-3xl sm:text-4xl" style={{ color: C.textHead }}>
+                Novedades
+              </h2>
+              <span className="lp-novedades-count inline-flex items-center gap-1.5 text-xs font-black opacity-0">
+                12 productos nuevos
+              </span>
+            </div>
+            <p className="lp-novedades-copy mt-2 text-sm sm:text-base leading-relaxed opacity-0" style={{ color: C.textBody }}>
+              Lo mas reciente para surtir tu fiesta o negocio, listo para agregar al catalogo.
+            </p>
           </div>
+          <span className="lp-novedades-link text-xs font-black inline-flex items-center gap-1.5 opacity-0">
+            Ver todo el catalogo <ArrowRight size={12} aria-hidden="true" />
+          </span>
         </div>
         <div className="lp-novedades-shell">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -43,9 +54,66 @@ function NovedadesPlaceholder() {
               <div key={item} className={`lp-novedad-skeleton ${item > 1 ? 'hidden sm:block' : ''}`} />
             ))}
           </div>
+          <div className="lp-novedades-controls opacity-0">
+            <span className="lp-novedades-arrow" />
+            <span className="lp-novedades-dots">
+              {[0, 1, 2, 3, 4].map((item) => (
+                <span
+                  key={item}
+                  className="lp-novedades-dot"
+                  style={{ width: item === 3 ? 22 : 7, background: `${C.pink}40` }}
+                />
+              ))}
+            </span>
+            <span className="lp-novedades-arrow" />
+          </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function LazyMapIframe({ src, title }) {
+  const ref = useRef(null);
+  const [shouldLoad, setShouldLoad] = useState(false);
+
+  useEffect(() => {
+    if (shouldLoad) return undefined;
+    if (!ref.current || !('IntersectionObserver' in window)) {
+      setShouldLoad(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShouldLoad(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '520px 0px' },
+    );
+
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [shouldLoad]);
+
+  return (
+    <div ref={ref} className="w-full h-full">
+      {shouldLoad ? (
+        <iframe
+          src={src}
+          className="w-full h-full"
+          style={{ border: 0 }}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          allowFullScreen
+          title={title}
+        />
+      ) : (
+        <div className="lp-map-placeholder w-full h-full" aria-hidden="true" />
+      )}
+    </div>
   );
 }
 
@@ -401,8 +469,6 @@ export default function LandingPage() {
               background:   p.color,
               borderRadius: p.shape === 'circle' ? '50%' : '2px',
               transform:    p.shape === 'diamond' ? 'rotate(45deg)' : 'none',
-              animation:   `floatDrift ${p.dur}s ease-in-out ${p.delay}s infinite`,
-              filter:      `drop-shadow(0 0 3px ${p.color}99)`,
             }}
           />
         ))}
@@ -534,65 +600,57 @@ export default function LandingPage() {
             <h1 id="hero-heading" className="sr-only">
               Full Party Uruapan - mayoreo y menudeo de articulos para fiesta
             </h1>
-            <Reveal>
-              <span
-                className="lp-hero-kicker inline-flex items-center gap-2 text-xs font-black px-5 py-2 rounded-full mb-7"
-                style={{ background: 'rgba(255,255,255,0.72)', color: C.textMuted, border: `1px solid ${C.purple}55` }}
-              >
-                +500 PRODUCTOS · MAYOREO Y MENUDEO
-              </span>
-            </Reveal>
+            <span
+              className="lp-hero-kicker inline-flex items-center gap-2 text-xs font-black px-5 py-2 rounded-full mb-7"
+              style={{ background: 'rgba(255,255,255,0.72)', color: C.textMuted, border: `1px solid ${C.purple}55` }}
+            >
+              +500 PRODUCTOS · MAYOREO Y MENUDEO
+            </span>
 
             {/* Nombre animado de sucursal */}
             <div className="mb-6"><BranchTyper branchNames={[ENV.suc1.nombre, ENV.suc2.nombre]} /></div>
 
-            <Reveal delay={0.18}>
-              <p className="lp-hero-copy text-base sm:text-lg leading-relaxed mb-7 max-w-2xl mx-auto" style={{ color: C.textBody }}>
-                Distribuidora de globos, cortinas, guirnaldas y todo para tu fiesta en Uruapan.
-                Arma tu pedido y envíalo por WhatsApp en un toque, sin llamadas ni esperas.
-              </p>
-            </Reveal>
+            <p className="lp-hero-copy text-base sm:text-lg leading-relaxed mb-7 max-w-2xl mx-auto" style={{ color: C.textBody }}>
+              Distribuidora de globos, cortinas, guirnaldas y todo para tu fiesta en Uruapan.
+              Arma tu pedido y envíalo por WhatsApp en un toque, sin llamadas ni esperas.
+            </p>
 
-            <Reveal delay={0.26}>
-              <div className="lp-hero-actions w-full max-w-[340px] mx-auto sm:max-w-none flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  pulse
-                  fullWidth
-                  onClick={irAlCatalogo}
-                  iconRight={<ArrowRight size={16} aria-hidden="true" />}
-                  className="lp-hero-primary max-w-full sm:w-auto"
-                >
-                  Ver Catálogo
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  as="a"
-                  href={WA_HREF}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  iconLeft={<WaIcon size={18} />}
-                  fullWidth
-                  className="lp-hero-whatsapp max-w-full sm:w-auto whitespace-nowrap"
-                  onClick={() => trackEvent('hero_whatsapp_click')}
-                >
-                  Pedir por WhatsApp
-                </Button>
-              </div>
-            </Reveal>
+            <div className="lp-hero-actions w-full max-w-[340px] mx-auto sm:max-w-none flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button
+                variant="primary"
+                size="lg"
+                pulse
+                fullWidth
+                onClick={irAlCatalogo}
+                iconRight={<ArrowRight size={16} aria-hidden="true" />}
+                className="lp-hero-primary max-w-full sm:w-auto"
+              >
+                Ver Catálogo
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                as="a"
+                href={WA_HREF}
+                target="_blank"
+                rel="noopener noreferrer"
+                iconLeft={<WaIcon size={18} />}
+                fullWidth
+                className="lp-hero-whatsapp max-w-full sm:w-auto whitespace-nowrap"
+                onClick={() => trackEvent('hero_whatsapp_click')}
+              >
+                Pedir por WhatsApp
+              </Button>
+            </div>
 
-            <Reveal delay={0.35}>
-              <div className="lp-hero-proof mt-6 mx-auto inline-flex flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-full px-5 py-3 text-xs font-black" style={{ color: C.textBody }}>
-                <span className="text-yellow-400 tracking-[0.12em]">★★★★★</span>
-                <span>4.9 · Google Maps</span>
-                <span className="lp-proof-separator" aria-hidden="true" />
-                <span>🚚 Envíos a todo México</span>
-                <span className="lp-proof-separator" aria-hidden="true" />
-                <span>📍 2 sucursales en Uruapan</span>
-              </div>
-            </Reveal>
+            <div className="lp-hero-proof mt-6 mx-auto inline-flex flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-full px-5 py-3 text-xs font-black" style={{ color: C.textBody }}>
+              <span className="text-yellow-400 tracking-[0.12em]">★★★★★</span>
+              <span>4.9 · Google Maps</span>
+              <span className="lp-proof-separator" aria-hidden="true" />
+              <span>🚚 Envíos a todo México</span>
+              <span className="lp-proof-separator" aria-hidden="true" />
+              <span>📍 2 sucursales en Uruapan</span>
+            </div>
 
             {/* Stats */}
             <Reveal delay={0.35}>
@@ -874,13 +932,8 @@ export default function LandingPage() {
                         className="h-40 relative overflow-hidden rounded-t-[14px]"
                         style={{ borderBottom: `1px solid ${color}33` }}
                       >
-                        <iframe
+                        <LazyMapIframe
                           src={embedUrl}
-                          className="w-full h-full"
-                          style={{ border: 0 }}
-                          loading="lazy"
-                          referrerPolicy="no-referrer-when-downgrade"
-                          allowFullScreen
                           title={`Mapa de ${ENV.negocio} ${nombre}`}
                         />
                         <span

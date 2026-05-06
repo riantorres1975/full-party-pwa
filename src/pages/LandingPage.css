@@ -147,7 +147,7 @@
 }
 
 .lp-novedad-skeleton {
-  min-height: 230px;
+  min-height: 21rem;
   border-radius: 1.15rem;
   background:
     linear-gradient(180deg, rgba(255,255,255,0.98), rgba(253,249,255,0.96)),
@@ -285,6 +285,10 @@
     border-radius: 1rem;
   }
 
+  .lp-novedad-skeleton {
+    min-height: 18.5rem;
+  }
+
   .lp-novedad-media {
     aspect-ratio: 1 / 0.92;
     padding: 6px;
@@ -383,6 +387,26 @@
 
 
 /* ── Transiciones reutilizables ────────────────────────────── */
+@media (min-width: 641px) {
+  .btn-pink-pulse,
+  .wa-pulse,
+  .lp-novedades-shell::before,
+  .lp-novedad-glow,
+  .lp-pill-nuevo,
+  .lp-pill-nuevo::after,
+  .lp-galeria-float {
+    animation: none !important;
+  }
+
+  .lp-branch-logo {
+    filter: none;
+  }
+
+  .lp-hero-proof {
+    backdrop-filter: none;
+  }
+}
+
 .lp-card {
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 0.3s ease;
@@ -463,6 +487,14 @@
   width: 1px;
   height: 16px;
   background: rgba(192, 132, 252, 0.36);
+}
+
+.lp-map-placeholder {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.55), rgba(255,255,255,0.22)),
+    radial-gradient(circle at 22% 24%, rgba(244, 114, 182, 0.2), transparent 34%),
+    radial-gradient(circle at 80% 68%, rgba(34, 211, 238, 0.18), transparent 38%),
+    #f8f4ff;
 }
 
 .lp-main-nav {
@@ -616,12 +648,6 @@
 }
 
 /* ── Aplazar render de secciones bajo el primer viewport ───── */
-@supports (content-visibility: auto) {
-  .lp-below-fold {
-    content-visibility: auto;
-  }
-}
-
 /* ── Ocultar scrollbar en el dot-strip de reseñas ─────────── */
 .lp-hide-scroll { scrollbar-width: none; }
 .lp-hide-scroll::-webkit-scrollbar { display: none; }
