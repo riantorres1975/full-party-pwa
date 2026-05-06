@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, PackageCheck, Sparkles } from 'lucide-react';
 import { useProductos } from '../../hooks/useProductos';
 import { C } from '../../styles/tokens';
 import Reveal from './Reveal';
@@ -16,27 +16,35 @@ export default function NovedadesSection() {
   if (novedades.length === 0) return null;
 
   return (
-    <section className="lp-below-fold px-5 pt-8 pb-14" style={{ background: C.bgHero }}>
+    <section className="lp-below-fold lp-novedades-section px-5 pt-8 pb-16" style={{ background: C.bgHero }}>
       <div className="max-w-[1100px] mx-auto">
         <Reveal>
-          <div className="flex items-center justify-between mb-7 flex-wrap gap-3">
-            <div>
+          <div className="lp-novedades-heading mb-7">
+            <div className="min-w-0">
               <span
-                className="inline-flex items-center gap-1.5 text-xs font-black px-3 py-1.5 rounded-full mb-2"
+                className="lp-novedades-eyebrow inline-flex items-center gap-1.5 text-xs font-black px-3 py-1.5 rounded-full mb-3"
                 style={{ background: `linear-gradient(135deg, ${C.pink}30, ${C.purple}25)`, color: C.pink, border: `1px solid ${C.pink}33` }}
               >
-                <Sparkles size={11} aria-hidden="true" /> Recién llegados
+                <Sparkles size={11} aria-hidden="true" /> Recien llegados
               </span>
-              <h2 className="font-display text-2xl sm:text-3xl" style={{ color: C.textHead }}>
-                Novedades
-              </h2>
+              <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
+                <h2 className="font-display text-3xl sm:text-4xl" style={{ color: C.textHead }}>
+                  Novedades
+                </h2>
+                <span className="lp-novedades-count inline-flex items-center gap-1.5 text-xs font-black">
+                  <PackageCheck size={13} aria-hidden="true" />
+                  {novedades.length} productos nuevos
+                </span>
+              </div>
+              <p className="lp-novedades-copy mt-2 text-sm sm:text-base leading-relaxed" style={{ color: C.textBody }}>
+                Lo mas reciente para surtir tu fiesta o negocio, listo para agregar al catalogo.
+              </p>
             </div>
             <Link
               to="/catalogo"
-              className="text-xs font-black flex items-center gap-1 hover:gap-2 transition-all"
-              style={{ color: C.pink }}
+              className="lp-novedades-link text-xs font-black inline-flex items-center gap-1.5 transition-all"
             >
-              Ver todo el catálogo <ArrowRight size={12} aria-hidden="true" />
+              Ver todo el catalogo <ArrowRight size={12} aria-hidden="true" />
             </Link>
           </div>
         </Reveal>

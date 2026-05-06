@@ -437,10 +437,11 @@ export default function LandingPage() {
                     backgroundClip:       'text',
                   }}
                 >
-                  {ENV.negocio}
+                  <span className="lp-brand-full">Full</span>
+                  <span className="lp-brand-party">Party</span>
                 </span>
-                <span className="text-[10px] font-black tracking-widest uppercase" style={{ color: C.infoBlue }}>
-                  Uruapan
+                <span className="lp-main-nav-subtitle text-[10px] font-black tracking-widest uppercase">
+                  Mayoreo · Uruapan
                 </span>
               </div>
             </div>
@@ -458,14 +459,14 @@ export default function LandingPage() {
                 </button>
               ))}
               <Button
-                variant="primary"
+                variant="outline"
                 size="sm"
                 as="a"
                 href={WA_HREF}
                 target="_blank"
                 rel="noopener noreferrer"
                 iconLeft={<WaIcon size={13} />}
-                className="ml-2 whitespace-nowrap"
+                className="lp-nav-whatsapp ml-2 whitespace-nowrap"
                 onClick={() => trackEvent('nav_whatsapp_click')}
               >
                 WhatsApp
