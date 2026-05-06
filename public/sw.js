@@ -1,6 +1,6 @@
 // Service Worker — Catálogo Digital PWA
 const CACHE_NAME = 'catalogo-v8';
-const IMG_CACHE  = 'catalogo-img-v2';
+const IMG_CACHE  = 'catalogo-img-v3';
 const MAX_IMG_CACHE = 150; // max images to keep cached
 
 // Recursos a cachear en la instalación (NO incluir index.html — siempre se pide al server)
@@ -105,8 +105,8 @@ self.addEventListener('fetch', (event) => {
 
         // Background revalidate — usar no-cors para imágenes externas
         const networkFetch = fetch(event.request).then((response) => {
-          // Solo cachear respuestas exitosas y transparentes (no opacas rotas)
-          if (response && (response.status === 200 || response.type === 'opaque')) {
+          // Solo cachear respuestas exitosas (no opacas — no se puede verificar su validez)
+          if (response && response.status === 200) {
             cache.put(event.request, response.clone()).catch(() => {});
             trimImageCache();
           }

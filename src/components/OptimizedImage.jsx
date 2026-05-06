@@ -58,10 +58,15 @@ function OptimizedImageInner({
       }
     });
 
-    // Failsafe: evita quedarse eternamente en shimmer por abort/cancel de carga
-    // sin forzar fallback prematuro cuando la red va lenta.
+    // Failsafe: si el <img> completó pero sin datos (naturalWidth=0), tratar como error.
+    // Si sigue cargando tras 2200ms, simplemente quitar shimmer.
     const timeoutId = setTimeout(() => {
-      setLoaded(true);
+      const img = imgRef.current;
+      if (img && img.complete && img.naturalWidth === 0 && !error) {
+        setError(true);
+      } else {
+        setLoaded(true);
+      }
     }, 2200);
 
     return () => {
@@ -100,7 +105,15 @@ function OptimizedImageInner({
         fetchpriority={priority ? 'high' : 'auto'}
         className={`w-full h-full object-contain ${priority ? '' : 'transition-opacity duration-300'} ${loaded ? 'opacity-100' : 'opacity-0'} ${className}`}
         style={style}
-        onLoad={() => setLoaded(true)}
+        onLoad={(e) => {
+          if (e.currentTarget.naturalWidth > 0) {
+            setLoaded(true);
+          } else if (!error) {
+            setError(true);
+          } else {
+            setLoaded(true);
+          }
+        }}
         onError={() => {
           if (!error) {
             setError(true);
