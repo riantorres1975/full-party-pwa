@@ -525,8 +525,8 @@ export default function AdminCatalogo() {
 
   return (
     <div className="min-w-0">
-      {/* Sticky toolbar: search + actions + filters */}
-      <div className="sticky top-[57px] lg:top-0 z-20 flex flex-col gap-3 bg-admin-bg pt-3 pb-3 -mx-3 px-3 sm:-mx-4 sm:px-4 lg:-mx-8 lg:px-8 border-b border-admin-border-soft">
+      {/* Toolbar: search + actions + filters */}
+      <div className="flex flex-col gap-3 bg-admin-bg pt-3 pb-3 -mx-3 px-3 sm:-mx-4 sm:px-4 lg:-mx-8 lg:px-8 border-b border-admin-border-soft">
         <div className="flex gap-2 items-center shrink-0">
           <div className="relative flex-1 min-w-0">
             <Search
