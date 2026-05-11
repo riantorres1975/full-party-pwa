@@ -68,7 +68,7 @@ export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut,
       <PermissionsGate onSignOut={onSignOut}>
       <AdminDataProvider toast={toast} confirmCancelar={confirmCancelar}>
         <BreadcrumbProvider>
-        <div className="flex flex-col h-screen bg-admin-bg lg:flex-row">
+        <div className="flex flex-col h-screen overflow-hidden bg-admin-bg lg:flex-row">
           <ConfirmModal
             open={cancelConfirmOpen}
             {...cancelConfig}
@@ -102,7 +102,7 @@ export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut,
             <Topbar />
 
             {/* Page content */}
-            <main id="admin-main" className="flex-1 min-w-0 overflow-y-auto">
+            <main id="admin-main" className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto">
               <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 lg:p-5 lg:max-w-none pb-20 lg:pb-0">
                 {children}
               </div>
