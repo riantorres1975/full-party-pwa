@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useProductos }      from './hooks/useProductos';
 import { useCarrito }        from './hooks/useCarrito';
 import { useToast }          from './components/ui/ToastProvider';
@@ -12,10 +12,12 @@ import ModalFiltros       from './components/ModalFiltros';
 import ProductGrid        from './components/ProductGrid';
 import ProductosSkeleton  from './components/ProductosSkeleton';
 import CarritoDrawer      from './components/CarritoDrawer';
-import FloatingCartButton from './components/FloatingCartButton';
 import RastreoPedido      from './components/RastreoPedido';
 import RedesSociales      from './components/RedesSociales';
 import SidebarFiltrosDesktop from './components/SidebarFiltrosDesktop';
+import CategoryGrid from './components/CategoryGrid';
+import CategoryBrowser from './components/CategoryBrowser';
+import BottomNav from './components/BottomNav';
 import { fuzzySearch } from './utils/fuzzySearch';
 
 const PRODUCT_SEARCH_KEYS = [
@@ -38,11 +40,16 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
+  const [isCategoryBrowserOpen, setIsCategoryBrowserOpen] = useState(false);
+  const [bottomNavActive, setBottomNavActive] = useState('inicio');
+  const searchRef = useRef(null);
 
   const [activeFilters, setActiveFilters] = useState({
     categorias: [],
     marcas:     [],
     tamanios:   [],
+    precioMin:  null,
+    precioMax:  null,
   });
 
   const { items, total, cantidadTotal,
@@ -76,7 +83,25 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   };
 
   const clearFilters = () =>
-    setActiveFilters({ categorias: [], marcas: [], tamanios: [] });
+    setActiveFilters({ categorias: [], marcas: [], tamanios: [], precioMin: null, precioMax: null });
+
+  const setPriceFilter = ({ min, max }) => {
+    setActiveFilters(prev => ({
+      ...prev,
+      precioMin: min,
+      precioMax: max,
+    }));
+  };
+
+  const priceBounds = useMemo(() => {
+    const prices = productos
+      .filter(p => p.activo !== false)
+      .map(p => Number(p.precio))
+      .filter(price => Number.isFinite(price) && price >= 0);
+
+    if (prices.length === 0) return { min: null, max: null };
+    return { min: Math.min(...prices), max: Math.max(...prices) };
+  }, [productos]);
 
   const filteredProducts = useMemo(() => {
     const base = productos.filter(p => {
@@ -86,8 +111,12 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
         activeFilters.marcas.length === 0 || (p.marca && activeFilters.marcas.includes(p.marca));
       const matchesSize =
         activeFilters.tamanios.length === 0 || (p.tamano && activeFilters.tamanios.includes(p.tamano));
+      const precio = Number(p.precio);
+      const matchesPrice =
+        (!Number.isFinite(activeFilters.precioMin) || precio >= activeFilters.precioMin) &&
+        (!Number.isFinite(activeFilters.precioMax) || precio <= activeFilters.precioMax);
 
-      return matchesCategory && matchesBrand && matchesSize;
+      return matchesCategory && matchesBrand && matchesSize && matchesPrice;
     });
 
     const query = searchQuery.trim();
@@ -109,19 +138,63 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     return CATEGORIAS_CONFIG.filter(c => usadas.has(c.id));
   }, [productos]);
 
-  const singleActiveCategory =
-    activeFilters.categorias.length === 1 ? activeFilters.categorias[0] : null;
+  const categoryStats = useMemo(() => {
+    const counts = new Map();
+    productos
+      .filter(p => p.activo !== false && p.categoria)
+      .forEach((p) => counts.set(p.categoria, (counts.get(p.categoria) || 0) + 1));
 
-  const selectCategoryPill = (catId) => {
-    if (catId === null) {
+    const labels = Object.fromEntries(CATEGORIAS_CONFIG.map(c => [c.id, c.label]));
+    return [...counts.entries()]
+      .map(([id, count]) => ({ id, label: labels[id] || id, count }))
+      .sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        return String(a.label || '').localeCompare(String(b.label || ''), 'es', { sensitivity: 'base' });
+      });
+  }, [productos]);
+
+  const topHomeCategories = useMemo(() => categoryStats.slice(0, 9), [categoryStats]);
+  const topBrowserCategories = useMemo(() => categoryStats.slice(0, 8), [categoryStats]);
+
+  const scrollCatalogTop = () => {
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  };
+
+  const selectCategory = (categoryOrId) => {
+    const catId = typeof categoryOrId === 'string' ? categoryOrId : categoryOrId?.id;
+    if (!catId) {
       setActiveFilters(prev => ({ ...prev, categorias: [] }));
     } else {
       setActiveFilters(prev => ({ ...prev, categorias: [catId] }));
     }
+    setSearchQuery('');
+    setIsCategoryBrowserOpen(false);
+    setBottomNavActive('categorias');
+    scrollCatalogTop();
+  };
+
+  const resetCatalog = () => {
+    setSearchQuery('');
+    clearFilters();
+    setIsCategoryBrowserOpen(false);
+    setBottomNavActive('inicio');
+    scrollCatalogTop();
+  };
+
+  const focusSearch = () => {
+    setIsCategoryBrowserOpen(false);
+    setBottomNavActive('buscar');
+    scrollCatalogTop();
+    setTimeout(() => searchRef.current?.focus(), 180);
   };
 
   const activeFilterCount =
-    activeFilters.categorias.length + activeFilters.marcas.length + activeFilters.tamanios.length;
+    activeFilters.categorias.length +
+    activeFilters.marcas.length +
+    activeFilters.tamanios.length +
+    (Number.isFinite(activeFilters.precioMin) || Number.isFinite(activeFilters.precioMax) ? 1 : 0);
 
   // Render
   // Full-screen tracking view
@@ -150,47 +223,18 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
           <div className="pt-1">
             <BuscadorFiltros
+              ref={searchRef}
               busqueda={searchQuery}
               setBusqueda={setSearchQuery}
               filtros={activeFilters}
               toggleFiltro={toggleFilter}
               totalFiltrosActivos={activeFilterCount}
               onAbrirFiltros={() => setAreFiltersOpen(true)}
+              productos={productos}
+              categoryStats={categoryStats}
+              onSelectCategory={selectCategory}
             />
           </div>
-
-          {/* Category pills: quick access on mobile only */}
-          {categoryPills.length > 0 && !loading && (
-            <div className="lg:hidden overflow-x-auto hide-scrollbar pb-2 pt-1.5">
-              <div className="flex gap-2 px-4">
-                <button
-                    onClick={() => selectCategoryPill(null)}
-                  className="flex-shrink-0 text-[11px] font-body font-black px-3 py-1.5 rounded-full
-                             transition-all duration-200 active:scale-95 whitespace-nowrap"
-                  style={activeFilters.categorias.length === 0
-                    ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)', color: 'white', boxShadow: '0 2px 8px #ff3dac44' }
-                    : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-soft)' }
-                  }
-                >
-                  {t('common.all')}
-                </button>
-                {categoryPills.map(cat => (
-                  <button
-                    key={cat.id}
-                    onClick={() => selectCategoryPill(cat.id)}
-                    className="flex-shrink-0 text-[11px] font-body font-black px-3 py-1.5 rounded-full
-                               transition-all duration-200 active:scale-95 whitespace-nowrap"
-                    style={singleActiveCategory === cat.id
-                      ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)', color: 'white', boxShadow: '0 2px 8px #ff3dac44' }
-                      : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-soft)' }
-                    }
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </header>
 
         {/* Customer announcement banner */}
@@ -230,7 +274,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
           </div>
         )}
 
-        <main className={`lg:pb-0 lg:h-[calc(100vh-130px)] lg:overflow-hidden transition-all duration-300 ${items.length > 0 ? 'pb-40' : 'pb-8'}`}>
+        <main className="pb-[calc(6.25rem+env(safe-area-inset-bottom,0px))] lg:pb-0 lg:h-[calc(100vh-130px)] lg:overflow-hidden transition-all duration-300">
           <h1 className="sr-only">Catálogo de Artículos para Fiesta al Mayoreo | Full Party Uruapan</h1>
           <div className="max-w-[1600px] mx-auto w-full px-3 lg:px-6 h-full">
             <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(0,1fr)] lg:gap-6 xl:gap-8 lg:items-start lg:h-full">
@@ -242,6 +286,18 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
               />
 
               <section className="lg:h-full lg:flex lg:flex-col min-h-0">
+                {!loading && !error && (
+                  <CategoryGrid
+                    categories={topHomeCategories}
+                    totalCategories={categoryStats.length || categoryPills.length}
+                    onSelectCategory={selectCategory}
+                    onViewAll={() => {
+                      setBottomNavActive('categorias');
+                      setIsCategoryBrowserOpen(true);
+                    }}
+                  />
+                )}
+
                  {/* Trust strip */}
                 <div className="px-3 lg:px-0 pt-2 pb-1">
                   <div className="flex items-center justify-start lg:justify-center gap-3 lg:gap-5 text-[10px] lg:text-xs font-body font-bold overflow-x-auto hide-scrollbar"
@@ -297,10 +353,16 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
           </div>
         </main>
 
-        <FloatingCartButton
+        <BottomNav
+          active={isCartOpen ? 'pedido' : isCategoryBrowserOpen ? 'categorias' : bottomNavActive}
           cantidadTotal={cantidadTotal}
-          total={total}
-          onAbrir={() => setIsCartOpen(true)}
+          onInicio={resetCatalog}
+          onCategorias={() => {
+            setBottomNavActive('categorias');
+            setIsCategoryBrowserOpen(true);
+          }}
+          onBuscar={focusSearch}
+          onPedido={() => setIsCartOpen(true)}
         />
       </div>
 
@@ -320,8 +382,18 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
         onCerrar={() => setAreFiltersOpen(false)}
         filtros={activeFilters}
         toggleFiltro={toggleFilter}
+        onPrecioChange={setPriceFilter}
+        priceBounds={priceBounds}
         limpiarFiltros={clearFilters}
         totalResultados={filteredProducts.length}
+      />
+
+      <CategoryBrowser
+        isOpen={isCategoryBrowserOpen}
+        categories={categoryStats}
+        popularCategories={topBrowserCategories}
+        onClose={() => setIsCategoryBrowserOpen(false)}
+        onSelectCategory={selectCategory}
       />
     </div>
   );
