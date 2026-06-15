@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { ArrowLeft, Check, Search } from 'lucide-react';
-import { categorias, marcas, tamanios } from '../data/productos';
+import { categorias, marcas, tamanios, SIMBOLO_MONEDA } from '../data/productos';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -128,14 +128,16 @@ function FilaCategoria({ label, activo, count = 0, onClick }) {
 }
 
 function PrecioInputs({ min, max, valueMin, valueMax, onChange }) {
+  // Empty unless an actual filter is set; the catalog bounds show as placeholders.
   const [minValue, setMinValue] = useState('');
   const [maxValue, setMaxValue] = useState('');
 
+  const minHint = Number.isFinite(min) ? String(Math.round(min)) : '0';
+  const maxHint = Number.isFinite(max) ? String(Math.round(max)) : '';
+
   useEffect(() => {
-    const nextMin = Number.isFinite(valueMin) ? valueMin : min;
-    const nextMax = Number.isFinite(valueMax) ? valueMax : max;
-    setMinValue(Number.isFinite(nextMin) ? String(nextMin) : '');
-    setMaxValue(Number.isFinite(nextMax) ? String(nextMax) : '');
+    setMinValue(Number.isFinite(valueMin) ? String(valueMin) : '');
+    setMaxValue(Number.isFinite(valueMax) ? String(valueMax) : '');
   }, [min, max, valueMin, valueMax]);
 
   const commitChange = (nextMinText, nextMaxText) => {
@@ -187,17 +189,21 @@ function PrecioInputs({ min, max, valueMin, valueMax, onChange }) {
         <span className="block text-[10px] font-body font-black text-ink-400">
           Mínimo
         </span>
-        <input
-          type="number"
-          inputMode="decimal"
-          min={Number.isFinite(min) ? min : undefined}
-          max={Number.isFinite(maxValue) ? Number(maxValue) : undefined}
-          step="0.01"
-          value={minValue}
-          onChange={handleMinChange}
-          className="mt-0.5 block w-full bg-transparent p-0 text-sm font-body font-black text-ink-900 outline-none"
-          aria-label="Precio minimo"
-        />
+        <div className="mt-0.5 flex items-baseline gap-1">
+          <span className="text-sm font-body font-black text-ink-300">{SIMBOLO_MONEDA}</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min={Number.isFinite(min) ? min : undefined}
+            max={Number.isFinite(maxValue) ? Number(maxValue) : undefined}
+            step="0.01"
+            value={minValue}
+            placeholder={minHint}
+            onChange={handleMinChange}
+            className="block w-full bg-transparent p-0 text-sm font-body font-black text-ink-900 outline-none placeholder:text-ink-300 placeholder:font-bold"
+            aria-label="Precio minimo"
+          />
+        </div>
       </div>
       <span className="flex-shrink-0 text-lg font-body font-semibold text-ink-400">-</span>
       <div
@@ -207,17 +213,21 @@ function PrecioInputs({ min, max, valueMin, valueMax, onChange }) {
         <span className="block text-[10px] font-body font-black text-ink-400">
           Máximo
         </span>
-        <input
-          type="number"
-          inputMode="decimal"
-          min={Number.isFinite(minValue) ? Number(minValue) : undefined}
-          max={Number.isFinite(max) ? max : undefined}
-          step="0.01"
-          value={maxValue}
-          onChange={handleMaxChange}
-          className="mt-0.5 block w-full bg-transparent p-0 text-sm font-body font-black text-ink-900 outline-none"
-          aria-label="Precio maximo"
-        />
+        <div className="mt-0.5 flex items-baseline gap-1">
+          <span className="text-sm font-body font-black text-ink-300">{SIMBOLO_MONEDA}</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min={Number.isFinite(minValue) ? Number(minValue) : undefined}
+            max={Number.isFinite(max) ? max : undefined}
+            step="0.01"
+            value={maxValue}
+            placeholder={maxHint}
+            onChange={handleMaxChange}
+            className="block w-full bg-transparent p-0 text-sm font-body font-black text-ink-900 outline-none placeholder:text-ink-300 placeholder:font-bold"
+            aria-label="Precio maximo"
+          />
+        </div>
       </div>
     </div>
   );
