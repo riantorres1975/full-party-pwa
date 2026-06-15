@@ -23,7 +23,8 @@
     "recharts": "^3.8.1"
   },
   "overrides": {
-    "ws": "^8.21.0"
+    "ws": "^8.21.0",
+    "esbuild": "^0.28.1"
   },
   "devDependencies": {
     "@axe-core/cli": "^4.11.1",
