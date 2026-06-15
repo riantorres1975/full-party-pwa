@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
-import { categorias, marcas, tamanios } from '../data/productos';
+import { categorias, marcas, tamanios, SIMBOLO_MONEDA } from '../data/productos';
 import { useLanguage } from '../hooks/useLanguage';
 import SearchPanel, { saveRecentSearch } from './SearchPanel';
 
@@ -69,15 +69,18 @@ function BuscadorFiltros({
     ? (LABELS.categorias[categoriaActiva] ?? categoryStats.find(c => c.id === categoriaActiva)?.label ?? categoriaActiva)
     : null;
 
-  // Three quick price tiers ($, $$, $$$) split evenly across the catalog's price range.
+  // Three quick price tiers split evenly across the catalog's price range, with readable labels.
   const priceTiers = (() => {
     const { min, max } = priceBounds;
     if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) return [];
     const step = (max - min) / 3;
+    const a = Math.round((min + step) / 10) * 10;
+    const b = Math.round((min + step * 2) / 10) * 10;
+    const m = `${SIMBOLO_MONEDA}`;
     return [
-      { id: 'low',  label: '$',   min,            max: min + step },
-      { id: 'mid',  label: '$$',  min: min + step, max: min + step * 2 },
-      { id: 'high', label: '$$$', min: min + step * 2, max },
+      { id: 'low',  label: `${m}0–${m}${a}`,  min,            max: min + step },
+      { id: 'mid',  label: `${m}${a}–${m}${b}`, min: min + step, max: min + step * 2 },
+      { id: 'high', label: `+${m}${b}`,        min: min + step * 2, max },
     ];
   })();
 
