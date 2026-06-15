@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { ArrowLeft, Search } from 'lucide-react';
+import { ArrowLeft, Check, Search } from 'lucide-react';
 import { categorias, marcas, tamanios } from '../data/productos';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useLanguage } from '../hooks/useLanguage';
@@ -100,15 +100,15 @@ function FilaCategoria({ label, activo, count = 0, onClick }) {
             border: '1px solid var(--border-soft)',
           }}
     >
-      <input
-        type="checkbox"
-        checked={activo}
-        readOnly
-        tabIndex={-1}
+      <span
         aria-hidden="true"
-        className="h-[18px] w-[18px] flex-shrink-0 rounded accent-purple-700"
-        style={{ accentColor: BRAND_PURPLE }}
-      />
+        className="flex h-[20px] w-[20px] flex-shrink-0 items-center justify-center rounded-md transition-all"
+        style={activo
+          ? { background: BRAND_PURPLE, border: `1px solid ${BRAND_PURPLE}` }
+          : { background: 'var(--surface-input)', border: '1.5px solid var(--border-default)' }}
+      >
+        {activo && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
+      </span>
       <span
         className="min-w-0 flex-1 truncate text-sm font-body font-black"
         style={{ color: activo ? BRAND_PURPLE : 'var(--text-primary)' }}
