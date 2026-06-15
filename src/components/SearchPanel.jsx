@@ -50,6 +50,22 @@ function removeRecentSearch(query) {
   }
 }
 
+// Bold the part of `text` that matches `query` (case-insensitive). Visual aid only.
+function highlightMatch(text, query) {
+  const value = String(text || '');
+  const term = String(query || '').trim();
+  if (!term) return value;
+  const idx = value.toLowerCase().indexOf(term.toLowerCase());
+  if (idx === -1) return value;
+  return (
+    <>
+      {value.slice(0, idx)}
+      <mark className="bg-transparent text-fiesta-magenta font-black">{value.slice(idx, idx + term.length)}</mark>
+      {value.slice(idx + term.length)}
+    </>
+  );
+}
+
 export default function SearchPanel({
   open,
   query,
@@ -211,15 +227,25 @@ export default function SearchPanel({
                   }}
                   className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-ink-50"
                 >
-                  <span
-                    className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg"
-                    style={{ background: 'var(--surface-muted)', color: 'var(--text-secondary)' }}
-                  >
-                    <Search className="h-4 w-4" />
-                  </span>
+                  {producto.imagen_url ? (
+                    <img
+                      src={producto.imagen_url}
+                      alt=""
+                      loading="lazy"
+                      className="h-11 w-11 flex-shrink-0 rounded-lg object-cover"
+                      style={{ background: 'var(--surface-muted)' }}
+                    />
+                  ) : (
+                    <span
+                      className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg"
+                      style={{ background: 'var(--surface-muted)', color: 'var(--text-secondary)' }}
+                    >
+                      <Search className="h-4 w-4" />
+                    </span>
+                  )}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-body font-black text-ink-900">
-                      {producto.nombre}
+                      {highlightMatch(producto.nombre, query)}
                     </span>
                     <span className="block truncate text-[11px] font-body font-bold text-ink-400">
                       {categoryLabelById[producto.categoria] || producto.categoria || t('common.products')}

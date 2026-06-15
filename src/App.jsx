@@ -140,13 +140,17 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
   const categoryStats = useMemo(() => {
     const counts = new Map();
+    const thumbs = new Map(); // representative product image per category
     productos
       .filter(p => p.activo !== false && p.categoria)
-      .forEach((p) => counts.set(p.categoria, (counts.get(p.categoria) || 0) + 1));
+      .forEach((p) => {
+        counts.set(p.categoria, (counts.get(p.categoria) || 0) + 1);
+        if (!thumbs.has(p.categoria) && p.imagen_url) thumbs.set(p.categoria, p.imagen_url);
+      });
 
     const labels = Object.fromEntries(CATEGORIAS_CONFIG.map(c => [c.id, c.label]));
     return [...counts.entries()]
-      .map(([id, count]) => ({ id, label: labels[id] || id, count }))
+      .map(([id, count]) => ({ id, label: labels[id] || id, count, imagen: thumbs.get(id) || null }))
       .sort((a, b) => {
         if (b.count !== a.count) return b.count - a.count;
         return String(a.label || '').localeCompare(String(b.label || ''), 'es', { sensitivity: 'base' });
@@ -233,6 +237,8 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
               productos={productos}
               categoryStats={categoryStats}
               onSelectCategory={selectCategory}
+              priceBounds={priceBounds}
+              onPrecioChange={setPriceFilter}
             />
           </div>
         </header>
@@ -343,6 +349,8 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                       getCantidad={getCantidad}
                       onAgregar={agregarItem}
                       onReducir={reducirItem}
+                      isFiltered={searchQuery.trim().length > 0 || activeFilterCount > 0}
+                      onClear={resetCatalog}
                     />
                   )}
 

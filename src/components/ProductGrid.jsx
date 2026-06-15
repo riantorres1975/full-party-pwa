@@ -4,7 +4,7 @@ import ProductoDetalleModal from './ProductoDetalleModal';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { useLanguage } from '../hooks/useLanguage';
 
-export default function ProductGrid({ productos, getCantidad, onAgregar, onReducir }) {
+export default function ProductGrid({ productos, getCantidad, onAgregar, onReducir, isFiltered = false, onClear }) {
   const { visibleCount, sentinelRef, hayMas, cargando, reset } = useInfiniteScroll(productos.length);
   const [productoDetalle, setProductoDetalle] = useState(null);
   const { t } = useLanguage();
@@ -18,15 +18,34 @@ export default function ProductGrid({ productos, getCantidad, onAgregar, onReduc
       <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
         <div className="text-5xl mb-4 animate-float">🎈</div>
         <h3 className="font-display text-2xl text-ink-500 mb-1">{t('grid.noResults')}</h3>
-        <p className="text-sm text-ink-400 font-body">
+        <p className="text-sm text-ink-400 font-body mb-4">
           {t('grid.noResultsDesc')}
         </p>
+        {isFiltered && onClear && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="px-5 py-2.5 rounded-2xl font-body font-black text-sm text-white transition-all duration-200 active:scale-95"
+            style={{ background: 'var(--gradient-accent)', boxShadow: 'var(--shadow-accent-soft)' }}
+          >
+            {t('grid.clearFilters')}
+          </button>
+        )}
       </div>
     );
   }
 
   return (
     <div className="w-full">
+      {isFiltered && (
+        <div className="px-3 sm:px-4 lg:px-0 pt-1 pb-0.5">
+          <p className="text-xs font-body font-black" style={{ color: 'var(--text-secondary)' }}>
+            {productos.length === 1
+              ? t('grid.resultCountOne')
+              : t('grid.resultCount', { count: productos.length })}
+          </p>
+        </div>
+      )}
       <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(195px,1fr))] gap-2.5 sm:gap-3 lg:gap-4 p-3 sm:p-4 lg:p-0 animate-fade-in">
         {visibles.map((producto, index) => (
           <ProductCard

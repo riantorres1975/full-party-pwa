@@ -17,11 +17,14 @@ function BuscadorFiltros({
   productos = [],
   categoryStats = [],
   onSelectCategory,
+  priceBounds = { min: null, max: null },
+  onPrecioChange,
 }, ref) {
   const { t } = useLanguage();
   const [panelOpen, setPanelOpen] = useState(false);
   const rootRef = useRef(null);
   const inputRef = useRef(null);
+  const activeChipRef = useRef(null);
 
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -37,19 +40,56 @@ function BuscadorFiltros({
         setPanelOpen(false);
       }
     };
+    // Close the suggestions dropdown as soon as the page scrolls so it never covers results.
+    const handleScroll = () => setPanelOpen(false);
     window.addEventListener('mousedown', handlePointerDown);
     window.addEventListener('touchstart', handlePointerDown, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       window.removeEventListener('mousedown', handlePointerDown);
       window.removeEventListener('touchstart', handlePointerDown);
+      window.removeEventListener('scroll', handleScroll);
     };
   }, [panelOpen]);
 
+  const categoriaActiva = filtros.categorias[0] || null;
+
+  // Bring the selected category chip into view when it changes (e.g. picked from a deep position).
+  useEffect(() => {
+    activeChipRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, [categoriaActiva]);
+
+  // Category lives in the always-visible chip bar below; pills only carry brand/size.
   const pillsActivas = [
-    ...filtros.categorias.map(v => ({ dim: 'categorias', val: v, label: LABELS.categorias[v] ?? v })),
     ...filtros.marcas.map(v     => ({ dim: 'marcas',     val: v, label: v })),
     ...filtros.tamanios.map(v   => ({ dim: 'tamanios',   val: v, label: v })),
   ];
+
+  const categoriaActivaLabel = categoriaActiva
+    ? (LABELS.categorias[categoriaActiva] ?? categoryStats.find(c => c.id === categoriaActiva)?.label ?? categoriaActiva)
+    : null;
+
+  // Three quick price tiers ($, $$, $$$) split evenly across the catalog's price range.
+  const priceTiers = (() => {
+    const { min, max } = priceBounds;
+    if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) return [];
+    const step = (max - min) / 3;
+    return [
+      { id: 'low',  label: '$',   min,            max: min + step },
+      { id: 'mid',  label: '$$',  min: min + step, max: min + step * 2 },
+      { id: 'high', label: '$$$', min: min + step * 2, max },
+    ];
+  })();
+
+  const activePriceTier = priceTiers.find(
+    tier => filtros.precioMin === tier.min && filtros.precioMax === tier.max
+  )?.id || null;
+
+  const togglePriceTier = (tier) => {
+    if (!onPrecioChange) return;
+    if (activePriceTier === tier.id) onPrecioChange({ min: null, max: null });
+    else onPrecioChange({ min: tier.min, max: tier.max });
+  };
 
   const ejecutarBusqueda = (term = busqueda) => {
     const clean = String(term || '').trim();
@@ -151,6 +191,48 @@ function BuscadorFiltros({
         />
       </div>
 
+      {busqueda && categoriaActivaLabel && (
+        <div className="flex items-center gap-1.5 text-[11px] font-body font-bold lg:hidden"
+             style={{ color: 'var(--text-secondary)' }}>
+          <span>{t('search.searchingIn')}</span>
+          <button
+            onClick={() => seleccionarCategoria(null)}
+            className="flex items-center gap-1 rounded-full px-2 py-0.5 text-white font-black"
+            style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}
+          >
+            {categoriaActivaLabel}
+            <X className="w-3 h-3 opacity-80" />
+          </button>
+        </div>
+      )}
+
+      {categoryStats.length > 0 && !busqueda && (
+        <div className="flex overflow-x-auto hide-scrollbar gap-1.5 pb-0.5 w-full lg:hidden">
+          <CategoryChip
+            label={t('common.all')}
+            active={!categoriaActiva}
+            onClick={() => seleccionarCategoria(null)}
+          />
+          {priceTiers.map(tier => (
+            <CategoryChip
+              key={tier.id}
+              label={tier.label}
+              active={activePriceTier === tier.id}
+              onClick={() => togglePriceTier(tier)}
+            />
+          ))}
+          {categoryStats.slice(0, 14).map(cat => (
+            <CategoryChip
+              key={cat.id}
+              ref={categoriaActiva === cat.id ? activeChipRef : null}
+              label={cat.label}
+              active={categoriaActiva === cat.id}
+              onClick={() => seleccionarCategoria(categoriaActiva === cat.id ? null : cat)}
+            />
+          ))}
+        </div>
+      )}
+
       {pillsActivas.length > 0 && (
         <div className="flex overflow-x-auto hide-scrollbar gap-1.5 pb-1 w-full lg:hidden">
           {pillsActivas.map(({ dim, val, label }) => (
@@ -174,5 +256,23 @@ function BuscadorFiltros({
     </div>
   );
 }
+
+const CategoryChip = forwardRef(function CategoryChip({ label, active, onClick }, ref) {
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={onClick}
+      className="flex-shrink-0 rounded-full px-3 py-1.5 text-[12px] font-body font-black whitespace-nowrap transition-all duration-150 active:scale-95"
+      style={active
+        ? { background: 'linear-gradient(135deg, #ff3dac, #a855f7)', color: 'white', boxShadow: '0 2px 8px #ff3dac33' }
+        : { background: 'var(--surface-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-soft)' }
+      }
+      aria-pressed={active}
+    >
+      {label}
+    </button>
+  );
+});
 
 export default forwardRef(BuscadorFiltros);

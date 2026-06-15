@@ -44,6 +44,7 @@
   "error.retry": "🔄 Retry",
 
   "search.placeholder": "Search products...",
+  "search.searchingIn": "Searching in:",
   "search.openFilters": "Open filters",
   "search.clear": "Clear search",
   "search.noMatches": "No matches",
@@ -103,6 +104,9 @@
   "grid.noResultsDesc": "We couldn't find products matching that criteria.",
   "grid.loadingMore": "Loading more products...",
   "grid.ofProducts": "{shown} of {total} products",
+  "grid.resultCount": "{count} products",
+  "grid.resultCountOne": "1 product",
+  "grid.clearFilters": "Clear filters and see all",
 
   "cart.title": "🎁 My Order",
   "cart.itemsSelected": "{count} products selected",

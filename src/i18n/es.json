@@ -44,6 +44,7 @@
   "error.retry": "🔄 Reintentar",
 
   "search.placeholder": "Buscar productos...",
+  "search.searchingIn": "Buscando en:",
   "search.openFilters": "Abrir filtros",
   "search.clear": "Limpiar busqueda",
   "search.noMatches": "Sin coincidencias",
@@ -103,6 +104,9 @@
   "grid.noResultsDesc": "No encontramos productos con ese criterio.",
   "grid.loadingMore": "Cargando más productos...",
   "grid.ofProducts": "{shown} de {total} productos",
+  "grid.resultCount": "{count} productos",
+  "grid.resultCountOne": "1 producto",
+  "grid.clearFilters": "Quitar filtros y ver todo",
 
   "cart.title": "🎁 Mi Pedido",
   "cart.itemsSelected": "{count} productos seleccionados",

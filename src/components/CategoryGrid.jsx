@@ -14,17 +14,23 @@ export const CATEGORY_COLORS = [
 ];
 
 const CATEGORY_EMOJI = [
-  { match: ['globo', 'balloon'], emoji: '🎈' },
+  { match: ['globo', 'balloon', 'foil', 'metalico', 'metálico'], emoji: '🎈' },
   { match: ['vela', 'candle'], emoji: '🕯️' },
   { match: ['cortina', 'lluvia'], emoji: '✨' },
-  { match: ['guirnalda', 'banner'], emoji: '🎊' },
-  { match: ['confeti', 'bazuca'], emoji: '🎉' },
+  { match: ['guirnalda', 'banner', 'bandera'], emoji: '🎊' },
+  { match: ['confeti', 'bazuca', 'canon', 'cañon', 'cañón'], emoji: '🎉' },
   { match: ['letra'], emoji: '🔤' },
   { match: ['numero', 'número'], emoji: '🔢' },
-  { match: ['set', 'kit'], emoji: '🎁' },
-  { match: ['cumple'], emoji: '🎂' },
-  { match: ['boda'], emoji: '💍' },
+  { match: ['set', 'kit', 'paquete'], emoji: '🎁' },
+  { match: ['cumple', 'pastel', 'pinata', 'piñata'], emoji: '🎂' },
+  { match: ['boda', 'novia', 'novio'], emoji: '💍' },
   { match: ['graduacion', 'graduación'], emoji: '🎓' },
+  { match: ['baby', 'bebe', 'bebé'], emoji: '🍼' },
+  { match: ['plato', 'vaso', 'servilleta', 'mantel', 'desechable', 'cubierto', 'mesa'], emoji: '🍽️' },
+  { match: ['dulce', 'dulcero', 'bolsa', 'sorpresa'], emoji: '🍬' },
+  { match: ['luz', 'led', 'lampara', 'lámpara', 'neon', 'neón'], emoji: '💡' },
+  { match: ['disfraz', 'mascara', 'máscara', 'antifaz', 'sombrero', 'gorro', 'corona'], emoji: '🎭' },
+  { match: ['papel', 'crepe', 'pompon', 'pompón', 'abanico', 'flor'], emoji: '🌸' },
   { match: ['accesorio'], emoji: '🧰' },
 ];
 
@@ -48,16 +54,32 @@ export function CategoryCard({ category, index = 0, onSelect, compact = false })
       }}
       aria-label={category.label}
     >
-      <span
-        className={`mx-auto flex items-center justify-center rounded-xl ${compact ? 'h-11 w-11 text-2xl' : 'h-14 w-14 text-[34px]'}`}
-        style={{ background: color.bg, color: color.fg }}
-        aria-hidden="true"
-      >
-        {getCategoryEmoji(category.label)}
-      </span>
+      {category.imagen ? (
+        <img
+          src={category.imagen}
+          alt=""
+          loading="lazy"
+          className={`mx-auto rounded-xl object-cover ${compact ? 'h-11 w-11' : 'h-14 w-14'}`}
+          style={{ background: color.bg }}
+          aria-hidden="true"
+        />
+      ) : (
+        <span
+          className={`mx-auto flex items-center justify-center rounded-xl ${compact ? 'h-11 w-11 text-2xl' : 'h-14 w-14 text-[34px]'}`}
+          style={{ background: color.bg, color: color.fg }}
+          aria-hidden="true"
+        >
+          {getCategoryEmoji(category.label)}
+        </span>
+      )}
       <span className="mt-2 block min-h-[32px] text-[11px] font-body font-black leading-tight text-ink-700 line-clamp-2">
         {category.label}
       </span>
+      {category.count != null && (
+        <span className="mt-0.5 block text-[10px] font-body font-bold text-ink-400">
+          {category.count}
+        </span>
+      )}
     </button>
   );
 }
