@@ -297,32 +297,47 @@ REVOKE ALL ON TABLE public.configuracion FROM anon, authenticated;
 GRANT SELECT ON TABLE public.configuracion TO anon;
 GRANT SELECT, INSERT, UPDATE ON TABLE public.configuracion TO authenticated;
 
--- Push endpoints remain write-only for visitors, with basic payload limits.
-CREATE POLICY push_public_insert
-  ON public.push_subscriptions FOR INSERT
-  TO anon, authenticated
-  WITH CHECK (
-    folio ~ '^FP-[A-Z0-9-]{4,32}$'
-    AND endpoint ~ '^https://'
-    AND char_length(endpoint) BETWEEN 20 AND 2048
-    AND char_length(keys_p256dh) BETWEEN 16 AND 512
-    AND char_length(keys_auth) BETWEEN 8 AND 256
-    AND (cliente_telefono IS NULL OR cliente_telefono ~ '^[0-9]{10}$')
-  );
+-- Push is optional. Harden it when installed without blocking projects that do
+-- not use web notifications.
+DO $$
+BEGIN
+  IF to_regclass('public.push_subscriptions') IS NOT NULL THEN
+    EXECUTE $policy$
+      CREATE POLICY push_public_insert
+        ON public.push_subscriptions FOR INSERT
+        TO anon, authenticated
+        WITH CHECK (
+          folio ~ '^FP-[A-Z0-9-]{4,32}$'
+          AND endpoint ~ '^https://'
+          AND char_length(endpoint) BETWEEN 20 AND 2048
+          AND char_length(keys_p256dh) BETWEEN 16 AND 512
+          AND char_length(keys_auth) BETWEEN 8 AND 256
+          AND (cliente_telefono IS NULL OR cliente_telefono ~ '^[0-9]{10}$')
+        )
+    $policy$;
 
-CREATE POLICY push_admin_select
-  ON public.push_subscriptions FOR SELECT
-  TO authenticated
-  USING (public.has_role(ARRAY['admin']));
+    EXECUTE $policy$
+      CREATE POLICY push_admin_select
+        ON public.push_subscriptions FOR SELECT
+        TO authenticated
+        USING (public.has_role(ARRAY['admin']))
+    $policy$;
 
-CREATE POLICY push_admin_delete
-  ON public.push_subscriptions FOR DELETE
-  TO authenticated
-  USING (public.has_role(ARRAY['admin']));
+    EXECUTE $policy$
+      CREATE POLICY push_admin_delete
+        ON public.push_subscriptions FOR DELETE
+        TO authenticated
+        USING (public.has_role(ARRAY['admin']))
+    $policy$;
 
-REVOKE ALL ON TABLE public.push_subscriptions FROM anon, authenticated;
-GRANT INSERT ON TABLE public.push_subscriptions TO anon;
-GRANT INSERT, SELECT, DELETE ON TABLE public.push_subscriptions TO authenticated;
+    EXECUTE 'REVOKE ALL ON TABLE public.push_subscriptions FROM anon, authenticated';
+    EXECUTE 'GRANT INSERT ON TABLE public.push_subscriptions TO anon';
+    EXECUTE 'GRANT INSERT, SELECT, DELETE ON TABLE public.push_subscriptions TO authenticated';
+  ELSE
+    RAISE NOTICE 'push_subscriptions not installed; skipping optional push policies';
+  END IF;
+END;
+$$;
 
 COMMIT;
 
