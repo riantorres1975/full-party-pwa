@@ -18,7 +18,7 @@ export default function Sidebar({ user, collapsed, onToggle, onSignOut, temaOscu
   const disabledTooltip = t('admin.comingSoon');
 
   return (
-    <div className="flex flex-col h-full bg-admin-card">
+    <div className="flex min-h-0 flex-col h-full bg-admin-card">
       {/* Brand + collapse button */}
       <div className="px-5 py-4 flex items-center justify-between border-b border-admin-border">
         {!collapsed && (
@@ -41,7 +41,7 @@ export default function Sidebar({ user, collapsed, onToggle, onSignOut, temaOscu
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6" aria-label={t('admin.layout.sidebar')}>
+      <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 space-y-6" aria-label={t('admin.layout.sidebar')}>
         {/* PRINCIPAL */}
         <SidebarSection label={t('admin.section.main')} collapsed={collapsed}>
           <SidebarItem

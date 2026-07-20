@@ -48,15 +48,15 @@ function StockBadge({ product, t }) {
 
 function SelectionCheckbox({ product, selected, onToggle, t }) {
   return (
-    <label className="inline-flex items-center justify-center cursor-pointer" onClick={event => event.stopPropagation()}>
+    <label className="relative inline-flex items-center justify-center cursor-pointer" onClick={event => event.stopPropagation()}>
       <input
         type="checkbox"
         checked={selected}
         onChange={() => onToggle(product.id)}
-        className="sr-only peer"
+        className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
         aria-label={`${t('admin.catalog.selectProduct')} ${product.nombre}`}
       />
-      <span className="w-5 h-5 rounded-md border-2 border-admin-border bg-admin-card peer-checked:bg-fiesta-magenta peer-checked:border-fiesta-magenta flex items-center justify-center transition-colors">
+      <span className="w-5 h-5 rounded-md border-2 border-admin-border bg-admin-card peer-checked:bg-fiesta-magenta peer-checked:border-fiesta-magenta peer-focus-visible:ring-2 peer-focus-visible:ring-fiesta-magenta peer-focus-visible:ring-offset-2 flex items-center justify-center transition-colors">
         {selected && <Check size={13} strokeWidth={3} className="text-white" />}
       </span>
     </label>

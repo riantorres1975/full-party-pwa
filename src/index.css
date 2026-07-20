@@ -63,6 +63,14 @@
   /* Disable scroll when drawer is open */
   html.overflow-hidden { overflow: hidden; }
 
+  html.admin-scroll-locked,
+  body.admin-scroll-locked {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {

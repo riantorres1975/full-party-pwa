@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import BottomNav from '../components/ui/BottomNav';
 import { useToast } from '../components/ui/ToastProvider';
 import { useConfirm } from '../hooks/useConfirm';
@@ -63,12 +63,23 @@ export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut,
     } catch {}
   };
 
+  useEffect(() => {
+    document.documentElement.classList.add('admin-scroll-locked');
+    document.body.classList.add('admin-scroll-locked');
+    window.scrollTo(0, 0);
+
+    return () => {
+      document.documentElement.classList.remove('admin-scroll-locked');
+      document.body.classList.remove('admin-scroll-locked');
+    };
+  }, []);
+
   return (
     <PermissionsProvider user={user}>
       <PermissionsGate onSignOut={onSignOut}>
       <AdminDataProvider toast={toast} confirmCancelar={confirmCancelar}>
         <BreadcrumbProvider>
-        <div className="flex flex-col h-screen overflow-hidden bg-admin-bg lg:flex-row">
+        <div className="fixed inset-0 flex flex-col overflow-hidden bg-admin-bg lg:flex-row">
           <ConfirmModal
             open={cancelConfirmOpen}
             {...cancelConfig}
@@ -83,7 +94,7 @@ export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut,
 
           {/* Sidebar — desktop only */}
           <aside
-            className={`hidden lg:flex lg:flex-col lg:h-full lg:flex-shrink-0 lg:border-r border-admin-border transition-[width] duration-200 ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-56'}`}
+            className={`hidden lg:flex lg:min-h-0 lg:flex-col lg:h-full lg:flex-shrink-0 lg:border-r border-admin-border transition-[width] duration-200 ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-56'}`}
             style={{ backgroundColor: 'var(--admin-card)' }}
           >
             <Sidebar
@@ -97,12 +108,12 @@ export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut,
           </aside>
 
           {/* Main content area */}
-          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <div className="flex min-h-0 flex-1 flex-col min-w-0 overflow-hidden">
             {/* Topbar */}
             <Topbar />
 
             {/* Page content */}
-            <main id="admin-main" className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto">
+            <main id="admin-main" className="min-h-0 flex-1 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain">
               <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 lg:p-5 lg:max-w-none pb-20 lg:pb-0">
                 {children}
               </div>
