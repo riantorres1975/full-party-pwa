@@ -16,7 +16,8 @@ export function usePWA() {
     }
 
     const ua = window.navigator.userAgent || '';
-    setEsIOS(/iPad|iPhone|iPod/.test(ua));
+    const isIPadOS = /Macintosh/.test(ua) && window.navigator.maxTouchPoints > 1;
+    setEsIOS(/iPad|iPhone|iPod/.test(ua) || isIPadOS);
 
     if (window.__fpDeferredInstallPrompt) {
       setInstallPrompt(window.__fpDeferredInstallPrompt);
@@ -26,21 +27,6 @@ export function usePWA() {
       e.preventDefault();
       window.__fpDeferredInstallPrompt = e;
       setInstallPrompt(e);
-
-      // Mostrar el prompt de instalación automáticamente tras un breve retraso
-      const dismissed = sessionStorage.getItem('pwa-prompt-dismissed');
-      if (!dismissed) {
-        setTimeout(async () => {
-          try {
-            const { outcome } = await e.prompt();
-            if (outcome === 'accepted') {
-              setInstallPrompt(null);
-            } else {
-              sessionStorage.setItem('pwa-prompt-dismissed', '1');
-            }
-          } catch { /* el prompt ya fue usado */ }
-        }, 1500);
-      }
     };
 
     window.addEventListener('beforeinstallprompt', handler);
@@ -72,8 +58,15 @@ export function usePWA() {
 
   const instalarApp = async () => {
     if (!installPrompt) return;
-    const { outcome } = await installPrompt.prompt();
-    if (outcome === 'accepted') {
+
+    try {
+      const { outcome } = await installPrompt.prompt();
+      window.__fpDeferredInstallPrompt = null;
+      setInstallPrompt(null);
+      if (outcome !== 'accepted') {
+        sessionStorage.setItem('pwa-prompt-dismissed', '1');
+      }
+    } catch {
       window.__fpDeferredInstallPrompt = null;
       setInstallPrompt(null);
     }

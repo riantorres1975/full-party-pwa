@@ -50,6 +50,9 @@
   "error.boundary.details": "Detalles técnicos",
   "error.data.title": "No pudimos cargar los datos",
 
+  "catalog.cachedData": "No pudimos actualizar. Mostramos la ultima informacion guardada.",
+  "catalog.refresh": "Actualizar",
+
   "search.placeholder": "Buscar productos...",
   "search.searchingIn": "Buscando en:",
   "search.openFilters": "Abrir filtros",

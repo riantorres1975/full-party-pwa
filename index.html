@@ -22,13 +22,13 @@
         } else {
           document.documentElement.classList.add('fp-skip-boot');
         }
-        // Preload de las primeras 4 imágenes del catálogo (LCP + above-the-fold)
+        // Preload only the first visible row to avoid competing with the LCP image.
         if (pathname.startsWith('/catalogo')) {
           try {
             var raw = localStorage.getItem('fp_lcp_image_v1');
             if (raw) {
               var urls = raw.charAt(0) === '[' ? JSON.parse(raw) : [raw];
-              for (var i = 0; i < urls.length && i < 4; i++) {
+              for (var i = 0; i < urls.length && i < 2; i++) {
                 var u = urls[i];
                 if (typeof u === 'string' && /^https?:\/\//.test(u)) {
                   var l = document.createElement('link');

@@ -3,7 +3,6 @@ import { supabase } from '../lib/supabase';
 import { registrarCategoria, registrarMarca, registrarTamano } from '../data/productos';
 
 const PRODUCTOS_CACHE_KEY = 'fp_productos_cache_v1';
-const PRODUCTOS_CACHE_TTL_MS = 30 * 60 * 1000;
 const INITIAL_PRODUCT_COUNT = 40;
 const LCP_IMAGE_KEY = 'fp_lcp_image_v1';
 
@@ -19,7 +18,7 @@ function writeLcpImageHint(lista) {
       if (aNuevo !== bNuevo) return bNuevo - aNuevo;
       return String(a.nombre || '').localeCompare(String(b.nombre || ''));
     });
-    const urls = ordenados.slice(0, 4).map((p) => p.imagen_url.trim());
+    const urls = ordenados.slice(0, 2).map((p) => p.imagen_url.trim());
     if (urls.length > 0) {
       localStorage.setItem(LCP_IMAGE_KEY, JSON.stringify(urls));
     }
@@ -33,8 +32,7 @@ function readProductosCache() {
     const raw = localStorage.getItem(PRODUCTOS_CACHE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    if (!parsed || !Array.isArray(parsed.data) || typeof parsed.ts !== 'number') return [];
-    if (Date.now() - parsed.ts > PRODUCTOS_CACHE_TTL_MS) return [];
+    if (!parsed || !Array.isArray(parsed.data)) return [];
     return parsed.data;
   } catch {
     return [];
@@ -72,6 +70,8 @@ export function useProductos() {
   const [productos, setProductos] = useState(cacheSeed);
   const [loading,   setLoading]   = useState(() => cacheSeed.length === 0);
   const [error,     setError]     = useState(null);
+  const [usingCachedData, setUsingCachedData] = useState(false);
+  const [isInitialSyncing, setIsInitialSyncing] = useState(() => cacheSeed.length === 0);
   const [tick,      setTick]      = useState(0); // dispara refetch
 
   useEffect(() => {
@@ -91,7 +91,7 @@ export function useProductos() {
         .order('nombre', { ascending: true });
 
     async function fetchProductos() {
-      if (productos.length === 0 || tick > 0) {
+      if (productos.length === 0) {
         setLoading(true);
       }
       setError(null);
@@ -122,6 +122,8 @@ export function useProductos() {
                 : 'Error al cargar productos. Intenta de nuevo más tarde.'
             );
             setProductos([]);
+          } else {
+            setUsingCachedData(true);
           }
         } else {
           const lista = data ?? [];
@@ -129,8 +131,10 @@ export function useProductos() {
           writeProductosCache(lista);
           writeLcpImageHint(lista);
           setProductos(lista);
+          setUsingCachedData(false);
         }
 
+        setIsInitialSyncing(false);
         setLoading(false);
         return;
       }
@@ -140,19 +144,22 @@ export function useProductos() {
 
       if (sbError) {
         console.error('[useProductos]', sbError.code, sbError.message);
-        setError(
-          sbError.code === 'PGRST301'
-            ? 'No tienes permisos para ver los productos.'
-            : 'Error al cargar productos. Intenta de nuevo más tarde.'
-        );
         if (productos.length === 0) {
+          setError(
+            sbError.code === 'PGRST301'
+              ? 'No tienes permisos para ver los productos.'
+              : 'Error al cargar productos. Intenta de nuevo más tarde.'
+          );
           setProductos([]);
+        } else {
+          setUsingCachedData(true);
         }
       } else {
         const lista = data ?? [];
         registrarMetadatosProductos(lista);
         writeProductosCache(lista);
         setProductos(lista);
+        setUsingCachedData(false);
       }
 
       setLoading(false);
@@ -161,6 +168,12 @@ export function useProductos() {
     fetchProductos();
     return () => { cancelado = true; };
   }, [tick]);
+
+  useEffect(() => {
+    const refreshWhenOnline = () => setTick((current) => current + 1);
+    window.addEventListener('online', refreshWhenOnline);
+    return () => window.removeEventListener('online', refreshWhenOnline);
+  }, []);
 
   // Realtime subscription for product INSERT / UPDATE / DELETE
   useEffect(() => {
@@ -203,5 +216,5 @@ export function useProductos() {
 
   const refetch = () => setTick(t => t + 1);
 
-  return { productos, loading, error, refetch };
+  return { productos, loading, error, usingCachedData, isInitialSyncing, refetch };
 }

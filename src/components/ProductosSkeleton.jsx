@@ -4,7 +4,7 @@
  */
 function TarjetaSkeleton() {
   return (
-    <div className="bg-white rounded-2xl overflow-hidden"
+    <div className="skeleton-card bg-white rounded-2xl overflow-hidden"
          style={{ border: '1px solid var(--border-soft)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
       {/* Imagen */}
       <div className="aspect-square bg-ink-100 relative overflow-hidden">
@@ -25,26 +25,6 @@ function TarjetaSkeleton() {
           <div className="absolute inset-0 skeleton-shimmer" />
         </div>
       </div>
-
-      {/* Keyframe del shimmer — solo se inyecta una vez en el DOM */}
-      <style>{`
-        .skeleton-shimmer {
-          background: linear-gradient(
-            90deg,
-            transparent 0%,
-            rgba(168,85,247,0.08) 40%,
-            rgba(255,61,172,0.10) 50%,
-            rgba(168,85,247,0.08) 60%,
-            transparent 100%
-          );
-          background-size: 200% 100%;
-          animation: shimmer 1.6s ease-in-out infinite;
-        }
-        @keyframes shimmer {
-          0%   { background-position: 200% center; }
-          100% { background-position: -200% center; }
-        }
-      `}</style>
     </div>
   );
 }

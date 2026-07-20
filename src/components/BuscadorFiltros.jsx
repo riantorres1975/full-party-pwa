@@ -209,30 +209,44 @@ function BuscadorFiltros({
         </div>
       )}
 
-      {categoryStats.length > 0 && !busqueda && (
-        <div className="flex overflow-x-auto hide-scrollbar gap-1.5 pb-0.5 w-full lg:hidden">
-          <CategoryChip
-            label={t('common.all')}
-            active={!categoriaActiva}
-            onClick={() => seleccionarCategoria(null)}
-          />
-          {priceTiers.map(tier => (
-            <CategoryChip
-              key={tier.id}
-              label={tier.label}
-              active={activePriceTier === tier.id}
-              onClick={() => togglePriceTier(tier)}
-            />
-          ))}
-          {categoryStats.slice(0, 14).map(cat => (
-            <CategoryChip
-              key={cat.id}
-              ref={categoriaActiva === cat.id ? activeChipRef : null}
-              label={cat.label}
-              active={categoriaActiva === cat.id}
-              onClick={() => seleccionarCategoria(categoriaActiva === cat.id ? null : cat)}
-            />
-          ))}
+      {!busqueda && (
+        <div className="flex min-h-[31px] w-full gap-1.5 overflow-x-auto pb-0.5 hide-scrollbar lg:hidden">
+          {categoryStats.length > 0 ? (
+            <>
+              <CategoryChip
+                label={t('common.all')}
+                active={!categoriaActiva}
+                onClick={() => seleccionarCategoria(null)}
+              />
+              {priceTiers.map(tier => (
+                <CategoryChip
+                  key={tier.id}
+                  label={tier.label}
+                  active={activePriceTier === tier.id}
+                  onClick={() => togglePriceTier(tier)}
+                />
+              ))}
+              {categoryStats.slice(0, 14).map(cat => (
+                <CategoryChip
+                  key={cat.id}
+                  ref={categoriaActiva === cat.id ? activeChipRef : null}
+                  label={cat.label}
+                  active={categoriaActiva === cat.id}
+                  onClick={() => seleccionarCategoria(categoriaActiva === cat.id ? null : cat)}
+                />
+              ))}
+            </>
+          ) : (
+            <div className="flex items-center gap-1.5" aria-hidden="true">
+              {[52, 72, 82, 64].map((width) => (
+                <span
+                  key={width}
+                  className="h-[30px] flex-shrink-0 rounded-full bg-ink-100 skeleton-shimmer"
+                  style={{ width }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 

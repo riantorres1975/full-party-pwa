@@ -1,12 +1,17 @@
 {
   "name": "Full Party Uruapan",
   "short_name": "Full Party",
+  "id": "/catalogo",
+  "scope": "/",
+  "lang": "es-MX",
+  "dir": "ltr",
   "description": "Catálogo mayoreo de artículos para fiesta en Uruapan. Globos, kits de personajes, cortinas de lluvia y más.",
   "start_url": "/catalogo",
   "display": "standalone",
   "background_color": "#fbf7f3",
   "theme_color": "#fbf7f3",
   "orientation": "any",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icons/icon-192.png",

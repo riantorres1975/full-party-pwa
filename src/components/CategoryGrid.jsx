@@ -46,31 +46,21 @@ export function CategoryCard({ category, index = 0, onSelect, compact = false })
     <button
       type="button"
       onClick={() => onSelect?.(category)}
-      className="min-w-0 rounded-xl p-2 text-center transition-all duration-200 active:scale-95 hover:-translate-y-0.5"
+      className="min-w-0 overflow-hidden rounded-xl p-2 text-center transition-all duration-200 active:scale-95 hover:-translate-y-0.5"
       style={{
+        height: compact ? 116 : 132,
         background: 'var(--surface-card)',
         border: '1px solid var(--border-soft)',
         boxShadow: '0 2px 10px rgba(107,53,184,0.06)',
       }}
     >
-      {category.imagen ? (
-        <img
-          src={category.imagen}
-          alt=""
-          loading="lazy"
-          className={`mx-auto rounded-xl object-cover ${compact ? 'h-11 w-11' : 'h-14 w-14'}`}
-          style={{ background: color.bg }}
-          aria-hidden="true"
-        />
-      ) : (
-        <span
-          className={`mx-auto flex items-center justify-center rounded-xl ${compact ? 'h-11 w-11 text-2xl' : 'h-14 w-14 text-[34px]'}`}
-          style={{ background: color.bg, color: color.fg }}
-          aria-hidden="true"
-        >
-          {getCategoryEmoji(category.label)}
-        </span>
-      )}
+      <span
+        className={`mx-auto flex items-center justify-center rounded-xl ${compact ? 'h-11 w-11 text-2xl' : 'h-14 w-14 text-[34px]'}`}
+        style={{ background: color.bg, color: color.fg }}
+        aria-hidden="true"
+      >
+        {getCategoryEmoji(category.label)}
+      </span>
       <span className="mt-2 block min-h-[32px] text-[11px] font-body font-black leading-tight text-ink-700 line-clamp-2">
         {category.label}
       </span>
@@ -80,6 +70,28 @@ export function CategoryCard({ category, index = 0, onSelect, compact = false })
         </span>
       )}
     </button>
+  );
+}
+
+export function CategoryGridSkeleton() {
+  return (
+    <section className="px-4 pb-2 pt-3 lg:hidden" aria-hidden="true">
+      <div className="mb-2 flex h-[38px] items-center justify-between gap-3">
+        <div className="space-y-1.5">
+          <div className="h-4 w-24 rounded-full bg-ink-100 skeleton-shimmer" />
+          <div className="h-2.5 w-40 rounded-full bg-ink-100 skeleton-shimmer" />
+        </div>
+        <div className="h-8 w-24 rounded-lg bg-ink-100 skeleton-shimmer" />
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        {Array.from({ length: 9 }).map((_, index) => (
+          <div key={index} className="h-[132px] rounded-xl bg-ink-100 skeleton-shimmer" />
+        ))}
+      </div>
+
+      <div className="mt-2 h-10 rounded-xl bg-ink-100 skeleton-shimmer" />
+    </section>
   );
 }
 

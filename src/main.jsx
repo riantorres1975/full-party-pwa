@@ -3,6 +3,47 @@ import ReactDOM from 'react-dom/client';
 import AppRouter from './AppRouter';
 import './index.css';
 
+const UPDATE_RELOAD_KEY = 'fp-update-reload-at';
+const UPDATE_QUERY_KEY = '__fp_update';
+
+function reloadWithFreshAssets() {
+  const now = Date.now();
+  const lastReload = Number(sessionStorage.getItem(UPDATE_RELOAD_KEY) || 0);
+  if (now - lastReload < 15_000) return;
+
+  sessionStorage.setItem(UPDATE_RELOAD_KEY, String(now));
+  const url = new URL(window.location.href);
+  url.searchParams.set(UPDATE_QUERY_KEY, String(now));
+  window.location.replace(url.toString());
+}
+
+function cacheLoadedAppAssets() {
+  const controller = navigator.serviceWorker?.controller;
+  if (!controller) return;
+
+  const urls = performance
+    .getEntriesByType('resource')
+    .map((entry) => entry.name)
+    .filter((value) => {
+      try {
+        const url = new URL(value);
+        return url.origin === window.location.origin && url.pathname.startsWith('/assets/');
+      } catch {
+        return false;
+      }
+    });
+
+  if (urls.length > 0) {
+    controller.postMessage({ type: 'CACHE_URLS', urls: [...new Set(urls)] });
+  }
+}
+
+const currentUrl = new URL(window.location.href);
+if (currentUrl.searchParams.has(UPDATE_QUERY_KEY)) {
+  currentUrl.searchParams.delete(UPDATE_QUERY_KEY);
+  window.history.replaceState(window.history.state, '', currentUrl.toString());
+}
+
 // Capturar prompt de instalación desde el arranque (aunque aún no monte el catálogo)
 if (typeof window !== 'undefined' && !window.__fpInstallPromptListenerAttached) {
   window.__fpInstallPromptListenerAttached = true;
@@ -28,9 +69,13 @@ if (typeof window !== 'undefined' && !window.__fpInstallPromptListenerAttached) 
 if ('serviceWorker' in navigator) {
   if (import.meta.env.PROD) {
     window.addEventListener('load', () => {
+      const hadServiceWorkerController = Boolean(navigator.serviceWorker.controller);
+
       navigator.serviceWorker
-        .register('/sw.js')
+        .register('/sw.js', { updateViaCache: 'none' })
         .then((registration) => {
+          cacheLoadedAppAssets();
+
           // Si hay un SW esperando, activarlo inmediatamente
           if (registration.waiting) {
             registration.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -50,20 +95,32 @@ if ('serviceWorker' in navigator) {
 
           // When the new SW takes control, reload to use fresh assets
           navigator.serviceWorker.addEventListener('controllerchange', () => {
-            window.location.reload();
+            if (hadServiceWorkerController) {
+              reloadWithFreshAssets();
+            } else {
+              cacheLoadedAppAssets();
+            }
           });
 
           // Escuchar mensaje del SW cuando detecta chunks faltantes (nueva versión)
           navigator.serviceWorker.addEventListener('message', (event) => {
             if (event.data?.type === 'FORCE_RELOAD') {
-              window.location.reload();
+              reloadWithFreshAssets();
             }
           });
 
-          // Chequear actualizaciones cada 5 minutos (en vez de cada 24h por defecto)
+          const checkForUpdate = () => registration.update().catch(() => {});
+          const checkWhenVisible = () => {
+            if (document.visibilityState === 'visible') checkForUpdate();
+          };
+
+          window.addEventListener('online', checkForUpdate);
+          document.addEventListener('visibilitychange', checkWhenVisible);
+
+          // Visibility and online events cover normal returns; this is a long-session fallback.
           setInterval(() => {
-            registration.update().catch(() => {});
-          }, 5 * 60 * 1000);
+            checkForUpdate();
+          }, 30 * 60 * 1000);
         })
         .catch(() => {});
     });
@@ -86,7 +143,7 @@ if ('serviceWorker' in navigator) {
 // Auto-reload si ocurre un error cargando modulos (e.g. nueva version en Vercel)
 window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault();
-  window.location.reload(true);
+  reloadWithFreshAssets();
 });
 
 ReactDOM.createRoot(document.getElementById('root')).render(

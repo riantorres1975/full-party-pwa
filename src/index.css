@@ -99,6 +99,19 @@
 }
 
 /* Shimmer animation for image placeholders (also defined in tailwind.config) */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(168, 85, 247, 0.08) 40%,
+    rgba(255, 61, 172, 0.1) 50%,
+    rgba(168, 85, 247, 0.08) 60%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }

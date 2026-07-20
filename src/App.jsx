@@ -15,7 +15,7 @@ import CarritoDrawer      from './components/CarritoDrawer';
 import RastreoPedido      from './components/RastreoPedido';
 import RedesSociales      from './components/RedesSociales';
 import SidebarFiltrosDesktop from './components/SidebarFiltrosDesktop';
-import CategoryGrid from './components/CategoryGrid';
+import CategoryGrid, { CategoryGridSkeleton } from './components/CategoryGrid';
 import CategoryBrowser from './components/CategoryBrowser';
 import BottomNav from './components/BottomNav';
 import { fuzzySearch } from './utils/fuzzySearch';
@@ -30,7 +30,14 @@ const PRODUCT_SEARCH_KEYS = [
 
 export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   // Data from Supabase
-  const { productos, loading, error, refetch } = useProductos();
+  const {
+    productos,
+    loading,
+    error,
+    usingCachedData,
+    isInitialSyncing,
+    refetch,
+  } = useProductos();
   const { mensaje: anuncioMsg, activo: anuncioActivo } = useAnuncio(true);
   const { pedidosHabilitados } = usePedidosHabilitados(true);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
@@ -235,7 +242,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
               totalFiltrosActivos={activeFilterCount}
               onAbrirFiltros={() => setAreFiltersOpen(true)}
               productos={productos}
-              categoryStats={categoryStats}
+              categoryStats={isInitialSyncing ? [] : categoryStats}
               onSelectCategory={selectCategory}
               priceBounds={priceBounds}
               onPrecioChange={setPriceFilter}
@@ -247,18 +254,19 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
         {anuncioActivo && anuncioMsg && !isBannerDismissed && (
           <aside
             aria-label={t('announcements.bannerAriaLabel')}
-            className="relative overflow-hidden text-center font-body font-black"
+            className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] left-3 right-3 z-[45] overflow-hidden rounded-2xl text-center font-body font-black lg:bottom-6 lg:left-auto lg:right-6 lg:w-full lg:max-w-xl"
             style={{
               background: 'linear-gradient(90deg, #f97316, #ec4899, #a855f7, #f97316)',
               backgroundSize: '300% 100%',
               animation: 'bannerSlideDown 0.4s ease-out, bannerShimmer 6s linear infinite, bannerPulseGlow 3s ease-in-out infinite',
               color: 'white',
               textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+              boxShadow: '0 16px 40px rgba(76, 29, 149, 0.28)',
             }}
           >
             <div className="flex items-center justify-center gap-2 px-12 py-2.5">
               <span className="text-base animate-bounce" style={{ animationDuration: '2s' }}>📢</span>
-              <span className="text-sm leading-snug">{anuncioMsg}</span>
+              <span className="line-clamp-3 text-sm leading-snug">{anuncioMsg}</span>
             </div>
             <button
               onClick={() => setIsBannerDismissed(true)}
@@ -281,6 +289,23 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
           </div>
         )}
 
+        {usingCachedData && !error && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex items-center justify-center gap-3 border-y border-amber-200 bg-amber-50 px-4 py-2 text-center font-body text-xs font-bold text-amber-900"
+          >
+            <span>{t('catalog.cachedData')}</span>
+            <button
+              type="button"
+              onClick={refetch}
+              className="min-h-10 flex-shrink-0 rounded-xl border border-amber-300 bg-white px-3 font-black text-amber-900 transition-colors hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
+            >
+              {t('catalog.refresh')}
+            </button>
+          </div>
+        )}
+
         <main className="pb-[calc(6.25rem+env(safe-area-inset-bottom,0px))] lg:pb-0 lg:h-[calc(100vh-130px)] lg:overflow-hidden transition-all duration-300">
           <h1 className="sr-only">Catálogo de Artículos para Fiesta al Mayoreo | Full Party Uruapan</h1>
           <div className="max-w-[1600px] mx-auto w-full px-3 lg:px-6 h-full">
@@ -293,7 +318,9 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
               />
 
               <section className="lg:h-full lg:flex lg:flex-col min-h-0">
-                {!loading && !error && (
+                {(loading || isInitialSyncing) && !error && <CategoryGridSkeleton />}
+
+                {!loading && !isInitialSyncing && !error && (
                   <CategoryGrid
                     categories={topHomeCategories}
                     totalCategories={categoryStats.length || categoryPills.length}

@@ -50,6 +50,9 @@
   "error.boundary.details": "Technical details",
   "error.data.title": "We could not load the data",
 
+  "catalog.cachedData": "We could not refresh. Showing the latest saved information.",
+  "catalog.refresh": "Refresh",
+
   "search.placeholder": "Search products...",
   "search.searchingIn": "Searching in:",
   "search.openFilters": "Open filters",
