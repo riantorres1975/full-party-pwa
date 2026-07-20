@@ -1,7 +1,7 @@
 import { useLanguage } from '../../../../hooks/useLanguage';
 import { ESTADO_META } from '../../../../lib/estadoMeta';
 
-export default function UltimosPedidos({ data, loading, onRowClick }) {
+export default function UltimosPedidos({ data, loading, onRowClick, onViewAll }) {
   const { t } = useLanguage();
 
   if (loading) {
@@ -46,10 +46,19 @@ export default function UltimosPedidos({ data, loading, onRowClick }) {
 
   return (
     <div className="bg-admin-card border border-admin-border rounded-lg overflow-hidden">
-      <div className="p-4 border-b border-admin-border-soft">
+      <div className="flex items-center justify-between gap-3 p-4 border-b border-admin-border-soft">
         <h3 className="text-sm font-body font-bold text-admin-text">
           {t('admin.dashboard.recent_orders')}
         </h3>
+        {onViewAll && (
+          <button
+            type="button"
+            onClick={onViewAll}
+            className="text-xs font-bold text-fiesta-magenta hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-fiesta-magenta"
+          >
+            {t('admin.dashboard.viewAll')}
+          </button>
+        )}
       </div>
 
       <div className="hidden lg:block">

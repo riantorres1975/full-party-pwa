@@ -14,6 +14,11 @@ import ConfirmModal from '../../../components/ui/ConfirmModal';
 const FILTROS = ['todos', 'pendiente', 'confirmado'];
 const PERIODOS = ['hoy', 'semana', 'mes', 'todo'];
 
+function getInitialOption(key, options, fallback) {
+  const value = new URLSearchParams(window.location.search).get(key);
+  return options.includes(value) ? value : fallback;
+}
+
 function inicioDelDia() {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
@@ -77,8 +82,8 @@ export default function PagosPage() {
   const setBreadcrumb = useBreadcrumb();
   const toast = useToast();
   const { pagos, loading, error, actualizando, refetch, confirmarPago, marcarPendiente } = usePagos();
-  const [filtro, setFiltro] = useState('todos');
-  const [periodo, setPeriodo] = useState('hoy');
+  const [filtro, setFiltro] = useState(() => getInitialOption('filtro', FILTROS, 'todos'));
+  const [periodo, setPeriodo] = useState(() => getInitialOption('periodo', PERIODOS, 'hoy'));
   const [pedidoModal, setPedidoModal] = useState(null);
   const { isOpen, config, confirm, onConfirm, onCancel } = useConfirm();
 

@@ -5,11 +5,15 @@ import { useAdminData } from '../../../../contexts/AdminDataContext';
 import PedidosActivos from './PedidosActivos';
 import PedidosHistorial from './PedidosHistorial';
 
+function getInitialQueryParam(key) {
+  return new URLSearchParams(window.location.search).get(key) || '';
+}
+
 export default function PedidosTabs() {
   const { t } = useLanguage();
   const { setBusqueda, contadores } = useAdminData();
-  const [tabActivo, setTabActivo] = useState('activos');
-  const [busquedaInput, setBusquedaInput] = useState('');
+  const [tabActivo, setTabActivo] = useState(() => getInitialQueryParam('tab') === 'historial' ? 'historial' : 'activos');
+  const [busquedaInput, setBusquedaInput] = useState(() => getInitialQueryParam('q'));
   const busquedaDebounced = useDebounce(busquedaInput, 300);
 
   const activosCount =
@@ -20,9 +24,11 @@ export default function PedidosTabs() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const tab = params.get('tab') || 'activos';
-    setTabActivo(tab === 'historial' ? 'historial' : 'activos');
-  }, []);
+    if (busquedaDebounced) params.set('q', busquedaDebounced);
+    else params.delete('q');
+    const query = params.toString();
+    window.history.replaceState(null, '', query ? `?${query}` : window.location.pathname);
+  }, [busquedaDebounced]);
 
   const cambiarTab = (tab) => {
     setTabActivo(tab);

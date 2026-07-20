@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../../hooks/useLanguage';
 import { useBreadcrumb } from '../../../contexts/BreadcrumbContext';
+import { useAdminData } from '../../../contexts/AdminDataContext';
 import PageHeader from '../../../components/admin/PageHeader';
 import RangoPeriodoPicker from './components/RangoPeriodoPicker';
 import KpiGrid from './components/KpiGrid';
@@ -8,7 +10,9 @@ import VentasChart from './components/VentasChart';
 import PedidosPorEstadoChart from './components/PedidosPorEstadoChart';
 import TopProductos from './components/TopProductos';
 import UltimosPedidos from './components/UltimosPedidos';
+import PrioridadesOperativas from './components/PrioridadesOperativas';
 import { useDashboardData } from './hooks/useDashboardData';
+import { calcularPrioridades } from './dashboardPriorities';
 import DataErrorState from '../../../components/admin/DataErrorState';
 
 function getDefaultDates() {
@@ -48,7 +52,9 @@ function useIsDesktop() {
 
 export default function DashboardPage() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const setBreadcrumb = useBreadcrumb();
+  const { pedidos, loading: pedidosLoading } = useAdminData();
   const isDesktop = useIsDesktop();
   const [periodo, setPeriodo] = useState('today');
   const [fechas, setFechas] = useState(getDefaultDates());
@@ -57,10 +63,14 @@ export default function DashboardPage() {
     setBreadcrumb([t('admin.nav.dashboard')]);
   }, [t, setBreadcrumb]);
 
-  const { kpis, kpisAnterior, ventasDiarias, pedidosPorEstado, topProductos, ultimosPedidos, loading, error, refetch } = useDashboardData({
+  const { kpis, kpisAnterior, ventasDiarias, pedidosPorEstado, topProductos, ultimosPedidos, stockAlerts, loading, error, refetch } = useDashboardData({
     desde: fechas.desde,
     hasta: fechas.hasta,
   });
+  const prioridades = useMemo(
+    () => calcularPrioridades(pedidos, stockAlerts),
+    [pedidos, stockAlerts]
+  );
 
   const handleChangePeriodo = (newPeriodo, desde, hasta) => {
     setPeriodo(newPeriodo);
@@ -85,6 +95,13 @@ export default function DashboardPage() {
         {/* Periodo picker */}
         <div className="mb-8">
           <RangoPeriodoPicker periodo={periodo} onChangePeriodo={handleChangePeriodo} />
+        </div>
+
+        <div className="mb-8">
+          <PrioridadesOperativas
+            prioridades={prioridades}
+            loading={loading || pedidosLoading}
+          />
         </div>
 
         {/* KPI Grid */}
@@ -119,7 +136,12 @@ export default function DashboardPage() {
                 <TopProductos data={topProductos} loading={loading} />
               </div>
               <div className="lg:col-span-2">
-                <UltimosPedidos data={ultimosPedidos} loading={loading} />
+                <UltimosPedidos
+                  data={ultimosPedidos}
+                  loading={loading}
+                  onViewAll={() => navigate('/admin/pedidos')}
+                  onRowClick={(pedido) => navigate(`/admin/pedidos?tab=${pedido.estado === 'Enviado' || pedido.estado === 'Cancelado' ? 'historial' : 'activos'}&q=${encodeURIComponent(pedido.folio || '')}`)}
+                />
               </div>
             </div>
           ) : (
@@ -130,7 +152,12 @@ export default function DashboardPage() {
                 </h3>
                 <TopProductos data={topProductos} loading={loading} />
               </div>
-              <UltimosPedidos data={ultimosPedidos} loading={loading} />
+              <UltimosPedidos
+                data={ultimosPedidos}
+                loading={loading}
+                onViewAll={() => navigate('/admin/pedidos')}
+                onRowClick={(pedido) => navigate(`/admin/pedidos?tab=${pedido.estado === 'Enviado' || pedido.estado === 'Cancelado' ? 'historial' : 'activos'}&q=${encodeURIComponent(pedido.folio || '')}`)}
+              />
             </div>
           )}
         </div>

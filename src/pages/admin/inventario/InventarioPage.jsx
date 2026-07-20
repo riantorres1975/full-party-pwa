@@ -25,6 +25,13 @@ const STOCK_STATUS = {
   ok:        { label: 'inventario.estado.ok',        cls: 'bg-emerald-500/15 text-emerald-500' },
 };
 
+const STOCK_FILTERS = new Set(['todos', 'sinStock', 'bajo', 'ok', 'ilimitado']);
+
+function getInitialStockFilter() {
+  const value = new URLSearchParams(window.location.search).get('filtro');
+  return STOCK_FILTERS.has(value) ? value : 'todos';
+}
+
 function getStatus(p) {
   if (p.stock_ilimitado) return 'ilimitado';
   if (p.stock_actual <= 0) return 'sinStock';
@@ -47,7 +54,7 @@ export default function InventarioPage() {
   const canEdit = usePermission('catalogo.edit');
   const { productos, loading, error, refetch, updateStock } = useInventario();
 
-  const [filtro, setFiltro] = useState('todos');
+  const [filtro, setFiltro] = useState(getInitialStockFilter);
   const [search, setSearch] = useState('');
 
   useEffect(() => {

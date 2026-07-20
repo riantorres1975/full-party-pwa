@@ -11,6 +11,7 @@ export function useDashboardData({ desde, hasta }) {
     pedidosPorEstado: [],
     topProductos: [],
     ultimosPedidos: [],
+    stockAlerts: { bajo: 0, sinStock: 0 },
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -31,7 +32,7 @@ export function useDashboardData({ desde, hasta }) {
       const hastaAnterior = endOfDay(addDays(desdeActual, -1));
       const desdeAnterior = startOfDay(addDays(desdeActual, -diasPeriodo));
 
-      const [resultadoActual, resultadoAnterior] = await Promise.all([
+      const [resultadoActual, resultadoAnterior, resultadoInventario] = await Promise.all([
         guardedQuery((client) =>
           client
             .from('pedidos')
@@ -46,6 +47,13 @@ export function useDashboardData({ desde, hasta }) {
             .gte('created_at', desdeAnterior.toISOString())
             .lte('created_at', hastaAnterior.toISOString())
         ),
+        guardedQuery((client) =>
+          client
+            .from('productos')
+            .select('id,stock_actual,stock_minimo')
+            .eq('stock_ilimitado', false)
+            .eq('activo', true)
+        ),
       ]);
 
       if (requestId !== requestIdRef.current) return;
@@ -55,6 +63,11 @@ export function useDashboardData({ desde, hasta }) {
 
       if (errActual) throw new Error(errActual.message);
       if (errAnterior) throw new Error(errAnterior.message);
+
+      const productosInventario = resultadoInventario.error ? [] : (resultadoInventario.data || []);
+      if (resultadoInventario.error) {
+        console.warn('[useDashboardData] No se pudieron cargar alertas de inventario', resultadoInventario.error.message);
+      }
 
       const actual = pedidosActual || [];
       const anterior = pedidosAnterior || [];
@@ -127,6 +140,14 @@ export function useDashboardData({ desde, hasta }) {
           created_at: p.created_at,
         }));
 
+      const stockAlerts = productosInventario.reduce((acc, producto) => {
+        const actual = Number(producto.stock_actual) || 0;
+        const minimo = Number(producto.stock_minimo) || 0;
+        if (actual <= 0) acc.sinStock += 1;
+        else if (actual <= minimo) acc.bajo += 1;
+        return acc;
+      }, { bajo: 0, sinStock: 0 });
+
       setData({
         kpis: {
           ingresos,
@@ -144,6 +165,7 @@ export function useDashboardData({ desde, hasta }) {
         pedidosPorEstado,
         topProductos,
         ultimosPedidos,
+        stockAlerts,
       });
     } catch (err) {
       if (requestId !== requestIdRef.current) return;
