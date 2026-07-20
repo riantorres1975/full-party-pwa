@@ -19,7 +19,7 @@ export function useClientes() {
       const { data: pedidos, error: err } = await guardedQuery((client) =>
         client
           .from('pedidos')
-          .select('id,cliente_nombre,cliente_telefono,tipo_entrega,total,estado,created_at')
+          .select('id,cliente_nombre,cliente_telefono,tipo_entrega,total,estado,pago_estado,created_at')
           .neq('estado', 'Cancelado')
           .order('created_at', { ascending: false })
       );
@@ -55,7 +55,9 @@ export function useClientes() {
         const esMasReciente = pedidoFecha > ultimoPedidoFecha;
 
         cliente.pedidos_total += 1;
-        cliente.gasto_total += Number(pedido.total) || 0;
+        if (pedido.pago_estado === 'confirmado') {
+          cliente.gasto_total += Number(pedido.total) || 0;
+        }
         if (esMasReciente) {
           cliente.ultimo_pedido = pedido.created_at;
           cliente.nombre = pedido.cliente_nombre || cliente.nombre;

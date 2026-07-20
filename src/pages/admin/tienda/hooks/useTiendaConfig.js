@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getConfig, setConfig } from '../../../../lib/configAdmin';
 import { useToast } from '../../../../components/ui/ToastProvider';
 import { useLanguage } from '../../../../hooks/useLanguage';
@@ -36,12 +36,17 @@ const DEFAULTS = {
   },
 };
 
+function serializeConfig(info, sucursales, redes) {
+  return JSON.stringify({ info, sucursales, redes });
+}
+
 export function useTiendaConfig() {
   const [info, setInfo] = useState(DEFAULTS.tienda_info);
   const [sucursales, setSucursales] = useState(DEFAULTS.sucursales);
   const [redes, setRedes] = useState(DEFAULTS.redes_sociales);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savedSnapshot, setSavedSnapshot] = useState(null);
   const toast = useToast();
   const { t } = useLanguage();
 
@@ -53,9 +58,14 @@ export function useTiendaConfig() {
         getConfig('sucursales', null),
         getConfig('redes_sociales', null),
       ]);
-      if (dbInfo) setInfo({ ...DEFAULTS.tienda_info, ...dbInfo });
-      if (dbSuc) setSucursales(dbSuc);
-      if (dbRedes) setRedes({ ...DEFAULTS.redes_sociales, ...dbRedes });
+      const nextInfo = dbInfo ? { ...DEFAULTS.tienda_info, ...dbInfo } : DEFAULTS.tienda_info;
+      const nextSucursales = dbSuc || DEFAULTS.sucursales;
+      const nextRedes = dbRedes ? { ...DEFAULTS.redes_sociales, ...dbRedes } : DEFAULTS.redes_sociales;
+
+      setInfo(nextInfo);
+      setSucursales(nextSucursales);
+      setRedes(nextRedes);
+      setSavedSnapshot(serializeConfig(nextInfo, nextSucursales, nextRedes));
     } catch (e) {
       console.error('[useTiendaConfig]', e);
     } finally {
@@ -73,6 +83,7 @@ export function useTiendaConfig() {
         setConfig('sucursales', sucursales),
         setConfig('redes_sociales', redes),
       ]);
+      setSavedSnapshot(serializeConfig(info, sucursales, redes));
       toast.success(t('tienda.guardado'));
     } catch (e) {
       console.error('[useTiendaConfig.save]', e);
@@ -92,10 +103,14 @@ export function useTiendaConfig() {
     { id: String(Date.now()), badge: '', nombre: '', direccion: '', maps_url: '', facebook: '' },
   ]);
   const removeSucursal = (id) => setSucursales(prev => prev.filter(s => s.id !== id));
+  const isDirty = useMemo(
+    () => savedSnapshot !== null && serializeConfig(info, sucursales, redes) !== savedSnapshot,
+    [info, sucursales, redes, savedSnapshot]
+  );
 
   return {
     info, sucursales, redes,
-    loading, saving,
+    loading, saving, isDirty,
     updateInfo, updateSucursal, updateRedes,
     addSucursal, removeSucursal,
     save,

@@ -8,6 +8,8 @@ import StatsCard from '../../../components/admin/StatsCard';
 import { DataTable } from '../../../components/admin/DataTable';
 import ModalConfirmarPago from './ModalConfirmarPago';
 import { usePagos } from './hooks/usePagos';
+import { useConfirm } from '../../../hooks/useConfirm';
+import ConfirmModal from '../../../components/ui/ConfirmModal';
 
 const FILTROS = ['todos', 'pendiente', 'confirmado'];
 const PERIODOS = ['hoy', 'semana', 'mes', 'todo'];
@@ -78,6 +80,7 @@ export default function PagosPage() {
   const [filtro, setFiltro] = useState('todos');
   const [periodo, setPeriodo] = useState('hoy');
   const [pedidoModal, setPedidoModal] = useState(null);
+  const { isOpen, config, confirm, onConfirm, onCancel } = useConfirm();
 
   useEffect(() => {
     setBreadcrumb([t('admin.nav.payments')]);
@@ -118,6 +121,14 @@ export default function PagosPage() {
   };
 
   const handleMarcarPendiente = async (pedido) => {
+    const accepted = await confirm({
+      title: t('pagos.revertir.title'),
+      message: t('pagos.revertir.message').replace('{folio}', pedido.folio || ''),
+      confirmLabel: t('pagos.accion.pendiente'),
+      variant: 'warning',
+    });
+    if (!accepted) return;
+
     const result = await marcarPendiente(pedido.id);
     if (result.ok) {
       toast.success(t('pagos.toast.pendiente'));
@@ -182,6 +193,7 @@ export default function PagosPage() {
         if (row.pago_estado === 'confirmado') {
           return (
             <button
+              type="button"
               onClick={(e) => { e.stopPropagation(); handleMarcarPendiente(row); }}
               disabled={isLoading}
               className="text-xs font-body text-admin-muted hover:text-admin-text border border-admin-border rounded-lg px-2.5 py-1 transition-colors disabled:opacity-50"
@@ -192,6 +204,7 @@ export default function PagosPage() {
         }
         return (
           <button
+            type="button"
             onClick={(e) => { e.stopPropagation(); setPedidoModal(row); }}
             disabled={isLoading}
             className="text-xs font-body rounded-lg px-2.5 py-1 font-bold transition-colors disabled:opacity-50"
@@ -213,6 +226,7 @@ export default function PagosPage() {
           subtitle={t('pagos.subtitle')}
           actions={
             <button
+              type="button"
               onClick={refetch}
               className="flex items-center gap-1.5 text-sm font-body text-admin-muted hover:text-admin-text border border-admin-border rounded-lg px-3 py-1.5 transition-colors"
             >
@@ -228,8 +242,10 @@ export default function PagosPage() {
         <div className="flex gap-1 p-1 bg-admin-elevated rounded-xl border border-admin-border">
           {PERIODOS.map((p) => (
             <button
+              type="button"
               key={p}
               onClick={() => setPeriodo(p)}
+              aria-pressed={periodo === p}
               className={`px-3 py-1.5 rounded-lg text-xs font-body font-bold transition-all ${
                 periodo === p
                   ? 'bg-admin-card text-admin-text shadow-sm'
@@ -278,8 +294,10 @@ export default function PagosPage() {
       <div className="flex gap-1 mb-4 p-1 bg-admin-elevated rounded-xl w-fit border border-admin-border">
         {FILTROS.map((f) => (
           <button
+            type="button"
             key={f}
             onClick={() => setFiltro(f)}
+            aria-pressed={filtro === f}
             className={`px-4 py-1.5 rounded-lg text-sm font-body font-bold transition-all ${
               filtro === f
                 ? 'bg-admin-card text-admin-text shadow-sm'
@@ -298,7 +316,8 @@ export default function PagosPage() {
         error={error}
         columns={columns}
         rowKey="id"
-        onRowClick={(row) => row.pago_estado === 'pendiente' && setPedidoModal(row)}
+        onRowClick={(row) => setPedidoModal(row)}
+        isRowClickable={(row) => row.pago_estado === 'pendiente'}
         searchable
         searchPlaceholder={t('pagos.buscar')}
         emptyState={{
@@ -318,6 +337,13 @@ export default function PagosPage() {
           guardando={actualizando === pedidoModal.id}
         />
       )}
+
+      <ConfirmModal
+        open={isOpen}
+        {...config}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+      />
 
       <div className="h-20 lg:h-0" />
     </div>

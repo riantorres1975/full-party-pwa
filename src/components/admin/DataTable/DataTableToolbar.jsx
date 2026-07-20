@@ -53,10 +53,11 @@ export default function DataTableToolbar({
       <div className="relative">
         <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-admin-text-secondary" />
         <input
-          type="text"
+          type="search"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={searchPlaceholder || t('datatable.search')}
+          aria-label={searchPlaceholder || t('datatable.search')}
           className="w-full pl-9 pr-4 py-2 rounded border border-admin-border bg-admin-input text-admin-text placeholder-admin-text-secondary outline-none focus:ring-2 focus:ring-ink-500/50"
         />
       </div>

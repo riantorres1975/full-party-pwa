@@ -41,7 +41,7 @@ export default function TiendaPage() {
   const { isOpen, config, confirm, onConfirm, onCancel } = useConfirm();
   const {
     info, sucursales, redes,
-    loading, saving,
+    loading, saving, isDirty,
     updateInfo, updateSucursal, updateRedes,
     addSucursal, removeSucursal,
     save,
@@ -50,6 +50,16 @@ export default function TiendaPage() {
   useEffect(() => {
     setBreadcrumb([t('tienda.title')]);
   }, [setBreadcrumb, t]);
+
+  useEffect(() => {
+    if (!canEdit || !isDirty) return undefined;
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [canEdit, isDirty]);
 
   const handleRemoveSucursal = async (id) => {
     const accepted = await confirm({
@@ -75,15 +85,22 @@ export default function TiendaPage() {
         title={t('tienda.title')}
         subtitle={t('tienda.subtitle')}
         actions={canEdit && (
-          <button
-            type="button"
-            onClick={save}
-            disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-fiesta-magenta text-white text-sm font-body font-bold hover:bg-fiesta-magenta/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-          >
-            <Save size={14} />
-            {saving ? t('common.saving') : t('tienda.guardar')}
-          </button>
+          <div className="flex items-center gap-3">
+            {isDirty && (
+              <span className="hidden sm:inline text-xs font-body font-bold text-amber-500" aria-live="polite">
+                {t('tienda.cambiosPendientes')}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={save}
+              disabled={saving || !isDirty}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-fiesta-magenta text-white text-sm font-body font-bold hover:bg-fiesta-magenta/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <Save size={14} />
+              {saving ? t('common.saving') : t('tienda.guardar')}
+            </button>
+          </div>
         )}
       />
 
@@ -229,7 +246,7 @@ export default function TiendaPage() {
         <button
           type="button"
           onClick={save}
-          disabled={saving}
+          disabled={saving || !isDirty}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-fiesta-magenta text-white text-sm font-body font-bold shadow-elevated hover:bg-fiesta-magenta/90 disabled:opacity-60 transition-colors"
         >
           <Save size={14} />

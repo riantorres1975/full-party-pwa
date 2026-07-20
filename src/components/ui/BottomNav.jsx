@@ -28,7 +28,6 @@ export default function BottomNav({ onSignOut }) {
   const location = useLocation();
   const {
     contadores,
-    fetchPedidos,
     notificationPermission,
     requestNotificationPermission,
     testNotification,
@@ -71,7 +70,7 @@ export default function BottomNav({ onSignOut }) {
     } else if (key === 'theme') {
       toggleTheme();
     } else if (key === 'reload') {
-      fetchPedidos();
+      navigate(0);
     } else if (key === 'notifications') {
       if (notificationsEnabled) {
         testNotification();

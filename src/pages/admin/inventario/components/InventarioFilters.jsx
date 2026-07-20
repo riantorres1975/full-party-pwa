@@ -9,8 +9,10 @@ export default function InventarioFilters({ active, onChange }) {
     <div className="flex flex-wrap gap-2">
       {FILTROS.map((f) => (
         <button
+          type="button"
           key={f}
           onClick={() => onChange(f)}
+          aria-pressed={active === f}
           className={`px-3 py-1.5 rounded-lg text-xs font-body font-bold transition-colors ${
             active === f
               ? 'bg-fiesta-magenta text-white'

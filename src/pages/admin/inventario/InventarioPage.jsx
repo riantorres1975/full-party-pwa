@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Package, ExternalLink } from 'lucide-react';
+import { Package, ExternalLink, Search, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../../../hooks/useLanguage';
 import { useBreadcrumb } from '../../../contexts/BreadcrumbContext';
@@ -71,6 +71,11 @@ export default function InventarioPage() {
     sinStock: productos.filter((p) => getStatus(p) === 'sinStock').length,
     bajo: productos.filter((p) => getStatus(p) === 'bajo').length,
   }), [productos]);
+  const hasFilters = filtro !== 'todos' || search.trim().length > 0;
+  const clearFilters = () => {
+    setFiltro('todos');
+    setSearch('');
+  };
 
   return (
     <div>
@@ -94,7 +99,9 @@ export default function InventarioPage() {
           <div className="flex flex-wrap gap-3 mb-4">
             {counts.sinStock > 0 && (
               <button
+                type="button"
                 onClick={() => setFiltro('sinStock')}
+                aria-pressed={filtro === 'sinStock'}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-body font-bold hover:bg-red-500/15 transition-colors"
               >
                 {counts.sinStock} {t('inventario.estado.sinStock')}
@@ -102,7 +109,9 @@ export default function InventarioPage() {
             )}
             {counts.bajo > 0 && (
               <button
+                type="button"
                 onClick={() => setFiltro('bajo')}
+                aria-pressed={filtro === 'bajo'}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-body font-bold hover:bg-amber-500/15 transition-colors"
               >
                 {counts.bajo} {t('inventario.estado.bajo')}
@@ -113,15 +122,34 @@ export default function InventarioPage() {
 
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('inventario.buscar')}
-            className="flex-1 px-3 py-2 rounded-lg border border-admin-border bg-admin-bg text-admin-text text-sm font-body focus:outline-none focus:ring-2 focus:ring-fiesta-magenta/40"
-          />
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-admin-muted" aria-hidden="true" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('inventario.buscar')}
+              aria-label={t('inventario.buscar')}
+              className="w-full pl-9 pr-9 py-2 rounded-lg border border-admin-border bg-admin-bg text-admin-text text-sm font-body focus:outline-none focus:ring-2 focus:ring-fiesta-magenta/40"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                aria-label={t('inventario.limpiarBusqueda')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-admin-muted hover:text-admin-text hover:bg-admin-elevated"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
           <InventarioFilters active={filtro} onChange={setFiltro} />
         </div>
+        {!loading && !error && (
+          <p className="mt-2 text-xs font-body text-admin-muted" aria-live="polite">
+            {t('inventario.resultados', { count: filtered.length })}
+          </p>
+        )}
       </div>
 
       {/* Tabla */}
@@ -139,6 +167,15 @@ export default function InventarioPage() {
           <Package size={36} className="opacity-30" />
           <p className="font-body font-bold text-sm">{t('inventario.vacio.titulo')}</p>
           <p className="font-body text-xs">{t('inventario.vacio.desc')}</p>
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="mt-1 rounded-lg border border-admin-border px-3 py-2 text-sm font-body font-bold text-admin-text hover:bg-admin-elevated transition-colors"
+            >
+              {t('inventario.limpiarFiltros')}
+            </button>
+          )}
         </div>
       ) : (
         <>
@@ -175,11 +212,13 @@ export default function InventarioPage() {
                       onCommit={(v) => updateStock(p.id, { stock_actual: v })}
                     />
                     <button
+                      type="button"
                       onClick={() => canEdit && updateStock(p.id, { activo: !p.activo })}
                       disabled={!canEdit}
                       className={`relative w-10 h-5 rounded-full transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed shrink-0
                         ${p.activo ? 'bg-emerald-500' : 'bg-admin-border'}`}
                       aria-label={t('inventario.col.activo')}
+                      aria-pressed={p.activo}
                     >
                       <span className={`block w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform
                         ${p.activo ? 'translate-x-5' : 'translate-x-0.5'}`} />
@@ -227,11 +266,13 @@ export default function InventarioPage() {
                         <td className="px-4 py-3"><StockBadge status={status} t={t} /></td>
                         <td className="px-4 py-3 text-center">
                           <button
+                            type="button"
                             onClick={() => canEdit && updateStock(p.id, { stock_ilimitado: !p.stock_ilimitado })}
                             disabled={!canEdit}
                             className={`relative w-10 h-5 rounded-full transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed
                               ${p.stock_ilimitado ? 'bg-fiesta-magenta' : 'bg-admin-border'}`}
                             aria-label={t('inventario.col.ilimitado')}
+                            aria-pressed={p.stock_ilimitado}
                           >
                             <span className={`block w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform ${p.stock_ilimitado ? 'translate-x-5' : 'translate-x-0.5'}`} />
                           </button>
@@ -248,11 +289,13 @@ export default function InventarioPage() {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <button
+                            type="button"
                             onClick={() => canEdit && updateStock(p.id, { activo: !p.activo })}
                             disabled={!canEdit}
                             className={`relative w-10 h-5 rounded-full transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed
                               ${p.activo ? 'bg-emerald-500' : 'bg-admin-border'}`}
                             aria-label={t('inventario.col.activo')}
+                            aria-pressed={p.activo}
                           >
                             <span className={`block w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform ${p.activo ? 'translate-x-5' : 'translate-x-0.5'}`} />
                           </button>

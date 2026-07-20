@@ -34,21 +34,27 @@ export default function ReportesPage() {
           actions={
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={() => setAnio((y) => y - 1)}
+                aria-label={t('reportes.anioAnterior')}
                 className="w-8 h-8 flex items-center justify-center rounded-lg border border-admin-border text-admin-muted hover:text-admin-text hover:bg-admin-elevated transition-colors"
               >
                 <ChevronLeft size={16} />
               </button>
               <span className="text-sm font-body font-black text-admin-text w-12 text-center">{anio}</span>
               <button
+                type="button"
                 onClick={() => setAnio((y) => y + 1)}
                 disabled={anio >= anioActual}
+                aria-label={t('reportes.anioSiguiente')}
                 className="w-8 h-8 flex items-center justify-center rounded-lg border border-admin-border text-admin-muted hover:text-admin-text hover:bg-admin-elevated transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <ChevronRight size={16} />
               </button>
               <button
+                type="button"
                 onClick={refetch}
+                aria-label={t('admin.reloadData')}
                 className="w-8 h-8 flex items-center justify-center rounded-lg border border-admin-border text-admin-muted hover:text-admin-text hover:bg-admin-elevated transition-colors"
                 title={t('admin.reloadData')}
               >
@@ -62,8 +68,10 @@ export default function ReportesPage() {
         <div className="flex gap-1 flex-wrap">
           {TABS.map((key) => (
             <button
+              type="button"
               key={key}
               onClick={() => setTab(key)}
+              aria-pressed={tab === key}
               className={`px-3 py-1.5 rounded-lg text-xs font-body font-bold transition-colors ${
                 tab === key
                   ? 'bg-fiesta-magenta text-white'

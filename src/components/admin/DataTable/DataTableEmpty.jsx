@@ -1,6 +1,6 @@
 import { useLanguage } from '../../../hooks/useLanguage';
 
-export default function DataTableEmpty({ icon: Icon, title, description }) {
+export default function DataTableEmpty({ icon: Icon, title, description, actionLabel, onAction }) {
   const { t } = useLanguage();
 
   return (
@@ -14,6 +14,15 @@ export default function DataTableEmpty({ icon: Icon, title, description }) {
       <p className="text-sm text-admin-text-secondary text-center max-w-xs">
         {description || t('datatable.empty.description')}
       </p>
+      {onAction && actionLabel && (
+        <button
+          type="button"
+          onClick={onAction}
+          className="mt-4 rounded-lg border border-admin-border px-3 py-2 text-sm font-body font-bold text-admin-text hover:bg-admin-elevated transition-colors"
+        >
+          {actionLabel}
+        </button>
+      )}
     </div>
   );
 }

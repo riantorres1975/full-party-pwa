@@ -14,6 +14,7 @@ export default function DataTable({
   columns = [],
   rowKey = 'id',
   onRowClick,
+  isRowClickable,
   searchable = true,
   searchPlaceholder,
   selectable = false,
@@ -37,6 +38,7 @@ export default function DataTable({
     toggleRow,
     toggleAll,
     clearSelection,
+    sortedData,
     paginatedData,
     totalPages,
     currentPage,
@@ -47,8 +49,8 @@ export default function DataTable({
     pageSize: pagination.pageSize,
   });
 
-  const allIds = data.map(row => row[rowKey]);
-  const selectAllChecked = selection.size === allIds.length && allIds.length > 0;
+  const allIds = sortedData.map(row => row[rowKey]);
+  const selectAllChecked = allIds.length > 0 && allIds.every(id => selection.has(id));
 
   if (error) {
     return (
@@ -70,7 +72,7 @@ export default function DataTable({
     return <DataTableSkeleton columnCount={columns.length} rowCount={5} />;
   }
 
-  if (totalResults === 0) {
+  if (data.length === 0) {
     return (
       <DataTableEmpty
         icon={emptyState.icon}
@@ -85,7 +87,10 @@ export default function DataTable({
       {searchable && (
         <DataTableToolbar
           search={search}
-          onSearchChange={setSearch}
+          onSearchChange={(value) => {
+            clearSelection();
+            setSearch(value);
+          }}
           searchPlaceholder={searchPlaceholder}
           selectionCount={selection.size}
           onClearSelection={clearSelection}
@@ -93,6 +98,15 @@ export default function DataTable({
         />
       )}
 
+      {totalResults === 0 ? (
+        <DataTableEmpty
+          title={t('datatable.no_matches.title')}
+          description={t('datatable.no_matches.description')}
+          actionLabel={t('datatable.no_matches.clear')}
+          onAction={() => setSearch('')}
+        />
+      ) : (
+        <>
       {/* Desktop Table */}
       <div className="hidden lg:block overflow-x-auto">
         <table className="w-full text-sm">
@@ -116,7 +130,7 @@ export default function DataTable({
                 selectable={selectable}
                 isSelected={selection.has(row[rowKey])}
                 onToggle={toggleRow}
-                onRowClick={onRowClick}
+                onRowClick={!isRowClickable || isRowClickable(row) ? onRowClick : undefined}
               />
             ))}
           </tbody>
@@ -134,7 +148,7 @@ export default function DataTable({
             selectable={selectable}
             isSelected={selection.has(row[rowKey])}
             onToggle={toggleRow}
-            onRowClick={onRowClick}
+            onRowClick={!isRowClickable || isRowClickable(row) ? onRowClick : undefined}
             variant="card"
           />
         ))}
@@ -147,6 +161,8 @@ export default function DataTable({
         totalResults={totalResults}
         onPageChange={setPage}
       />
+        </>
+      )}
     </div>
   );
 }

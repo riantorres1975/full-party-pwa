@@ -66,8 +66,10 @@ export function useDataTable({ data = [], columns = [], pageSize = 25, onSortCha
 
   const toggleAll = useCallback((ids) => {
     setSelection(prev => {
-      if (prev.size === ids.length) return new Set();
-      return new Set(ids);
+      const next = new Set(prev);
+      const allSelected = ids.length > 0 && ids.every(id => next.has(id));
+      ids.forEach(id => allSelected ? next.delete(id) : next.add(id));
+      return next;
     });
   }, []);
 

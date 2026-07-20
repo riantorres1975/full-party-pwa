@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { guardedQuery } from '../../../../lib/supabaseGuard';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -14,10 +14,12 @@ export function useDashboardData({ desde, hasta }) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const requestIdRef = useRef(0);
 
   const fetchDashboardData = useCallback(async () => {
     if (!desde || !hasta) return;
 
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
 
@@ -29,23 +31,27 @@ export function useDashboardData({ desde, hasta }) {
       const hastaAnterior = endOfDay(addDays(desdeActual, -1));
       const desdeAnterior = startOfDay(addDays(desdeActual, -diasPeriodo));
 
-      // Query periodo actual
-      const { data: pedidosActual, error: errActual } = await guardedQuery((client) =>
-        client
-          .from('pedidos')
-          .select('id,folio,estado,total,pago_estado,cliente_telefono,created_at,detalles_json')
-          .gte('created_at', desdeActual.toISOString())
-          .lte('created_at', hastaActual.toISOString())
-      );
+      const [resultadoActual, resultadoAnterior] = await Promise.all([
+        guardedQuery((client) =>
+          client
+            .from('pedidos')
+            .select('id,folio,estado,total,pago_estado,cliente_telefono,created_at,detalles_json')
+            .gte('created_at', desdeActual.toISOString())
+            .lte('created_at', hastaActual.toISOString())
+        ),
+        guardedQuery((client) =>
+          client
+            .from('pedidos')
+            .select('id,folio,estado,total,pago_estado,cliente_telefono,created_at,detalles_json')
+            .gte('created_at', desdeAnterior.toISOString())
+            .lte('created_at', hastaAnterior.toISOString())
+        ),
+      ]);
 
-      // Query periodo anterior
-      const { data: pedidosAnterior, error: errAnterior } = await guardedQuery((client) =>
-        client
-          .from('pedidos')
-          .select('id,folio,estado,total,pago_estado,cliente_telefono,created_at,detalles_json')
-          .gte('created_at', desdeAnterior.toISOString())
-          .lte('created_at', hastaAnterior.toISOString())
-      );
+      if (requestId !== requestIdRef.current) return;
+
+      const { data: pedidosActual, error: errActual } = resultadoActual;
+      const { data: pedidosAnterior, error: errAnterior } = resultadoAnterior;
 
       if (errActual) throw new Error(errActual.message);
       if (errAnterior) throw new Error(errAnterior.message);
@@ -140,10 +146,11 @@ export function useDashboardData({ desde, hasta }) {
         ultimosPedidos,
       });
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       console.error('[useDashboardData]', err);
       setError(err.message || 'Error al cargar datos del dashboard');
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   }, [desde, hasta]);
 

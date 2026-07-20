@@ -1,12 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { guardedQuery } from '../../../../lib/supabaseGuard';
 
 export function useReportesData(anio) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const requestIdRef = useRef(0);
 
   const fetch = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -20,6 +22,7 @@ export function useReportesData(anio) {
           .gte('created_at', desde.toISOString())
           .lte('created_at', hasta.toISOString())
       );
+      if (requestId !== requestIdRef.current) return;
       if (err) throw new Error(err.message);
 
       const rows = pedidos || [];
@@ -113,10 +116,11 @@ export function useReportesData(anio) {
 
       setData({ meses, productosRanking, clientesFrecuentes, tipoEntrega, resumen });
     } catch (e) {
+      if (requestId !== requestIdRef.current) return;
       console.error('[useReportesData]', e);
       setError(e.message);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   }, [anio]);
 
