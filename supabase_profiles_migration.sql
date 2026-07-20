@@ -25,6 +25,7 @@ RETURNS BOOLEAN
 LANGUAGE sql
 SECURITY DEFINER
 STABLE
+SET search_path = public, pg_temp
 AS $$
   SELECT EXISTS (
     SELECT 1
@@ -34,6 +35,9 @@ AS $$
       AND activo = true
   );
 $$;
+
+REVOKE ALL ON FUNCTION public.has_role(TEXT[]) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.has_role(TEXT[]) TO authenticated;
 
 -- 3. RLS de profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
@@ -77,6 +81,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   pending_role TEXT;
@@ -103,6 +108,8 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created

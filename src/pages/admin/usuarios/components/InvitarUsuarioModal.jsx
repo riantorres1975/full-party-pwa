@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { X, Copy, Check, AlertCircle, RefreshCw } from 'lucide-react';
 import { ROLES, ROLE_LABELS, ROLE_LABELS_EN } from '../../../../lib/roles';
 import { useLanguage } from '../../../../hooks/useLanguage';
 import { useInvitarUsuario } from '../hooks/useInvitarUsuario';
+import { useDialogFocus } from '../../../../hooks/useDialogFocus';
 
 const ROLE_ORDER = [ROLES.EMPLEADO, ROLES.MANAGER, ROLES.VIEWER, ROLES.ADMIN];
 
@@ -11,9 +12,12 @@ function isValidEmail(email) {
 }
 
 export default function InvitarUsuarioModal({ onClose, onInvited }) {
-  const { t, language } = useLanguage();
+  const { t, lang } = useLanguage();
   const { invitar, reenviar } = useInvitarUsuario();
-  const labels = language === 'en' ? ROLE_LABELS_EN : ROLE_LABELS;
+  const labels = lang === 'en' ? ROLE_LABELS_EN : ROLE_LABELS;
+  const dialogRef = useRef(null);
+  const emailRef = useRef(null);
+  const titleId = useId();
 
   const [email, setEmail] = useState('');
   const [role, setRole] = useState(ROLES.EMPLEADO);
@@ -22,6 +26,13 @@ export default function InvitarUsuarioModal({ onClose, onInvited }) {
   const [result, setResult] = useState(null); // { inviteUrl, role } cuando ok
   const [alreadyPending, setAlreadyPending] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  useDialogFocus({
+    open: true,
+    containerRef: dialogRef,
+    initialFocusRef: emailRef,
+    onClose,
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,14 +80,22 @@ export default function InvitarUsuarioModal({ onClose, onInvited }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
-      <div className="relative bg-admin-card border border-admin-border rounded-2xl shadow-elevated w-full max-w-md">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="relative bg-admin-card border border-admin-border rounded-2xl shadow-elevated w-full max-w-md"
+      >
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-admin-border">
-          <h2 className="font-display font-black text-lg text-admin-text">
+          <h2 id={titleId} className="font-display font-black text-lg text-admin-text">
             {result ? t('admin.users.invite.linkReady') : t('usuarios.invite.title')}
           </h2>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-lg text-admin-muted hover:bg-admin-elevated transition-colors"
             aria-label={t('common.close')}
@@ -89,29 +108,33 @@ export default function InvitarUsuarioModal({ onClose, onInvited }) {
         {!result && !alreadyPending && (
           <form onSubmit={handleSubmit} className="px-5 py-5 space-y-4">
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-body font-bold text-admin-muted uppercase tracking-wide">
+              <label htmlFor="invite-email" className="text-xs font-body font-bold text-admin-muted uppercase tracking-wide">
                 {t('usuarios.invite.email')}
               </label>
               <input
+                ref={emailRef}
+                id="invite-email"
                 type="email"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setEmailError(''); }}
                 placeholder="ejemplo@correo.com"
-                autoFocus
+                aria-invalid={Boolean(emailError)}
+                aria-describedby={emailError ? 'invite-email-error' : undefined}
                 className="w-full px-3 py-2 rounded-lg border border-admin-border bg-admin-bg text-admin-text text-sm font-body focus:outline-none focus:ring-2 focus:ring-fiesta-magenta/40"
               />
               {emailError && (
-                <p className="text-xs text-red-500 flex items-center gap-1">
+                <p id="invite-email-error" role="alert" className="text-xs text-red-500 flex items-center gap-1">
                   <AlertCircle size={12} /> {emailError}
                 </p>
               )}
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-body font-bold text-admin-muted uppercase tracking-wide">
+              <label htmlFor="invite-role" className="text-xs font-body font-bold text-admin-muted uppercase tracking-wide">
                 {t('usuarios.invite.role')}
               </label>
               <select
+                id="invite-role"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg border border-admin-border bg-admin-bg text-admin-text text-sm font-body focus:outline-none focus:ring-2 focus:ring-fiesta-magenta/40"
@@ -143,6 +166,7 @@ export default function InvitarUsuarioModal({ onClose, onInvited }) {
             </div>
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={handleResend}
                 disabled={loading}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-fiesta-magenta text-white text-sm font-body font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
@@ -151,6 +175,7 @@ export default function InvitarUsuarioModal({ onClose, onInvited }) {
                 {t('admin.users.invite.resend')}
               </button>
               <button
+                type="button"
                 onClick={() => setAlreadyPending(false)}
                 className="flex-1 py-2.5 rounded-xl bg-admin-elevated text-admin-text text-sm font-body font-bold hover:bg-admin-border transition-colors"
               >
@@ -170,6 +195,7 @@ export default function InvitarUsuarioModal({ onClose, onInvited }) {
                 {result.inviteUrl}
               </p>
               <button
+                type="button"
                 onClick={handleCopy}
                 className="p-1.5 rounded-lg hover:bg-admin-card transition-colors text-admin-muted shrink-0"
                 aria-label={t('admin.users.invite.linkCopied')}
@@ -182,10 +208,11 @@ export default function InvitarUsuarioModal({ onClose, onInvited }) {
             </div>
 
             {copied && (
-              <p className="text-xs text-emerald-500 font-body">{t('admin.users.invite.linkCopied')}</p>
+              <p role="status" className="text-xs text-emerald-500 font-body">{t('admin.users.invite.linkCopied')}</p>
             )}
 
             <button
+              type="button"
               onClick={onClose}
               className="w-full py-2.5 rounded-xl bg-admin-elevated text-admin-text text-sm font-body font-bold hover:bg-admin-border transition-colors"
             >

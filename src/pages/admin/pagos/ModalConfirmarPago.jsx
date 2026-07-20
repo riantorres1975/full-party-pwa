@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { X, CheckCircle, CreditCard, Banknote, Smartphone, MoreHorizontal } from 'lucide-react';
 import { useLanguage } from '../../../hooks/useLanguage';
+import { useDialogFocus } from '../../../hooks/useDialogFocus';
 
 const METODOS = [
   { value: 'transferencia', icon: Smartphone },
@@ -13,6 +14,21 @@ export default function ModalConfirmarPago({ pedido, onConfirm, onClose, guardan
   const { t } = useLanguage();
   const [metodo, setMetodo] = useState(pedido?.metodo_pago || '');
   const [notas, setNotas] = useState(pedido?.pago_notas || '');
+  const dialogRef = useRef(null);
+  const cancelRef = useRef(null);
+  const titleId = useId();
+
+  useDialogFocus({
+    open: Boolean(pedido),
+    containerRef: dialogRef,
+    initialFocusRef: cancelRef,
+    onClose,
+  });
+
+  useEffect(() => {
+    setMetodo(pedido?.metodo_pago || '');
+    setNotas(pedido?.pago_notas || '');
+  }, [pedido]);
 
   if (!pedido) return null;
 
@@ -23,7 +39,14 @@ export default function ModalConfirmarPago({ pedido, onConfirm, onClose, guardan
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl bg-admin-card border border-admin-border shadow-elevated overflow-hidden">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="w-full max-w-md rounded-2xl bg-admin-card border border-admin-border shadow-elevated overflow-hidden"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-admin-border">
           <div className="flex items-center gap-3">
@@ -31,11 +54,11 @@ export default function ModalConfirmarPago({ pedido, onConfirm, onClose, guardan
               <CheckCircle size={18} className="text-green-600" />
             </div>
             <div>
-              <p className="font-body font-bold text-admin-text text-sm">{t('pagos.modal.title')}</p>
+              <h2 id={titleId} className="font-body font-bold text-admin-text text-sm">{t('pagos.modal.title')}</h2>
               <p className="text-xs text-admin-muted font-body">{pedido.folio} · {pedido.cliente_nombre}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-admin-muted hover:bg-admin-elevated transition-colors">
+          <button type="button" onClick={onClose} aria-label={t('common.close')} className="p-1.5 rounded-lg text-admin-muted hover:bg-admin-elevated transition-colors">
             <X size={16} />
           </button>
         </div>
@@ -60,6 +83,7 @@ export default function ModalConfirmarPago({ pedido, onConfirm, onClose, guardan
                 <button
                   key={value}
                   type="button"
+                  aria-pressed={metodo === value}
                   onClick={() => setMetodo(metodo === value ? '' : value)}
                   className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-body font-bold transition-all ${
                     metodo === value
@@ -76,10 +100,11 @@ export default function ModalConfirmarPago({ pedido, onConfirm, onClose, guardan
 
           {/* Notas */}
           <div>
-            <label className="text-xs font-body font-bold text-admin-muted uppercase tracking-wide mb-2 block">
+            <label htmlFor="pago-notas" className="text-xs font-body font-bold text-admin-muted uppercase tracking-wide mb-2 block">
               {t('pagos.modal.notas')}
             </label>
             <textarea
+              id="pago-notas"
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
               placeholder={t('pagos.modal.notasPlaceholder')}
@@ -91,6 +116,7 @@ export default function ModalConfirmarPago({ pedido, onConfirm, onClose, guardan
           {/* Actions */}
           <div className="flex gap-2 pt-1">
             <button
+              ref={cancelRef}
               type="button"
               onClick={onClose}
               className="flex-1 py-2.5 rounded-xl border border-admin-border text-sm font-body font-bold text-admin-muted hover:text-admin-text hover:bg-admin-elevated transition-colors"

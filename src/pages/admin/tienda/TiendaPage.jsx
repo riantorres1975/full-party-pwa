@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Store, MapPin, Share2, Plus, Trash2, Save, ExternalLink } from 'lucide-react';
+import { Store, MapPin, Share2, Plus, Trash2, Save, ExternalLink, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../../../hooks/useLanguage';
 import { useBreadcrumb } from '../../../contexts/BreadcrumbContext';
 import PageHeader from '../../../components/admin/PageHeader';
@@ -20,14 +20,21 @@ function Section({ icon: Icon, title, children }) {
   );
 }
 
-function Field({ id, label, hint, children }) {
+function Field({ id, label, hint, error, children }) {
   return (
-    <div>
+    <div className={error ? '[&_input]:border-red-500 [&_input]:focus:ring-red-500/30' : ''}>
       <label htmlFor={id} className="block text-xs font-body font-bold text-admin-muted uppercase tracking-wide mb-1.5">
         {label}
       </label>
       {children}
-      {hint && <p className="text-[11px] text-admin-muted mt-1">{hint}</p>}
+      {error ? (
+        <p id={`${id}-error`} role="alert" className="mt-1 flex items-center gap-1 text-[11px] font-body font-bold text-red-500">
+          <AlertCircle size={11} aria-hidden="true" />
+          {error}
+        </p>
+      ) : hint ? (
+        <p className="text-[11px] text-admin-muted mt-1">{hint}</p>
+      ) : null}
     </div>
   );
 }
@@ -41,7 +48,7 @@ export default function TiendaPage() {
   const { isOpen, config, confirm, onConfirm, onCancel } = useConfirm();
   const {
     info, sucursales, redes,
-    loading, saving, isDirty,
+    loading, saving, isDirty, isValid, validationErrors,
     updateInfo, updateSucursal, updateRedes,
     addSucursal, removeSucursal,
     save,
@@ -71,6 +78,20 @@ export default function TiendaPage() {
     if (accepted) removeSucursal(id);
   };
 
+  const getError = (id) => validationErrors[id] ? t(validationErrors[id]) : '';
+  const getValidationProps = (id) => ({
+    'aria-invalid': Boolean(validationErrors[id]),
+    'aria-describedby': validationErrors[id] ? `${id}-error` : undefined,
+  });
+
+  const handleSave = async () => {
+    if (!isValid) {
+      const firstInvalidId = Object.keys(validationErrors)[0];
+      document.getElementById(firstInvalidId)?.focus();
+    }
+    await save();
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-16">
@@ -93,7 +114,7 @@ export default function TiendaPage() {
             )}
             <button
               type="button"
-              onClick={save}
+              onClick={handleSave}
               disabled={saving || !isDirty}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-fiesta-magenta text-white text-sm font-body font-bold hover:bg-fiesta-magenta/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
@@ -110,14 +131,22 @@ export default function TiendaPage() {
         </div>
       )}
 
+      {canEdit && isDirty && !isValid && (
+        <div role="alert" className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-body font-bold text-red-600">
+          <AlertCircle size={16} aria-hidden="true" />
+          {t('tienda.validacion.resumen').replace('{count}', Object.keys(validationErrors).length)}
+        </div>
+      )}
+
       <fieldset disabled={!canEdit} className={`space-y-5 ${!canEdit ? 'opacity-75' : ''}`}>
 
       {/* Info general */}
       <Section icon={Store} title={t('tienda.seccion.info')}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field id="tienda-nombre" label={t('tienda.campo.nombre')}>
+          <Field id="tienda-nombre" label={t('tienda.campo.nombre')} error={getError('tienda-nombre')}>
             <input
               id="tienda-nombre"
+              {...getValidationProps('tienda-nombre')}
               type="text"
               value={info.nombre}
               onChange={e => updateInfo('nombre', e.target.value)}
@@ -125,9 +154,10 @@ export default function TiendaPage() {
               className={inputCls}
             />
           </Field>
-          <Field id="tienda-whatsapp" label={t('tienda.campo.whatsapp')} hint={t('tienda.campo.whatsappHint')}>
+          <Field id="tienda-whatsapp" label={t('tienda.campo.whatsapp')} hint={t('tienda.campo.whatsappHint')} error={getError('tienda-whatsapp')}>
             <input
               id="tienda-whatsapp"
+              {...getValidationProps('tienda-whatsapp')}
               type="text"
               value={info.whatsapp}
               onChange={e => updateInfo('whatsapp', e.target.value)}
@@ -155,9 +185,10 @@ export default function TiendaPage() {
               className={inputCls}
             />
           </Field>
-          <Field id="tienda-maps-url" label={t('tienda.campo.mapsUrl')} hint={t('tienda.campo.mapsHint')}>
+          <Field id="tienda-maps-url" label={t('tienda.campo.mapsUrl')} hint={t('tienda.campo.mapsHint')} error={getError('tienda-maps-url')}>
             <input
               id="tienda-maps-url"
+              {...getValidationProps('tienda-maps-url')}
               type="url"
               value={info.maps_url}
               onChange={e => updateInfo('maps_url', e.target.value)}
@@ -193,15 +224,15 @@ export default function TiendaPage() {
                 <Field id={`sucursal-${suc.id}-badge`} label={t('tienda.campo.badge')}>
                   <input id={`sucursal-${suc.id}-badge`} type="text" value={suc.badge} onChange={e => updateSucursal(suc.id, 'badge', e.target.value)} placeholder="Sucursal Centro" className={inputCls} />
                 </Field>
-                <Field id={`sucursal-${suc.id}-nombre`} label={t('tienda.campo.nombre')}>
-                  <input id={`sucursal-${suc.id}-nombre`} type="text" value={suc.nombre} onChange={e => updateSucursal(suc.id, 'nombre', e.target.value)} placeholder="Av. Principal 123" className={inputCls} />
+                <Field id={`sucursal-${suc.id}-nombre`} label={t('tienda.campo.nombre')} error={getError(`sucursal-${suc.id}-nombre`)}>
+                  <input id={`sucursal-${suc.id}-nombre`} {...getValidationProps(`sucursal-${suc.id}-nombre`)} type="text" value={suc.nombre} onChange={e => updateSucursal(suc.id, 'nombre', e.target.value)} placeholder="Av. Principal 123" className={inputCls} />
                 </Field>
-                <Field id={`sucursal-${suc.id}-direccion`} label={t('tienda.campo.direccion')}>
-                  <input id={`sucursal-${suc.id}-direccion`} type="text" value={suc.direccion} onChange={e => updateSucursal(suc.id, 'direccion', e.target.value)} placeholder="Dirección completa" className={inputCls} />
+                <Field id={`sucursal-${suc.id}-direccion`} label={t('tienda.campo.direccion')} error={getError(`sucursal-${suc.id}-direccion`)}>
+                  <input id={`sucursal-${suc.id}-direccion`} {...getValidationProps(`sucursal-${suc.id}-direccion`)} type="text" value={suc.direccion} onChange={e => updateSucursal(suc.id, 'direccion', e.target.value)} placeholder="Dirección completa" className={inputCls} />
                 </Field>
-                <Field id={`sucursal-${suc.id}-maps-url`} label={t('tienda.campo.mapsUrl')}>
+                <Field id={`sucursal-${suc.id}-maps-url`} label={t('tienda.campo.mapsUrl')} error={getError(`sucursal-${suc.id}-maps-url`)}>
                   <div className="flex gap-2">
-                    <input id={`sucursal-${suc.id}-maps-url`} type="url" value={suc.maps_url} onChange={e => updateSucursal(suc.id, 'maps_url', e.target.value)} placeholder="https://maps.google.com/..." className={inputCls} />
+                    <input id={`sucursal-${suc.id}-maps-url`} {...getValidationProps(`sucursal-${suc.id}-maps-url`)} type="url" value={suc.maps_url} onChange={e => updateSucursal(suc.id, 'maps_url', e.target.value)} placeholder="https://maps.google.com/..." className={inputCls} />
                     {suc.maps_url && (
                       <a href={suc.maps_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-9 h-9 rounded-lg border border-admin-border text-admin-muted hover:text-admin-text hover:bg-admin-elevated transition-colors shrink-0">
                         <ExternalLink size={13} />
@@ -209,8 +240,8 @@ export default function TiendaPage() {
                     )}
                   </div>
                 </Field>
-                <Field id={`sucursal-${suc.id}-facebook`} label="Facebook">
-                  <input id={`sucursal-${suc.id}-facebook`} type="url" value={suc.facebook} onChange={e => updateSucursal(suc.id, 'facebook', e.target.value)} placeholder="https://facebook.com/..." className={inputCls} />
+                <Field id={`sucursal-${suc.id}-facebook`} label="Facebook" error={getError(`sucursal-${suc.id}-facebook`)}>
+                  <input id={`sucursal-${suc.id}-facebook`} {...getValidationProps(`sucursal-${suc.id}-facebook`)} type="url" value={suc.facebook} onChange={e => updateSucursal(suc.id, 'facebook', e.target.value)} placeholder="https://facebook.com/..." className={inputCls} />
                 </Field>
               </div>
             </div>
@@ -229,14 +260,14 @@ export default function TiendaPage() {
       {/* Redes sociales */}
       <Section icon={Share2} title={t('tienda.seccion.redes')}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Field id="redes-facebook" label="Facebook">
-            <input id="redes-facebook" type="url" value={redes.facebook} onChange={e => updateRedes('facebook', e.target.value)} placeholder="https://facebook.com/..." className={inputCls} />
+          <Field id="redes-facebook" label="Facebook" error={getError('redes-facebook')}>
+            <input id="redes-facebook" {...getValidationProps('redes-facebook')} type="url" value={redes.facebook} onChange={e => updateRedes('facebook', e.target.value)} placeholder="https://facebook.com/..." className={inputCls} />
           </Field>
-          <Field id="redes-instagram" label="Instagram">
-            <input id="redes-instagram" type="url" value={redes.instagram} onChange={e => updateRedes('instagram', e.target.value)} placeholder="https://instagram.com/..." className={inputCls} />
+          <Field id="redes-instagram" label="Instagram" error={getError('redes-instagram')}>
+            <input id="redes-instagram" {...getValidationProps('redes-instagram')} type="url" value={redes.instagram} onChange={e => updateRedes('instagram', e.target.value)} placeholder="https://instagram.com/..." className={inputCls} />
           </Field>
-          <Field id="redes-tiktok" label="TikTok">
-            <input id="redes-tiktok" type="url" value={redes.tiktok} onChange={e => updateRedes('tiktok', e.target.value)} placeholder="https://tiktok.com/..." className={inputCls} />
+          <Field id="redes-tiktok" label="TikTok" error={getError('redes-tiktok')}>
+            <input id="redes-tiktok" {...getValidationProps('redes-tiktok')} type="url" value={redes.tiktok} onChange={e => updateRedes('tiktok', e.target.value)} placeholder="https://tiktok.com/..." className={inputCls} />
           </Field>
         </div>
       </Section>
@@ -245,7 +276,7 @@ export default function TiendaPage() {
       {canEdit && <div className="sm:hidden fixed bottom-16 right-4 z-20">
         <button
           type="button"
-          onClick={save}
+          onClick={handleSave}
           disabled={saving || !isDirty}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-fiesta-magenta text-white text-sm font-body font-bold shadow-elevated hover:bg-fiesta-magenta/90 disabled:opacity-60 transition-colors"
         >

@@ -25,7 +25,7 @@ export default function LoginAdmin({ onLogin, loading, error }) {
                         outline-none transition-all duration-200`;
 
   return (
-    <div
+    <main
       className="min-h-screen flex items-center justify-center px-4"
       style={{ background: 'linear-gradient(135deg, #0f0320 0%, #1a0733 40%, #2d1055 100%)' }}
     >
@@ -75,13 +75,14 @@ export default function LoginAdmin({ onLogin, loading, error }) {
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Email */}
           <div>
-            <label className="block text-xs font-body font-bold text-purple-300/80 mb-2 pl-0.5 tracking-wide uppercase">
+            <label htmlFor="admin-email" className="block text-xs font-body font-bold text-purple-300/80 mb-2 pl-0.5 tracking-wide uppercase">
               {t('login.email')}
             </label>
             <div className="relative">
               <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400/70" />
               <input
                 ref={emailRef}
+                id="admin-email"
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
@@ -95,12 +96,13 @@ export default function LoginAdmin({ onLogin, loading, error }) {
 
           {/* Password */}
           <div>
-            <label className="block text-xs font-body font-bold text-purple-300/80 mb-2 pl-0.5 tracking-wide uppercase">
+            <label htmlFor="admin-password" className="block text-xs font-body font-bold text-purple-300/80 mb-2 pl-0.5 tracking-wide uppercase">
               {t('login.password')}
             </label>
             <div className="relative">
               <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400/70" />
               <input
+                id="admin-password"
                 type={showPass ? 'text' : 'password'}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
@@ -123,7 +125,7 @@ export default function LoginAdmin({ onLogin, loading, error }) {
 
           {/* Error */}
           {error && (
-            <div className="flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm font-body font-semibold text-red-300
+            <div role="alert" className="flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm font-body font-semibold text-red-300
                             bg-red-500/10 border border-red-500/25 animate-[scaleIn_200ms_ease-out]">
               <AlertCircle size={15} className="flex-shrink-0 mt-0.5" />
               <span>{error}</span>
@@ -167,6 +169,6 @@ export default function LoginAdmin({ onLogin, loading, error }) {
           </a>
         </p>
       </div>
-    </div>
+    </main>
   );
 }

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getConfig, setConfig } from '../../../../lib/configAdmin';
 import { useToast } from '../../../../components/ui/ToastProvider';
 import { useLanguage } from '../../../../hooks/useLanguage';
+import { validateTiendaConfig } from '../tiendaValidation';
 
 const DEFAULTS = {
   tienda_info: {
@@ -75,7 +76,22 @@ export function useTiendaConfig() {
 
   useEffect(() => { load(); }, [load]);
 
+  const validationErrors = useMemo(
+    () => validateTiendaConfig(info, sucursales, redes),
+    [info, sucursales, redes]
+  );
+  const isValid = Object.keys(validationErrors).length === 0;
+  const isDirty = useMemo(
+    () => savedSnapshot !== null && serializeConfig(info, sucursales, redes) !== savedSnapshot,
+    [info, sucursales, redes, savedSnapshot]
+  );
+
   const save = useCallback(async () => {
+    if (!isValid) {
+      toast.error(t('tienda.validacion.revisar'));
+      return false;
+    }
+
     setSaving(true);
     try {
       await Promise.all([
@@ -85,13 +101,15 @@ export function useTiendaConfig() {
       ]);
       setSavedSnapshot(serializeConfig(info, sucursales, redes));
       toast.success(t('tienda.guardado'));
+      return true;
     } catch (e) {
       console.error('[useTiendaConfig.save]', e);
       toast.error(t('tienda.error'));
+      return false;
     } finally {
       setSaving(false);
     }
-  }, [info, sucursales, redes, toast, t]);
+  }, [info, sucursales, redes, isValid, toast, t]);
 
   const updateInfo = (field, value) => setInfo(prev => ({ ...prev, [field]: value }));
   const updateSucursal = (id, field, value) =>
@@ -103,14 +121,9 @@ export function useTiendaConfig() {
     { id: String(Date.now()), badge: '', nombre: '', direccion: '', maps_url: '', facebook: '' },
   ]);
   const removeSucursal = (id) => setSucursales(prev => prev.filter(s => s.id !== id));
-  const isDirty = useMemo(
-    () => savedSnapshot !== null && serializeConfig(info, sucursales, redes) !== savedSnapshot,
-    [info, sucursales, redes, savedSnapshot]
-  );
-
   return {
     info, sucursales, redes,
-    loading, saving, isDirty,
+    loading, saving, isDirty, isValid, validationErrors,
     updateInfo, updateSucursal, updateRedes,
     addSucursal, removeSucursal,
     save,

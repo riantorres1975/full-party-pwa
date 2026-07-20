@@ -15,17 +15,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_pending_token
   ON public.profiles_pending (token);
 
 -- ───────────────────────────────────────────────────────────────────────────
--- 2. Policy de lectura pública por token
---    Solo rol anon, solo filas no expiradas.
---    El token UUID v4 tiene ~2^122 posibilidades — adivinar uno válido es
---    computacionalmente imposible. Esto es aceptable para un panel interno.
+-- 2. Bloquear lectura directa de invitaciones
+--    La validación pública se hace exclusivamente mediante el RPC por token.
+--    Una policy SELECT no puede saber qué token incluyó el cliente y terminaría
+--    permitiendo enumerar todas las invitaciones vigentes.
 -- ───────────────────────────────────────────────────────────────────────────
 DROP POLICY IF EXISTS "Lectura pública con token válido" ON public.profiles_pending;
 DROP POLICY IF EXISTS "Lectura por token válido" ON public.profiles_pending;
-CREATE POLICY "Lectura por token válido"
-  ON public.profiles_pending FOR SELECT
-  TO anon
-  USING (expires_at > now());
+REVOKE SELECT ON TABLE public.profiles_pending FROM anon;
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 3. RPC: get_invite_by_token
@@ -38,6 +35,7 @@ RETURNS TABLE (email TEXT, role TEXT, expires_at TIMESTAMPTZ)
 LANGUAGE sql
 SECURITY DEFINER
 STABLE
+SET search_path = public, pg_temp
 AS $$
   SELECT email, role, expires_at
   FROM public.profiles_pending
@@ -45,8 +43,9 @@ AS $$
     AND expires_at > NOW();
 $$;
 
--- Permitir ejecución al rol anon (necesario para RegistroPage sin sesión)
-GRANT EXECUTE ON FUNCTION public.get_invite_by_token(UUID) TO anon;
+-- Permitir únicamente el RPC necesario para RegistroPage sin sesión.
+REVOKE ALL ON FUNCTION public.get_invite_by_token(UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_invite_by_token(UUID) TO anon, authenticated;
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 4. RPC: check_email_exists
@@ -55,16 +54,24 @@ GRANT EXECUTE ON FUNCTION public.get_invite_by_token(UUID) TO anon;
 -- ───────────────────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION public.check_email_exists(p_email TEXT)
 RETURNS BOOLEAN
-LANGUAGE sql
+LANGUAGE plpgsql
 SECURITY DEFINER
 STABLE
+SET search_path = public, pg_temp
 AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM auth.users WHERE email = lower(p_email)
+BEGIN
+  IF NOT public.has_role(ARRAY['admin']) THEN
+    RAISE EXCEPTION 'Insufficient privileges' USING ERRCODE = '42501';
+  END IF;
+
+  RETURN EXISTS (
+    SELECT 1 FROM auth.users WHERE lower(email) = lower(p_email)
   );
+END;
 $$;
 
 -- Solo usuarios autenticados pueden ejecutarla
+REVOKE ALL ON FUNCTION public.check_email_exists(TEXT) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.check_email_exists(TEXT) TO authenticated;
 
 -- ───────────────────────────────────────────────────────────────────────────
@@ -76,6 +83,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   pending_role    TEXT;
@@ -84,10 +92,10 @@ BEGIN
   SELECT role, (expires_at < NOW())
     INTO pending_role, pending_expired
     FROM public.profiles_pending
-    WHERE email = NEW.email;
+    WHERE lower(email) = lower(NEW.email);
 
   IF pending_role IS NOT NULL THEN
-    DELETE FROM public.profiles_pending WHERE email = NEW.email;
+    DELETE FROM public.profiles_pending WHERE lower(email) = lower(NEW.email);
     IF pending_expired THEN
       pending_role := NULL;
     END IF;
@@ -109,6 +117,8 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC;
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- VERIFICACIÓN
