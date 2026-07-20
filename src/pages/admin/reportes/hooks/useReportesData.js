@@ -16,7 +16,7 @@ export function useReportesData(anio) {
       const { data: pedidos, error: err } = await guardedQuery((client) =>
         client
           .from('pedidos')
-          .select('id,cliente_nombre,cliente_telefono,tipo_entrega,total,estado,detalles_json,created_at')
+          .select('id,cliente_nombre,cliente_telefono,tipo_entrega,total,estado,pago_estado,detalles_json,created_at')
           .gte('created_at', desde.toISOString())
           .lte('created_at', hasta.toISOString())
       );
@@ -24,11 +24,13 @@ export function useReportesData(anio) {
 
       const rows = pedidos || [];
       const noCancel = rows.filter((p) => p.estado !== 'Cancelado');
+      const cobrados = noCancel.filter((p) => p.pago_estado === 'confirmado');
 
       // ── Ventas mensuales ──
       const meses = Array.from({ length: 12 }, (_, i) => ({
         mes: i,
         pedidos: 0,
+        cobrados: 0,
         ingresos: 0,
         cancelados: 0,
       }));
@@ -38,16 +40,19 @@ export function useReportesData(anio) {
           meses[m].cancelados += 1;
         } else {
           meses[m].pedidos += 1;
-          meses[m].ingresos += Number(p.total) || 0;
+          if (p.pago_estado === 'confirmado') {
+            meses[m].cobrados += 1;
+            meses[m].ingresos += Number(p.total) || 0;
+          }
         }
       });
       meses.forEach((m) => {
-        m.ticketPromedio = m.pedidos > 0 ? m.ingresos / m.pedidos : 0;
+        m.ticketPromedio = m.cobrados > 0 ? m.ingresos / m.cobrados : 0;
       });
 
       // ── Productos ranking ──
       const prodMap = {};
-      noCancel.forEach((p) => {
+      cobrados.forEach((p) => {
         const items = Array.isArray(p.detalles_json) ? p.detalles_json : [];
         items.forEach((item) => {
           const key = item.id || item.nombre;
@@ -72,7 +77,7 @@ export function useReportesData(anio) {
 
       // ── Clientes frecuentes ──
       const clienteMap = {};
-      noCancel.forEach((p) => {
+      cobrados.forEach((p) => {
         const key = normTel(p.cliente_telefono) || p.cliente_nombre || '?';
         if (!clienteMap[key]) {
           clienteMap[key] = { nombre: p.cliente_nombre || '—', telefono: p.cliente_telefono || '—', pedidos: 0, ingresos: 0 };
@@ -86,7 +91,7 @@ export function useReportesData(anio) {
 
       // ── Tipo de entrega ──
       const entregaMap = {};
-      noCancel.forEach((p) => {
+      cobrados.forEach((p) => {
         const k = p.tipo_entrega || 'Sin especificar';
         if (!entregaMap[k]) entregaMap[k] = { tipo: k, pedidos: 0, ingresos: 0 };
         entregaMap[k].pedidos += 1;
@@ -95,15 +100,15 @@ export function useReportesData(anio) {
       const tipoEntrega = Object.values(entregaMap).sort((a, b) => b.pedidos - a.pedidos);
 
       // ── Resumen general ──
-      const ingresosTotales = noCancel.reduce((s, p) => s + (Number(p.total) || 0), 0);
+      const ingresosTotales = cobrados.reduce((s, p) => s + (Number(p.total) || 0), 0);
       const resumen = {
         totalPedidos: rows.length,
-        pedidosCompletados: noCancel.length,
+        pedidosCompletados: rows.filter((p) => p.estado === 'Enviado').length,
         cancelados: rows.length - noCancel.length,
         tasaCancelacion: rows.length > 0 ? ((rows.length - noCancel.length) / rows.length) * 100 : 0,
         ingresos: ingresosTotales,
-        ticketPromedio: noCancel.length > 0 ? ingresosTotales / noCancel.length : 0,
-        clientesUnicos: new Set(rows.map((p) => normTel(p.cliente_telefono))).size,
+        ticketPromedio: cobrados.length > 0 ? ingresosTotales / cobrados.length : 0,
+        clientesUnicos: new Set(rows.map((p) => normTel(p.cliente_telefono)).filter(Boolean)).size,
       };
 
       setData({ meses, productosRanking, clientesFrecuentes, tipoEntrega, resumen });

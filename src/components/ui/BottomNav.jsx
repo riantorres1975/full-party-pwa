@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ClipboardList, LayoutGrid, LogOut, MoreHorizontal, Home, Users, Sun, Moon, RefreshCw, Bell, User, Settings, Package, BarChart3 } from 'lucide-react';
+import { ClipboardList, LayoutGrid, LogOut, MoreHorizontal, Home, Users, Sun, Moon, RefreshCw, Bell, Package, BarChart3, CreditCard, Store } from 'lucide-react';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useTheme } from '../../hooks/useTheme';
 import { usePermission } from '../../hooks/usePermission';
@@ -14,6 +14,9 @@ const ROUTE_MAP = {
   clientes: '/admin/clientes',
   inventario: '/admin/inventario',
   reportes: '/admin/reportes',
+  pagos: '/admin/pagos',
+  usuarios: '/admin/usuarios',
+  tienda: '/admin/tienda',
 };
 
 export default function BottomNav({ onSignOut }) {
@@ -33,8 +36,11 @@ export default function BottomNav({ onSignOut }) {
 
   const canViewDashboard = usePermission('reportes.view');
   const canViewClients = usePermission('clientes.view');
-  const canViewInventario = usePermission('catalogo.edit');
+  const canViewInventario = usePermission('catalogo.view');
   const canViewReportes = usePermission('reportes.view');
+  const canViewPayments = usePermission('pagos.view');
+  const canViewUsers = usePermission('usuarios.view');
+  const canViewSettings = usePermission('configuracion.view');
 
   const badge = contadores?.['Por Surtir'] ?? 0;
   const notificationsEnabled = notificationPermission === 'granted';
@@ -45,7 +51,12 @@ export default function BottomNav({ onSignOut }) {
     : location.pathname.startsWith('/admin/clientes') ? 'clientes'
     : location.pathname.startsWith('/admin/inventario') ? 'inventario'
     : location.pathname.startsWith('/admin/reportes') ? 'reportes'
+    : location.pathname.startsWith('/admin/pagos') ? 'pagos'
+    : location.pathname.startsWith('/admin/usuarios') ? 'usuarios'
+    : location.pathname.startsWith('/admin/tienda') ? 'tienda'
     : null;
+
+  const moreActive = active !== null && active !== 'pedidos' && active !== 'catalogo';
 
   const MAIN_TABS = [
     { key: 'pedidos', label: t('admin.nav.orders'), icon: ClipboardList },
@@ -98,7 +109,7 @@ export default function BottomNav({ onSignOut }) {
     >
       <div className="flex items-center justify-around h-14">
         {MAIN_TABS.map(({ key, label, icon: Icon }) => {
-          const isActive = key === active && key !== 'more';
+          const isActive = key === 'more' ? moreActive : key === active;
           const handleClick = () => {
             if (key === 'more') {
               setSheetOpen(true);
@@ -152,17 +163,6 @@ export default function BottomNav({ onSignOut }) {
 
           <div className="px-2 pb-2">
             {/* Perfil (disabled) */}
-            <button
-              disabled
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-body font-bold text-admin-inactive cursor-not-allowed rounded-lg"
-            >
-              <User size={18} />
-              <span className="flex-1 text-left">{t('admin.userMenu.profile') || 'Perfil'}</span>
-              <span className="text-[10px] font-body uppercase tracking-wide text-admin-muted">
-                {t('admin.comingSoon')}
-              </span>
-            </button>
-
             {/* Sections — navigation */}
             {canViewDashboard && (
               <button
@@ -201,17 +201,33 @@ export default function BottomNav({ onSignOut }) {
               </button>
             )}
 
-            <button
-              disabled
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-body font-bold text-admin-inactive cursor-not-allowed rounded-lg"
-              title={t('admin.comingSoon')}
-            >
-              <Settings size={18} />
-              <span className="flex-1 text-left">{t('admin.nav.settings')}</span>
-              <span className="text-[10px] font-body uppercase tracking-wide text-admin-muted">
-                {t('admin.comingSoon')}
-              </span>
-            </button>
+            {canViewPayments && (
+              <button
+                onClick={() => handleMenuClick('pagos')}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-body font-bold text-admin-text hover:bg-admin-elevated transition-colors rounded-lg"
+              >
+                <CreditCard size={18} />
+                <span className="flex-1 text-left">{t('admin.nav.payments')}</span>
+              </button>
+            )}
+            {canViewUsers && (
+              <button
+                onClick={() => handleMenuClick('usuarios')}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-body font-bold text-admin-text hover:bg-admin-elevated transition-colors rounded-lg"
+              >
+                <Users size={18} />
+                <span className="flex-1 text-left">{t('admin.nav.users')}</span>
+              </button>
+            )}
+            {canViewSettings && (
+              <button
+                onClick={() => handleMenuClick('tienda')}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-body font-bold text-admin-text hover:bg-admin-elevated transition-colors rounded-lg"
+              >
+                <Store size={18} />
+                <span className="flex-1 text-left">{t('admin.nav.store')}</span>
+              </button>
+            )}
 
             <div className="border-t border-admin-border my-1" />
 

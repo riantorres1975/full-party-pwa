@@ -23,6 +23,7 @@ export default function DataTableToolbar({
           {bulkActions?.map(action => (
             <Can key={action.id} permission={action.permission} fallback={null}>
               <button
+                type="button"
                 onClick={action.onClick}
                 className="flex items-center gap-2 px-3 py-1 rounded bg-white/20 hover:bg-white/30 transition-colors text-sm font-bold"
               >
@@ -34,9 +35,10 @@ export default function DataTableToolbar({
         </div>
 
         <button
+          type="button"
           onClick={onClearSelection}
           className="p-1 hover:bg-white/20 rounded transition-colors"
-          aria-label="Clear selection"
+          aria-label={t('datatable.clear_selection')}
         >
           <X size={18} />
         </button>

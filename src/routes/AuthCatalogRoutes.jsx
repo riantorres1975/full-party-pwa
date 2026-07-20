@@ -155,8 +155,16 @@ export default function AuthCatalogRoutes() {
                         <DashboardPage />
                       </ProtectedRoute>
                     } />
-                    <Route path="pedidos" element={<PedidosPage />} />
-                    <Route path="catalogo" element={<CatalogoPage />} />
+                    <Route path="pedidos" element={
+                      <ProtectedRoute permission="pedidos.view" fallback="/admin/catalogo">
+                        <PedidosPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="catalogo" element={
+                      <ProtectedRoute permission="catalogo.view" fallback="/admin/pedidos">
+                        <CatalogoPage />
+                      </ProtectedRoute>
+                    } />
                     <Route path="clientes" element={
                       <ProtectedRoute permission="clientes.view" fallback="/admin/pedidos">
                         <ClientesPage />
@@ -168,7 +176,7 @@ export default function AuthCatalogRoutes() {
                       </ProtectedRoute>
                     } />
                     <Route path="inventario" element={
-                      <ProtectedRoute permission="catalogo.edit" fallback="/admin/pedidos">
+                      <ProtectedRoute permission="catalogo.view" fallback="/admin/pedidos">
                         <InventarioPage />
                       </ProtectedRoute>
                     } />
@@ -183,7 +191,7 @@ export default function AuthCatalogRoutes() {
                       </ProtectedRoute>
                     } />
                     <Route path="tienda" element={
-                      <ProtectedRoute permission="usuarios.view" fallback="/admin/pedidos">
+                      <ProtectedRoute permission="configuracion.view" fallback="/admin/pedidos">
                         <TiendaPage />
                       </ProtectedRoute>
                     } />

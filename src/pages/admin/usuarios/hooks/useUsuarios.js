@@ -43,9 +43,11 @@ export function useUsuarios() {
       if (err) throw new Error(err.message);
       toast.success(t('usuarios.roleUpdated'));
       await fetchUsuarios();
+      return true;
     } catch (err) {
       console.error('[useUsuarios.updateRole]', err);
       toast.error(t('usuarios.updateError'));
+      return false;
     }
   }, [fetchUsuarios, toast, t]);
 
@@ -59,9 +61,11 @@ export function useUsuarios() {
       if (err) throw new Error(err.message);
       toast.success(t('usuarios.statusUpdated'));
       await fetchUsuarios();
+      return true;
     } catch (err) {
       console.error('[useUsuarios.toggleActivo]', err);
       toast.error(t('usuarios.updateError'));
+      return false;
     }
   }, [fetchUsuarios, toast, t]);
 

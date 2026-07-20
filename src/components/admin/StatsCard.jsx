@@ -9,18 +9,16 @@ export default function StatsCard({ label, value, trend, icon: Icon, variant = '
 
   const style = variants[variant] || variants.default;
 
-  return (
-    <button
-      onClick={onClick}
-      className={`relative flex items-center gap-3 rounded-2xl p-4 text-left transition-all duration-200 active:scale-95 border overflow-hidden ${
-        onClick ? 'cursor-pointer' : ''
-      }`}
-      style={{
-        background: style.bg,
-        color: style.color,
-        border: `1px solid ${style.color}33`,
-      }}
-    >
+  const className = `relative flex items-center gap-3 rounded-2xl p-4 text-left border overflow-hidden ${
+    onClick ? 'cursor-pointer transition-transform duration-200 active:scale-95' : ''
+  }`;
+  const cardStyle = {
+    background: style.bg,
+    color: style.color,
+    border: `1px solid ${style.color}33`,
+  };
+  const content = (
+    <>
       {/* Accent bar */}
       <div className="absolute left-0 top-0 bottom-0 w-1 rounded-full" style={{ background: style.color }} />
 
@@ -39,6 +37,16 @@ export default function StatsCard({ label, value, trend, icon: Icon, variant = '
       {trend && (
         <div className="flex-shrink-0 text-xs font-body font-bold">{trend}</div>
       )}
+    </>
+  );
+
+  if (!onClick) {
+    return <div className={className} style={cardStyle}>{content}</div>;
+  }
+
+  return (
+    <button type="button" onClick={onClick} className={className} style={cardStyle}>
+      {content}
     </button>
   );
 }

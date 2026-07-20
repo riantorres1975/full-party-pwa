@@ -1,3 +1,5 @@
+import { useLanguage } from '../../../hooks/useLanguage';
+
 export default function DataTableRow({
   row,
   columns,
@@ -9,7 +11,14 @@ export default function DataTableRow({
   formatters,
   variant = 'row',
 }) {
+  const { t } = useLanguage();
   const rowId = row[rowKey];
+
+  const handleRowKeyDown = (event) => {
+    if (event.target !== event.currentTarget || !onRowClick || (event.key !== 'Enter' && event.key !== ' ')) return;
+    event.preventDefault();
+    onRowClick(row);
+  };
 
   const renderCellValue = (col, value) => {
     if (col.render) {
@@ -57,8 +66,10 @@ export default function DataTableRow({
     return (
       <div
         onClick={() => onRowClick && onRowClick(row)}
+        onKeyDown={handleRowKeyDown}
+        tabIndex={onRowClick ? 0 : undefined}
         className={`p-4 border-b border-admin-border-soft bg-admin-card rounded-lg ${
-          onRowClick ? 'cursor-pointer active:scale-95 transition-transform' : ''
+          onRowClick ? 'cursor-pointer active:scale-95 transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-500' : ''
         }`}
       >
         {selectable && (
@@ -69,7 +80,7 @@ export default function DataTableRow({
               onChange={() => onToggle(rowId)}
               className="rounded border-admin-border cursor-pointer accent-ink-500"
               onClick={(e) => e.stopPropagation()}
-              aria-label={`Select row ${rowId}`}
+              aria-label={t('datatable.select_row', { id: rowId })}
             />
           </div>
         )}
@@ -117,8 +128,10 @@ export default function DataTableRow({
   return (
     <tr
       onClick={() => onRowClick && !selectable && onRowClick(row)}
+      onKeyDown={onRowClick && !selectable ? handleRowKeyDown : undefined}
+      tabIndex={onRowClick && !selectable ? 0 : undefined}
       className={`border-b border-admin-border-soft hover:bg-admin-elevated transition-colors ${
-        onRowClick && !selectable ? 'cursor-pointer' : ''
+        onRowClick && !selectable ? 'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-500' : ''
       }`}
     >
       {selectable && (
@@ -129,7 +142,7 @@ export default function DataTableRow({
             onChange={() => onToggle(rowId)}
             className="rounded border-admin-border cursor-pointer accent-ink-500"
             onClick={(e) => e.stopPropagation()}
-            aria-label={`Select row ${rowId}`}
+            aria-label={t('datatable.select_row', { id: rowId })}
           />
         </td>
       )}

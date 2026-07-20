@@ -10,6 +10,8 @@ import UsuarioDetalleDrawer from './components/UsuarioDetalleDrawer';
 import InvitarUsuarioModal from './components/InvitarUsuarioModal';
 import { useUsuarios } from './hooks/useUsuarios';
 import { usePendingInvites } from './hooks/usePendingInvites';
+import { useConfirm } from '../../../hooks/useConfirm';
+import ConfirmModal from '../../../components/ui/ConfirmModal';
 
 function UsuarioAvatar({ profile }) {
   const initials = (profile.nombre || profile.email || '?').charAt(0).toUpperCase();
@@ -109,6 +111,7 @@ function PendingInvitesSection({ invites, loading, onResend, onCancel, t }) {
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-1">
                     <button
+                      type="button"
                       onClick={() => handleResend(inv.email, inv.role)}
                       title={t('admin.users.invite.resend')}
                       className="p-1.5 rounded-lg text-admin-muted hover:text-fiesta-magenta hover:bg-admin-elevated transition-colors"
@@ -119,11 +122,8 @@ function PendingInvitesSection({ invites, loading, onResend, onCancel, t }) {
                       }
                     </button>
                     <button
-                      onClick={() => {
-                        if (window.confirm(`${t('admin.users.invite.cancel')}?`)) {
-                          onCancel(inv.email);
-                        }
-                      }}
+                      type="button"
+                      onClick={() => onCancel(inv.email)}
                       title={t('admin.users.invite.cancel')}
                       className="p-1.5 rounded-lg text-admin-muted hover:text-red-500 hover:bg-red-500/10 transition-colors"
                     >
@@ -148,10 +148,39 @@ export default function UsuariosPage() {
   const { invites, loading: loadingInvites, refetch: refetchInvites, resend, cancel } = usePendingInvites();
   const [detalle, setDetalle] = useState(null);
   const [invitarOpen, setInvitarOpen] = useState(false);
+  const { isOpen, config, confirm, onConfirm, onCancel } = useConfirm();
 
   useEffect(() => {
     setBreadcrumb([t('admin.users.title')]);
   }, [setBreadcrumb, t]);
+
+  const handleCancelInvite = async (email) => {
+    const accepted = await confirm({
+      title: t('admin.users.invite.cancel'),
+      message: t('admin.users.invite.cancelConfirm'),
+      confirmLabel: t('admin.users.invite.cancel'),
+      variant: 'danger',
+    });
+    if (accepted) await cancel(email);
+  };
+
+  const handleToggleActivo = async (id, currentActivo) => {
+    if (currentActivo) {
+      const accepted = await confirm({
+        title: t('usuarios.deactivateUser'),
+        message: t('usuarios.deactivateConfirm'),
+        confirmLabel: t('usuarios.deactivateUser'),
+        variant: 'danger',
+      });
+      if (!accepted) return false;
+    }
+
+    const updated = await toggleActivo(id, currentActivo);
+    if (updated) {
+      setDetalle((prev) => prev ? { ...prev, activo: !currentActivo } : null);
+    }
+    return updated;
+  };
 
   const columns = [
     {
@@ -224,7 +253,7 @@ export default function UsuariosPage() {
           invites={invites}
           loading={loadingInvites}
           onResend={resend}
-          onCancel={cancel}
+          onCancel={handleCancelInvite}
           t={t}
         />
       )}
@@ -234,13 +263,10 @@ export default function UsuariosPage() {
           usuario={detalle}
           onClose={() => setDetalle(null)}
           onUpdateRole={async (id, role) => {
-            await updateRole(id, role);
-            setDetalle((prev) => prev ? { ...prev, role } : null);
+            const updated = await updateRole(id, role);
+            if (updated) setDetalle((prev) => prev ? { ...prev, role } : null);
           }}
-          onToggleActivo={async (id, current) => {
-            await toggleActivo(id, current);
-            setDetalle((prev) => prev ? { ...prev, activo: !current } : null);
-          }}
+          onToggleActivo={handleToggleActivo}
         />
       )}
 
@@ -250,6 +276,13 @@ export default function UsuariosPage() {
           onInvited={() => { refetch(); refetchInvites(); }}
         />
       )}
+
+      <ConfirmModal
+        open={isOpen}
+        {...config}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+      />
     </div>
   );
 }

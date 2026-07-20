@@ -38,6 +38,12 @@ export default function UltimosPedidos({ data, loading, onRowClick }) {
     return `${diffDays}d`;
   };
 
+  const handleKeyDown = (event, pedido) => {
+    if (event.target !== event.currentTarget || !onRowClick || (event.key !== 'Enter' && event.key !== ' ')) return;
+    event.preventDefault();
+    onRowClick(pedido);
+  };
+
   return (
     <div className="bg-admin-card border border-admin-border rounded-lg overflow-hidden">
       <div className="p-4 border-b border-admin-border-soft">
@@ -76,7 +82,9 @@ export default function UltimosPedidos({ data, loading, onRowClick }) {
                 <tr
                   key={pedido.id}
                   onClick={() => onRowClick && onRowClick(pedido)}
-                  className="border-b border-admin-border-soft hover:bg-admin-elevated transition-colors cursor-pointer"
+                  onKeyDown={(event) => handleKeyDown(event, pedido)}
+                  tabIndex={onRowClick ? 0 : undefined}
+                  className={`border-b border-admin-border-soft hover:bg-admin-elevated transition-colors ${onRowClick ? 'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-500' : ''}`}
                 >
                   <td className="px-4 py-3 font-bold text-admin-text">
                     {pedido.folio || t('common.notAvailable')}
@@ -110,7 +118,10 @@ export default function UltimosPedidos({ data, loading, onRowClick }) {
             <div
               key={pedido.id}
               onClick={() => onRowClick && onRowClick(pedido)}
-              className="p-3 bg-admin-elevated rounded cursor-pointer active:scale-95 transition-transform"
+              onKeyDown={(event) => handleKeyDown(event, pedido)}
+              tabIndex={onRowClick ? 0 : undefined}
+              role={onRowClick ? 'button' : undefined}
+              className={`p-3 bg-admin-elevated rounded ${onRowClick ? 'cursor-pointer active:scale-95 transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-500' : ''}`}
             >
               <div className="flex justify-between items-start gap-2 mb-1">
                 <span className="font-bold text-admin-text">

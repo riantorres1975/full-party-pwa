@@ -27,10 +27,11 @@ export default function DataTablePagination({
 
       <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 0}
           className="p-1 rounded hover:bg-admin-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          aria-label="Previous page"
+          aria-label={t('datatable.pagination.previous')}
         >
           <ChevronLeft size={18} />
         </button>
@@ -40,10 +41,11 @@ export default function DataTablePagination({
         </span>
 
         <button
+          type="button"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage >= totalPages - 1}
           className="p-1 rounded hover:bg-admin-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          aria-label="Next page"
+          aria-label={t('datatable.pagination.next')}
         >
           <ChevronRight size={18} />
         </button>

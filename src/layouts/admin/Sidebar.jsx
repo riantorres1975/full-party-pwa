@@ -13,9 +13,9 @@ export default function Sidebar({ user, collapsed, onToggle, onSignOut, temaOscu
   const canViewCatalog = usePermission('catalogo.view');
   const canViewReports = usePermission('reportes.view');
   const canViewClients = usePermission('clientes.view');
+  const canViewPayments = usePermission('pagos.view');
   const canViewUsers = usePermission('usuarios.view');
-
-  const disabledTooltip = t('admin.comingSoon');
+  const canViewSettings = usePermission('configuracion.view');
 
   return (
     <div className="flex min-h-0 flex-col h-full bg-admin-card">
@@ -77,8 +77,8 @@ export default function Sidebar({ user, collapsed, onToggle, onSignOut, temaOscu
             href="/admin/pagos"
             icon={CreditCard}
             label={t('admin.nav.payments')}
-            disabled={!canViewClients}
-            tooltip={!canViewClients ? t('admin.noPermission') : undefined}
+            disabled={!canViewPayments}
+            tooltip={!canViewPayments ? t('admin.noPermission') : undefined}
             collapsed={collapsed}
           />
         </SidebarSection>
@@ -129,8 +129,8 @@ export default function Sidebar({ user, collapsed, onToggle, onSignOut, temaOscu
             href="/admin/tienda"
             icon={Settings}
             label={t('admin.nav.store')}
-            disabled={!canViewUsers}
-            tooltip={!canViewUsers ? t('admin.noPermission') : undefined}
+            disabled={!canViewSettings}
+            tooltip={!canViewSettings ? t('admin.noPermission') : undefined}
             collapsed={collapsed}
           />
         </SidebarSection>

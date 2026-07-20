@@ -33,7 +33,7 @@ export function useDashboardData({ desde, hasta }) {
       const { data: pedidosActual, error: errActual } = await guardedQuery((client) =>
         client
           .from('pedidos')
-          .select('id,folio,estado,total,cliente_telefono,created_at,detalles_json')
+          .select('id,folio,estado,total,pago_estado,cliente_telefono,created_at,detalles_json')
           .gte('created_at', desdeActual.toISOString())
           .lte('created_at', hastaActual.toISOString())
       );
@@ -42,7 +42,7 @@ export function useDashboardData({ desde, hasta }) {
       const { data: pedidosAnterior, error: errAnterior } = await guardedQuery((client) =>
         client
           .from('pedidos')
-          .select('id,folio,estado,total,cliente_telefono,created_at,detalles_json')
+          .select('id,folio,estado,total,pago_estado,cliente_telefono,created_at,detalles_json')
           .gte('created_at', desdeAnterior.toISOString())
           .lte('created_at', hastaAnterior.toISOString())
       );
@@ -53,22 +53,21 @@ export function useDashboardData({ desde, hasta }) {
       const actual = pedidosActual || [];
       const anterior = pedidosAnterior || [];
 
-      // Calcular KPIs (excluyendo cancelados de ingresos)
-      const pedidosNoCancel = actual.filter(p => p.estado !== 'Cancelado');
-      const ingresos = pedidosNoCancel.reduce((sum, p) => sum + (Number(p.total) || 0), 0);
-      const ticketPromedio = pedidosNoCancel.length > 0 ? ingresos / pedidosNoCancel.length : 0;
-      const clientesUnicos = new Set(actual.map(p => normalizarTelefono(p.cliente_telefono))).size;
+      // Los indicadores financieros solo consideran dinero efectivamente cobrado.
+      const pedidosCobrados = actual.filter(p => p.estado !== 'Cancelado' && p.pago_estado === 'confirmado');
+      const ingresos = pedidosCobrados.reduce((sum, p) => sum + (Number(p.total) || 0), 0);
+      const ticketPromedio = pedidosCobrados.length > 0 ? ingresos / pedidosCobrados.length : 0;
+      const clientesUnicos = new Set(actual.map(p => normalizarTelefono(p.cliente_telefono)).filter(Boolean)).size;
 
       // Calcular KPIs periodo anterior
-      const pedidosNoCancel_Ant = anterior.filter(p => p.estado !== 'Cancelado');
-      const ingresos_Ant = pedidosNoCancel_Ant.reduce((sum, p) => sum + (Number(p.total) || 0), 0);
-      const ticketPromedio_Ant = pedidosNoCancel_Ant.length > 0 ? ingresos_Ant / pedidosNoCancel_Ant.length : 0;
-      const clientesUnicos_Ant = new Set(anterior.map(p => normalizarTelefono(p.cliente_telefono))).size;
+      const pedidosCobrados_Ant = anterior.filter(p => p.estado !== 'Cancelado' && p.pago_estado === 'confirmado');
+      const ingresos_Ant = pedidosCobrados_Ant.reduce((sum, p) => sum + (Number(p.total) || 0), 0);
+      const ticketPromedio_Ant = pedidosCobrados_Ant.length > 0 ? ingresos_Ant / pedidosCobrados_Ant.length : 0;
+      const clientesUnicos_Ant = new Set(anterior.map(p => normalizarTelefono(p.cliente_telefono)).filter(Boolean)).size;
 
       // Ventas diarias
       const ventasPorDia = {};
-      actual.forEach(p => {
-        if (p.estado === 'Cancelado') return;
+      pedidosCobrados.forEach(p => {
         const fecha = toLocalDateKey(p.created_at);
         if (!fecha) return;
         if (!ventasPorDia[fecha]) ventasPorDia[fecha] = { fecha, total: 0, pedidos: 0 };
@@ -86,8 +85,7 @@ export function useDashboardData({ desde, hasta }) {
 
       // Top productos
       const productoCounts = {};
-      actual.forEach(p => {
-        if (p.estado === 'Cancelado') return;
+      pedidosCobrados.forEach(p => {
         const items = Array.isArray(p.detalles_json) ? p.detalles_json : [];
         items.forEach(item => {
           const key = item.id || item.nombre;

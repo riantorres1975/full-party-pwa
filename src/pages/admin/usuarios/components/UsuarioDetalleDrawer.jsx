@@ -124,20 +124,17 @@ export default function UsuarioDetalleDrawer({ usuario, onClose, onUpdateRole, o
         {/* Footer — eliminar */}
         {canManage && !isSelf && (
           <div className="px-5 py-4 border-t border-admin-border">
-            <p className="text-xs text-admin-muted mb-3">
-              La eliminación completa requiere acción en Supabase Dashboard (auth.users).
-            </p>
+            <p className="text-xs text-admin-muted mb-3">{t('usuarios.deactivateHelp')}</p>
             <button
-              onClick={() => {
-                if (window.confirm(t('usuarios.deleteUser') + '?')) {
-                  onToggleActivo(usuario.id, true);
-                  onClose();
-                }
+              type="button"
+              onClick={async () => {
+                const updated = await onToggleActivo(usuario.id, true);
+                if (updated) onClose();
               }}
               className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-body font-bold text-red-500 border border-red-500/30 hover:bg-red-500/10 transition-colors"
             >
               <Trash2 size={14} />
-              {t('usuarios.deleteUser')}
+              {t('usuarios.deactivateUser')}
             </button>
           </div>
         )}
