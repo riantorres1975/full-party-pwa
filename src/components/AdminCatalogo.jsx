@@ -32,6 +32,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { usePermission } from '../hooks/usePermission';
 import { fuzzySearch } from '../utils/fuzzySearch';
 import { CatalogCards, CatalogTable } from './admin/catalog/CatalogProductViews';
+import CatalogBulkActionsBar from './admin/catalog/CatalogBulkActionsBar';
 
 const PRODUCT_SEARCH_KEYS = [
   { name: 'nombre', weight: 0.5 },
@@ -701,46 +702,6 @@ export default function AdminCatalogo() {
     </div>
   );
 
-  const renderSelectionBar = (mobile = false) => seleccionados.size > 0 && (
-    <div className={`${mobile ? 'fixed left-3 right-3 bottom-20 z-30 sm:hidden' : 'hidden sm:flex'} items-center gap-2 rounded-xl bg-ink-700 text-white px-3 py-2 shadow-elevated`}>
-      <span className="text-xs font-body font-black whitespace-nowrap">
-        {t('admin.catalog.selectedCount', { count: seleccionados.size })}
-      </span>
-      <div className="flex flex-1 gap-1.5 overflow-x-auto hide-scrollbar justify-end">
-        {canEdit && (
-          <>
-            <button type="button" onClick={() => handleActualizarLote({ activo: true }, 'admin.catalog.bulkActivated')} disabled={procesandoLote} className="whitespace-nowrap px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-[11px] font-body font-black disabled:opacity-50">
-              {t('admin.catalog.activate')}
-            </button>
-            <button type="button" onClick={() => handleActualizarLote({ activo: false }, 'admin.catalog.bulkHidden')} disabled={procesandoLote} className="whitespace-nowrap px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-[11px] font-body font-black disabled:opacity-50">
-              {t('admin.catalog.hide')}
-            </button>
-            <select
-              defaultValue=""
-              onChange={event => {
-                if (event.target.value) handleActualizarLote({ categoria: event.target.value }, 'admin.catalog.bulkCategorized');
-              }}
-              disabled={procesandoLote}
-              className="max-w-[150px] rounded-lg border border-white/20 bg-ink-600 px-2 py-1.5 text-[11px] font-body font-black text-white outline-none disabled:opacity-50"
-              aria-label={t('admin.catalog.changeCategory')}
-            >
-              <option value="">{t('admin.catalog.changeCategory')}</option>
-              {todasCategorias.map(category => <option key={category} value={category}>{category}</option>)}
-            </select>
-          </>
-        )}
-        {canDelete && (
-          <button type="button" onClick={handleEliminarLote} disabled={procesandoLote} className="inline-flex items-center gap-1 whitespace-nowrap px-2.5 py-1.5 rounded-lg bg-red-500/80 hover:bg-red-500 text-[11px] font-body font-black disabled:opacity-50">
-            <Trash2 size={13} /> {t('admin.catalog.delete')}
-          </button>
-        )}
-      </div>
-      <button type="button" onClick={() => setSeleccionados(new Set())} className="p-1.5 rounded-lg hover:bg-white/15" aria-label={t('datatable.clear_selection')}>
-        <X size={16} />
-      </button>
-    </div>
-  );
-
   return (
     <div className="min-w-0">
       {/* Keep the primary catalog controls available while products scroll. */}
@@ -988,15 +949,25 @@ export default function AdminCatalogo() {
         <div className="hidden sm:block">
           {renderCatalogMeta(true)}
         </div>
-        {renderSelectionBar(false)}
+        <CatalogBulkActionsBar
+          selectedCount={seleccionados.size}
+          categories={todasCategorias}
+          processing={procesandoLote}
+          canEdit={canEdit}
+          canDelete={canDelete}
+          onActivate={() => handleActualizarLote({ activo: true }, 'admin.catalog.bulkActivated')}
+          onHide={() => handleActualizarLote({ activo: false }, 'admin.catalog.bulkHidden')}
+          onChangeCategory={category => handleActualizarLote({ categoria: category }, 'admin.catalog.bulkCategorized')}
+          onDelete={handleEliminarLote}
+          onClear={() => setSeleccionados(new Set())}
+          t={t}
+        />
       </div>
 
       <div className="sm:hidden mt-3 space-y-2">
         {renderFilterChips()}
         {renderCatalogMeta(false)}
       </div>
-      {renderSelectionBar(true)}
-
       {/* Editor de anuncio inline */}
       {showAnuncioEditor && (
         <div className="mt-4 bg-admin-card border border-admin-border rounded-xl p-3 space-y-2">

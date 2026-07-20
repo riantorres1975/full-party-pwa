@@ -287,6 +287,7 @@
   "admin.catalog.tableView": "Vista de tabla",
   "admin.catalog.clearFilters": "Limpiar filtros",
   "admin.catalog.selectedCount": "{count} seleccionados",
+  "admin.catalog.bulkActions": "Acciones para productos seleccionados",
   "admin.catalog.activate": "Activar",
   "admin.catalog.hide": "Ocultar",
   "admin.catalog.changeCategory": "Cambiar categoría",
