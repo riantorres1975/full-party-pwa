@@ -9,6 +9,7 @@ import Topbar from './admin/Topbar';
 import { AdminDataProvider } from '../contexts/AdminDataContext';
 import { BreadcrumbProvider } from '../contexts/BreadcrumbContext';
 import { PermissionsProvider, usePermissions } from '../contexts/PermissionsContext';
+import AppErrorBoundary from '../components/ui/AppErrorBoundary';
 
 function PermissionsGate({ children, onSignOut }) {
   const { loading, role } = usePermissions();
@@ -115,7 +116,9 @@ export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut,
             {/* Page content */}
             <main id="admin-main" className="min-h-0 flex-1 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain">
               <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 lg:p-5 lg:max-w-none pb-20 lg:pb-0">
-                {children}
+                <AppErrorBoundary compact homePath="/admin">
+                  {children}
+                </AppErrorBoundary>
               </div>
             </main>
           </div>

@@ -9,6 +9,7 @@ import ProductosRanking from './components/ProductosRanking';
 import ClientesFrecuentes from './components/ClientesFrecuentes';
 import TipoEntrega from './components/TipoEntrega';
 import { useReportesData } from './hooks/useReportesData';
+import DataErrorState from '../../../components/admin/DataErrorState';
 
 const TABS = ['ventas', 'productos', 'clientes', 'entrega'];
 
@@ -89,10 +90,7 @@ export default function ReportesPage() {
           <div className="w-7 h-7 rounded-full border-[3px] border-purple-700 border-t-purple-300 animate-spin" />
         </div>
       ) : error ? (
-        <div className="text-center py-12">
-          <p className="text-admin-muted text-sm mb-3">{error}</p>
-          <button onClick={refetch} className="text-sm text-fiesta-magenta underline">{t('common.retry') || 'Reintentar'}</button>
-        </div>
+        <DataErrorState message={error} onRetry={refetch} />
       ) : !data ? null : (
         <div className="space-y-5">
           {/* Resumen siempre visible */}

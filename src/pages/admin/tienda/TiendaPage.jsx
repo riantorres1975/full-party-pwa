@@ -7,6 +7,7 @@ import { useTiendaConfig } from './hooks/useTiendaConfig';
 import { usePermission } from '../../../hooks/usePermission';
 import { useConfirm } from '../../../hooks/useConfirm';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
+import DataErrorState from '../../../components/admin/DataErrorState';
 
 function Section({ icon: Icon, title, children }) {
   return (
@@ -48,10 +49,10 @@ export default function TiendaPage() {
   const { isOpen, config, confirm, onConfirm, onCancel } = useConfirm();
   const {
     info, sucursales, redes,
-    loading, saving, isDirty, isValid, validationErrors,
+    loading, saving, error, isDirty, isValid, validationErrors,
     updateInfo, updateSucursal, updateRedes,
     addSucursal, removeSucursal,
-    save,
+    save, refetch,
   } = useTiendaConfig();
 
   useEffect(() => {
@@ -96,6 +97,15 @@ export default function TiendaPage() {
     return (
       <div className="flex justify-center py-16">
         <div className="w-7 h-7 rounded-full border-[3px] border-purple-700 border-t-purple-300 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-5">
+        <PageHeader title={t('tienda.title')} subtitle={t('tienda.subtitle')} />
+        <DataErrorState message={error} onRetry={refetch} />
       </div>
     );
   }

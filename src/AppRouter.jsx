@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import { LanguageProvider } from './hooks/useLanguage';
+import AppErrorBoundary from './components/ui/AppErrorBoundary';
 
 const AuthCatalogRoutes = lazy(() => import('./routes/AuthCatalogRoutes'));
 const Sucursales        = lazy(() => import('./pages/Sucursales'));
@@ -282,7 +283,8 @@ export default function AppRouter() {
     <BrowserRouter>
       <LanguageProvider>
         <RouterEffects />
-        <Routes>
+        <AppErrorBoundary>
+          <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route
             path="/catalogo"
@@ -349,7 +351,8 @@ export default function AppRouter() {
             }
           />
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+          </Routes>
+        </AppErrorBoundary>
       </LanguageProvider>
     </BrowserRouter>
   );

@@ -42,6 +42,13 @@
 
   "error.title": "Oops, something went wrong",
   "error.retry": "🔄 Retry",
+  "error.boundary.title": "We could not display this section",
+  "error.boundary.description": "Your data is safe. Try loading the section again or return home.",
+  "error.boundary.reload": "Reload page",
+  "error.boundary.home": "Go home",
+  "error.boundary.adminHome": "Go to dashboard",
+  "error.boundary.details": "Technical details",
+  "error.data.title": "We could not load the data",
 
   "search.placeholder": "Search products...",
   "search.searchingIn": "Searching in:",

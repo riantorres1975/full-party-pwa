@@ -117,6 +117,7 @@ export default function ClientesPage() {
           data={clientes}
           loading={loading}
           error={error}
+          onRetry={refetchClientes}
           columns={columns}
           rowKey="id"
           onRowClick={(row) => setClienteSeleccionado(row)}

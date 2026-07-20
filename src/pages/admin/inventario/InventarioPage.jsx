@@ -9,6 +9,7 @@ import StockCell from './components/StockCell';
 import InventarioFilters from './components/InventarioFilters';
 import { useInventario } from './hooks/useInventario';
 import { fuzzySearch } from '../../../utils/fuzzySearch';
+import DataErrorState from '../../../components/admin/DataErrorState';
 
 const INVENTARIO_SEARCH_KEYS = [
   { name: 'nombre', weight: 0.55 },
@@ -158,10 +159,7 @@ export default function InventarioPage() {
           <div className="w-7 h-7 rounded-full border-[3px] border-purple-700 border-t-purple-300 animate-spin" />
         </div>
       ) : error ? (
-        <div className="text-center py-12">
-          <p className="text-admin-muted text-sm mb-3">{error}</p>
-          <button onClick={refetch} className="text-sm text-fiesta-magenta underline">{t('common.retry') || 'Reintentar'}</button>
-        </div>
+        <DataErrorState message={error} onRetry={refetch} />
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center py-16 gap-3 text-admin-muted">
           <Package size={36} className="opacity-30" />

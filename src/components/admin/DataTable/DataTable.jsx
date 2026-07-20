@@ -6,6 +6,7 @@ import DataTableRow from './DataTableRow';
 import DataTablePagination from './DataTablePagination';
 import DataTableEmpty from './DataTableEmpty';
 import DataTableSkeleton from './DataTableSkeleton';
+import DataErrorState from '../DataErrorState';
 
 export default function DataTable({
   data = [],
@@ -53,19 +54,7 @@ export default function DataTable({
   const selectAllChecked = allIds.length > 0 && allIds.every(id => selection.has(id));
 
   if (error) {
-    return (
-      <div className="p-8 text-center">
-        <p className="text-admin-text mb-4">{error}</p>
-        {onRetry && (
-          <button
-            onClick={onRetry}
-            className="px-4 py-2 rounded bg-ink-500 text-white font-bold hover:bg-ink-600 transition-colors"
-          >
-            {t('common.retry')}
-          </button>
-        )}
-      </div>
-    );
+    return <DataErrorState message={error} onRetry={onRetry} compact />;
   }
 
   if (loading) {

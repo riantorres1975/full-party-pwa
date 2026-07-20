@@ -46,6 +46,7 @@ export function useTiendaConfig() {
   const [sucursales, setSucursales] = useState(DEFAULTS.sucursales);
   const [redes, setRedes] = useState(DEFAULTS.redes_sociales);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [savedSnapshot, setSavedSnapshot] = useState(null);
   const toast = useToast();
@@ -53,6 +54,7 @@ export function useTiendaConfig() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const [dbInfo, dbSuc, dbRedes] = await Promise.all([
         getConfig('tienda_info', null),
@@ -69,6 +71,7 @@ export function useTiendaConfig() {
       setSavedSnapshot(serializeConfig(nextInfo, nextSucursales, nextRedes));
     } catch (e) {
       console.error('[useTiendaConfig]', e);
+      setError(e.message || 'Error al cargar la configuración');
     } finally {
       setLoading(false);
     }
@@ -123,9 +126,10 @@ export function useTiendaConfig() {
   const removeSucursal = (id) => setSucursales(prev => prev.filter(s => s.id !== id));
   return {
     info, sucursales, redes,
-    loading, saving, isDirty, isValid, validationErrors,
+    loading, saving, error, isDirty, isValid, validationErrors,
     updateInfo, updateSucursal, updateRedes,
     addSucursal, removeSucursal,
     save,
+    refetch: load,
   };
 }

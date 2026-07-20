@@ -9,6 +9,7 @@ import PedidosPorEstadoChart from './components/PedidosPorEstadoChart';
 import TopProductos from './components/TopProductos';
 import UltimosPedidos from './components/UltimosPedidos';
 import { useDashboardData } from './hooks/useDashboardData';
+import DataErrorState from '../../../components/admin/DataErrorState';
 
 function getDefaultDates() {
   const desde = new Date();
@@ -56,7 +57,7 @@ export default function DashboardPage() {
     setBreadcrumb([t('admin.nav.dashboard')]);
   }, [t, setBreadcrumb]);
 
-  const { kpis, kpisAnterior, ventasDiarias, pedidosPorEstado, topProductos, ultimosPedidos, loading, error } = useDashboardData({
+  const { kpis, kpisAnterior, ventasDiarias, pedidosPorEstado, topProductos, ultimosPedidos, loading, error, refetch } = useDashboardData({
     desde: fechas.desde,
     hasta: fechas.hasta,
   });
@@ -67,14 +68,7 @@ export default function DashboardPage() {
   };
 
   if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <p className="text-admin-text font-bold">{t('admin.dashboard.error')}</p>
-          <p className="text-admin-text-secondary text-sm">{error}</p>
-        </div>
-      </div>
-    );
+    return <DataErrorState message={error} onRetry={refetch} />;
   }
 
   return (

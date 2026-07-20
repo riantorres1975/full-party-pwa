@@ -42,6 +42,13 @@
 
   "error.title": "Ups, algo salió mal",
   "error.retry": "🔄 Reintentar",
+  "error.boundary.title": "No pudimos mostrar esta sección",
+  "error.boundary.description": "Tus datos están seguros. Intenta cargar la sección otra vez o vuelve al inicio.",
+  "error.boundary.reload": "Recargar página",
+  "error.boundary.home": "Ir al inicio",
+  "error.boundary.adminHome": "Ir al panel",
+  "error.boundary.details": "Detalles técnicos",
+  "error.data.title": "No pudimos cargar los datos",
 
   "search.placeholder": "Buscar productos...",
   "search.searchingIn": "Buscando en:",

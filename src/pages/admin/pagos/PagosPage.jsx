@@ -314,6 +314,7 @@ export default function PagosPage() {
         data={datosFiltrados}
         loading={loading}
         error={error}
+        onRetry={refetch}
         columns={columns}
         rowKey="id"
         onRowClick={(row) => setPedidoModal(row)}

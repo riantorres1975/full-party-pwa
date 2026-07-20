@@ -114,8 +114,8 @@ export default function LoginAdmin({ onLogin, loading, error }) {
               <button
                 type="button"
                 onClick={() => setShowPass(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400/60
-                           hover:text-purple-300 transition-colors p-1 rounded-lg"
+                className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-purple-400/60
+                           hover:text-purple-300 hover:bg-white/5 transition-colors"
                 aria-label={showPass ? t('login.hidePassword') : t('login.showPassword')}
               >
                 {showPass ? <EyeOff size={15} /> : <Eye size={15} />}

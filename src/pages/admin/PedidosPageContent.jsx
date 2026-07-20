@@ -3,6 +3,7 @@ import { SkeletonPedido } from '../../components/ui/Skeleton';
 import { useAdminData } from '../../contexts/AdminDataContext';
 import { ClipboardList } from 'lucide-react';
 import PedidosTabs from './pedidos/components/PedidosTabs';
+import DataErrorState from '../../components/admin/DataErrorState';
 
 export default function PedidosPageContent() {
   const { t } = useLanguage();
@@ -21,12 +22,7 @@ export default function PedidosPageContent() {
 
       {/* Error */}
       {error && (
-        <div className="bg-admin-card rounded-2xl p-5 text-center border-2 border-red-100" role="alert">
-          <p className="text-sm font-body font-bold text-red-400"><span aria-hidden="true">⚠️</span> {error}</p>
-          <button onClick={fetchPedidos} className="mt-3 text-xs font-body font-black text-admin-muted underline">
-            {t('error.retry')}
-          </button>
-        </div>
+        <DataErrorState message={error} onRetry={fetchPedidos} />
       )}
 
       {/* Content */}

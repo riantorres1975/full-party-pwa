@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ClipboardList, LayoutGrid, LogOut, MoreHorizontal, Home, Users, Sun, Moon, RefreshCw, Bell, Package, BarChart3, CreditCard, Store } from 'lucide-react';
+import { ClipboardList, LayoutGrid, LogOut, MoreHorizontal, Home, Users, Sun, Moon, RefreshCw, Bell, Package, BarChart3, CreditCard, Store, X } from 'lucide-react';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useTheme } from '../../hooks/useTheme';
 import { usePermission } from '../../hooks/usePermission';
 import { useAdminData } from '../../contexts/AdminDataContext';
 import ConfirmModal from './ConfirmModal';
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 
 const ROUTE_MAP = {
   pedidos: '/admin/pedidos',
@@ -22,6 +23,9 @@ const ROUTE_MAP = {
 export default function BottomNav({ onSignOut }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const sheetRef = useRef(null);
+  const closeSheetRef = useRef(null);
+  const sheetTitleId = useId();
   const { t } = useLanguage();
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -43,6 +47,13 @@ export default function BottomNav({ onSignOut }) {
 
   const badge = contadores?.['Por Surtir'] ?? 0;
   const notificationsEnabled = notificationPermission === 'granted';
+
+  useDialogFocus({
+    open: sheetOpen,
+    containerRef: sheetRef,
+    initialFocusRef: closeSheetRef,
+    onClose: () => setSheetOpen(false),
+  });
 
   const active = location.pathname.startsWith('/admin/pedidos') ? 'pedidos'
     : location.pathname.startsWith('/admin/catalogo') ? 'catalogo'
@@ -144,7 +155,7 @@ export default function BottomNav({ onSignOut }) {
 
     {/* Bottom sheet — "Más" */}
     {sheetOpen && (
-      <div className="lg:hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
+      <div className="lg:hidden fixed inset-0 z-50">
         {/* Backdrop */}
         <div
           className="absolute inset-0 bg-black/40 backdrop-blur-sm"
@@ -152,12 +163,32 @@ export default function BottomNav({ onSignOut }) {
         />
         {/* Sheet */}
         <div
-          className="absolute bottom-0 inset-x-0 bg-admin-card border-t border-admin-border rounded-t-2xl shadow-elevated overflow-hidden"
+          ref={sheetRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={sheetTitleId}
+          tabIndex={-1}
+          className="absolute bottom-0 inset-x-0 max-h-[85dvh] overflow-y-auto overscroll-contain bg-admin-card border-t border-admin-border rounded-t-2xl shadow-elevated"
           style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
         >
           {/* Handle */}
           <div className="flex justify-center py-2">
             <div className="w-10 h-1 rounded-full bg-admin-border" />
+          </div>
+
+          <div className="flex items-center justify-between px-4 pb-2">
+            <h2 id={sheetTitleId} className="text-sm font-display text-admin-text">
+              {t('common.more')}
+            </h2>
+            <button
+              ref={closeSheetRef}
+              type="button"
+              onClick={() => setSheetOpen(false)}
+              aria-label={t('common.close')}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-admin-muted transition-colors hover:bg-admin-elevated hover:text-admin-text focus:outline-none focus-visible:ring-2 focus-visible:ring-fiesta-magenta"
+            >
+              <X size={17} aria-hidden="true" />
+            </button>
           </div>
 
           <div className="px-2 pb-2">
