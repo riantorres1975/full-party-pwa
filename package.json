@@ -8,6 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test",
+    "test:e2e": "playwright test",
+    "test:e2e:public": "playwright test tests/e2e/public-catalog.spec.js",
+    "test:e2e:report": "playwright show-report",
     "test:permissions": "node --test tests/permissions.test.js",
     "lighthouse": "lighthouse http://localhost:4173 --output html --output-path ./lighthouse-report.html --chrome-flags=\"--headless\"",
     "lighthouse:pwa": "lighthouse http://localhost:4173 --preset=perf --only-categories=performance,accessibility,best-practices,seo,pwa --output html --output-path ./lighthouse-report.html --chrome-flags=\"--headless\"",
@@ -30,6 +33,7 @@
   },
   "devDependencies": {
     "@axe-core/cli": "^4.11.1",
+    "@playwright/test": "^1.61.1",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
     "lighthouse": "^13.1.0",

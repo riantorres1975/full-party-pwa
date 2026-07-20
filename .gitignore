@@ -6,6 +6,8 @@
 # Deps & build
 node_modules
 dist
+playwright-report
+test-results
 
 # IDE
 .vscode
