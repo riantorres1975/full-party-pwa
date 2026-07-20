@@ -1,4 +1,4 @@
-import { ROLES } from './roles';
+import { ROLES } from './roles.js';
 
 // Matriz de permisos: { 'resource.action': [roles_permitidos] }
 export const PERMISSIONS_MATRIX = {

@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "test": "node --test",
+    "test:permissions": "node --test tests/permissions.test.js",
     "lighthouse": "lighthouse http://localhost:4173 --output html --output-path ./lighthouse-report.html --chrome-flags=\"--headless\"",
     "lighthouse:pwa": "lighthouse http://localhost:4173 --preset=perf --only-categories=performance,accessibility,best-practices,seo,pwa --output html --output-path ./lighthouse-report.html --chrome-flags=\"--headless\"",
     "axe": "axe http://localhost:4173"
