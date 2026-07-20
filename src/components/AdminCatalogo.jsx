@@ -525,8 +525,8 @@ export default function AdminCatalogo() {
 
   return (
     <div className="min-w-0">
-      {/* Toolbar: search + actions + filters */}
-      <div className="flex flex-col gap-3 bg-admin-bg pt-3 pb-3 -mx-3 px-3 sm:-mx-4 sm:px-4 lg:-mx-8 lg:px-8 border-b border-admin-border-soft">
+      {/* Keep the primary catalog controls available while products scroll. */}
+      <div className="sticky top-0 z-20 flex flex-col gap-2.5 bg-admin-bg py-3 -mx-3 px-3 sm:-mx-4 sm:px-4 lg:-mx-5 lg:px-5 border-y border-admin-border-soft shadow-[0_8px_18px_-16px_rgba(34,14,66,0.55)]">
         <div className="flex gap-2 items-center shrink-0">
           <div className="relative flex-1 min-w-0">
             <Search
@@ -538,16 +538,26 @@ export default function AdminCatalogo() {
               value={busquedaInput}
               onChange={e => setBusquedaInput(e.target.value)}
               placeholder={t('admin.catalog.searchPlaceholder')}
-              className="w-full bg-admin-card rounded-2xl pl-12 pr-4 py-3 text-sm font-body font-semibold
-                         text-admin-text placeholder:text-admin-inactive outline-none border-2 border-admin-border
-                         focus:border-fiesta-magenta transition-colors"
+              className={`w-full bg-admin-card rounded-xl pl-11 ${busquedaInput ? 'pr-11' : 'pr-4'} py-2.5 text-sm font-body font-semibold
+                         text-admin-text placeholder:text-admin-inactive outline-none border border-admin-border
+                         focus:border-fiesta-magenta focus:ring-2 focus:ring-fiesta-magenta/15 transition-all`}
             />
+            {busquedaInput && (
+              <button
+                type="button"
+                onClick={() => setBusquedaInput('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-admin-muted hover:text-admin-text hover:bg-admin-elevated transition-colors"
+                aria-label={t('search.clear')}
+              >
+                <X size={16} />
+              </button>
+            )}
           </div>
           <button
             type="button"
             onClick={() => setCreando(true)}
-            className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-3 rounded-2xl text-sm font-body font-black
-                       text-white transition-all duration-200 active:scale-95"
+            className="flex-shrink-0 inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-xl text-sm font-body font-black
+                       text-white transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fiesta-magenta focus-visible:ring-offset-2"
             style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)', boxShadow: '0 4px 14px #ff3dac33' }}
           >
             <Plus size={18} strokeWidth={3} />
@@ -560,8 +570,8 @@ export default function AdminCatalogo() {
               type="button"
               onClick={() => setShowExportMenu(prev => !prev)}
               disabled={exportando || productos.length === 0}
-              className="inline-flex items-center gap-1.5 px-3 py-3 rounded-2xl text-sm font-body font-black
-                         border-2 border-admin-border text-admin-text hover:border-fiesta-magenta hover:text-fiesta-magenta
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2.5 rounded-xl text-sm font-body font-black
+                         border border-admin-border bg-admin-card text-admin-text hover:border-fiesta-magenta hover:text-fiesta-magenta
                          transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
               title={t('admin.catalog.export')}
             >
@@ -595,8 +605,8 @@ export default function AdminCatalogo() {
 
           {/* Importar (JSON o CSV) */}
           <label
-            className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-3 rounded-2xl text-sm font-body font-black
-                       border-2 border-admin-border text-admin-text hover:border-fiesta-cyan hover:text-fiesta-cyan
+            className={`flex-shrink-0 inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2.5 rounded-xl text-sm font-body font-black
+                       border border-admin-border bg-admin-card text-admin-text hover:border-fiesta-cyan hover:text-fiesta-cyan
                        transition-all duration-200 active:scale-95 cursor-pointer
                        ${importando ? 'opacity-40 pointer-events-none' : ''}`}
             title={t('admin.catalog.importHint')}
@@ -613,11 +623,11 @@ export default function AdminCatalogo() {
           </label>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar items-center pb-1">
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar items-center pb-0.5" aria-label={t('admin.catalog.title')}>
           <button
             type="button"
             onClick={() => setFiltroActivo('todos')}
-            className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-body font-black border-2 transition-colors"
+            className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-body font-black border transition-colors"
             style={filtroActivo === 'todos'
               ? { background: '#6b35b8', color: 'white', borderColor: '#6b35b8' }
               : { background: '#f3f4f6', color: '#6b7280', borderColor: '#e5e7eb' }}
@@ -628,7 +638,7 @@ export default function AdminCatalogo() {
           <button
             type="button"
             onClick={() => setFiltroActivo('stock-bajo')}
-            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black border-2 transition-colors"
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black border transition-colors"
             style={filtroActivo === 'stock-bajo'
               ? { background: '#fef2f2', color: '#b91c1c', borderColor: '#fca5a5' }
               : { background: 'white', color: '#dc2626', borderColor: '#fecaca' }}
@@ -640,7 +650,7 @@ export default function AdminCatalogo() {
           <button
             type="button"
             onClick={() => setFiltroActivo('nuevo')}
-            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black border-2 transition-colors"
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black border transition-colors"
             style={filtroActivo === 'nuevo'
               ? { background: '#f0fdf4', color: '#166534', borderColor: '#86efac' }
               : { background: 'white', color: '#16a34a', borderColor: '#bbf7d0' }}
@@ -655,7 +665,7 @@ export default function AdminCatalogo() {
             type="button"
             onClick={() => setShowCatMgr(true)}
             className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
-                       border-2 transition-all duration-200 active:scale-95"
+                       border transition-all duration-200 active:scale-95"
             style={{ borderColor: '#c084fc', color: '#7c3aed', background: '#faf5ff' }}
             title={t('admin.catalog.manageCategories')}
           >
@@ -666,7 +676,7 @@ export default function AdminCatalogo() {
             type="button"
             onClick={() => setShowMarcaMgr(true)}
             className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
-                       border-2 transition-all duration-200 active:scale-95"
+                       border transition-all duration-200 active:scale-95"
             style={{ borderColor: '#93c5fd', color: '#2563eb', background: '#eff6ff' }}
             title={t('admin.catalog.manageBrands')}
           >
@@ -677,7 +687,7 @@ export default function AdminCatalogo() {
             type="button"
             onClick={() => setShowTamanoMgr(true)}
             className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
-                       border-2 transition-all duration-200 active:scale-95"
+                       border transition-all duration-200 active:scale-95"
             style={{ borderColor: '#86efac', color: '#16a34a', background: '#f0fdf4' }}
             title={t('admin.catalog.manageSizes')}
           >
@@ -688,7 +698,7 @@ export default function AdminCatalogo() {
             type="button"
             onClick={() => setShowAnuncioEditor(v => !v)}
             className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
-                       border-2 transition-all duration-200 active:scale-95"
+                       border transition-all duration-200 active:scale-95"
             style={anuncioActivo
               ? { borderColor: '#f59e0b', color: '#92400e', background: '#fffbeb' }
               : { borderColor: '#d1d5db', color: '#6b7280', background: '#f9fafb' }}
@@ -703,7 +713,7 @@ export default function AdminCatalogo() {
             onClick={handleTogglePedidos}
             disabled={pedidosGuardando}
             className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black
-                       border-2 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                       border transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
             style={pedidosHabilitados
               ? { borderColor: '#86efac', color: '#166534', background: '#f0fdf4' }
               : { borderColor: '#fca5a5', color: '#991b1b', background: '#fef2f2' }}
@@ -714,9 +724,11 @@ export default function AdminCatalogo() {
           </button>
         </div>
 
-        {/* ── Editor de anuncio inline ── */}
-        {showAnuncioEditor && (
-          <div className="bg-admin-card border border-admin-border rounded-xl p-3 space-y-2">
+      </div>
+
+      {/* Editor de anuncio inline */}
+      {showAnuncioEditor && (
+        <div className="mt-4 bg-admin-card border border-admin-border rounded-xl p-3 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Megaphone size={16} className="text-amber-500" />
@@ -778,8 +790,8 @@ export default function AdminCatalogo() {
                 {anuncioGuardando ? t('admin.catalog.saving') : t('admin.catalog.saveMessage')}
               </button>
             </div>
-          </div>
-        )}
+        </div>
+      )}
 
             {/* Modal gestión de categorías */}
             {showCatMgr && (
@@ -972,8 +984,6 @@ export default function AdminCatalogo() {
                 </div>
               </div>
             )}
-
-      </div>
 
       {/* Contenido scrollable */}
       <div className="space-y-4 mt-4">
