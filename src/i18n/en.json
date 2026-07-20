@@ -447,6 +447,7 @@
   "social.visitUs": "Visit us on {name}",
 
   "announcements.closeAriaLabel": "Close announcement",
+  "announcements.bannerAriaLabel": "Store announcement",
 
   "lang.toggle": "ES",
   "lang.label": "Switch to Spanish",

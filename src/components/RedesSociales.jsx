@@ -53,7 +53,7 @@ function BtnRed({ red }) {
                  focus-visible:ring-2 focus-visible:ring-ink-300"
       style={{
         background:  hovered ? red.hoverBg    : 'var(--surface-elevated)',
-        color:       hovered ? red.hoverColor : 'var(--text-inactive)',
+        color:       hovered ? red.hoverColor : 'var(--text-secondary)',
         border:      `1.5px solid ${hovered ? red.hoverBg : 'var(--border-default)'}`,
         boxShadow:   hovered ? red.hoverShadow : 'none',
         transform:   hovered ? 'scale(1.07)'   : 'scale(1)',
@@ -70,7 +70,7 @@ export default function RedesSociales() {
   const { t } = useLanguage();
   return (
     <div className="flex flex-col items-center gap-3 py-6 px-4">
-      <p className="text-[11px] font-body font-black text-ink-300 tracking-[0.2em] uppercase">
+      <p className="text-[11px] font-body font-black text-ink-500 tracking-[0.2em] uppercase">
         {t('common.followUs')}
       </p>
       <div className="flex items-center gap-3 flex-wrap justify-center">

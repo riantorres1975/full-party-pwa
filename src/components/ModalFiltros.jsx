@@ -119,7 +119,7 @@ function FilaCategoria({ label, activo, count = 0, onClick }) {
         className="flex h-5 min-w-[26px] flex-shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-body font-bold tabular-nums transition-all"
         style={activo
           ? { background: 'rgba(123,47,190,0.14)', color: BRAND_PURPLE }
-          : { background: '#f3f4f6', color: '#6b7280' }}
+          : { background: '#f3f4f6', color: '#4b5563' }}
       >
         {count}
       </span>
@@ -289,15 +289,15 @@ export default function ModalFiltros({
     return { min: Math.min(...prices), max: Math.max(...prices) };
   }, [priceBounds, productosCache]);
 
+  if (!isOpen) return null;
+
   return (
     <>
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-50 animate-fade-in"
-          style={{ background: 'rgba(10,5,20,0.6)', backdropFilter: 'blur(6px)' }}
-          onClick={onCerrar}
-        />
-      )}
+      <div
+        className="fixed inset-0 z-50 animate-fade-in"
+        style={{ background: 'rgba(10,5,20,0.6)', backdropFilter: 'blur(6px)' }}
+        onClick={onCerrar}
+      />
 
       <div
         ref={panelRef}
@@ -309,7 +309,7 @@ export default function ModalFiltros({
           flex flex-col safe-bottom
           sm:max-w-sm sm:left-auto sm:right-6 sm:rounded-[26px] sm:bottom-6
           transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
-          ${isOpen ? 'translate-y-0' : 'translate-y-full sm:translate-y-[calc(100%+2rem)]'}
+          translate-y-0
         `}
         style={{
           background: 'var(--surface-primary)',

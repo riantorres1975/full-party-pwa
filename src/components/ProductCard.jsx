@@ -56,13 +56,10 @@ function ProductCardInner({
         opacity: agotado ? 0.65 : 1,
       }}
     >
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
         onClick={() => onAbrirDetalle?.(producto)}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onAbrirDetalle?.(producto); } }}
         className="w-full text-left cursor-pointer flex-1 flex flex-col"
-        aria-label={t('product.viewDetail', { name: producto.nombre })}
       >
         <div className="relative">
           <OptimizedImage
@@ -116,7 +113,7 @@ function ProductCardInner({
               <div className="flex flex-col gap-0.5">
                 <div className="flex items-center gap-1.5">
                   <span className="font-body font-black text-[15px] sm:text-base"
-                        style={{ color: '#16a34a' }}>
+                        style={{ color: 'var(--text-success)' }}>
                     {SIMBOLO_MONEDA}{precioAplicable.toFixed(2)}
                   </span>
                   <Badge variant="discount" size="sm">−{Math.round((1 - precioAplicable / precioBase) * 100)}%</Badge>
@@ -134,7 +131,7 @@ function ProductCardInner({
               <div className="flex items-center gap-1 mt-1">
                 <span className="text-[10px]" aria-hidden="true">🏷️</span>
                 <span className="text-[10px] font-body font-bold"
-                      style={{ color: '#16a34a' }}>
+                      style={{ color: 'var(--text-success)' }}>
                   {SIMBOLO_MONEDA}{mayoreoMinTier.precio.toFixed(2)} {t('product.eachUnit')}
                 </span>
                 <span className="text-[9px] font-body font-semibold text-ink-400">
@@ -144,7 +141,7 @@ function ProductCardInner({
             )}
           </div>
         </div>
-      </div>
+      </button>
 
       <div className="px-2 pb-2 sm:px-3 sm:pb-3">
         {agotado ? (
@@ -154,8 +151,9 @@ function ProductCardInner({
         ) : enCarrito ? (
           <div className="flex items-center justify-between w-full">
             <button
+              type="button"
               onClick={() => onReducir(producto.id)}
-              className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl
+              className="w-10 h-10 flex items-center justify-center rounded-xl
                          bg-ink-100 text-ink-600
                          transition-all duration-150 active:scale-90 hover:bg-ink-200"
               aria-label={t('product.removeOne', { name: producto.nombre })}
@@ -170,9 +168,10 @@ function ProductCardInner({
             </span>
 
             <button
+              type="button"
               onClick={() => !maxStockAlcanzado && onAgregar(producto)}
               disabled={maxStockAlcanzado}
-              className={`w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl text-white
+              className={`w-10 h-10 flex items-center justify-center rounded-xl text-white
                          transition-all duration-150
                          ${maxStockAlcanzado ? 'opacity-50 cursor-not-allowed' : 'active:scale-90'}`}
               style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}

@@ -52,7 +52,6 @@ export function CategoryCard({ category, index = 0, onSelect, compact = false })
         border: '1px solid var(--border-soft)',
         boxShadow: '0 2px 10px rgba(107,53,184,0.06)',
       }}
-      aria-label={category.label}
     >
       {category.imagen ? (
         <img

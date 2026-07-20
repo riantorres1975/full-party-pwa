@@ -7,7 +7,7 @@ function NavButton({ active, icon: Icon, label, badge, onClick }) {
       type="button"
       onClick={onClick}
       className="relative flex h-14 flex-1 flex-col items-center justify-center gap-0.5 transition-colors"
-      style={{ color: active ? 'var(--accent-primary)' : 'var(--text-muted)' }}
+      style={{ color: active ? 'var(--text-secondary)' : 'var(--text-muted)' }}
       aria-current={active ? 'page' : undefined}
     >
       <span className="relative">

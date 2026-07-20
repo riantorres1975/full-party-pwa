@@ -447,6 +447,7 @@
   "social.visitUs": "Visítanos en {name}",
 
   "announcements.closeAriaLabel": "Cerrar anuncio",
+  "announcements.bannerAriaLabel": "Anuncio de la tienda",
 
   "lang.toggle": "EN",
   "lang.label": "Cambiar a inglés",

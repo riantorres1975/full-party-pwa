@@ -245,7 +245,8 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
         {/* Customer announcement banner */}
         {anuncioActivo && anuncioMsg && !isBannerDismissed && (
-          <div
+          <aside
+            aria-label={t('announcements.bannerAriaLabel')}
             className="relative overflow-hidden text-center font-body font-black"
             style={{
               background: 'linear-gradient(90deg, #f97316, #ec4899, #a855f7, #f97316)',
@@ -255,20 +256,20 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
               textShadow: '0 1px 2px rgba(0,0,0,0.2)',
             }}
           >
-            <div className="flex items-center justify-center gap-2 px-10 py-2.5">
+            <div className="flex items-center justify-center gap-2 px-12 py-2.5">
               <span className="text-base animate-bounce" style={{ animationDuration: '2s' }}>📢</span>
               <span className="text-sm leading-snug">{anuncioMsg}</span>
             </div>
             <button
               onClick={() => setIsBannerDismissed(true)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center
                          rounded-full bg-white/20 text-white/80 hover:bg-white/30 hover:text-white
                          text-xs font-bold transition-all duration-200 active:scale-90"
               aria-label={t('announcements.closeAriaLabel')}
             >
               ✕
             </button>
-          </div>
+          </aside>
         )}
 
         {!pedidosHabilitados && (
@@ -314,7 +315,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     <button
                       onClick={() => setIsTrackingOpen(true)}
                       className="whitespace-nowrap ml-auto lg:hidden flex items-center gap-1 transition-colors"
-                      style={{ color: 'var(--accent-primary)' }}
+                      style={{ color: 'var(--text-secondary)' }}
                     >
                       {t('trust.trackOrder')}
                     </button>

@@ -82,7 +82,7 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
             <button
               onClick={manejarInstalar}
               className="hidden sm:flex items-center gap-1.5 text-xs font-body font-bold
-                         text-fiesta-purple bg-ink-100 px-2 sm:px-3 py-1.5 rounded-full
+                         text-ink-600 bg-ink-100 px-2 sm:px-3 py-1.5 rounded-full
                          border-2 border-ink-200 transition-all duration-200 hover:bg-ink-200 active:scale-95"
               aria-label={t('header.installAriaLabel')}
             >

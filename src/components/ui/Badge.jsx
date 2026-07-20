@@ -14,22 +14,20 @@
  *  - md: text-[10px] px-2.5 py-1
  *  - lg: text-xs     px-3 py-1.5
  */
-import { gradients, shadows } from '../../styles/tokens';
-
 const STYLES = {
   new: {
     classes: 'text-white rounded-full uppercase tracking-wider',
-    background: gradients.primary,
+    background: 'linear-gradient(135deg, #be185d, #6d28d9)',
     shadow: '0 2px 8px rgba(255, 61, 172, 0.35)',
   },
   discount: {
     classes: 'text-white rounded-full',
-    background: 'linear-gradient(135deg, #16a34a, #059669)',
+    background: 'linear-gradient(135deg, #15803d, #047857)',
     shadow: 'none',
   },
   warning: {
     classes: 'text-white rounded-full',
-    background: 'linear-gradient(135deg, #f97316, #dc2626)',
+    background: 'linear-gradient(135deg, #c2410c, #b91c1c)',
     shadow: 'none',
   },
   info: {

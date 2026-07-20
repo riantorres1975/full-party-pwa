@@ -38,6 +38,7 @@ body.theme-dark {
   --text-secondary: #c4b5fd;
   --text-muted: #8a84b8;
   --text-inactive: #7f7aa8;
+  --text-success: #4ade80;
   background-color: #0f1124;
   background-image:
     radial-gradient(circle at 15% 20%, #ff3dac1f 0%, transparent 38%),
