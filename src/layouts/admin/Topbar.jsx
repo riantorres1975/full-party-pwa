@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { Search, ChevronRight } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useBreadcrumbValue } from '../../contexts/BreadcrumbContext';
 
 export default function Topbar() {
   const { t } = useLanguage();
+  const location = useLocation();
   const breadcrumb = useBreadcrumbValue();
+  const showGlobalActions = location.pathname !== '/admin/catalogo';
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef(null);
@@ -14,6 +17,7 @@ export default function Topbar() {
     : 'Ctrl+K';
 
   useEffect(() => {
+    if (!showGlobalActions) return undefined;
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
@@ -26,7 +30,7 @@ export default function Topbar() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [showGlobalActions]);
 
   useEffect(() => {
     if (searchOpen) {
@@ -39,7 +43,7 @@ export default function Topbar() {
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 lg:px-5 lg:max-w-none">
         {/* Breadcrumb */}
         {breadcrumb && breadcrumb.length > 0 && (
-          <div className="flex items-center gap-2 mb-3">
+          <div className={`flex items-center gap-2 ${showGlobalActions ? 'mb-3' : ''}`}>
             <span className="text-xs font-body font-bold text-admin-muted uppercase tracking-wider">
               Admin
             </span>
@@ -57,6 +61,7 @@ export default function Topbar() {
         )}
 
         {/* Search + actions */}
+        {showGlobalActions && (
         <div className="flex items-center gap-2">
           {/* Search button */}
           <div className="relative">
@@ -101,6 +106,7 @@ export default function Topbar() {
             {t('admin.topbar.new')}
           </button>
         </div>
+        )}
       </div>
     </div>
   );

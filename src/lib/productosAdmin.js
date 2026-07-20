@@ -461,6 +461,55 @@ export async function actualizarDisponibilidadProducto(id, activo) {
   return { id, activo: !!activo };
 }
 
+const QUICK_EDIT_FIELDS = new Set(['precio', 'stock_actual', 'categoria', 'activo']);
+
+/** Updates a safe subset of fields for one or more catalog products. */
+export async function actualizarCamposProductos(ids, changes) {
+  const productIds = (Array.isArray(ids) ? ids : [ids]).filter(Boolean);
+  if (productIds.length === 0) throw new Error('Selecciona al menos un producto.');
+
+  const row = Object.fromEntries(
+    Object.entries(changes || {}).filter(([key]) => QUICK_EDIT_FIELDS.has(key))
+  );
+
+  if ('precio' in row) {
+    row.precio = Number(row.precio);
+    if (!Number.isFinite(row.precio) || row.precio < 0) throw new Error('Indica un precio valido.');
+  }
+  if ('stock_actual' in row) {
+    row.stock_actual = Math.floor(Number(row.stock_actual));
+    if (!Number.isFinite(row.stock_actual) || row.stock_actual < 0) throw new Error('Indica un stock valido.');
+  }
+  if ('categoria' in row) row.categoria = row.categoria?.trim() || null;
+  if ('activo' in row) row.activo = !!row.activo;
+  if (Object.keys(row).length === 0) throw new Error('No hay cambios para guardar.');
+
+  const { error } = await guardedQuery(() =>
+    supabase.from('productos').update(row).in('id', productIds)
+  );
+
+  if (error) {
+    console.error('[actualizarCamposProductos]', error.code, error.message);
+    throw new Error('No se pudieron actualizar los productos.');
+  }
+
+  return row;
+}
+
+export async function eliminarProductos(ids) {
+  const productIds = (Array.isArray(ids) ? ids : [ids]).filter(Boolean);
+  if (productIds.length === 0) throw new Error('Selecciona al menos un producto.');
+
+  const { error } = await guardedQuery(() =>
+    supabase.from('productos').delete().in('id', productIds)
+  );
+
+  if (error) {
+    console.error('[eliminarProductos]', error.code, error.message);
+    throw new Error('No se pudieron eliminar los productos.');
+  }
+}
+
 export async function eliminarProducto(id) {
   if (!id) throw new Error('Falta el id del producto.');
   const { error } = await supabase.from('productos').delete().eq('id', id);

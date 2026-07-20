@@ -1,17 +1,18 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Package, Pencil, Trash2, Search, AlertTriangle, Plus, X, Tag, Check, Bookmark, Ruler, Megaphone, Download, Upload, Power } from 'lucide-react';
+import { Pencil, Trash2, Search, Plus, X, Tag, Check, Bookmark, Ruler, Megaphone, Download, Upload, Power, LayoutGrid, List, MoreHorizontal } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { guardedQuery } from '../lib/supabaseGuard';
 import {
-  SIMBOLO_MONEDA,
   registrarCategoria,
   registrarMarca,
   registrarTamano,
 } from '../data/productos';
 import {
   actualizarDisponibilidadProducto,
+  actualizarCamposProductos,
   eliminarProducto,
+  eliminarProductos,
   renameCategoria,
   eliminarCategoria,
   renameMarca,
@@ -28,7 +29,9 @@ import { useToast } from './ui/ToastProvider';
 import { useConfirm } from '../hooks/useConfirm';
 import { useDebounce } from '../hooks/useDebounce';
 import { useLanguage } from '../hooks/useLanguage';
+import { usePermission } from '../hooks/usePermission';
 import { fuzzySearch } from '../utils/fuzzySearch';
+import { CatalogCards, CatalogTable } from './admin/catalog/CatalogProductViews';
 
 const PRODUCT_SEARCH_KEYS = [
   { name: 'nombre', weight: 0.5 },
@@ -38,28 +41,11 @@ const PRODUCT_SEARCH_KEYS = [
   { name: 'tamano', weight: 0.05 },
 ];
 
-function MiniaturaProducto({ url, nombre }) {
-  const [fallo, setFallo] = useState(false);
-  if (!url || fallo) {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <Package size={24} className="text-ink-300" />
-      </div>
-    );
-  }
-  return (
-    <img
-      src={url}
-      alt={nombre || ''}
-      className="w-full h-full object-contain"
-      onError={() => setFallo(true)}
-    />
-  );
-}
-
 export default function AdminCatalogo() {
   const toast = useToast();
   const { t } = useLanguage();
+  const canEdit = usePermission('catalogo.edit');
+  const canDelete = usePermission('catalogo.delete');
   const { isOpen: confirmOpen, config: confirmConfig, confirm: confirmDialog, onConfirm, onCancel } = useConfirm();
   const [creando, setCreando] = useState(false);
   const [productos, setProductos] = useState([]);
@@ -68,6 +54,19 @@ export default function AdminCatalogo() {
   const [busquedaInput, setBusquedaInput] = useState('');
   const busqueda = useDebounce(busquedaInput, 300);
   const [filtroActivo, setFiltroActivo] = useState('todos');
+  const [orden, setOrden] = useState('nombre-asc');
+  const [vista, setVista] = useState(() => {
+    try {
+      return localStorage.getItem('admin.catalog.view') === 'tabla' ? 'tabla' : 'tarjetas';
+    } catch {
+      return 'tarjetas';
+    }
+  });
+  const [seleccionados, setSeleccionados] = useState(() => new Set());
+  const [edicionRapidaId, setEdicionRapidaId] = useState(null);
+  const [guardandoRapidoId, setGuardandoRapidoId] = useState(null);
+  const [procesandoLote, setProcesandoLote] = useState(false);
+  const [showMobileMore, setShowMobileMore] = useState(false);
   const [editando, setEditando] = useState(null);
   const [toggleId, setToggleId] = useState(null);
   const [eliminandoId, setEliminandoId] = useState(null);
@@ -107,6 +106,12 @@ export default function AdminCatalogo() {
   useEffect(() => {
     fetchProductos();
   }, [fetchProductos]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('admin.catalog.view', vista);
+    } catch {}
+  }, [vista]);
 
   const [showCatMgr, setShowCatMgr] = useState(false);
   const [catEditando, setCatEditando] = useState(null);
@@ -373,10 +378,102 @@ export default function AdminCatalogo() {
     }
 
     const q = busqueda.trim();
-    if (!q) return lista;
+    if (q) lista = fuzzySearch(lista, q, PRODUCT_SEARCH_KEYS, { threshold: 0.38 });
 
-    return fuzzySearch(lista, q, PRODUCT_SEARCH_KEYS, { threshold: 0.38 });
-  }, [productos, busqueda, filtroActivo, productosEnAlerta, productosNuevos]);
+    return [...lista].sort((a, b) => {
+      if (orden === 'precio-asc') return Number(a.precio) - Number(b.precio);
+      if (orden === 'precio-desc') return Number(b.precio) - Number(a.precio);
+      if (orden === 'stock-asc') {
+        const stockA = a.stock_ilimitado !== false ? Number.POSITIVE_INFINITY : Number(a.stock_actual);
+        const stockB = b.stock_ilimitado !== false ? Number.POSITIVE_INFINITY : Number(b.stock_actual);
+        return stockA - stockB;
+      }
+      if (orden === 'recientes') {
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      }
+      return String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base' });
+    });
+  }, [productos, busqueda, filtroActivo, orden, productosEnAlerta, productosNuevos]);
+
+  const hayFiltrosActivos = filtroActivo !== 'todos' || busquedaInput.trim().length > 0;
+
+  function limpiarFiltros() {
+    setBusquedaInput('');
+    setFiltroActivo('todos');
+  }
+
+  function toggleSeleccion(id) {
+    setSeleccionados(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleTodosVisibles() {
+    const visibleIds = filtrados.map(producto => producto.id);
+    const todosSeleccionados = visibleIds.length > 0 && visibleIds.every(id => seleccionados.has(id));
+    setSeleccionados(prev => {
+      const next = new Set(prev);
+      visibleIds.forEach(id => todosSeleccionados ? next.delete(id) : next.add(id));
+      return next;
+    });
+  }
+
+  async function handleGuardarRapido(producto, changes) {
+    setGuardandoRapidoId(producto.id);
+    try {
+      const saved = await actualizarCamposProductos(producto.id, changes);
+      setProductos(prev => prev.map(item => item.id === producto.id ? { ...item, ...saved } : item));
+      setEdicionRapidaId(null);
+      toast.success(t('admin.catalog.quickSaved'));
+    } catch (err) {
+      toast.error(err.message || t('admin.catalog.saveError'));
+    } finally {
+      setGuardandoRapidoId(null);
+    }
+  }
+
+  async function handleActualizarLote(changes, successKey) {
+    const ids = Array.from(seleccionados);
+    if (ids.length === 0) return;
+    setProcesandoLote(true);
+    try {
+      const saved = await actualizarCamposProductos(ids, changes);
+      setProductos(prev => prev.map(item => seleccionados.has(item.id) ? { ...item, ...saved } : item));
+      setSeleccionados(new Set());
+      toast.success(t(successKey, { count: ids.length }));
+    } catch (err) {
+      toast.error(err.message || t('admin.catalog.saveError'));
+    } finally {
+      setProcesandoLote(false);
+    }
+  }
+
+  async function handleEliminarLote() {
+    const ids = Array.from(seleccionados);
+    if (ids.length === 0) return;
+    const ok = await confirmDialog({
+      title: t('admin.catalog.bulkDeleteTitle'),
+      message: t('admin.catalog.bulkDeleteMessage', { count: ids.length }),
+      confirmLabel: t('admin.catalog.delete'),
+      variant: 'danger',
+    });
+    if (!ok) return;
+
+    setProcesandoLote(true);
+    try {
+      await eliminarProductos(ids);
+      setProductos(prev => prev.filter(item => !seleccionados.has(item.id)));
+      setSeleccionados(new Set());
+      toast.success(t('admin.catalog.bulkDeleted', { count: ids.length }));
+    } catch (err) {
+      toast.error(err.message || t('admin.catalog.saveError'));
+    } finally {
+      setProcesandoLote(false);
+    }
+  }
 
   async function handleToggleDisponibilidad(p) {
     const siguiente = !p.activo;
@@ -404,6 +501,12 @@ export default function AdminCatalogo() {
     try {
       await eliminarProducto(p.id);
       setProductos(prev => prev.filter(x => x.id !== p.id));
+      setSeleccionados(prev => {
+        const next = new Set(prev);
+        next.delete(p.id);
+        return next;
+      });
+      if (edicionRapidaId === p.id) setEdicionRapidaId(null);
       toast.success(`"${p.nombre}" eliminado`);
     } catch (err) {
       toast.error(err.message || 'No se pudo eliminar');
@@ -523,6 +626,121 @@ export default function AdminCatalogo() {
     }
   }
 
+  const renderFilterChips = () => (
+    <div className="flex gap-2 overflow-x-auto hide-scrollbar items-center pb-0.5" aria-label={t('admin.catalog.filters')}>
+      <button
+        type="button"
+        onClick={() => setFiltroActivo('todos')}
+        className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-body font-black border transition-colors ${
+          filtroActivo === 'todos'
+            ? 'bg-purple-700 text-white border-purple-700'
+            : 'bg-admin-card text-admin-muted border-admin-border hover:text-admin-text'
+        }`}
+      >
+        {t('common.all')}
+      </button>
+      <button
+        type="button"
+        onClick={() => setFiltroActivo('stock-bajo')}
+        className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black border transition-colors ${
+          filtroActivo === 'stock-bajo'
+            ? 'bg-red-50 text-red-700 border-red-300'
+            : 'bg-admin-card text-red-600 border-red-200'
+        }`}
+      >
+        <span className="w-2 h-2 rounded-full bg-red-500" />
+        {t('admin.catalog.lowStock', { count: productosEnAlerta.length })}
+      </button>
+      <button
+        type="button"
+        onClick={() => setFiltroActivo('nuevo')}
+        className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-black border transition-colors ${
+          filtroActivo === 'nuevo'
+            ? 'bg-green-50 text-green-800 border-green-300'
+            : 'bg-admin-card text-green-700 border-green-200'
+        }`}
+      >
+        <span className="w-2 h-2 rounded-full bg-green-500" />
+        {t('admin.catalog.newItems', { count: productosNuevos.length })}
+      </button>
+    </div>
+  );
+
+  const renderCatalogMeta = (showViewToggle = true) => (
+    <div className="flex items-center gap-2 min-w-0">
+      <span className="text-xs font-body font-bold text-admin-muted whitespace-nowrap">
+        {t('admin.catalog.resultCount', { count: filtrados.length })}
+      </span>
+      <select
+        value={orden}
+        onChange={event => setOrden(event.target.value)}
+        className="min-w-0 max-w-[190px] rounded-lg border border-admin-border bg-admin-card px-2.5 py-1.5 text-xs font-body font-bold text-admin-text outline-none focus:border-fiesta-magenta"
+        aria-label={t('admin.catalog.sortBy')}
+      >
+        <option value="nombre-asc">{t('admin.catalog.sortName')}</option>
+        <option value="stock-asc">{t('admin.catalog.sortStock')}</option>
+        <option value="precio-asc">{t('admin.catalog.sortPriceLow')}</option>
+        <option value="precio-desc">{t('admin.catalog.sortPriceHigh')}</option>
+        <option value="recientes">{t('admin.catalog.sortRecent')}</option>
+      </select>
+      {showViewToggle && (
+        <div className="hidden sm:flex items-center rounded-lg border border-admin-border bg-admin-card p-0.5" aria-label={t('admin.catalog.view')}>
+          <button type="button" onClick={() => setVista('tarjetas')} className={`p-1.5 rounded-md ${vista === 'tarjetas' ? 'bg-admin-elevated text-fiesta-magenta' : 'text-admin-muted hover:text-admin-text'}`} aria-label={t('admin.catalog.cardView')}>
+            <LayoutGrid size={15} />
+          </button>
+          <button type="button" onClick={() => setVista('tabla')} className={`p-1.5 rounded-md ${vista === 'tabla' ? 'bg-admin-elevated text-fiesta-magenta' : 'text-admin-muted hover:text-admin-text'}`} aria-label={t('admin.catalog.tableView')}>
+            <List size={15} />
+          </button>
+        </div>
+      )}
+      {hayFiltrosActivos && (
+        <button type="button" onClick={limpiarFiltros} className="ml-auto whitespace-nowrap text-xs font-body font-black text-fiesta-magenta hover:underline">
+          {t('admin.catalog.clearFilters')}
+        </button>
+      )}
+    </div>
+  );
+
+  const renderSelectionBar = (mobile = false) => seleccionados.size > 0 && (
+    <div className={`${mobile ? 'fixed left-3 right-3 bottom-20 z-30 sm:hidden' : 'hidden sm:flex'} items-center gap-2 rounded-xl bg-ink-700 text-white px-3 py-2 shadow-elevated`}>
+      <span className="text-xs font-body font-black whitespace-nowrap">
+        {t('admin.catalog.selectedCount', { count: seleccionados.size })}
+      </span>
+      <div className="flex flex-1 gap-1.5 overflow-x-auto hide-scrollbar justify-end">
+        {canEdit && (
+          <>
+            <button type="button" onClick={() => handleActualizarLote({ activo: true }, 'admin.catalog.bulkActivated')} disabled={procesandoLote} className="whitespace-nowrap px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-[11px] font-body font-black disabled:opacity-50">
+              {t('admin.catalog.activate')}
+            </button>
+            <button type="button" onClick={() => handleActualizarLote({ activo: false }, 'admin.catalog.bulkHidden')} disabled={procesandoLote} className="whitespace-nowrap px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-[11px] font-body font-black disabled:opacity-50">
+              {t('admin.catalog.hide')}
+            </button>
+            <select
+              defaultValue=""
+              onChange={event => {
+                if (event.target.value) handleActualizarLote({ categoria: event.target.value }, 'admin.catalog.bulkCategorized');
+              }}
+              disabled={procesandoLote}
+              className="max-w-[150px] rounded-lg border border-white/20 bg-ink-600 px-2 py-1.5 text-[11px] font-body font-black text-white outline-none disabled:opacity-50"
+              aria-label={t('admin.catalog.changeCategory')}
+            >
+              <option value="">{t('admin.catalog.changeCategory')}</option>
+              {todasCategorias.map(category => <option key={category} value={category}>{category}</option>)}
+            </select>
+          </>
+        )}
+        {canDelete && (
+          <button type="button" onClick={handleEliminarLote} disabled={procesandoLote} className="inline-flex items-center gap-1 whitespace-nowrap px-2.5 py-1.5 rounded-lg bg-red-500/80 hover:bg-red-500 text-[11px] font-body font-black disabled:opacity-50">
+            <Trash2 size={13} /> {t('admin.catalog.delete')}
+          </button>
+        )}
+      </div>
+      <button type="button" onClick={() => setSeleccionados(new Set())} className="p-1.5 rounded-lg hover:bg-white/15" aria-label={t('datatable.clear_selection')}>
+        <X size={16} />
+      </button>
+    </div>
+  );
+
   return (
     <div className="min-w-0">
       {/* Keep the primary catalog controls available while products scroll. */}
@@ -556,8 +774,9 @@ export default function AdminCatalogo() {
           <button
             type="button"
             onClick={() => setCreando(true)}
-            className="flex-shrink-0 inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-xl text-sm font-body font-black
-                       text-white transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fiesta-magenta focus-visible:ring-offset-2"
+            className={`flex-shrink-0 items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-xl text-sm font-body font-black
+                       text-white transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fiesta-magenta focus-visible:ring-offset-2
+                       ${canEdit ? 'inline-flex' : 'hidden'}`}
             style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)', boxShadow: '0 4px 14px #ff3dac33' }}
           >
             <Plus size={18} strokeWidth={3} />
@@ -565,7 +784,7 @@ export default function AdminCatalogo() {
           </button>
 
           {/* Exportar con menú de formato */}
-          <div className="relative flex-shrink-0">
+          <div className="relative flex-shrink-0 hidden sm:block">
             <button
               type="button"
               onClick={() => setShowExportMenu(prev => !prev)}
@@ -605,10 +824,10 @@ export default function AdminCatalogo() {
 
           {/* Importar (JSON o CSV) */}
           <label
-            className={`flex-shrink-0 inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2.5 rounded-xl text-sm font-body font-black
+            className={`hidden sm:items-center sm:justify-center gap-1.5 px-2.5 sm:px-3 py-2.5 rounded-xl text-sm font-body font-black
                        border border-admin-border bg-admin-card text-admin-text hover:border-fiesta-cyan hover:text-fiesta-cyan
                        transition-all duration-200 active:scale-95 cursor-pointer
-                       ${importando ? 'opacity-40 pointer-events-none' : ''}`}
+                       ${canEdit ? 'sm:inline-flex' : 'sm:hidden'} ${importando ? 'opacity-40 pointer-events-none' : ''}`}
             title={t('admin.catalog.importHint')}
           >
             <Upload size={18} strokeWidth={2.5} className={importando ? 'animate-bounce' : ''} />
@@ -621,9 +840,52 @@ export default function AdminCatalogo() {
               onChange={(e) => { handleImportar(e.target.files?.[0]); e.target.value = ''; }}
             />
           </label>
+
+          <div className="relative sm:hidden">
+            <button
+              type="button"
+              onClick={() => setShowMobileMore(value => !value)}
+              className="inline-flex items-center justify-center p-2.5 rounded-xl border border-admin-border bg-admin-card text-admin-text"
+              aria-label={t('admin.catalog.moreActions')}
+            >
+              <MoreHorizontal size={19} />
+            </button>
+            {showMobileMore && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={() => setShowMobileMore(false)} />
+                <div className="absolute right-0 top-full mt-2 z-40 w-64 rounded-xl border border-admin-border bg-admin-card shadow-elevated overflow-hidden">
+                  <div className="p-2 border-b border-admin-border-soft">
+                    <p className="px-2 py-1 text-[10px] uppercase tracking-wider font-body font-black text-admin-muted">{t('admin.catalog.dataActions')}</p>
+                    <button type="button" onClick={() => { setShowMobileMore(false); handleExportar('csv'); }} disabled={productos.length === 0} className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-sm font-body font-bold text-admin-text hover:bg-admin-elevated disabled:opacity-40">
+                      <Download size={16} /> {t('admin.catalog.exportCsv')}
+                    </button>
+                    <button type="button" onClick={() => { setShowMobileMore(false); handleExportar('json'); }} disabled={productos.length === 0} className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-sm font-body font-bold text-admin-text hover:bg-admin-elevated disabled:opacity-40">
+                      <Download size={16} /> {t('admin.catalog.exportJson')}
+                    </button>
+                    {canEdit && (
+                      <label className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-sm font-body font-bold text-admin-text hover:bg-admin-elevated cursor-pointer">
+                        <Upload size={16} /> {t('admin.catalog.import')}
+                        <input type="file" accept=".json,.csv" className="hidden" disabled={importando} onChange={event => { handleImportar(event.target.files?.[0]); event.target.value = ''; setShowMobileMore(false); }} />
+                      </label>
+                    )}
+                  </div>
+                  {canEdit && (
+                    <div className="p-2">
+                      <p className="px-2 py-1 text-[10px] uppercase tracking-wider font-body font-black text-admin-muted">{t('admin.catalog.settings')}</p>
+                      <button type="button" onClick={() => { setShowMobileMore(false); setShowCatMgr(true); }} className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-sm font-body font-bold text-admin-text hover:bg-admin-elevated"><Tag size={16} /> {t('admin.catalog.manageCategories')}</button>
+                      <button type="button" onClick={() => { setShowMobileMore(false); setShowMarcaMgr(true); }} className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-sm font-body font-bold text-admin-text hover:bg-admin-elevated"><Bookmark size={16} /> {t('admin.catalog.manageBrands')}</button>
+                      <button type="button" onClick={() => { setShowMobileMore(false); setShowTamanoMgr(true); }} className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-sm font-body font-bold text-admin-text hover:bg-admin-elevated"><Ruler size={16} /> {t('admin.catalog.manageSizes')}</button>
+                      <button type="button" onClick={() => { setShowMobileMore(false); setShowAnuncioEditor(value => !value); }} className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-sm font-body font-bold text-admin-text hover:bg-admin-elevated"><Megaphone size={16} /> {t('admin.catalog.banner')}</button>
+                      <button type="button" onClick={() => { setShowMobileMore(false); handleTogglePedidos(); }} disabled={pedidosGuardando} className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-sm font-body font-bold text-admin-text hover:bg-admin-elevated disabled:opacity-50"><Power size={16} /> {pedidosHabilitados ? t('admin.catalog.ordersOn') : t('admin.catalog.ordersOff')}</button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar items-center pb-0.5" aria-label={t('admin.catalog.title')}>
+        <div className="hidden sm:flex gap-2 overflow-x-auto hide-scrollbar items-center pb-0.5" aria-label={t('admin.catalog.title')}>
           <button
             type="button"
             onClick={() => setFiltroActivo('todos')}
@@ -723,8 +985,17 @@ export default function AdminCatalogo() {
             {pedidosHabilitados ? t('admin.catalog.ordersOn') : t('admin.catalog.ordersOff')}
           </button>
         </div>
-
+        <div className="hidden sm:block">
+          {renderCatalogMeta(true)}
+        </div>
+        {renderSelectionBar(false)}
       </div>
+
+      <div className="sm:hidden mt-3 space-y-2">
+        {renderFilterChips()}
+        {renderCatalogMeta(false)}
+      </div>
+      {renderSelectionBar(true)}
 
       {/* Editor de anuncio inline */}
       {showAnuncioEditor && (
@@ -1018,100 +1289,73 @@ export default function AdminCatalogo() {
             )}
 
             {!cargando && !errorLista && filtrados.length > 0 && (
-              <div
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 pb-24"
-              >
-                {filtrados.map(p => (
-                  <div
-                    key={p.id}
-                    className="bg-admin-card rounded-2xl border border-admin-border p-4 flex flex-col gap-4
-                               transition-shadow hover:shadow-card-hover"
-                  >
-                    <div className="flex gap-3 min-w-0 items-start">
-                      <div
-                        className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-admin-elevated border border-admin-border
-                                   flex items-center justify-center"
-                      >
-                        <MiniaturaProducto url={p.imagen_url} nombre={p.nombre} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-body font-black text-admin-text text-sm leading-snug line-clamp-2" title={p.nombre}>
-                          {p.nombre}
-                        </p>
-                        <p className="text-[11px] font-body text-admin-muted mt-1 line-clamp-1">
-                          {p.marca ? (
-                            <span>{t('filters.brand')}: {p.marca}</span>
-                          ) : (
-                            <span className="text-ink-300">{t('admin.catalog.noBrand')}</span>
-                          )}
-                          <span className="mx-1.5 text-ink-200">·</span>
-                          {p.tamano ? (
-                            <span>{t('filters.size')}: {p.tamano}</span>
-                          ) : (
-                            <span className="text-ink-300">{t('admin.catalog.noSize')}</span>
-                          )}
-                        </p>
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <p className="text-sm font-body font-black text-admin-text">
-                            {SIMBOLO_MONEDA}
-                            {Number(p.precio).toFixed(2)}
-                          </p>
-                          {p.stock_ilimitado !== false ? (
-                            <span className="inline-flex items-center w-fit gap-0.5 text-[10px] font-body font-bold text-ink-500 bg-ink-50 px-1.5 py-0.5 rounded border border-ink-100">
-                              <span className="text-[12px] leading-none mb-[1px]">∞</span> {t('admin.catalog.unlimited')}
-                            </span>
-                          ) : (
-                            Number(p.stock_actual) <= Number(p.stock_minimo) ? (
-                              <span className="inline-flex items-center w-fit gap-1 text-[10px] font-body font-bold text-red-700 bg-red-50 px-1.5 py-0.5 rounded border border-red-200">
-                                <AlertTriangle size={10} strokeWidth={2.5} />
-                                {p.stock_actual} {t('admin.catalog.low')}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center w-fit gap-1 text-[10px] font-body font-bold text-ink-600 bg-ink-50 px-1.5 py-0.5 rounded border border-ink-200">
-                                {t('admin.catalog.inStock', { count: p.stock_actual })}
-                              </span>
-                            )
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-3 mt-auto pt-4 border-t border-admin-border">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-body font-bold text-admin-text-secondary">
-                          {p.activo !== false ? t('admin.catalog.active') : t('admin.catalog.hidden')}
-                        </span>
-                        <Toggle
-                          checked={p.activo !== false}
-                          disabled={toggleId === p.id}
-                          onChange={() => handleToggleDisponibilidad(p)}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 mt-1">
-                        <button
-                          type="button"
-                          onClick={() => setEditando(p)}
-                          className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-body font-bold
-                                     text-admin-text-secondary bg-admin-card border border-admin-border transition-colors hover:bg-admin-elevated hover:text-admin-text active:scale-95"
-                        >
-                          <Pencil size={14} />
-                          {t('admin.catalog.edit')}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleEliminar(p)}
-                          disabled={eliminandoId === p.id}
-                          className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-body font-bold
-                                     text-rose-600 bg-admin-card transition-colors hover:bg-rose-50 hover:text-rose-700 active:scale-95 disabled:opacity-50"
-                        >
-                          <Trash2 size={14} />
-                          {eliminandoId === p.id ? '…' : t('admin.catalog.delete')}
-                        </button>
-                      </div>
-                    </div>
+              vista === 'tabla' ? (
+                <>
+                  <div className="hidden sm:block">
+                    <CatalogTable
+                      products={filtrados}
+                      selectable={canEdit || canDelete}
+                      selectedIds={seleccionados}
+                      onToggleSelection={toggleSeleccion}
+                      onToggleAll={toggleTodosVisibles}
+                      editingId={edicionRapidaId}
+                      savingId={guardandoRapidoId}
+                      deletingId={eliminandoId}
+                      toggleId={toggleId}
+                      onQuickEdit={product => setEdicionRapidaId(product.id)}
+                      onQuickSave={handleGuardarRapido}
+                      onCancelQuickEdit={() => setEdicionRapidaId(null)}
+                      onEdit={setEditando}
+                      onDelete={handleEliminar}
+                      onToggleAvailability={handleToggleDisponibilidad}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
+                      t={t}
+                    />
                   </div>
-                ))}
-              </div>
+                  <div className="sm:hidden">
+                    <CatalogCards
+                      products={filtrados}
+                      selectable={canEdit || canDelete}
+                      selectedIds={seleccionados}
+                      onToggleSelection={toggleSeleccion}
+                      editingId={edicionRapidaId}
+                      savingId={guardandoRapidoId}
+                      deletingId={eliminandoId}
+                      toggleId={toggleId}
+                      onQuickEdit={product => setEdicionRapidaId(product.id)}
+                      onQuickSave={handleGuardarRapido}
+                      onCancelQuickEdit={() => setEdicionRapidaId(null)}
+                      onEdit={setEditando}
+                      onDelete={handleEliminar}
+                      onToggleAvailability={handleToggleDisponibilidad}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
+                      t={t}
+                    />
+                  </div>
+                </>
+              ) : (
+                <CatalogCards
+                  products={filtrados}
+                  selectable={canEdit || canDelete}
+                  selectedIds={seleccionados}
+                  onToggleSelection={toggleSeleccion}
+                  editingId={edicionRapidaId}
+                  savingId={guardandoRapidoId}
+                  deletingId={eliminandoId}
+                  toggleId={toggleId}
+                  onQuickEdit={product => setEdicionRapidaId(product.id)}
+                  onQuickSave={handleGuardarRapido}
+                  onCancelQuickEdit={() => setEdicionRapidaId(null)}
+                  onEdit={setEditando}
+                  onDelete={handleEliminar}
+                  onToggleAvailability={handleToggleDisponibilidad}
+                  canEdit={canEdit}
+                  canDelete={canDelete}
+                  t={t}
+                />
+              )
             )}
 
             {/* Load more button */}
