@@ -103,6 +103,61 @@ test('the catalog can be sorted and the cart guides order completion', async ({ 
   await expect(cart.getByRole('button', { name: 'Revisar pedido' })).toBeDisabled();
 });
 
+test('a product detail is shareable and supports shopping without closing', async ({ page }) => {
+  await page.goto('/catalogo');
+  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
+
+  const firstProduct = page.locator('article.product-card').first();
+  const productName = await firstProduct.locator('h3').innerText();
+  await firstProduct.locator('button').first().click();
+
+  await expect(page).toHaveURL(/[?&]producto=/);
+  const productUrl = page.url();
+  let detail = page.getByRole('dialog', { name: `Ver detalle de ${productName}`, exact: true });
+  await expect(detail).toBeVisible();
+  await expect(detail.getByRole('heading', { name: productName })).toBeVisible();
+  await expect.poll(() => detail.evaluate((dialog) => document.activeElement === dialog)).toBe(true);
+  await expect(detail.getByRole('button', { name: 'Compartir' })).toBeVisible();
+  await expect(detail.getByText('Precios por mayoreo', { exact: true })).toHaveCount(0);
+  await expect(detail.locator('section[aria-labelledby="related-products-title"] button').first()).toBeVisible();
+  const statusLayout = await detail.evaluate((dialog) => {
+    const actions = dialog.querySelector('[data-testid="product-detail-actions"]')?.getBoundingClientRect();
+    const badges = dialog.querySelector('[data-testid="product-status-badges"]')?.getBoundingClientRect();
+    if (!actions || !badges) return { overlap: false };
+    return {
+      overlap: !(
+        actions.right <= badges.left ||
+        actions.left >= badges.right ||
+        actions.bottom <= badges.top ||
+        actions.top >= badges.bottom
+      ),
+    };
+  });
+  expect(statusLayout.overlap).toBe(false);
+
+  await page.keyboard.press('Escape');
+  await expect(detail).toBeHidden();
+  await expect.poll(() => firstProduct.locator('button').first().evaluate(
+    (button) => getComputedStyle(button).outlineStyle,
+  )).toBe('none');
+
+  await firstProduct.locator('button').first().click();
+  detail = page.getByRole('dialog', { name: `Ver detalle de ${productName}`, exact: true });
+  await expect(detail).toBeVisible();
+  await expect.poll(() => detail.evaluate((dialog) => document.activeElement === dialog)).toBe(true);
+  await expect(detail.getByRole('button', { name: 'Compartir' })).not.toBeFocused();
+
+  await page.goto(productUrl);
+  detail = page.getByRole('dialog', { name: `Ver detalle de ${productName}`, exact: true });
+  await expect(detail).toBeVisible();
+  await expect(detail.getByRole('heading', { name: productName })).toBeVisible();
+
+  await detail.getByRole('button', { name: 'Agregar al carrito' }).click();
+  await expect(detail).toBeVisible();
+  await expect(detail.getByLabel('1 pieza en tu pedido')).toBeVisible();
+  await expect(page).toHaveURL(productUrl);
+});
+
 test('the admin route presents an accessible login when signed out', async ({ page }) => {
   await page.goto('/admin/catalogo');
 

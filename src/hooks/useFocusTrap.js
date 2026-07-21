@@ -6,18 +6,23 @@ const FOCUSABLE = 'button:not([disabled]),a[href],input:not([disabled]),select:n
  * useFocusTrap — traps keyboard focus inside a container (WCAG 2.4.3).
  * @param {React.RefObject} ref   — ref to the modal/dialog container
  * @param {boolean}         active — whether the trap is active
+ * @param {'first'|'container'} initialFocus — where focus starts when opened
  */
-export function useFocusTrap(ref, active) {
+export function useFocusTrap(ref, active, initialFocus = 'first') {
   useEffect(() => {
     if (!active || !ref.current) return;
 
     const el = ref.current;
     const previouslyFocused = document.activeElement;
 
-    // Focus the first focusable element
-    requestAnimationFrame(() => {
+    const focusFrame = requestAnimationFrame(() => {
+      if (initialFocus === 'container') {
+        el.focus({ preventScroll: true });
+        return;
+      }
+
       const nodes = el.querySelectorAll(FOCUSABLE);
-      nodes[0]?.focus();
+      nodes[0]?.focus({ preventScroll: true });
     });
 
     function trap(e) {
@@ -27,6 +32,12 @@ export function useFocusTrap(ref, active) {
 
       const first = nodes[0];
       const last  = nodes[nodes.length - 1];
+
+      if (document.activeElement === el) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+        return;
+      }
 
       if (e.shiftKey) {
         if (document.activeElement === first) { e.preventDefault(); last.focus(); }
@@ -38,8 +49,9 @@ export function useFocusTrap(ref, active) {
     el.addEventListener('keydown', trap);
 
     return () => {
+      cancelAnimationFrame(focusFrame);
       el.removeEventListener('keydown', trap);
       previouslyFocused?.focus?.();
     };
-  }, [active, ref]);
+  }, [active, ref, initialFocus]);
 }

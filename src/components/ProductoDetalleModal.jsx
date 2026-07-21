@@ -1,17 +1,38 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, ShoppingCart, Tag, Ruler, Sparkles } from 'lucide-react';
+import {
+  Check,
+  Minus,
+  PackageCheck,
+  Plus,
+  Ruler,
+  Share2,
+  ShoppingCart,
+  Sparkles,
+  Tag,
+  X,
+} from 'lucide-react';
 import { SIMBOLO_MONEDA } from '../data/productos';
-import { obtenerPrecioAplicable } from '../utils/precios';
+import { obtenerPrecioAplicable, obtenerSiguienteEscalaMayoreo } from '../utils/precios';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useLanguage } from '../hooks/useLanguage';
 import { getProductPlaceholderUrl, getSafeProductImageUrl, getSupabaseImageUrl } from '../utils/imagenes';
 
-export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, cantidad = 0 }) {
+export default function ProductoDetalleModal({
+  producto,
+  onCerrar,
+  onAgregar,
+  onReducir,
+  onSeleccionarRelacionado,
+  relacionados = [],
+  cantidad = 0,
+}) {
   const [cerrando, setCerrando] = useState(false);
+  const [shareStatus, setShareStatus] = useState('idle');
   const closeTimerRef = useRef(null);
+  const shareTimerRef = useRef(null);
   const dialogRef = useRef(null);
   const { t } = useLanguage();
-  useFocusTrap(dialogRef, !!producto && !cerrando);
+  useFocusTrap(dialogRef, !!producto && !cerrando, 'container');
 
   const modalHeight = 'min(92dvh, 820px)';
 
@@ -43,14 +64,42 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
         clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
       }
+      if (shareTimerRef.current) {
+        clearTimeout(shareTimerRef.current);
+        shareTimerRef.current = null;
+      }
       document.documentElement.classList.remove('overflow-hidden');
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [producto]);
 
+  useEffect(() => {
+    if (!producto) return undefined;
+
+    setShareStatus('idle');
+    const previousTitle = document.title;
+    const descriptionMeta = document.querySelector('meta[name="description"]');
+    const previousDescription = descriptionMeta?.getAttribute('content') || '';
+
+    document.title = `${producto.nombre} | Full Party Uruapan`;
+    if (descriptionMeta) {
+      descriptionMeta.setAttribute(
+        'content',
+        producto.descripcion || `${producto.nombre}. Consulta precio, mayoreo y disponibilidad en Full Party Uruapan.`,
+      );
+    }
+
+    return () => {
+      document.title = previousTitle;
+      if (descriptionMeta) descriptionMeta.setAttribute('content', previousDescription);
+    };
+  }, [producto]);
+
   if (!producto) return null;
 
-  const agotado = producto.activo === false;
+  const stockActual = Number(producto.stock_actual) || 0;
+  const stockLimitado = producto.stock_ilimitado === false;
+  const agotado = producto.activo === false || (stockLimitado && stockActual <= 0);
   const marca = typeof producto.marca === 'string' ? producto.marca.trim() : '';
   const tamano = typeof producto.tamano === 'string' ? producto.tamano.trim() : '';
   const categoria = typeof producto.categoria === 'string' ? producto.categoria.trim() : '';
@@ -58,29 +107,48 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
   const enCarrito = cantidad > 0;
   const precioAplicable = obtenerPrecioAplicable(producto, cantidad || 1);
   const hayDescuento = enCarrito && precioAplicable < precioBase;
+  const subtotal = precioAplicable * cantidad;
+  const maxStockAlcanzado = stockLimitado && cantidad >= stockActual;
   const esNuevo = producto.es_nuevo === true && !agotado;
   const fallbackImage = getProductPlaceholderUrl(producto.nombre, '900x900');
   const imageSrc = getSupabaseImageUrl(
     getSafeProductImageUrl(producto.imagen_url, producto.nombre, '900x900'),
     { width: 900, quality: 85 }
   );
-
-  const escalasMayoreo = (() => {
-    let escalas = producto.precios_mayoreo;
-    if (typeof escalas === 'string') {
-      try { escalas = JSON.parse(escalas); } catch { escalas = []; }
-    }
-    if (!Array.isArray(escalas) || escalas.length === 0) return [];
-    return escalas
-      .map(e => ({ min: Number(e?.cantidad_minima) || 0, precio: Number(e?.precio) }))
-      .filter(e => e.min > 0 && Number.isFinite(e.precio) && e.precio < precioBase)
-      .sort((a, b) => a.min - b.min);
-  })();
+  const siguienteEscala = enCarrito
+    ? obtenerSiguienteEscalaMayoreo(producto, cantidad)
+    : null;
 
   const stockBajo = !agotado &&
     producto.stock_ilimitado === false &&
-    (producto.stock_actual || 0) > 0 &&
-    (producto.stock_actual || 0) <= 5;
+    stockActual > 0 &&
+    stockActual <= 5;
+
+  async function compartirProducto() {
+    const url = new URL(window.location.href);
+    url.searchParams.set('producto', String(producto.id));
+    const shareData = {
+      title: producto.nombre,
+      text: t('product.shareText', { name: producto.nombre }),
+      url: url.toString(),
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setShareStatus('shared');
+      } else {
+        await navigator.clipboard.writeText(shareData.url);
+        setShareStatus('copied');
+      }
+    } catch (error) {
+      if (error?.name === 'AbortError') return;
+      setShareStatus('error');
+    }
+
+    if (shareTimerRef.current) clearTimeout(shareTimerRef.current);
+    shareTimerRef.current = setTimeout(() => setShareStatus('idle'), 2200);
+  }
 
   // JSON-LD inyectado en <head> mientras el modal está abierto
   const jsonLd = {
@@ -94,19 +162,12 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
     ),
     ...(marca ? { brand: { '@type': 'Brand', name: marca } } : {}),
     offers: {
-      '@type': agotado ? 'Offer' : 'AggregateOffer',
+      '@type': 'Offer',
       priceCurrency: 'MXN',
+      price: precioBase.toFixed(2),
       availability: agotado
         ? 'https://schema.org/OutOfStock'
         : 'https://schema.org/InStock',
-      ...(agotado
-        ? { price: precioBase.toFixed(2) }
-        : {
-            lowPrice: escalasMayoreo.length > 0
-              ? Math.min(...escalasMayoreo.map(e => e.precio)).toFixed(2)
-              : precioBase.toFixed(2),
-            highPrice: precioBase.toFixed(2),
-          }),
       seller: { '@type': 'Organization', name: 'Full Party Uruapan' },
     },
   };
@@ -115,7 +176,7 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
     <div className="fixed inset-0 z-[70]">
       <button
@@ -133,8 +194,9 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
           ref={dialogRef}
           role="dialog"
           aria-modal="true"
+          tabIndex={-1}
           aria-label={t('product.viewDetail', { name: producto.nombre })}
-          className={`relative w-full sm:max-w-[480px] md:max-w-[720px] lg:max-w-[800px]
+          className={`product-detail-dialog relative w-full sm:max-w-[480px] md:max-w-[720px] lg:max-w-[800px]
                      h-[92dvh] sm:h-auto
                      rounded-t-3xl sm:rounded-2xl overflow-hidden
                      shadow-2xl transition-all duration-200 ease-out
@@ -155,23 +217,51 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
             <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border-default)' }} />
           </div>
 
-          <button
-            type="button"
-            onClick={iniciarCierre}
-            className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full
-                       transition-all duration-200 hover:scale-105 active:scale-95
-                       flex items-center justify-center"
-            style={{
-              background: 'var(--surface-card-alpha80)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid var(--border-default)',
-              color: 'var(--text-primary)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-            }}
-            aria-label={t('common.close')}
+          <div
+            className="absolute top-3 right-3 z-10 flex items-center gap-2 md:left-3 md:right-auto"
+            data-testid="product-detail-actions"
           >
-            <X size={18} strokeWidth={2.5} />
-          </button>
+            <button
+              type="button"
+              onClick={compartirProducto}
+              className="flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-body font-black transition-all duration-200 hover:scale-105 active:scale-95"
+              style={{
+                background: 'var(--surface-card-alpha80)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid var(--border-default)',
+                color: shareStatus === 'error' ? '#dc2626' : 'var(--text-primary)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              }}
+              aria-label={t('product.share')}
+            >
+              {shareStatus === 'copied' || shareStatus === 'shared'
+                ? <Check size={15} strokeWidth={2.5} />
+                : <Share2 size={15} strokeWidth={2.5} />}
+              <span className="hidden sm:inline">
+                {shareStatus === 'copied' || shareStatus === 'shared'
+                  ? t('product.linkCopied')
+                  : shareStatus === 'error'
+                    ? t('product.shareError')
+                    : t('product.share')}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={iniciarCierre}
+              className="w-9 h-9 rounded-full transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center"
+              style={{
+                background: 'var(--surface-card-alpha80)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid var(--border-default)',
+                color: 'var(--text-primary)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              }}
+              aria-label={t('common.close')}
+            >
+              <X size={18} strokeWidth={2.5} />
+            </button>
+          </div>
 
           <div className="flex h-full flex-col md:flex-row md:items-stretch overflow-hidden">
             <div className="relative w-full md:w-1/2 shrink md:shrink-0 md:h-full min-h-0">
@@ -197,7 +287,7 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
                               md:pt-6 md:px-6 md:pb-6 flex flex-col">
 
                 {(esNuevo || agotado || stockBajo || (enCarrito && !agotado)) && (
-                  <div className="flex flex-wrap gap-1.5 mb-2.5">
+                  <div className="flex flex-wrap gap-1.5 mb-2.5" data-testid="product-status-badges">
                     {esNuevo && (
                       <span
                         className="inline-flex items-center gap-1 text-[10px] font-body font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white shadow-sm"
@@ -268,6 +358,34 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
                   )}
                 </div>
 
+                <div
+                  className="mt-3 flex items-start gap-2.5 rounded-xl px-3 py-2.5"
+                  style={{
+                    background: agotado ? 'rgba(220, 38, 38, 0.06)' : 'rgba(22, 163, 74, 0.06)',
+                    border: `1px solid ${agotado ? 'rgba(220, 38, 38, 0.16)' : 'rgba(22, 163, 74, 0.16)'}`,
+                  }}
+                >
+                  <PackageCheck
+                    className="mt-0.5 h-4 w-4 flex-shrink-0"
+                    style={{ color: agotado ? '#dc2626' : '#16a34a' }}
+                    aria-hidden="true"
+                  />
+                  <div>
+                    <p className="text-[12px] font-body font-black" style={{ color: agotado ? '#dc2626' : '#15803d' }}>
+                      {agotado
+                        ? t('common.notAvailable')
+                        : stockLimitado
+                          ? t('product.stockAvailable', { count: stockActual })
+                          : t('product.availableToOrder')}
+                    </p>
+                    {!agotado && (
+                      <p className="mt-0.5 text-[10px] font-body font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                        {t('product.availabilityHint')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
                 {producto.descripcion && (
                   <p className="text-[13px] sm:text-sm font-body leading-relaxed mt-3 line-clamp-4"
                      style={{ color: 'var(--text-secondary)' }}>
@@ -302,68 +420,138 @@ export default function ProductoDetalleModal({ producto, onCerrar, onAgregar, ca
                   </div>
                 )}
 
-                {escalasMayoreo.length > 0 && !agotado && (
-                  <div className="mt-4 rounded-xl overflow-hidden"
-                       style={{ border: '1px solid var(--border-soft)' }}>
-                    <div className="px-3 py-2 flex items-center gap-1.5"
-                         style={{ background: 'rgba(22,163,74,0.06)' }}>
-                      <span className="text-[11px]" aria-hidden="true">🏷️</span>
-                      <span className="text-[11px] font-body font-black" style={{ color: '#16a34a' }}>
-                        {t('product.wholesalePrices')}
+                {relacionados.length > 0 && (
+                  <section className="mt-4" aria-labelledby="related-products-title">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <h4 id="related-products-title" className="text-[12px] font-body font-black text-ink-800">
+                        {t('product.related')}
+                      </h4>
+                      <span className="text-[10px] font-body font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                        {categoria}
                       </span>
                     </div>
-                    <div className="divide-y" style={{ borderColor: 'var(--border-soft)' }}>
-                      {escalasMayoreo.map((e) => {
-                        const ahorro = Math.round((1 - e.precio / precioBase) * 100);
+                    <div className="grid grid-cols-3 gap-2">
+                      {relacionados.map((relacionado) => {
+                        const relatedImage = getSupabaseImageUrl(
+                          getSafeProductImageUrl(relacionado.imagen_url, relacionado.nombre, '240x240'),
+                          { width: 240, quality: 75 },
+                        );
                         return (
-                          <div key={e.min} className="flex items-center justify-between px-3 py-2"
-                               style={{ background: 'var(--surface-card)' }}>
-                            <span className="text-[12px] font-body font-semibold text-ink-600">
-                              {t('product.units', { count: e.min })}
+                          <button
+                            key={relacionado.id}
+                            type="button"
+                            onClick={() => onSeleccionarRelacionado?.(relacionado)}
+                            className="min-w-0 rounded-xl p-2 text-left transition-transform active:scale-95"
+                            style={{ background: 'var(--surface-input)', border: '1px solid var(--border-soft)' }}
+                            aria-label={t('product.viewRelated', { name: relacionado.nombre })}
+                          >
+                            <img
+                              src={relatedImage}
+                              alt=""
+                              className="aspect-square w-full rounded-lg object-contain"
+                              loading="lazy"
+                              onError={(event) => {
+                                event.currentTarget.onerror = null;
+                                event.currentTarget.src = getProductPlaceholderUrl(relacionado.nombre, '240x240');
+                              }}
+                            />
+                            <span className="mt-1.5 line-clamp-2 block text-[9px] font-body font-black leading-tight text-ink-800">
+                              {relacionado.nombre}
                             </span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[13px] font-body font-black" style={{ color: '#16a34a' }}>
-                                {SIMBOLO_MONEDA}{e.precio.toFixed(2)}
-                              </span>
-                              <span className="text-[9px] font-body font-bold px-1.5 py-0.5 rounded-full"
-                                    style={{ background: 'rgba(22,163,74,0.1)', color: '#16a34a' }}>
-                                −{ahorro}%
-                              </span>
-                            </div>
-                          </div>
+                            <span className="mt-1 block text-[10px] font-body font-black" style={{ color: 'var(--accent-primary)' }}>
+                              {SIMBOLO_MONEDA}{(Number(relacionado.precio) || 0).toFixed(2)}
+                            </span>
+                          </button>
                         );
                       })}
                     </div>
-                  </div>
+                  </section>
                 )}
 
               </div>
 
               <div className="px-5 pb-5 pt-2 md:px-6 md:pb-6 flex-shrink-0"
                    style={{ borderTop: '1px solid var(--border-soft)' }}>
-                <button
-                  type="button"
-                  onClick={() => onAgregar?.(producto)}
-                  disabled={agotado}
-                  className="w-full py-3.5 rounded-2xl font-body font-black text-[15px] text-white
-                             transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed
-                             flex items-center justify-center gap-2"
-                  style={{
-                    background: agotado
-                      ? 'linear-gradient(135deg, #c4b5fd, #a78bfa)'
-                      : 'linear-gradient(135deg, #ff3dac, #a855f7)',
-                    boxShadow: agotado ? 'none' : '0 6px 24px rgba(255,61,172,0.3)',
-                  }}
-                >
-                  {agotado ? (
-                    t('common.notAvailable')
-                  ) : (
-                    <>
-                      <ShoppingCart size={16} strokeWidth={2.5} />
-                      {enCarrito ? t('product.addAnother') : t('product.addToCart')}
-                    </>
-                  )}
-                </button>
+                {agotado ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="flex w-full items-center justify-center rounded-2xl py-3.5 text-[15px] font-body font-black text-white opacity-60"
+                    style={{ background: 'linear-gradient(135deg, #c4b5fd, #a78bfa)' }}
+                  >
+                    {t('common.notAvailable')}
+                  </button>
+                ) : enCarrito ? (
+                  <div>
+                    {siguienteEscala && (
+                      <p
+                        className="mb-2 rounded-xl px-3 py-1.5 text-center text-[11px] font-body font-black"
+                        style={{ background: 'rgba(22,163,74,0.08)', color: '#15803d' }}
+                      >
+                        {t('product.nextWholesaleTier', {
+                          count: siguienteEscala.faltantes,
+                          price: `${SIMBOLO_MONEDA}${siguienteEscala.precio.toFixed(2)}`,
+                        })}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="flex min-h-12 items-center rounded-2xl p-1"
+                        style={{ background: 'var(--surface-input)', border: '1px solid var(--border-default)' }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => onReducir?.(producto.id)}
+                          className="flex h-10 w-10 items-center justify-center rounded-xl transition-colors hover:bg-black/5 active:scale-95"
+                          aria-label={t('product.removeOne', { name: producto.nombre })}
+                        >
+                          <Minus size={17} strokeWidth={2.8} />
+                        </button>
+                        <span
+                          className="min-w-10 text-center text-base font-body font-black text-ink-900"
+                          aria-live="polite"
+                          aria-label={t(
+                            cantidad === 1 ? 'product.quantityInCartOne' : 'product.quantityInCart',
+                            { count: cantidad },
+                          )}
+                        >
+                          {cantidad}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => onAgregar?.(producto)}
+                          disabled={maxStockAlcanzado}
+                          className="flex h-10 w-10 items-center justify-center rounded-xl text-white transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                          style={{ background: 'var(--gradient-accent)' }}
+                          aria-label={t('product.addOne', { name: producto.nombre })}
+                        >
+                          <Plus size={17} strokeWidth={2.8} />
+                        </button>
+                      </div>
+                      <div className="min-w-0 flex-1 text-right">
+                        <p className="text-[10px] font-body font-bold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+                          {t('product.cartSubtotal')}
+                        </p>
+                        <p className="text-xl font-body font-black text-ink-900">
+                          {SIMBOLO_MONEDA}{subtotal.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onAgregar?.(producto)}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-[15px] font-body font-black text-white transition-all duration-200 active:scale-[0.98]"
+                    style={{
+                      background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
+                      boxShadow: '0 6px 24px rgba(255,61,172,0.3)',
+                    }}
+                  >
+                    <ShoppingCart size={16} strokeWidth={2.5} />
+                    {t('product.addToCart')}
+                  </button>
+                )}
               </div>
             </div>
           </div>

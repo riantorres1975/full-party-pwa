@@ -367,14 +367,6 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
                         </div>
                       )}
 
-                      {stockBajoRT && !agotadoRT && (
-                        <div className="absolute -top-2 -right-2 z-10 text-white text-[9px] font-body font-black
-                                        px-2 py-0.5 rounded-full shadow-md"
-                             style={{ background: 'var(--gradient-warning)' }}>
-                          {t('product.max', { count: prodReal.stock_actual })}
-                        </div>
-                      )}
-
                       <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-ink-50"
                            style={{ border: '2px solid var(--color-brand-soft-2)', filter: agotadoRT ? 'grayscale(60%)' : 'none' }}>
                         <img src={imageSrc} alt={item.nombre}
@@ -403,6 +395,14 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
                         <p className="font-body text-sm font-black mt-0.5" style={{ color: agotadoRT ? 'var(--text-inactive)' : c }}>
                           {SIMBOLO_MONEDA}{subtotal.toFixed(2)}
                         </p>
+                        {stockBajoRT && !agotadoRT && (
+                          <span
+                            className="mt-1 inline-flex rounded-full px-2 py-0.5 text-[9px] font-body font-black text-white"
+                            style={{ background: 'linear-gradient(135deg, #f97316, #dc2626)' }}
+                          >
+                            {t('product.max', { count: prodReal.stock_actual })}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         <button onClick={() => !agotadoRT && onReducir(item.id)}
@@ -419,7 +419,10 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
                         <span className="font-body font-black text-sm text-ink-900 w-5 text-center">{item.cantidad}</span>
 
                         {(() => {
-                          const maxStockAlcanzado = agotadoRT || (item.stock_ilimitado !== true && item.stock_actual != null && item.cantidad >= item.stock_actual);
+                          const maxStockAlcanzado = agotadoRT || (
+                            prodReal?.stock_ilimitado === false &&
+                            item.cantidad >= (Number(prodReal.stock_actual) || 0)
+                          );
                           return (
                             <button onClick={() => !maxStockAlcanzado && onAgregar(item)}
                               disabled={maxStockAlcanzado}

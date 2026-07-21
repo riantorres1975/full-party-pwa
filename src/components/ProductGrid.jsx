@@ -1,15 +1,65 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import ProductCard from './ProductCard';
 import ProductoDetalleModal from './ProductoDetalleModal';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { useLanguage } from '../hooks/useLanguage';
 
-export default function ProductGrid({ productos, getCantidad, onAgregar, onReducir, isFiltered = false, onClear }) {
+export default function ProductGrid({
+  productos,
+  catalogProducts = productos,
+  getCantidad,
+  onAgregar,
+  onReducir,
+  isFiltered = false,
+  onClear,
+}) {
   const { visibleCount, sentinelRef, hayMas, cargando, reset } = useInfiniteScroll(productos.length);
   const [productoDetalle, setProductoDetalle] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useLanguage();
+  const productId = searchParams.get('producto');
 
   useEffect(() => { reset(); }, [productos, reset]);
+
+  useEffect(() => {
+    if (!productId) {
+      setProductoDetalle(null);
+      return;
+    }
+
+    const linkedProduct = catalogProducts.find((producto) => String(producto.id) === productId);
+    if (linkedProduct) setProductoDetalle(linkedProduct);
+  }, [catalogProducts, productId]);
+
+  const openProductDetail = (producto) => {
+    setProductoDetalle(producto);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('producto', String(producto.id));
+    setSearchParams(nextParams);
+  };
+
+  const closeProductDetail = () => {
+    setProductoDetalle(null);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('producto');
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const relatedProducts = productoDetalle
+    ? catalogProducts
+        .filter((producto) => (
+          producto.id !== productoDetalle.id &&
+          producto.activo !== false &&
+          producto.categoria === productoDetalle.categoria
+        ))
+        .sort((a, b) => {
+          const aSameBrand = a.marca === productoDetalle.marca ? 1 : 0;
+          const bSameBrand = b.marca === productoDetalle.marca ? 1 : 0;
+          return bSameBrand - aSameBrand;
+        })
+        .slice(0, 3)
+    : [];
 
   const visibles = productos.slice(0, visibleCount);
 
@@ -46,7 +96,7 @@ export default function ProductGrid({ productos, getCantidad, onAgregar, onReduc
             cantidad={getCantidad(producto.id)}
             onAgregar={onAgregar}
             onReducir={onReducir}
-            onAbrirDetalle={setProductoDetalle}
+            onAbrirDetalle={openProductDetail}
           />
         ))}
       </div>
@@ -88,11 +138,11 @@ export default function ProductGrid({ productos, getCantidad, onAgregar, onReduc
       <ProductoDetalleModal
         producto={productoDetalle}
         cantidad={productoDetalle ? getCantidad(productoDetalle.id) : 0}
-        onCerrar={() => setProductoDetalle(null)}
-        onAgregar={(producto) => {
-          onAgregar(producto);
-          setProductoDetalle(null);
-        }}
+        relacionados={relatedProducts}
+        onCerrar={closeProductDetail}
+        onAgregar={onAgregar}
+        onReducir={onReducir}
+        onSeleccionarRelacionado={openProductDetail}
       />
     </div>
   );

@@ -392,6 +392,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                   {!loading && !error && (
                     <ProductGrid
                       productos={filteredProducts}
+                      catalogProducts={productos}
                       getCantidad={getCantidad}
                       onAgregar={agregarItem}
                       onReducir={reducirItem}

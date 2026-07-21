@@ -1,10 +1,6 @@
 import { memo } from 'react';
 import { SIMBOLO_MONEDA } from '../data/productos';
-import {
-  obtenerEscalasMayoreo,
-  obtenerPrecioAplicable,
-  obtenerSiguienteEscalaMayoreo,
-} from '../utils/precios';
+import { obtenerPrecioAplicable, obtenerSiguienteEscalaMayoreo } from '../utils/precios';
 import { useLanguage } from '../hooks/useLanguage';
 import OptimizedImage from './OptimizedImage';
 import Badge from './ui/Badge';
@@ -20,7 +16,9 @@ function ProductCardInner({
 }) {
   const { t } = useLanguage();
   const enCarrito  = cantidad > 0;
-  const agotado    = producto.activo === false;
+  const agotado = producto.activo === false || (
+    producto.stock_ilimitado === false && (Number(producto.stock_actual) || 0) <= 0
+  );
   const maxStockAlcanzado = producto.stock_ilimitado === false && cantidad >= (producto.stock_actual || 0);
   const precioBase = Number(producto.precio) || 0;
   const precioAplicable = obtenerPrecioAplicable(producto, cantidad || 1);
@@ -31,13 +29,6 @@ function ProductCardInner({
     producto.stock_ilimitado === false &&
     (producto.stock_actual || 0) > 0 &&
     (producto.stock_actual || 0) <= 5;
-
-  const mayoreoMinTier = (() => {
-    const primera = obtenerEscalasMayoreo(producto).find(e => e.precio < precioBase);
-    return primera
-      ? { min: primera.cantidad_minima, precio: primera.precio }
-      : null;
-  })();
   const siguienteEscala = enCarrito
     ? obtenerSiguienteEscalaMayoreo(producto, cantidad)
     : null;
@@ -60,7 +51,7 @@ function ProductCardInner({
       <button
         type="button"
         onClick={() => onAbrirDetalle?.(producto)}
-        className="w-full text-left cursor-pointer flex-1 flex flex-col"
+        className="product-card-detail-trigger w-full text-left cursor-pointer flex-1 flex flex-col focus-visible:bg-purple-50/30"
       >
         <div className="relative">
           <OptimizedImage
@@ -127,18 +118,6 @@ function ProductCardInner({
               <span className="font-body font-black text-[13px] sm:text-[14px] text-ink-900">
                 {SIMBOLO_MONEDA}{precioBase.toFixed(2)}
               </span>
-            )}
-            {mayoreoMinTier && !agotado && (
-              <div className="flex items-center gap-1 mt-1">
-                <span className="text-[10px]" aria-hidden="true">🏷️</span>
-                <span className="text-[10px] font-body font-bold"
-                      style={{ color: 'var(--text-success)' }}>
-                  {SIMBOLO_MONEDA}{mayoreoMinTier.precio.toFixed(2)} {t('product.eachUnit')}
-                </span>
-                <span className="text-[9px] font-body font-semibold text-ink-400">
-                  {t('product.buying', { min: mayoreoMinTier.min })}
-                </span>
-              </div>
             )}
           </div>
         </div>
