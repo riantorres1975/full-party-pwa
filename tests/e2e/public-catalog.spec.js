@@ -31,6 +31,27 @@ test('the landing page presents a clear path to shop on every viewport', async (
   expect(pageErrors).toEqual([]);
 });
 
+test('the landing proof remains contained at the tablet breakpoint', async ({ page }) => {
+  await page.setViewportSize({ width: 710, height: 820 });
+  await page.goto('/');
+
+  const layout = await page.locator('.lp-hero-proof').evaluate((proof) => {
+    const proofRect = proof.getBoundingClientRect();
+    const items = [...proof.querySelectorAll('.lp-proof-item')];
+
+    return {
+      columns: getComputedStyle(proof).gridTemplateColumns.split(' ').length,
+      itemsContained: items.every((item) => {
+        const itemRect = item.getBoundingClientRect();
+        return itemRect.left >= proofRect.left && itemRect.right <= proofRect.right;
+      }),
+    };
+  });
+
+  expect(layout.columns).toBe(2);
+  expect(layout.itemsContained).toBe(true);
+});
+
 test('the public catalog remains usable without horizontal overflow', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
