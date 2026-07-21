@@ -172,16 +172,11 @@ async function fetchAndCacheImage(request) {
   }
 }
 
-async function handleImage(request, event) {
+async function handleImage(request) {
   const cached = await caches.match(request);
-  const revalidate = fetchAndCacheImage(request);
+  if (cached) return cached;
 
-  if (cached) {
-    event.waitUntil(revalidate);
-    return cached;
-  }
-
-  return (await revalidate) || new Response('', { status: 404 });
+  return (await fetchAndCacheImage(request)) || new Response('', { status: 404 });
 }
 
 async function handleHashedAsset(request, event) {
@@ -237,7 +232,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isImageRequest(request)) {
-    event.respondWith(handleImage(request, event));
+    event.respondWith(handleImage(request));
     return;
   }
 

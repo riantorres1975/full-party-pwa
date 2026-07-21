@@ -542,6 +542,10 @@ export default function CarritoDrawer({
                       <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-ink-50"
                            style={{ border: '2px solid var(--color-brand-soft-2)', filter: agotadoRT ? 'grayscale(60%)' : 'none' }}>
                         <img src={imageSrc} alt={item.nombre}
+                          width="56"
+                          height="56"
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-contain"
                           onError={(e) => {
                             e.currentTarget.onerror = null;

@@ -230,7 +230,8 @@ export async function subirImagenProducto(file, { nombreProducto = '' } = {}) {
   const { error: upErr } = await supabase.storage
     .from(BUCKET_IMAGENES_PRODUCTOS)
     .upload(path, archivoSubida, {
-      cacheControl: '3600',
+      // Cada ruta incluye un UUID y nunca se sobrescribe, por lo que es inmutable.
+      cacheControl: '31536000',
       upsert: false,
       contentType: archivoSubida.type,
     });

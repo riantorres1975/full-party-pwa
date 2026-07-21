@@ -286,6 +286,11 @@ export default function ProductoDetalleModal({
                 <img
                   src={imageSrc}
                   alt={producto.nombre}
+                  width="900"
+                  height="900"
+                  loading="eager"
+                  decoding="async"
+                  fetchpriority="high"
                   className="w-full h-full object-contain transition-transform duration-500 sm:hover:scale-[1.05]"
                   onError={(e) => {
                     e.currentTarget.onerror = null;
@@ -461,8 +466,11 @@ export default function ProductoDetalleModal({
                             <img
                               src={relatedImage}
                               alt=""
+                              width="240"
+                              height="240"
                               className="aspect-square w-full rounded-lg object-contain"
                               loading="lazy"
+                              decoding="async"
                               onError={(event) => {
                                 event.currentTarget.onerror = null;
                                 event.currentTarget.src = getProductPlaceholderUrl(relacionado.nombre, '240x240');
