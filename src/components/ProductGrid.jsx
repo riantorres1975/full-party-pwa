@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProductCard from './ProductCard';
-import ProductoDetalleModal from './ProductoDetalleModal';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { useLanguage } from '../hooks/useLanguage';
 import { obtenerProductosRelacionados } from '../utils/productosRelacionados';
+
+const ProductoDetalleModal = lazy(() => import('./ProductoDetalleModal'));
 
 export default function ProductGrid({
   productos,
@@ -47,9 +48,15 @@ export default function ProductGrid({
     setSearchParams(nextParams, { replace: true });
   };
 
-  const relatedProducts = obtenerProductosRelacionados(catalogProducts, productoDetalle);
+  const relatedProducts = useMemo(
+    () => obtenerProductosRelacionados(catalogProducts, productoDetalle),
+    [catalogProducts, productoDetalle],
+  );
 
-  const visibles = productos.slice(0, visibleCount);
+  const visibles = useMemo(
+    () => productos.slice(0, visibleCount),
+    [productos, visibleCount],
+  );
 
   if (productos.length === 0) {
     return (
@@ -123,15 +130,19 @@ export default function ProductGrid({
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
 
-      <ProductoDetalleModal
-        producto={productoDetalle}
-        cantidad={productoDetalle ? getCantidad(productoDetalle.id) : 0}
-        relacionados={relatedProducts}
-        onCerrar={closeProductDetail}
-        onAgregar={onAgregar}
-        onReducir={onReducir}
-        onSeleccionarRelacionado={openProductDetail}
-      />
+      {productoDetalle && (
+        <Suspense fallback={null}>
+          <ProductoDetalleModal
+            producto={productoDetalle}
+            cantidad={getCantidad(productoDetalle.id)}
+            relacionados={relatedProducts}
+            onCerrar={closeProductDetail}
+            onAgregar={onAgregar}
+            onReducir={onReducir}
+            onSeleccionarRelacionado={openProductDetail}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

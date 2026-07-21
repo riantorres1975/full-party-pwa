@@ -171,6 +171,8 @@ test('the catalog can be sorted and the cart guides order completion', async ({ 
 test('a product detail is shareable and supports shopping without closing', async ({ page }) => {
   await page.goto('/catalogo');
   await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
+  const catalogTitle = await page.title();
+  const catalogCanonical = await page.locator('link[rel="canonical"]').getAttribute('href');
 
   const firstProduct = page.locator('article.product-card').first();
   const productName = await firstProduct.locator('h3').innerText();
@@ -181,6 +183,14 @@ test('a product detail is shareable and supports shopping without closing', asyn
   let detail = page.getByRole('dialog', { name: `Ver detalle de ${productName}`, exact: true });
   await expect(detail).toBeVisible();
   await expect(detail.getByRole('heading', { name: productName })).toBeVisible();
+  await expect(page).toHaveTitle(`${productName} | Full Party Uruapan`);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', productUrl);
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
+    'content',
+    `${productName} | Full Party Uruapan`,
+  );
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', productUrl);
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image');
   await expect.poll(() => detail.evaluate((dialog) => document.activeElement === dialog)).toBe(true);
   await expect(detail.getByRole('button', { name: 'Compartir' })).toBeVisible();
   await expect(detail.getByText('Precios por mayoreo', { exact: true })).toHaveCount(0);
@@ -202,6 +212,8 @@ test('a product detail is shareable and supports shopping without closing', asyn
 
   await page.keyboard.press('Escape');
   await expect(detail).toBeHidden();
+  await expect(page).toHaveTitle(catalogTitle);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', catalogCanonical);
   await expect.poll(() => firstProduct.locator('button').first().evaluate(
     (button) => getComputedStyle(button).outlineStyle,
   )).toBe('none');

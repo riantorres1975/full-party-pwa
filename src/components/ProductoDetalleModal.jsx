@@ -16,6 +16,7 @@ import { obtenerPrecioAplicable, obtenerSiguienteEscalaMayoreo } from '../utils/
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useLanguage } from '../hooks/useLanguage';
 import { getProductPlaceholderUrl, getSafeProductImageUrl, getSupabaseImageUrl } from '../utils/imagenes';
+import { applyProductSeo, buildProductSeo } from '../utils/productSeo';
 
 export default function ProductoDetalleModal({
   producto,
@@ -77,22 +78,16 @@ export default function ProductoDetalleModal({
     if (!producto) return undefined;
 
     setShareStatus('idle');
-    const previousTitle = document.title;
-    const descriptionMeta = document.querySelector('meta[name="description"]');
-    const previousDescription = descriptionMeta?.getAttribute('content') || '';
+    const productImage = getSupabaseImageUrl(
+      getSafeProductImageUrl(producto.imagen_url, producto.nombre, '900x900'),
+      { width: 900, quality: 85 },
+    );
+    const metadata = buildProductSeo(producto, {
+      pageUrl: window.location.href,
+      imageUrl: productImage,
+    });
 
-    document.title = `${producto.nombre} | Full Party Uruapan`;
-    if (descriptionMeta) {
-      descriptionMeta.setAttribute(
-        'content',
-        producto.descripcion || `${producto.nombre}. Consulta precio, mayoreo y disponibilidad en Full Party Uruapan.`,
-      );
-    }
-
-    return () => {
-      document.title = previousTitle;
-      if (descriptionMeta) descriptionMeta.setAttribute('content', previousDescription);
-    };
+    return applyProductSeo(document, metadata);
   }, [producto]);
 
   if (!producto) return null;
