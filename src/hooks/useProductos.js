@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { registrarCategoria, registrarMarca, registrarTamano } from '../data/productos';
+import { fetchAllPublicProducts } from '../lib/productosPublicos';
 
 const PRODUCTOS_CACHE_KEY = 'fp_productos_cache_v1';
 const LCP_IMAGE_KEY = 'fp_lcp_image_v1';
@@ -82,12 +83,16 @@ export function useProductos() {
   useEffect(() => {
     let cancelado = false; // evita setState en componente desmontado
 
-    const baseQuery = () =>
-      supabase
-        .from('productos')
-        .select('*')
-        .order('activo', { ascending: false })
-        .order('nombre', { ascending: true });
+    const baseQuery = async ({ acceptPartial = false, ...options } = {}) => {
+      const result = await fetchAllPublicProducts(supabase, options);
+
+      if (acceptPartial && result.error && result.data.length > 0) {
+        console.warn('[useProductos] Carga parcial del catálogo', result.error.code);
+        return { ...result, error: null };
+      }
+
+      return result;
+    };
 
     async function fetchProductos() {
       if (productos.length === 0) {
@@ -98,11 +103,24 @@ export function useProductos() {
       const enPrimerArranqueSinCache = productos.length === 0 && tick === 0;
 
       if (enPrimerArranqueSinCache) {
-        const { data: primerLote, error: primerError } = await baseQuery();
+        const { data: primerLote, error: primerError } = await baseQuery({
+          acceptPartial: true,
+          onPage: (partialProducts, { pageIndex }) => {
+            if (cancelado || pageIndex !== 0 || partialProducts.length === 0) return;
+
+            registrarMetadatosProductos(partialProducts);
+            writeProductosCache(partialProducts);
+            writeLcpImageHint(partialProducts);
+            setProductos(partialProducts);
+            setUsingCachedData(false);
+            setIsInitialSyncing(false);
+            setLoading(false);
+          },
+        });
 
         if (cancelado) return;
 
-        if (!primerError && Array.isArray(primerLote) && primerLote.length > 0) {
+        if (!primerError && Array.isArray(primerLote)) {
           registrarMetadatosProductos(primerLote);
           writeProductosCache(primerLote);
           writeLcpImageHint(primerLote);
