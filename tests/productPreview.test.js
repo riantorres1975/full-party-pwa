@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildProductPreviewHtml, escapeHtml } from '../api/product-preview.js';
+import productPreviewHandler, {
+  buildProductCatalogUrl,
+  buildProductPreviewHtml,
+  escapeHtml,
+  shouldServePreviewHtml,
+} from '../api/product-preview.js';
 
 test('escapes untrusted product data in preview metadata', () => {
   const html = buildProductPreviewHtml(
@@ -59,4 +64,68 @@ test('renders a safe catalog fallback when a product is unavailable', () => {
 
 test('escapeHtml covers attribute-sensitive characters', () => {
   assert.equal(escapeHtml('&<>"\''), '&amp;&lt;&gt;&quot;&#39;');
+});
+
+test('distinguishes social crawlers from interactive browsers', () => {
+  assert.equal(shouldServePreviewHtml('facebookexternalhit/1.1'), true);
+  assert.equal(shouldServePreviewHtml('WhatsApp/2.24.7 Android'), true);
+  assert.equal(shouldServePreviewHtml('Twitterbot/1.0'), true);
+  assert.equal(
+    shouldServePreviewHtml('Mozilla/5.0 (Linux; Android 14) Chrome/126.0 Mobile Safari/537.36'),
+    false,
+  );
+  assert.equal(
+    shouldServePreviewHtml('Mozilla/5.0 (iPhone; CPU iPhone OS 17_5) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1'),
+    false,
+  );
+  assert.equal(shouldServePreviewHtml('Dalvik/2.1.0 (Linux; Android 13)'), false);
+  assert.equal(shouldServePreviewHtml('curl/8.0'), true);
+});
+
+test('builds a safe catalog destination for a shared product', () => {
+  assert.equal(
+    buildProductCatalogUrl('product-42', 'https://www.fullpartyuruapan.com.mx'),
+    'https://www.fullpartyuruapan.com.mx/catalogo?producto=product-42',
+  );
+});
+
+test('redirects interactive browsers before fetching product metadata', async () => {
+  const originalFetch = globalThis.fetch;
+  let fetchCalled = false;
+  globalThis.fetch = async () => {
+    fetchCalled = true;
+    throw new Error('The browser redirect must not query Supabase');
+  };
+  const headers = new Map();
+  const response = {
+    statusCode: 200,
+    ended: false,
+    setHeader(name, value) {
+      headers.set(name.toLowerCase(), value);
+    },
+    end() {
+      this.ended = true;
+      return this;
+    },
+  };
+
+  try {
+    await productPreviewHandler({
+      method: 'GET',
+      query: { id: 'product-42' },
+      headers: { 'user-agent': 'Mozilla/5.0 Chrome/126.0 Mobile Safari/537.36' },
+    }, response);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(response.statusCode, 307);
+  assert.equal(response.ended, true);
+  assert.equal(fetchCalled, false);
+  assert.equal(
+    headers.get('location'),
+    'https://www.fullpartyuruapan.com.mx/catalogo?producto=product-42',
+  );
+  assert.equal(headers.get('cache-control'), 'private, no-store');
+  assert.equal(headers.get('cdn-cache-control'), 'no-store');
 });

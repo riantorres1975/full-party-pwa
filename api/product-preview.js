@@ -1,5 +1,7 @@
 const DEFAULT_SITE_URL = 'https://www.fullpartyuruapan.com.mx';
 const DEFAULT_DESCRIPTION = 'Consulta precio y disponibilidad en Full Party Uruapan.';
+const SOCIAL_PREVIEW_CRAWLER_RE = /(?:facebookexternalhit|facebot|whatsapp|twitterbot|linkedinbot|slackbot|telegrambot|discordbot|pinterestbot|googlebot|bingbot|applebot|duckduckbot|embedly|quora link preview|vkshare)/i;
+const INTERACTIVE_BROWSER_RE = /(?:mozilla\/5\.0|chrome\/|crios\/|safari\/|firefox\/|fxios\/|edg\/|opr\/|android|iphone|ipad|mobile)/i;
 const PRODUCT_FIELDS = [
   'id',
   'nombre',
@@ -60,6 +62,21 @@ function getAvailability(product) {
   return unavailable ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock';
 }
 
+export function shouldServePreviewHtml(userAgent = '') {
+  const value = String(userAgent || '');
+  if (SOCIAL_PREVIEW_CRAWLER_RE.test(value)) return true;
+  if (INTERACTIVE_BROWSER_RE.test(value)) return false;
+  return true;
+}
+
+export function buildProductCatalogUrl(productId, siteOrigin = DEFAULT_SITE_URL) {
+  const catalogUrl = new URL('/catalogo', siteOrigin);
+  if (productId !== undefined && productId !== null && String(productId)) {
+    catalogUrl.searchParams.set('producto', String(productId));
+  }
+  return catalogUrl.toString();
+}
+
 export function buildProductPreviewHtml(product, { siteOrigin = DEFAULT_SITE_URL } = {}) {
   const validProduct = product && product.id !== undefined && product.id !== null;
   const id = validProduct ? String(product.id) : '';
@@ -70,8 +87,7 @@ export function buildProductPreviewHtml(product, { siteOrigin = DEFAULT_SITE_URL
       : 'Explora el catálogo de productos de Full Party Uruapan.'),
   );
   const title = validProduct ? `${name} | Full Party Uruapan` : name;
-  const catalogUrl = new URL('/catalogo', siteOrigin);
-  if (validProduct) catalogUrl.searchParams.set('producto', id);
+  const catalogUrl = new URL(buildProductCatalogUrl(validProduct ? id : '', siteOrigin));
   const shareUrl = validProduct
     ? new URL(`/p/${encodeURIComponent(id)}`, siteOrigin).toString()
     : catalogUrl.toString();
@@ -164,10 +180,6 @@ async function fetchProduct(id) {
 }
 
 export default async function handler(request, response) {
-  response.setHeader('Content-Type', 'text/html; charset=utf-8');
-  response.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-  response.setHeader('CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=86400');
-
   if (!['GET', 'HEAD'].includes(request.method)) {
     response.setHeader('Allow', 'GET, HEAD');
     return response.status(405).send('Método no permitido');
@@ -175,6 +187,19 @@ export default async function handler(request, response) {
 
   const siteOrigin = getSiteOrigin();
   const productId = getProductId(request);
+  const catalogUrl = buildProductCatalogUrl(productId, siteOrigin);
+  const userAgent = request.headers?.['user-agent'] || '';
+
+  response.setHeader('Cache-Control', 'private, no-store');
+  response.setHeader('CDN-Cache-Control', 'no-store');
+
+  if (!shouldServePreviewHtml(userAgent)) {
+    response.statusCode = 307;
+    response.setHeader('Location', catalogUrl);
+    return response.end();
+  }
+
+  response.setHeader('Content-Type', 'text/html; charset=utf-8');
   let product = null;
 
   if (productId) {
