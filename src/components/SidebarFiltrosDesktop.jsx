@@ -141,7 +141,7 @@ export default function SidebarFiltrosDesktop({ filtros, toggleFiltro, limpiarFi
                  boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}
       >
         <div className="flex items-center justify-between gap-2">
-          <h3 className="font-display text-lg text-ink-900">{t('common.filters')}</h3>
+          <h2 className="font-display text-lg text-ink-900">{t('common.filters')}</h2>
           <button
             onClick={limpiarFiltros}
             disabled={totalFiltrosActivos === 0}

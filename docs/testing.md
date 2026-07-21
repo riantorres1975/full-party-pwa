@@ -32,3 +32,16 @@ npm run test:e2e
 Usa `E2E_BASE_URL` para probar un despliegue existente en lugar del servidor
 local. Playwright guarda capturas, video y trazas solamente cuando una prueba
 falla; esos artefactos estan excluidos de Git.
+
+## Lighthouse
+
+Con `npm run preview` activo en el puerto 4173, ejecuta:
+
+```bash
+npm run lighthouse:pwa
+```
+
+Lighthouse 13 ya no publica una categoria PWA independiente. El manifiesto y
+el registro del Service Worker se validan dentro de las pruebas E2E publicas.
+La misma suite ejecuta axe sobre el catalogo cargado para detectar regresiones
+de accesibilidad, incluidos contraste, nombres accesibles y estructura ARIA.

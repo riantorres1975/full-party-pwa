@@ -53,7 +53,6 @@ function ProductCardInner({
           ? '0 4px 20px rgba(168, 85, 247, 0.18)'
           : undefined,
         animation: esNuevo ? 'cardNuevoGlow 3s ease-in-out infinite' : undefined,
-        opacity: agotado ? 0.65 : 1,
       }}
     >
       <button

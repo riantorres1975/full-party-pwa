@@ -3,7 +3,6 @@ import { supabase } from '../lib/supabase';
 import { registrarCategoria, registrarMarca, registrarTamano } from '../data/productos';
 
 const PRODUCTOS_CACHE_KEY = 'fp_productos_cache_v1';
-const INITIAL_PRODUCT_COUNT = 40;
 const LCP_IMAGE_KEY = 'fp_lcp_image_v1';
 
 function writeLcpImageHint(lista) {
@@ -99,15 +98,19 @@ export function useProductos() {
       const enPrimerArranqueSinCache = productos.length === 0 && tick === 0;
 
       if (enPrimerArranqueSinCache) {
-        const { data: primerLote, error: primerError } = await baseQuery().limit(INITIAL_PRODUCT_COUNT);
+        const { data: primerLote, error: primerError } = await baseQuery();
 
         if (cancelado) return;
 
         if (!primerError && Array.isArray(primerLote) && primerLote.length > 0) {
           registrarMetadatosProductos(primerLote);
+          writeProductosCache(primerLote);
           writeLcpImageHint(primerLote);
           setProductos(primerLote);
+          setUsingCachedData(false);
+          setIsInitialSyncing(false);
           setLoading(false);
+          return;
         }
 
         const { data, error: sbError } = await baseQuery();
@@ -170,9 +173,19 @@ export function useProductos() {
   }, [tick]);
 
   useEffect(() => {
-    const refreshWhenOnline = () => setTick((current) => current + 1);
+    let wasOffline = !navigator.onLine;
+    const markOffline = () => { wasOffline = true; };
+    const refreshWhenOnline = () => {
+      if (!wasOffline) return;
+      wasOffline = false;
+      setTick((current) => current + 1);
+    };
+    window.addEventListener('offline', markOffline);
     window.addEventListener('online', refreshWhenOnline);
-    return () => window.removeEventListener('online', refreshWhenOnline);
+    return () => {
+      window.removeEventListener('offline', markOffline);
+      window.removeEventListener('online', refreshWhenOnline);
+    };
   }, []);
 
   // Realtime subscription for product INSERT / UPDATE / DELETE

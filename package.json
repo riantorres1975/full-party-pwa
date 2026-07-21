@@ -13,7 +13,7 @@
     "test:e2e:report": "playwright show-report",
     "test:permissions": "node --test tests/permissions.test.js",
     "lighthouse": "lighthouse http://localhost:4173 --output html --output-path ./lighthouse-report.html --chrome-flags=\"--headless\"",
-    "lighthouse:pwa": "lighthouse http://localhost:4173 --preset=perf --only-categories=performance,accessibility,best-practices,seo,pwa --output html --output-path ./lighthouse-report.html --chrome-flags=\"--headless\"",
+    "lighthouse:pwa": "lighthouse http://localhost:4173/catalogo --preset=perf --only-categories=performance,accessibility,best-practices,seo --output html --output-path ./lighthouse-report.html --chrome-flags=\"--headless\"",
     "axe": "axe http://localhost:4173"
   },
   "dependencies": {
@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@axe-core/cli": "^4.11.1",
+    "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "^1.61.1",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
