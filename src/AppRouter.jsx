@@ -5,6 +5,7 @@ import { LanguageProvider } from './hooks/useLanguage';
 import AppErrorBoundary from './components/ui/AppErrorBoundary';
 
 const AuthCatalogRoutes = lazy(() => import('./routes/AuthCatalogRoutes'));
+const PublicCatalogRoute = lazy(() => import('./routes/PublicCatalogRoute'));
 const Sucursales        = lazy(() => import('./pages/Sucursales'));
 const ComoFunciona      = lazy(() => import('./pages/ComoFunciona'));
 const Destacados        = lazy(() => import('./pages/Destacados'));
@@ -290,7 +291,7 @@ export default function AppRouter() {
             path="/catalogo"
             element={
               <Suspense fallback={Spinner}>
-                <AuthCatalogRoutes />
+                <PublicCatalogRoute />
               </Suspense>
             }
           />
@@ -298,7 +299,7 @@ export default function AppRouter() {
             path="/catalogo/:categoria"
             element={
               <Suspense fallback={Spinner}>
-                <AuthCatalogRoutes />
+                <PublicCatalogRoute />
               </Suspense>
             }
           />

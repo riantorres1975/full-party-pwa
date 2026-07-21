@@ -6,6 +6,7 @@
 
 /* ─── Decoración de confetti fijo en el fondo (solo catálogo público) ──── */
 body.catalogo::before {
+  display: none;
   content: '🎉 🎈 ⭐ 🎊 🌟 🎀 🎁 🥳 🎶 🎉 🎈 ⭐ 🎊 🌟';
   position: fixed;
   top: -10px;

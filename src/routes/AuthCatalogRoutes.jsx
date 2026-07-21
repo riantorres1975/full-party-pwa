@@ -1,7 +1,6 @@
 import { useEffect, lazy, Suspense } from 'react';
 import { useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom';
 import '../catalog.css'; // Estilos exclusivos del catálogo/admin (dark-mode, etc.)
-import App from '../App';
 import LoginAdmin from '../components/LoginAdmin';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
@@ -206,9 +205,5 @@ export default function AuthCatalogRoutes() {
     );
   }
 
-  return (
-    <ToastProvider>
-      <App temaOscuro={isDarkMode} onToggleTema={toggleTheme} isAdmin={!!session} />
-    </ToastProvider>
-  );
+  return <Navigate to="/" replace />;
 }

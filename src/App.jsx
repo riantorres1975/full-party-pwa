@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback, useDeferredValue } from 'react';
+import { lazy, Suspense, useState, useMemo, useEffect, useRef, useCallback, useDeferredValue } from 'react';
 import { useProductos }      from './hooks/useProductos';
 import { useCarrito }        from './hooks/useCarrito';
 import { useToast }          from './components/ui/ToastProvider';
@@ -8,21 +8,22 @@ import { usePedidosHabilitados } from './hooks/usePedidosHabilitados';
 import { useLanguage }        from './hooks/useLanguage';
 import Header             from './components/Header';
 import BuscadorFiltros    from './components/BuscadorFiltros';
-import ModalFiltros       from './components/ModalFiltros';
 import ProductGrid        from './components/ProductGrid';
 import ProductosSkeleton  from './components/ProductosSkeleton';
-import CarritoDrawer      from './components/CarritoDrawer';
-import RastreoPedido      from './components/RastreoPedido';
 import RedesSociales      from './components/RedesSociales';
 import SidebarFiltrosDesktop from './components/SidebarFiltrosDesktop';
 import CategoryGrid, { CategoryGridSkeleton } from './components/CategoryGrid';
-import CategoryBrowser from './components/CategoryBrowser';
 import BottomNav from './components/BottomNav';
 import CatalogToolbar from './components/CatalogToolbar';
 import { createFuzzySearchIndex } from './utils/fuzzySearch';
 import { buildProductAnalyticsParams, trackEvent } from './utils/analytics';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useProductPreferences } from './hooks/useProductPreferences';
+
+const CarritoDrawer = lazy(() => import('./components/CarritoDrawer'));
+const CategoryBrowser = lazy(() => import('./components/CategoryBrowser'));
+const ModalFiltros = lazy(() => import('./components/ModalFiltros'));
+const RastreoPedido = lazy(() => import('./components/RastreoPedido'));
 
 const PRODUCT_SEARCH_KEYS = [
   { name: 'nombre', weight: 0.5 },
@@ -52,6 +53,9 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
   const [isCategoryBrowserOpen, setIsCategoryBrowserOpen] = useState(false);
+  const [hasOpenedCart, setHasOpenedCart] = useState(false);
+  const [hasOpenedFilters, setHasOpenedFilters] = useState(false);
+  const [hasOpenedCategoryBrowser, setHasOpenedCategoryBrowser] = useState(false);
   const [bottomNavActive, setBottomNavActive] = useState('inicio');
   const [sortOrder, setSortOrder] = useState('featured');
   const [showFavorites, setShowFavorites] = useState(false);
@@ -82,6 +86,18 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     recordViewedProduct,
   } = useProductPreferences();
 
+  const deferredPanelFallback = (
+    <div
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-ink-950/20 backdrop-blur-sm"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="rounded-2xl bg-white px-5 py-3 font-body text-sm font-black text-ink-700 shadow-xl">
+        {t('common.loading')}
+      </div>
+    </div>
+  );
+
   const addCatalogItem = useCallback((product) => {
     agregarItem(product);
     trackEvent('catalog_add_to_cart', buildProductAnalyticsParams(product, {
@@ -106,8 +122,19 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
       value: total,
       currency: 'MXN',
     });
+    setHasOpenedCart(true);
     setIsCartOpen(true);
   }, [cantidadTotal, items.length, total]);
+
+  const openFilters = () => {
+    setHasOpenedFilters(true);
+    setAreFiltersOpen(true);
+  };
+
+  const openCategoryBrowser = () => {
+    setHasOpenedCategoryBrowser(true);
+    setIsCategoryBrowserOpen(true);
+  };
 
   const handleToggleFavorite = useCallback((product, source) => {
     const nextFavoriteState = !isFavorite(product.id);
@@ -317,7 +344,11 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   // Render
   // Full-screen tracking view
   if (isTrackingOpen) {
-    return <RastreoPedido onCerrar={() => setIsTrackingOpen(false)} />;
+    return (
+      <Suspense fallback={deferredPanelFallback}>
+        <RastreoPedido onCerrar={() => setIsTrackingOpen(false)} />
+      </Suspense>
+    );
   }
 
   return (
@@ -347,7 +378,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
               filtros={activeFilters}
               toggleFiltro={toggleFilter}
               totalFiltrosActivos={activeFilterCount}
-              onAbrirFiltros={() => setAreFiltersOpen(true)}
+              onAbrirFiltros={openFilters}
               productos={productos}
               categoryStats={isInitialSyncing ? [] : categoryStats}
               onSelectCategory={selectCategory}
@@ -444,7 +475,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     onSelectCategory={selectCategory}
                     onViewAll={() => {
                       setBottomNavActive('categorias');
-                      setIsCategoryBrowserOpen(true);
+                      openCategoryBrowser();
                     }}
                   />
                 )}
@@ -536,43 +567,55 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
           onInicio={resetCatalog}
           onCategorias={() => {
             setBottomNavActive('categorias');
-            setIsCategoryBrowserOpen(true);
+            openCategoryBrowser();
           }}
           onBuscar={focusSearch}
           onPedido={() => openCart('bottom_nav')}
         />
       </div>
 
-      <CarritoDrawer
-        items={items}
-        isOpen={isCartOpen}
-        onCerrar={() => setIsCartOpen(false)}
-        onAgregar={addCartItem}
-        onReducir={reducirItem}
-        onLimpiar={limpiarCarrito}
-        productos={productos}
-        pedidosHabilitados={pedidosHabilitados}
-        isOnline={isOnline}
-      />
+      {hasOpenedCart && (
+        <Suspense fallback={deferredPanelFallback}>
+          <CarritoDrawer
+            items={items}
+            isOpen={isCartOpen}
+            onCerrar={() => setIsCartOpen(false)}
+            onAgregar={addCartItem}
+            onReducir={reducirItem}
+            onLimpiar={limpiarCarrito}
+            productos={productos}
+            pedidosHabilitados={pedidosHabilitados}
+            isOnline={isOnline}
+          />
+        </Suspense>
+      )}
 
-      <ModalFiltros
-        isOpen={areFiltersOpen}
-        onCerrar={() => setAreFiltersOpen(false)}
-        filtros={activeFilters}
-        toggleFiltro={toggleFilter}
-        onPrecioChange={setPriceFilter}
-        priceBounds={priceBounds}
-        limpiarFiltros={clearFilters}
-        totalResultados={filteredProducts.length}
-      />
+      {hasOpenedFilters && (
+        <Suspense fallback={deferredPanelFallback}>
+          <ModalFiltros
+            isOpen={areFiltersOpen}
+            onCerrar={() => setAreFiltersOpen(false)}
+            filtros={activeFilters}
+            toggleFiltro={toggleFilter}
+            onPrecioChange={setPriceFilter}
+            priceBounds={priceBounds}
+            limpiarFiltros={clearFilters}
+            totalResultados={filteredProducts.length}
+          />
+        </Suspense>
+      )}
 
-      <CategoryBrowser
-        isOpen={isCategoryBrowserOpen}
-        categories={categoryStats}
-        popularCategories={topBrowserCategories}
-        onClose={() => setIsCategoryBrowserOpen(false)}
-        onSelectCategory={selectCategory}
-      />
+      {hasOpenedCategoryBrowser && (
+        <Suspense fallback={deferredPanelFallback}>
+          <CategoryBrowser
+            isOpen={isCategoryBrowserOpen}
+            categories={categoryStats}
+            popularCategories={topBrowserCategories}
+            onClose={() => setIsCategoryBrowserOpen(false)}
+            onSelectCategory={selectCategory}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
