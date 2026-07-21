@@ -17,7 +17,7 @@ import { obtenerPrecioAplicable, obtenerSiguienteEscalaMayoreo } from '../utils/
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useLanguage } from '../hooks/useLanguage';
 import { getProductPlaceholderUrl, getSafeProductImageUrl, getSupabaseImageUrl } from '../utils/imagenes';
-import { applyProductSeo, buildProductSeo } from '../utils/productSeo';
+import { applyProductSeo, buildProductSeo, buildProductShareUrl } from '../utils/productSeo';
 
 export default function ProductoDetalleModal({
   producto,
@@ -123,12 +123,10 @@ export default function ProductoDetalleModal({
     stockActual <= 5;
 
   async function compartirProducto() {
-    const url = new URL(window.location.href);
-    url.searchParams.set('producto', String(producto.id));
     const shareData = {
       title: producto.nombre,
       text: t('product.shareText', { name: producto.nombre }),
-      url: url.toString(),
+      url: buildProductShareUrl(producto.id, window.location.href),
     };
 
     try {

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildProductSeo } from '../src/utils/productSeo.js';
+import { buildProductSeo, buildProductShareUrl } from '../src/utils/productSeo.js';
 
 test('builds a canonical product URL without preserving catalog filters', () => {
   const metadata = buildProductSeo(
@@ -35,4 +35,11 @@ test('uses a concise fallback description for products without one', () => {
     'Bomba Manual. Consulta precio y disponibilidad en Full Party Uruapan.',
   );
   assert.equal(metadata.price, '');
+});
+
+test('builds a short share URL without preserving catalog state', () => {
+  assert.equal(
+    buildProductShareUrl('abc 123', 'https://www.fullpartyuruapan.com.mx/catalogo?buscar=globos#top'),
+    'https://www.fullpartyuruapan.com.mx/p/abc%20123',
+  );
 });

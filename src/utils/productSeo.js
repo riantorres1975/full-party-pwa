@@ -36,6 +36,14 @@ export function buildProductSeo(product, { pageUrl, imageUrl } = {}) {
   };
 }
 
+export function buildProductShareUrl(productId, pageUrl) {
+  const url = new URL(pageUrl || 'https://www.fullpartyuruapan.com.mx');
+  url.pathname = `/p/${encodeURIComponent(String(productId))}`;
+  url.search = '';
+  url.hash = '';
+  return url.toString();
+}
+
 function updateMeta(documentRef, selector, attributes, content) {
   let element = documentRef.head.querySelector(selector);
   const created = !element;
