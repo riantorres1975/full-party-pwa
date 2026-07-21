@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { obtenerPrecioAplicable } from '../src/utils/precios.js';
+import {
+  obtenerPrecioAplicable,
+  obtenerSiguienteEscalaMayoreo,
+} from '../src/utils/precios.js';
 
 test('uses base price without wholesale tiers', () => {
   assert.equal(obtenerPrecioAplicable({ precio: 85 }, 12), 85);
@@ -54,4 +57,27 @@ test('supports zero-price promotional tiers', () => {
   };
 
   assert.equal(obtenerPrecioAplicable(producto, 100), 0);
+});
+
+test('returns the next cheaper wholesale tier and missing quantity', () => {
+  const producto = {
+    precio: 85,
+    precios_mayoreo: [
+      { cantidad_minima: 24, precio: 65 },
+      { cantidad_minima: 6, precio: 78 },
+      { cantidad_minima: 12, precio: 72 },
+    ],
+  };
+
+  assert.deepEqual(obtenerSiguienteEscalaMayoreo(producto, 4), {
+    cantidad_minima: 6,
+    precio: 78,
+    faltantes: 2,
+  });
+  assert.deepEqual(obtenerSiguienteEscalaMayoreo(producto, 6), {
+    cantidad_minima: 12,
+    precio: 72,
+    faltantes: 6,
+  });
+  assert.equal(obtenerSiguienteEscalaMayoreo(producto, 24), null);
 });

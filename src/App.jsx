@@ -18,6 +18,7 @@ import SidebarFiltrosDesktop from './components/SidebarFiltrosDesktop';
 import CategoryGrid, { CategoryGridSkeleton } from './components/CategoryGrid';
 import CategoryBrowser from './components/CategoryBrowser';
 import BottomNav from './components/BottomNav';
+import CatalogToolbar from './components/CatalogToolbar';
 import { fuzzySearch } from './utils/fuzzySearch';
 
 const PRODUCT_SEARCH_KEYS = [
@@ -49,6 +50,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
   const [isCategoryBrowserOpen, setIsCategoryBrowserOpen] = useState(false);
   const [bottomNavActive, setBottomNavActive] = useState('inicio');
+  const [sortOrder, setSortOrder] = useState('featured');
   const searchRef = useRef(null);
 
   const [activeFilters, setActiveFilters] = useState({
@@ -127,17 +129,23 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     });
 
     const query = searchQuery.trim();
-    if (query) {
-      return fuzzySearch(base, query, PRODUCT_SEARCH_KEYS, { threshold: 0.38 });
-    }
+    const matches = query
+      ? fuzzySearch(base, query, PRODUCT_SEARCH_KEYS, { threshold: 0.38 })
+      : base;
 
-    return [...base].sort((a, b) => {
+    return [...matches].sort((a, b) => {
+      if (sortOrder === 'name-asc') {
+        return String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base' });
+      }
+      if (sortOrder === 'price-asc') return (Number(a.precio) || 0) - (Number(b.precio) || 0);
+      if (sortOrder === 'price-desc') return (Number(b.precio) || 0) - (Number(a.precio) || 0);
+
       const aNuevo = a.es_nuevo === true ? 1 : 0;
       const bNuevo = b.es_nuevo === true ? 1 : 0;
       if (aNuevo !== bNuevo) return bNuevo - aNuevo;
-      return String(a.nombre || '').localeCompare(String(b.nombre || ''));
+      return String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base' });
     });
-  }, [productos, searchQuery, activeFilters]);
+  }, [productos, searchQuery, activeFilters, sortOrder]);
 
   // Build ordered category pill list from known config (only show if products exist with that category)
   const categoryPills = useMemo(() => {
@@ -348,6 +356,16 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     </button>
                   </div>
                 </div>
+
+                {!loading && !isInitialSyncing && !error && (
+                  <CatalogToolbar
+                    total={filteredProducts.length}
+                    sortOrder={sortOrder}
+                    onSortChange={setSortOrder}
+                    isFiltered={searchQuery.trim().length > 0 || activeFilterCount > 0}
+                    onClear={resetCatalog}
+                  />
+                )}
 
                 <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-16">
                   {loading && <ProductosSkeleton cantidad={8} />}

@@ -1,7 +1,5 @@
-export function obtenerPrecioAplicable(producto, cantidadEnCarrito) {
-  const precioBase = Number(producto?.precio) || 0;
-  if (!producto) return precioBase;
-
+export function obtenerEscalasMayoreo(producto) {
+  if (!producto) return [];
   let escalas = producto.precios_mayoreo;
   if (typeof escalas === 'string') {
     try {
@@ -11,16 +9,38 @@ export function obtenerPrecioAplicable(producto, cantidadEnCarrito) {
     }
   }
 
-  if (!Array.isArray(escalas) || escalas.length === 0) return precioBase;
+  if (!Array.isArray(escalas) || escalas.length === 0) return [];
 
-  const escalasValidas = escalas
+  return escalas
     .map(e => ({
       cantidad_minima: Number(e?.cantidad_minima) || 0,
       precio: Number(e?.precio),
     }))
     .filter(e => e.cantidad_minima > 0 && Number.isFinite(e.precio) && e.precio >= 0)
-    .sort((a, b) => b.cantidad_minima - a.cantidad_minima);
+    .sort((a, b) => a.cantidad_minima - b.cantidad_minima);
+}
 
-  const nivel = escalasValidas.find(e => cantidadEnCarrito >= e.cantidad_minima);
+export function obtenerPrecioAplicable(producto, cantidadEnCarrito) {
+  const precioBase = Number(producto?.precio) || 0;
+  if (!producto) return precioBase;
+
+  const nivel = [...obtenerEscalasMayoreo(producto)]
+    .reverse()
+    .find(e => cantidadEnCarrito >= e.cantidad_minima);
   return nivel ? nivel.precio : precioBase;
+}
+
+export function obtenerSiguienteEscalaMayoreo(producto, cantidadEnCarrito) {
+  if (!producto || cantidadEnCarrito < 1) return null;
+
+  const precioActual = obtenerPrecioAplicable(producto, cantidadEnCarrito);
+  const siguiente = obtenerEscalasMayoreo(producto).find(
+    (escala) => escala.cantidad_minima > cantidadEnCarrito && escala.precio < precioActual,
+  );
+
+  if (!siguiente) return null;
+  return {
+    ...siguiente,
+    faltantes: siguiente.cantidad_minima - cantidadEnCarrito,
+  };
 }

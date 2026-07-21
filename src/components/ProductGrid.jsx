@@ -37,15 +37,6 @@ export default function ProductGrid({ productos, getCantidad, onAgregar, onReduc
 
   return (
     <div className="w-full">
-      {isFiltered && (
-        <div className="px-3 sm:px-4 lg:px-0 pt-1 pb-0.5">
-          <p className="text-xs font-body font-black" style={{ color: 'var(--text-secondary)' }}>
-            {productos.length === 1
-              ? t('grid.resultCountOne')
-              : t('grid.resultCount', { count: productos.length })}
-          </p>
-        </div>
-      )}
       <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(195px,1fr))] gap-2.5 sm:gap-3 lg:gap-4 p-3 sm:p-4 lg:p-0 animate-fade-in">
         {visibles.map((producto, index) => (
           <ProductCard

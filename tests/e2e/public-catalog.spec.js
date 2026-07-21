@@ -78,6 +78,31 @@ test('the public catalog remains usable without horizontal overflow', async ({ p
   expect(pageErrors).toEqual([]);
 });
 
+test('the catalog can be sorted and the cart guides order completion', async ({ page }) => {
+  await page.goto('/catalogo');
+  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
+
+  const sort = page.locator('#catalog-sort');
+  await sort.selectOption('price-asc');
+  await expect(sort).toHaveValue('price-asc');
+
+  const availableProduct = page
+    .locator('article.product-card button[aria-label^="Agregar "][aria-label$=" al carrito"]:not([disabled])')
+    .first();
+  await expect(availableProduct).toBeVisible();
+  await availableProduct.click();
+
+  const cartButton = page.locator('button[aria-label^="Carrito con "]');
+  await expect(cartButton).toHaveAttribute('aria-label', /Carrito con 1/);
+  await cartButton.click();
+
+  const cart = page.getByRole('dialog');
+  await expect(cart).toBeVisible();
+  await expect(cart.getByText('1 producto · 1 pieza')).toBeVisible();
+  await expect(cart.getByText(/Completa: nombre, teléfono válido/)).toBeVisible();
+  await expect(cart.getByRole('button', { name: 'Revisar pedido' })).toBeDisabled();
+});
+
 test('the admin route presents an accessible login when signed out', async ({ page }) => {
   await page.goto('/admin/catalogo');
 

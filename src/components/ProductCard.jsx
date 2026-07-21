@@ -1,6 +1,10 @@
 import { memo } from 'react';
 import { SIMBOLO_MONEDA } from '../data/productos';
-import { obtenerPrecioAplicable } from '../utils/precios';
+import {
+  obtenerEscalasMayoreo,
+  obtenerPrecioAplicable,
+  obtenerSiguienteEscalaMayoreo,
+} from '../utils/precios';
 import { useLanguage } from '../hooks/useLanguage';
 import OptimizedImage from './OptimizedImage';
 import Badge from './ui/Badge';
@@ -21,6 +25,7 @@ function ProductCardInner({
   const precioBase = Number(producto.precio) || 0;
   const precioAplicable = obtenerPrecioAplicable(producto, cantidad || 1);
   const hayDescuento = precioAplicable < precioBase;
+  const subtotalCarrito = precioAplicable * cantidad;
 
   const stockBajo = !agotado &&
     producto.stock_ilimitado === false &&
@@ -28,17 +33,14 @@ function ProductCardInner({
     (producto.stock_actual || 0) <= 5;
 
   const mayoreoMinTier = (() => {
-    let escalas = producto.precios_mayoreo;
-    if (typeof escalas === 'string') {
-      try { escalas = JSON.parse(escalas); } catch { escalas = []; }
-    }
-    if (!Array.isArray(escalas) || escalas.length === 0) return null;
-    const validas = escalas
-      .map(e => ({ min: Number(e?.cantidad_minima) || 0, precio: Number(e?.precio) }))
-      .filter(e => e.min > 0 && Number.isFinite(e.precio) && e.precio < precioBase)
-      .sort((a, b) => a.min - b.min);
-    return validas[0] || null;
+    const primera = obtenerEscalasMayoreo(producto).find(e => e.precio < precioBase);
+    return primera
+      ? { min: primera.cantidad_minima, precio: primera.precio }
+      : null;
   })();
+  const siguienteEscala = enCarrito
+    ? obtenerSiguienteEscalaMayoreo(producto, cantidad)
+    : null;
 
   const isPriority = index < 2;
   const esNuevo = producto.es_nuevo === true && !agotado;
@@ -148,38 +150,62 @@ function ProductCardInner({
             {t('common.notAvailable')}
           </Button>
         ) : enCarrito ? (
-          <div className="flex items-center justify-between w-full">
-            <button
-              type="button"
-              onClick={() => onReducir(producto.id)}
-              className="w-10 h-10 flex items-center justify-center rounded-xl
-                         bg-ink-100 text-ink-600
-                         transition-all duration-150 active:scale-90 hover:bg-ink-200"
-              aria-label={t('product.removeOne', { name: producto.nombre })}
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" />
-              </svg>
-            </button>
+          <div className="space-y-1.5">
+            {siguienteEscala && (
+              <p
+                className="rounded-lg px-2 py-1 text-center text-[9px] font-body font-black leading-tight"
+                style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--text-success)' }}
+              >
+                {t('product.nextTier', {
+                  count: siguienteEscala.faltantes,
+                  price: `${SIMBOLO_MONEDA}${siguienteEscala.precio.toFixed(2)}`,
+                })}
+              </p>
+            )}
 
-            <span className="font-body font-black text-sm text-ink-900 min-w-[20px] text-center">
-              {cantidad}
-            </span>
+            <div className="flex items-center justify-between w-full">
+              <button
+                type="button"
+                onClick={() => onReducir(producto.id)}
+                className="w-10 h-10 flex items-center justify-center rounded-xl
+                           bg-ink-100 text-ink-600
+                           transition-all duration-150 active:scale-90 hover:bg-ink-200"
+                aria-label={t('product.removeOne', { name: producto.nombre })}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" />
+                </svg>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => !maxStockAlcanzado && onAgregar(producto)}
-              disabled={maxStockAlcanzado}
-              className={`w-10 h-10 flex items-center justify-center rounded-xl text-white
-                         transition-all duration-150
-                         ${maxStockAlcanzado ? 'opacity-50 cursor-not-allowed' : 'active:scale-90'}`}
-              style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}
-              aria-label={t('product.addOne', { name: producto.nombre })}
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
-              </svg>
-            </button>
+              <span
+                className="flex min-w-[52px] flex-col items-center text-center font-body"
+                aria-live="polite"
+                aria-label={t('product.quantitySubtotal', {
+                  count: cantidad,
+                  total: `${SIMBOLO_MONEDA}${subtotalCarrito.toFixed(2)}`,
+                })}
+              >
+                <strong className="text-sm font-black text-ink-900">{cantidad}</strong>
+                <span className="text-[9px] font-black" style={{ color: 'var(--text-secondary)' }}>
+                  {SIMBOLO_MONEDA}{subtotalCarrito.toFixed(2)}
+                </span>
+              </span>
+
+              <button
+                type="button"
+                onClick={() => !maxStockAlcanzado && onAgregar(producto)}
+                disabled={maxStockAlcanzado}
+                className={`w-10 h-10 flex items-center justify-center rounded-xl text-white
+                           transition-all duration-150
+                           ${maxStockAlcanzado ? 'opacity-50 cursor-not-allowed' : 'active:scale-90'}`}
+                style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)' }}
+                aria-label={t('product.addOne', { name: producto.nombre })}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
           </div>
         ) : (
           <Button
