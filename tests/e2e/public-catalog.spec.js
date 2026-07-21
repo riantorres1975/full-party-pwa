@@ -1,6 +1,48 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
+const catalogFixture = [
+  { id: 'e2e-1', nombre: 'Globo Rosa 12 Pulg', precio: 85, categoria: 'Globo Latex', marca: 'Glomex', tamano: '12 Pulg', stock_actual: 20, es_nuevo: true },
+  { id: 'e2e-2', nombre: 'Globo Azul 12 Pulg', precio: 85, categoria: 'Globo Latex', marca: 'Glomex', tamano: '12 Pulg', stock_actual: 18, es_nuevo: true },
+  { id: 'e2e-3', nombre: 'Globo Verde 12 Pulg', precio: 85, categoria: 'Globo Latex', marca: 'Glomex', tamano: '12 Pulg', stock_actual: 15, es_nuevo: false },
+  { id: 'e2e-4', nombre: 'Globo Amarillo 12 Pulg', precio: 85, categoria: 'Globo Latex', marca: 'Glomex', tamano: '12 Pulg', stock_actual: 12, es_nuevo: false },
+  { id: 'e2e-5', nombre: 'Bomba Manual para Globos', precio: 45, categoria: 'Infladora de globos', marca: 'Económico', tamano: '', stock_actual: 4, es_nuevo: true },
+  { id: 'e2e-6', nombre: 'Confeti Dorado', precio: 10, categoria: 'Confeti', marca: 'Genérico', tamano: '', stock_actual: 30, es_nuevo: false },
+].map((producto) => ({
+  descripcion: `${producto.nombre} para pruebas del catálogo`,
+  imagen_url: '/icons/icon-192.png',
+  activo: true,
+  stock_ilimitado: false,
+  precios_mayoreo: [{ cantidad_minima: 12, precio: Math.max(1, producto.precio - 5) }],
+  ...producto,
+}));
+
+test.beforeEach(async ({ page }) => {
+  await page.route('**/rest/v1/productos*', async (route) => {
+    const corsHeaders = {
+      'access-control-allow-origin': '*',
+      'access-control-allow-headers': 'authorization, apikey, content-type, x-client-info',
+      'access-control-allow-methods': 'GET, OPTIONS',
+      'access-control-expose-headers': 'content-range',
+    };
+
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: corsHeaders });
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: {
+        ...corsHeaders,
+        'content-range': `0-${catalogFixture.length - 1}/${catalogFixture.length}`,
+      },
+      body: JSON.stringify(catalogFixture),
+    });
+  });
+});
+
 test('the landing page presents a clear path to shop on every viewport', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
