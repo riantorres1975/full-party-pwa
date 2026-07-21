@@ -4,6 +4,7 @@ import ProductCard from './ProductCard';
 import ProductoDetalleModal from './ProductoDetalleModal';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { useLanguage } from '../hooks/useLanguage';
+import { obtenerProductosRelacionados } from '../utils/productosRelacionados';
 
 export default function ProductGrid({
   productos,
@@ -46,20 +47,7 @@ export default function ProductGrid({
     setSearchParams(nextParams, { replace: true });
   };
 
-  const relatedProducts = productoDetalle
-    ? catalogProducts
-        .filter((producto) => (
-          producto.id !== productoDetalle.id &&
-          producto.activo !== false &&
-          producto.categoria === productoDetalle.categoria
-        ))
-        .sort((a, b) => {
-          const aSameBrand = a.marca === productoDetalle.marca ? 1 : 0;
-          const bSameBrand = b.marca === productoDetalle.marca ? 1 : 0;
-          return bSameBrand - aSameBrand;
-        })
-        .slice(0, 3)
-    : [];
+  const relatedProducts = obtenerProductosRelacionados(catalogProducts, productoDetalle);
 
   const visibles = productos.slice(0, visibleCount);
 
