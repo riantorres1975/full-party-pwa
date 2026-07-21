@@ -12,18 +12,28 @@ function normalizarQuery(query) {
   return String(query || '').trim();
 }
 
+export function createFuzzySearchIndex(items, keys, options = {}) {
+  const collection = Array.isArray(items) ? items : [];
+  const fuse = collection.length > 0
+    ? new Fuse(collection, {
+      ...DEFAULT_FUSE_OPTIONS,
+      ...options,
+      keys,
+    })
+    : null;
+
+  return {
+    search(query) {
+      const q = normalizarQuery(query);
+      if (!q) return collection;
+      if (!fuse) return [];
+      return fuse.search(q).map(result => result.item);
+    },
+  };
+}
+
 export function fuzzySearch(items, query, keys, options = {}) {
-  const q = normalizarQuery(query);
-  if (!q) return items;
-  if (!Array.isArray(items) || items.length === 0) return [];
-
-  const fuse = new Fuse(items, {
-    ...DEFAULT_FUSE_OPTIONS,
-    ...options,
-    keys,
-  });
-
-  return fuse.search(q).map(result => result.item);
+  return createFuzzySearchIndex(items, keys, options).search(query);
 }
 
 export function fuzzySearchByText(items, query, getText, options = {}) {

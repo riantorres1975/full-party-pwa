@@ -4,7 +4,7 @@ import { categorias as CATEGORIAS_CONFIG, SIMBOLO_MONEDA } from '../data/product
 import { useDebounce } from '../hooks/useDebounce';
 import { useLanguage } from '../hooks/useLanguage';
 import { obtenerPrecioAplicable } from '../utils/precios';
-import { fuzzySearch } from '../utils/fuzzySearch';
+import { createFuzzySearchIndex } from '../utils/fuzzySearch';
 
 export const RECENT_SEARCHES_KEY = 'fullparty_recent_searches';
 
@@ -83,12 +83,16 @@ export default function SearchPanel({
     if (open) setRecentSearches(readRecentSearches());
   }, [open]);
 
+  const suggestionIndex = useMemo(() => {
+    const activeProducts = (productos || []).filter(producto => producto.activo !== false);
+    return createFuzzySearchIndex(activeProducts, SEARCH_KEYS, { threshold: 0.38 });
+  }, [productos]);
+
   const suggestions = useMemo(() => {
     const clean = debouncedQuery.trim();
     if (!clean) return [];
-    const activeProducts = (productos || []).filter(producto => producto.activo !== false);
-    return fuzzySearch(activeProducts, clean, SEARCH_KEYS, { threshold: 0.38 }).slice(0, 8);
-  }, [debouncedQuery, productos]);
+    return suggestionIndex.search(clean).slice(0, 8);
+  }, [debouncedQuery, suggestionIndex]);
 
   const topCategories = useMemo(() => (categoryStats || []).slice(0, 3), [categoryStats]);
 

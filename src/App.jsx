@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback, useDeferredValue } from 'react';
 import { useProductos }      from './hooks/useProductos';
 import { useCarrito }        from './hooks/useCarrito';
 import { useToast }          from './components/ui/ToastProvider';
@@ -19,7 +19,7 @@ import CategoryGrid, { CategoryGridSkeleton } from './components/CategoryGrid';
 import CategoryBrowser from './components/CategoryBrowser';
 import BottomNav from './components/BottomNav';
 import CatalogToolbar from './components/CatalogToolbar';
-import { fuzzySearch } from './utils/fuzzySearch';
+import { createFuzzySearchIndex } from './utils/fuzzySearch';
 import { buildProductAnalyticsParams, trackEvent } from './utils/analytics';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useProductPreferences } from './hooks/useProductPreferences';
@@ -55,6 +55,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   const [bottomNavActive, setBottomNavActive] = useState('inicio');
   const [sortOrder, setSortOrder] = useState('featured');
   const [showFavorites, setShowFavorites] = useState(false);
+  const deferredSearchQuery = useDeferredValue(searchQuery);
   const searchRef = useRef(null);
   const searchMetricRef = useRef('');
 
@@ -166,8 +167,8 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     activeFilters.tamanios.length +
     (Number.isFinite(activeFilters.precioMin) || Number.isFinite(activeFilters.precioMax) ? 1 : 0);
 
-  const filteredProducts = useMemo(() => {
-    const base = productos.filter(p => {
+  const productsMatchingFilters = useMemo(() => (
+    productos.filter(p => {
       if (showFavorites && !isFavorite(p.id)) return false;
       const matchesCategory =
         activeFilters.categorias.length === 0 || activeFilters.categorias.includes(p.categoria);
@@ -181,13 +182,20 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
         (!Number.isFinite(activeFilters.precioMax) || precio <= activeFilters.precioMax);
 
       return matchesCategory && matchesBrand && matchesSize && matchesPrice;
-    });
+    })
+  ), [productos, activeFilters, showFavorites, isFavorite]);
 
-    const query = searchQuery.trim();
-    const matches = query
-      ? fuzzySearch(base, query, PRODUCT_SEARCH_KEYS, { threshold: 0.38 })
-      : base;
+  const productSearchIndex = useMemo(
+    () => createFuzzySearchIndex(
+      productsMatchingFilters,
+      PRODUCT_SEARCH_KEYS,
+      { threshold: 0.38 },
+    ),
+    [productsMatchingFilters],
+  );
 
+  const filteredProducts = useMemo(() => {
+    const matches = productSearchIndex.search(deferredSearchQuery);
     return [...matches].sort((a, b) => {
       if (sortOrder === 'name-asc') {
         return String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base' });
@@ -200,7 +208,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
       if (aNuevo !== bNuevo) return bNuevo - aNuevo;
       return String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base' });
     });
-  }, [productos, searchQuery, activeFilters, sortOrder, showFavorites, isFavorite]);
+  }, [deferredSearchQuery, productSearchIndex, sortOrder]);
 
   const favoriteCount = useMemo(
     () => productos.filter((product) => isFavorite(product.id)).length,
@@ -215,7 +223,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   }, [productos, recentIds]);
 
   useEffect(() => {
-    const query = searchQuery.trim();
+    const query = deferredSearchQuery.trim();
     if (loading || isInitialSyncing || query.length < 2) {
       if (!query) searchMetricRef.current = '';
       return undefined;
@@ -235,7 +243,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [activeFilterCount, filteredProducts.length, isInitialSyncing, loading, searchQuery]);
+  }, [activeFilterCount, deferredSearchQuery, filteredProducts.length, isInitialSyncing, loading]);
 
   // Build ordered category pill list from known config (only show if products exist with that category)
   const categoryPills = useMemo(() => {
