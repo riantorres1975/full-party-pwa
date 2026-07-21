@@ -51,6 +51,7 @@
   "error.data.title": "We could not load the data",
 
   "catalog.cachedData": "We could not refresh. Showing the latest saved information.",
+  "catalog.offline": "You are offline. You can browse the saved catalog; reconnect before sending your order.",
   "catalog.refresh": "Refresh",
   "catalog.toolbarLabel": "Catalog results and sorting",
   "catalog.sortLabel": "Sort products",
@@ -188,6 +189,7 @@
   "cart.ordersPausedBanner": "⚠️ Orders are temporarily paused. We will be back soon.",
   "cart.ordersPausedError": "Orders are temporarily disabled. Please try again later.",
   "cart.ordersPausedCta": "Orders temporarily paused",
+  "cart.offlineOrderError": "You are offline. Your order is still saved; reconnect to send it through WhatsApp.",
 
   "delivery.title": "How do you want it? 🎀",
   "delivery.pickupLabel": "Pick up\nat store",

@@ -1,0 +1,68 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import {
+  buildProductAnalyticsParams,
+  classifyError,
+  sanitizeAnalyticsParams,
+  trackAppError,
+  trackEvent,
+} from '../src/utils/analytics.js';
+
+test('removes sensitive and unsupported analytics parameters', () => {
+  assert.deepEqual(
+    sanitizeAnalyticsParams({
+      item_id: ' 42 ',
+      result_count: 0,
+      has_results: false,
+      customer_name: 'Maria',
+      telefono: '4521234567',
+      nested: { unsafe: true },
+    }),
+    { item_id: '42', result_count: 0, has_results: false },
+  );
+});
+
+test('tracks only valid events through an available gtag function', () => {
+  const calls = [];
+  const target = { gtag: (...args) => calls.push(args) };
+
+  assert.equal(trackEvent('catalog_search', { query_length: 5 }, target), true);
+  assert.equal(trackEvent('Invalid Event', {}, target), false);
+  assert.deepEqual(calls, [['event', 'catalog_search', { query_length: 5 }]]);
+});
+
+test('builds anonymous product parameters', () => {
+  assert.deepEqual(
+    buildProductAnalyticsParams({
+      id: 7,
+      nombre: 'Producto privado',
+      categoria: 'Globos',
+      marca: 'Glomex',
+      precio: '85',
+    }, { source: 'catalog' }),
+    {
+      item_id: '7',
+      item_category: 'Globos',
+      item_brand: 'Glomex',
+      price: 85,
+      currency: 'MXN',
+      source: 'catalog',
+    },
+  );
+});
+
+test('classifies and reports errors without sending their message', () => {
+  const calls = [];
+  const target = { gtag: (...args) => calls.push(args) };
+  const error = new Error('Failed to fetch customer@example.com');
+
+  assert.equal(classifyError(error), 'network');
+  assert.equal(trackAppError(error, { context: 'react_boundary', route: '/catalogo' }, target), true);
+  assert.deepEqual(calls[0], [
+    'event',
+    'app_error',
+    { error_type: 'network', context: 'react_boundary', route: '/catalogo' },
+  ]);
+  assert.equal(trackAppError(error, { context: 'window_error' }, target), false);
+  assert.equal(calls.length, 1);
+});

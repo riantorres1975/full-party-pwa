@@ -51,6 +51,7 @@
   "error.data.title": "No pudimos cargar los datos",
 
   "catalog.cachedData": "No pudimos actualizar. Mostramos la ultima informacion guardada.",
+  "catalog.offline": "Sin conexión. Puedes revisar el catálogo guardado; reconéctate antes de enviar tu pedido.",
   "catalog.refresh": "Actualizar",
   "catalog.toolbarLabel": "Resultados y orden del catalogo",
   "catalog.sortLabel": "Ordenar productos",
@@ -188,6 +189,7 @@
   "cart.ordersPausedBanner": "⚠️ Pedidos temporalmente pausados. Estamos trabajando para reanudar pronto.",
   "cart.ordersPausedError": "Los pedidos están temporalmente desactivados. Intenta más tarde.",
   "cart.ordersPausedCta": "Pedidos temporalmente pausados",
+  "cart.offlineOrderError": "Sin conexión. Tu pedido sigue guardado; reconéctate para enviarlo por WhatsApp.",
 
   "delivery.title": "¿Cómo lo recibimos? 🎀",
   "delivery.pickupLabel": "Recoger\nen tienda",

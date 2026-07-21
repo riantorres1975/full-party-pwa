@@ -17,6 +17,13 @@ const catalogFixture = [
   ...producto,
 }));
 
+const readAnalyticsEvents = (page) => page.evaluate(() => (
+  (window.dataLayer || [])
+    .map((entry) => Array.from(entry))
+    .filter(([command]) => command === 'event')
+    .map(([, name, params]) => ({ name, params: params || {} }))
+));
+
 test.beforeEach(async ({ page }) => {
   await page.route('**/rest/v1/productos*', async (route) => {
     const corsHeaders = {
@@ -109,6 +116,12 @@ test('the public catalog remains usable without horizontal overflow', async ({ p
 
   await search.fill('globo');
   await expect(search).toHaveValue('globo');
+  await expect.poll(async () => (
+    (await readAnalyticsEvents(page)).some(({ name }) => name === 'catalog_search')
+  )).toBe(true);
+  const searchEvent = (await readAnalyticsEvents(page)).find(({ name }) => name === 'catalog_search');
+  expect(searchEvent.params).toMatchObject({ query_length: 5, has_results: true });
+  expect(searchEvent.params).not.toHaveProperty('search_term');
   await search.fill('');
 
   const viewport = await page.evaluate(() => ({
@@ -166,6 +179,39 @@ test('the catalog can be sorted and the cart guides order completion', async ({ 
   await expect(cart.getByText('María Prueba', { exact: true })).toBeVisible();
   await expect(cart.getByText(/Precios y disponibilidad verificados/)).toBeVisible();
   await expect(cart.getByRole('button', { name: '← Editar pedido' })).toBeVisible();
+
+  const eventNames = (await readAnalyticsEvents(page)).map(({ name }) => name);
+  expect(eventNames).toEqual(expect.arrayContaining([
+    'catalog_add_to_cart',
+    'cart_view',
+    'checkout_review',
+  ]));
+});
+
+test('an offline checkout stays intact until the connection returns', async ({ page, context }) => {
+  await page.goto('/catalogo');
+  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
+
+  await page
+    .locator('article.product-card button[aria-label^="Agregar "][aria-label$=" al carrito"]:not([disabled])')
+    .first()
+    .click();
+  await page.locator('button[aria-label^="Carrito con "]').click();
+
+  const cart = page.getByRole('dialog');
+  await cart.getByLabel('Nombre completo').fill('María Prueba');
+  await cart.getByLabel('Número de teléfono').fill('4521234567');
+  await cart.getByRole('button', { name: 'Revisar pedido' }).click();
+  await expect(cart.getByText('¡Pedido listo!')).toBeVisible();
+
+  await context.setOffline(true);
+  await expect(cart.getByText(/Tu pedido sigue guardado/)).toBeVisible();
+  await expect(cart.getByRole('button', { name: 'Enviar pedido a Full Party' })).toBeDisabled();
+  await expect(cart.getByText('1 producto · 1 pieza')).toBeVisible();
+
+  await context.setOffline(false);
+  await expect(cart.getByText(/Tu pedido sigue guardado/)).toBeHidden();
+  await expect(cart.getByRole('button', { name: 'Enviar pedido a Full Party' })).toBeEnabled();
 });
 
 test('a product detail is shareable and supports shopping without closing', async ({ page }) => {
@@ -183,6 +229,9 @@ test('a product detail is shareable and supports shopping without closing', asyn
   let detail = page.getByRole('dialog', { name: `Ver detalle de ${productName}`, exact: true });
   await expect(detail).toBeVisible();
   await expect(detail.getByRole('heading', { name: productName })).toBeVisible();
+  await expect.poll(async () => (
+    (await readAnalyticsEvents(page)).some(({ name }) => name === 'catalog_product_view')
+  )).toBe(true);
   await expect(page).toHaveTitle(`${productName} | Full Party Uruapan`);
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', productUrl);
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(

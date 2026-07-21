@@ -7,6 +7,7 @@ import { usePedido } from '../hooks/usePedido';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useLanguage } from '../hooks/useLanguage';
 import { getProductPlaceholderUrl, getSafeProductImageUrl } from '../utils/imagenes';
+import { trackEvent } from '../utils/analytics';
 
 // Session rate limit (max orders per time window)
 const MAX_ORDERS_PER_SESSION = 5;
@@ -70,7 +71,17 @@ const inputDynStyle = {
   borderColor: 'var(--border-default)',
 };
 
-export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onReducir, onLimpiar, productos = [], pedidosHabilitados = true }) {
+export default function CarritoDrawer({
+  items,
+  isOpen,
+  onCerrar,
+  onAgregar,
+  onReducir,
+  onLimpiar,
+  productos = [],
+  pedidosHabilitados = true,
+  isOnline = true,
+}) {
 
   const { guardarPedido, guardando } = usePedido();
   const { t } = useLanguage();
@@ -132,7 +143,8 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
   const hasStockIssues = stockIssues.length > 0;
 
   const isFormReady = customerName.trim().length > 0 && isPhoneValid &&
-    (deliveryType === 'tienda' || address.trim().length > 0) && !hasStockIssues && pedidosHabilitados;
+    (deliveryType === 'tienda' || address.trim().length > 0) && !hasStockIssues &&
+    pedidosHabilitados && isOnline;
 
   const calculatedTotal = currentItems.reduce((acc, item) => {
     const precioAplicable = obtenerPrecioAplicable(item, item.cantidad);
@@ -192,10 +204,21 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
       direccion: normalizedAddress,
     });
     setReviewUpdated(false);
+    trackEvent('checkout_review', {
+      delivery_type: deliveryType,
+      item_types: itemsWithAppliedPrice.length,
+      item_count: cantidadTotal,
+      value: calculatedTotal,
+      currency: 'MXN',
+    });
   };
 
   const handleOpenWhatsApp = async () => {
     if (!pendingOrder) return;
+    if (!isOnline) {
+      setErrors({ nombre: t('cart.offlineOrderError') });
+      return;
+    }
     if (!pedidosHabilitados) {
       setErrors({ nombre: t('cart.ordersPausedError') });
       setPendingOrder(null);
@@ -253,11 +276,27 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
       nombre: name, telefono: phoneNumber, tipoEntrega: type, direccion: normalizedAddress, total, items: itemsSnapshot,
     });
 
-    if (error) console.warn('[Pedido] No se pudo guardar en Supabase:', error);
+    if (error) {
+      console.warn('[Pedido] No se pudo guardar en Supabase:', error);
+      trackEvent('order_save_failed', {
+        error_type: 'backend',
+        delivery_type: type,
+        item_count: itemsSnapshot.reduce((count, item) => count + item.cantidad, 0),
+      });
+    }
 
     // 2) Build WhatsApp URL with order reference
     const url = generarMensajeWhatsApp(itemsSnapshot, total, {
       tipo: type, nombre: name, telefono: phoneNumber, direccion: normalizedAddress, folio,
+    });
+
+    trackEvent('order_whatsapp_click', {
+      delivery_type: type,
+      item_types: itemsSnapshot.length,
+      item_count: itemsSnapshot.reduce((count, item) => count + item.cantidad, 0),
+      value: total,
+      currency: 'MXN',
+      order_saved: Boolean(folio),
     });
 
     // 3) Reuse the synchronously opened tab so popup blockers do not lose the order.
@@ -713,14 +752,19 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
           <div className="px-5 pt-3 pb-4 border-t-2 border-ink-100 flex-shrink-0 space-y-3">
             {pendingOrder ? (
               <>
+                {!isOnline && (
+                  <p className="text-center text-xs font-body font-bold text-orange-700" role="status">
+                    {t('cart.offlineOrderError')}
+                  </p>
+                )}
                 <button
                   onClick={handleOpenWhatsApp}
-                  disabled={guardando}
+                  disabled={guardando || !isOnline}
                   className="w-full flex items-center justify-center gap-2.5 text-white
                              font-body font-black text-base py-4 rounded-2xl
                              transition-all duration-300 active:scale-[0.98]
                              disabled:cursor-not-allowed"
-                  style={!guardando
+                  style={!guardando && isOnline
                     ? { background: 'var(--gradient-success)', boxShadow: 'var(--shadow-success-soft)' }
                     : { background: 'linear-gradient(135deg, #a8d5b5, #7cb89a)', boxShadow: 'none', opacity: 0.7 }
                   }
@@ -764,7 +808,13 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
                   </p>
                 )}
 
-                {!isFormReady && !hasStockIssues && pedidosHabilitados && missingFields.length > 0 && (
+                {!isOnline && (
+                  <p className="text-xs font-body font-bold text-orange-700 text-center py-1" role="status">
+                    {t('cart.offlineOrderError')}
+                  </p>
+                )}
+
+                {!isFormReady && isOnline && !hasStockIssues && pedidosHabilitados && missingFields.length > 0 && (
                   <p className="text-center text-xs font-body font-bold" style={{ color: 'var(--text-secondary)' }} role="status">
                     {t('cart.completeFields', { fields: missingFields.join(', ') })}
                   </p>

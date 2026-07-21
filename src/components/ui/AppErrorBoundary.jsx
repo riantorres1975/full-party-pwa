@@ -2,6 +2,7 @@ import { Component, Fragment, useId } from 'react';
 import { AlertTriangle, Home, RefreshCw } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../hooks/useLanguage';
+import { trackAppError } from '../../utils/analytics';
 
 class ErrorBoundaryCore extends Component {
   state = { error: null, retryKey: 0 };
@@ -12,6 +13,10 @@ class ErrorBoundaryCore extends Component {
 
   componentDidCatch(error, info) {
     console.error('[AppErrorBoundary]', error, info);
+    trackAppError(error, {
+      context: 'react_boundary',
+      route: this.props.resetKey,
+    });
   }
 
   componentDidUpdate(previousProps) {

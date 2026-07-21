@@ -1,9 +1,10 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProductCard from './ProductCard';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { useLanguage } from '../hooks/useLanguage';
 import { obtenerProductosRelacionados } from '../utils/productosRelacionados';
+import { buildProductAnalyticsParams, trackEvent } from '../utils/analytics';
 
 const ProductoDetalleModal = lazy(() => import('./ProductoDetalleModal'));
 
@@ -19,6 +20,7 @@ export default function ProductGrid({
   const { visibleCount, sentinelRef, hayMas, cargando, reset } = useInfiniteScroll(productos.length);
   const [productoDetalle, setProductoDetalle] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const lastViewedProductRef = useRef(null);
   const { t } = useLanguage();
   const productId = searchParams.get('producto');
 
@@ -33,6 +35,19 @@ export default function ProductGrid({
     const linkedProduct = catalogProducts.find((producto) => String(producto.id) === productId);
     if (linkedProduct) setProductoDetalle(linkedProduct);
   }, [catalogProducts, productId]);
+
+  useEffect(() => {
+    if (!productoDetalle) {
+      lastViewedProductRef.current = null;
+      return;
+    }
+    if (lastViewedProductRef.current === productoDetalle.id) return;
+    lastViewedProductRef.current = productoDetalle.id;
+    trackEvent(
+      'catalog_product_view',
+      buildProductAnalyticsParams(productoDetalle),
+    );
+  }, [productoDetalle]);
 
   const openProductDetail = (producto) => {
     setProductoDetalle(producto);

@@ -17,6 +17,7 @@ import Button from '../components/ui/Button';
 import ReviewsCarousel from '../components/landing/ReviewsCarousel';
 import GaleriaCard from '../components/landing/GaleriaCard';
 import BrandCard from '../components/landing/BrandCard';
+import { trackEvent } from '../utils/analytics';
 
 const NovedadesSection = lazy(() => import('../components/landing/NovedadesSection'));
 
@@ -142,11 +143,6 @@ const ENV = {
 };
 
 const WA_HREF  = `https://wa.me/${ENV.waNumber}?text=${encodeURIComponent('Hola, vi su página web y quiero ayuda para cotizar un pedido 🎉')}`;
-
-/** GA4: registra un evento si gtag está disponible */
-const trackEvent = (name, params = {}) => {
-  if (typeof window.gtag === 'function') window.gtag('event', name, params);
-};
 
 const NAV_LINKS = [
   { label: 'Catálogo',      href: '/catalogo',      hash: true  },

@@ -2,9 +2,27 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import AppRouter from './AppRouter';
 import './index.css';
+import { trackAppError } from './utils/analytics';
 
 const UPDATE_RELOAD_KEY = 'fp-update-reload-at';
 const UPDATE_QUERY_KEY = '__fp_update';
+
+if (!window.__fpErrorMonitoringAttached) {
+  window.__fpErrorMonitoringAttached = true;
+  window.addEventListener('error', (event) => {
+    if (!event.error) return;
+    trackAppError(event.error, {
+      context: 'window_error',
+      route: window.location.pathname,
+    });
+  });
+  window.addEventListener('unhandledrejection', (event) => {
+    trackAppError(event.reason, {
+      context: 'unhandled_promise',
+      route: window.location.pathname,
+    });
+  });
+}
 
 function reloadWithFreshAssets() {
   const now = Date.now();
@@ -142,6 +160,10 @@ if ('serviceWorker' in navigator) {
 
 // Auto-reload si ocurre un error cargando modulos (e.g. nueva version en Vercel)
 window.addEventListener('vite:preloadError', (event) => {
+  trackAppError(event.payload || new Error('preload'), {
+    context: 'vite_preload',
+    route: window.location.pathname,
+  });
   event.preventDefault();
   reloadWithFreshAssets();
 });

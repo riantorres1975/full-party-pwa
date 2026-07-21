@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useProductos }      from './hooks/useProductos';
 import { useCarrito }        from './hooks/useCarrito';
 import { useToast }          from './components/ui/ToastProvider';
@@ -20,6 +20,8 @@ import CategoryBrowser from './components/CategoryBrowser';
 import BottomNav from './components/BottomNav';
 import CatalogToolbar from './components/CatalogToolbar';
 import { fuzzySearch } from './utils/fuzzySearch';
+import { buildProductAnalyticsParams, trackEvent } from './utils/analytics';
+import { useOnlineStatus } from './hooks/useOnlineStatus';
 
 const PRODUCT_SEARCH_KEYS = [
   { name: 'nombre', weight: 0.5 },
@@ -52,6 +54,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   const [bottomNavActive, setBottomNavActive] = useState('inicio');
   const [sortOrder, setSortOrder] = useState('featured');
   const searchRef = useRef(null);
+  const searchMetricRef = useRef('');
 
   const [activeFilters, setActiveFilters] = useState({
     categorias: [],
@@ -68,6 +71,34 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
   const toast = useToast();
   const { t } = useLanguage();
+  const isOnline = useOnlineStatus();
+
+  const addCatalogItem = useCallback((product) => {
+    agregarItem(product);
+    trackEvent('catalog_add_to_cart', buildProductAnalyticsParams(product, {
+      source: 'catalog',
+      quantity: 1,
+    }));
+  }, [agregarItem]);
+
+  const addCartItem = useCallback((product) => {
+    agregarItem(product);
+    trackEvent('catalog_add_to_cart', buildProductAnalyticsParams(product, {
+      source: 'cart',
+      quantity: 1,
+    }));
+  }, [agregarItem]);
+
+  const openCart = useCallback((source) => {
+    trackEvent('cart_view', {
+      source,
+      item_types: items.length,
+      item_count: cantidadTotal,
+      value: total,
+      currency: 'MXN',
+    });
+    setIsCartOpen(true);
+  }, [cantidadTotal, items.length, total]);
 
   useEffect(() => {
     if (stockError) toast.warning(stockError);
@@ -112,6 +143,12 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     return { min: Math.min(...prices), max: Math.max(...prices) };
   }, [productos]);
 
+  const activeFilterCount =
+    activeFilters.categorias.length +
+    activeFilters.marcas.length +
+    activeFilters.tamanios.length +
+    (Number.isFinite(activeFilters.precioMin) || Number.isFinite(activeFilters.precioMax) ? 1 : 0);
+
   const filteredProducts = useMemo(() => {
     const base = productos.filter(p => {
       const matchesCategory =
@@ -146,6 +183,29 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
       return String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base' });
     });
   }, [productos, searchQuery, activeFilters, sortOrder]);
+
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (loading || isInitialSyncing || query.length < 2) {
+      if (!query) searchMetricRef.current = '';
+      return undefined;
+    }
+
+    const fingerprint = `${query.toLocaleLowerCase('es')}|${filteredProducts.length}|${activeFilterCount}`;
+    if (searchMetricRef.current === fingerprint) return undefined;
+
+    const timer = setTimeout(() => {
+      searchMetricRef.current = fingerprint;
+      trackEvent('catalog_search', {
+        query_length: query.length,
+        result_count: filteredProducts.length,
+        has_results: filteredProducts.length > 0,
+        filter_count: activeFilterCount,
+      });
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [activeFilterCount, filteredProducts.length, isInitialSyncing, loading, searchQuery]);
 
   // Build ordered category pill list from known config (only show if products exist with that category)
   const categoryPills = useMemo(() => {
@@ -183,6 +243,10 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
   const selectCategory = (categoryOrId) => {
     const catId = typeof categoryOrId === 'string' ? categoryOrId : categoryOrId?.id;
+    trackEvent('catalog_filter', {
+      filter_type: 'category',
+      has_value: Boolean(catId),
+    });
     if (!catId) {
       setActiveFilters(prev => ({ ...prev, categorias: [] }));
     } else {
@@ -209,12 +273,6 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     setTimeout(() => searchRef.current?.focus(), 180);
   };
 
-  const activeFilterCount =
-    activeFilters.categorias.length +
-    activeFilters.marcas.length +
-    activeFilters.tamanios.length +
-    (Number.isFinite(activeFilters.precioMin) || Number.isFinite(activeFilters.precioMax) ? 1 : 0);
-
   // Render
   // Full-screen tracking view
   if (isTrackingOpen) {
@@ -233,7 +291,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
         >
           <Header
             cantidadTotal={cantidadTotal}
-            onAbrirCarrito={() => setIsCartOpen(true)}
+            onAbrirCarrito={() => openCart('header')}
             onRastreoClick={() => setIsTrackingOpen(true)}
             temaOscuro={temaOscuro}
             onToggleTema={onToggleTema}
@@ -297,7 +355,17 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
           </div>
         )}
 
-        {usingCachedData && !error && (
+        {!isOnline && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="border-y border-orange-200 bg-orange-50 px-4 py-2 text-center font-body text-xs font-bold text-orange-900"
+          >
+            {t('catalog.offline')}
+          </div>
+        )}
+
+        {isOnline && usingCachedData && !error && (
           <div
             role="status"
             aria-live="polite"
@@ -394,7 +462,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                       productos={filteredProducts}
                       catalogProducts={productos}
                       getCantidad={getCantidad}
-                      onAgregar={agregarItem}
+                      onAgregar={addCatalogItem}
                       onReducir={reducirItem}
                       isFiltered={searchQuery.trim().length > 0 || activeFilterCount > 0}
                       onClear={resetCatalog}
@@ -417,7 +485,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
             setIsCategoryBrowserOpen(true);
           }}
           onBuscar={focusSearch}
-          onPedido={() => setIsCartOpen(true)}
+          onPedido={() => openCart('bottom_nav')}
         />
       </div>
 
@@ -425,11 +493,12 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
         items={items}
         isOpen={isCartOpen}
         onCerrar={() => setIsCartOpen(false)}
-        onAgregar={agregarItem}
+        onAgregar={addCartItem}
         onReducir={reducirItem}
         onLimpiar={limpiarCarrito}
         productos={productos}
         pedidosHabilitados={pedidosHabilitados}
+        isOnline={isOnline}
       />
 
       <ModalFiltros
