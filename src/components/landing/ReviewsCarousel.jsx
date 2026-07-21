@@ -134,7 +134,7 @@ export default function ReviewsCarousel({ resenas }) {
       {/* Rating global */}
       <div className="flex items-center justify-center gap-2 mt-4">
         <StarRating count={5} />
-        <span className="font-black text-sm" style={{ color: C.textHead }}>4.9</span>
+        <span className="font-black text-sm" style={{ color: C.textHead }}>4.7</span>
         <span className="text-xs" style={{ color: C.textMuted }}>· {resenas.length} reseñas en Google Maps</span>
       </div>
     </div>

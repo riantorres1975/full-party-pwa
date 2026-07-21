@@ -465,8 +465,8 @@
 .lp-scale-hover:hover { transform: scale(1.05); }
 
 .lp-hero {
-  padding-top: 3rem;
-  padding-bottom: 2.5rem;
+  padding-top: 3.5rem;
+  padding-bottom: 3rem;
 }
 
 /* Todas las secciones de la landing son transparentes —
@@ -495,7 +495,6 @@
 
 .lp-hero-copy {
   text-wrap: balance;
-  margin-top: -0.25rem;
 }
 
 .lp-hero-primary,
@@ -520,16 +519,29 @@
 }
 
 .lp-hero-proof {
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  width: fit-content;
+  max-width: 100%;
+  gap: 0.35rem;
+  padding: 0.4rem;
+  border-radius: 1.35rem;
   border: 1px solid rgba(192, 132, 252, 0.24);
   background: rgba(255, 255, 255, 0.66);
   box-shadow: 0 12px 30px rgba(86, 26, 122, 0.07);
   backdrop-filter: blur(10px);
 }
 
-.lp-proof-separator {
-  width: 1px;
-  height: 16px;
-  background: rgba(192, 132, 252, 0.36);
+.lp-proof-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.35rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.95rem;
+  background: rgba(255, 255, 255, 0.72);
+  white-space: nowrap;
 }
 
 .lp-map-placeholder {
@@ -615,12 +627,6 @@
     font-size: clamp(1.1rem, 5.8vw, 1.5rem);
   }
 
-  .lp-hero-title {
-    font-size: clamp(2.35rem, 10.6vw, 2.65rem) !important;
-    line-height: 1.18 !important;
-    overflow-wrap: normal;
-  }
-
   .lp-hero-actions {
     width: min(340px, calc(100vw - 2.5rem)) !important;
     max-width: min(340px, calc(100vw - 2.5rem)) !important;
@@ -632,8 +638,8 @@
 
   .lp-hero {
     min-height: auto;
-    padding-top: 3rem;
-    padding-bottom: 4.5rem;
+    padding-top: 2.75rem;
+    padding-bottom: 3.5rem;
   }
 
   .lp-hero-kicker {
@@ -658,14 +664,17 @@
   }
 
   .lp-hero-proof {
-    border-radius: 1.25rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(340px, calc(100vw - 2.5rem));
+    border-radius: 1.2rem;
     backdrop-filter: none;
   }
 
-  .lp-proof-separator {
-    display: none;
+  .lp-proof-item {
+    min-width: 0;
+    padding: 0.45rem 0.35rem;
+    font-size: 0.66rem;
+    white-space: normal;
   }
 
   .btn-pink-pulse,

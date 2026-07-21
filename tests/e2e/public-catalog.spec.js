@@ -1,6 +1,36 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
+test('the landing page presents a clear path to shop on every viewport', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+
+  await page.goto('/');
+
+  const hero = page.locator('section[aria-labelledby="hero-heading"]');
+  const branchAnimation = hero.locator('.lp-branch-lockup');
+  const catalogCta = hero.getByRole('button', { name: 'Explorar productos' });
+  const whatsappCta = hero.getByRole('link', { name: 'Cotizar por WhatsApp' });
+
+  await expect(branchAnimation).toBeVisible();
+  await expect(branchAnimation).toContainText('Full Party');
+  await expect(catalogCta).toBeVisible();
+  await expect(whatsappCta).toHaveAttribute('href', /wa\.me/);
+  await expect(hero.getByText('4.7 en Google')).toBeVisible();
+  await expect(hero.getByText('Compra desde 1 pieza')).toBeVisible();
+
+  const viewport = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+
+  expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth + 1);
+
+  await catalogCta.click();
+  await expect(page).toHaveURL(/\/catalogo$/);
+  expect(pageErrors).toEqual([]);
+});
+
 test('the public catalog remains usable without horizontal overflow', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));

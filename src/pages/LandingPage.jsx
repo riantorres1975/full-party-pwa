@@ -141,7 +141,7 @@ const ENV = {
   },
 };
 
-const WA_HREF  = `https://wa.me/${ENV.waNumber}?text=${encodeURIComponent('Hola, me interesa hacer un pedido por mayoreo 🎉')}`;
+const WA_HREF  = `https://wa.me/${ENV.waNumber}?text=${encodeURIComponent('Hola, vi su página web y quiero ayuda para cotizar un pedido 🎉')}`;
 
 /** GA4: registra un evento si gtag está disponible */
 const trackEvent = (name, params = {}) => {
@@ -149,14 +149,11 @@ const trackEvent = (name, params = {}) => {
 };
 
 const NAV_LINKS = [
-  { label: 'Inicio',        href: 'top',            hash: false },
   { label: 'Catálogo',      href: '/catalogo',      hash: true  },
   { label: 'Destacados',    href: '/destacados',    hash: true  },
-  { label: 'Cómo funciona', href: '/como-funciona', hash: true  },
+  { label: 'Cómo comprar',  href: '/como-funciona', hash: true  },
   { label: 'Sucursales',    href: '/sucursales',    hash: true  },
   { label: 'Blog',          href: '/blog',          hash: true  },
-  { label: 'FAQ',           href: 'faq',            hash: false },
-  { label: 'Contacto',      href: 'contacto',       hash: false },
 ];
 
 const BENEFICIOS = [
@@ -474,7 +471,11 @@ export default function LandingPage() {
         >
           <div className="lp-main-nav-inner max-w-6xl mx-auto px-5 flex items-center justify-between">
             {/* Logo */}
-            <div className="flex items-center gap-3 min-w-0">
+            <Link
+              to="/"
+              className="flex items-center gap-3 min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+              aria-label="Ir al inicio de Full Party"
+            >
               <img
                 src="/icons/icon-64.png"
                 alt={`${ENV.negocio} logo`}
@@ -500,7 +501,7 @@ export default function LandingPage() {
                   Mayoreo · Uruapan
                 </span>
               </div>
-            </div>
+            </Link>
 
             {/* Links desktop */}
             <div className="hidden lg:flex items-center gap-0.5">
@@ -588,21 +589,22 @@ export default function LandingPage() {
 
           <div className="relative max-w-4xl mx-auto" style={{ zIndex: 1 }}>
             <h1 id="hero-heading" className="sr-only">
-              Full Party Uruapan - mayoreo y menudeo de articulos para fiesta
+              Full Party Uruapan - mayoreo y menudeo de artículos para fiesta
             </h1>
             <span
-              className="lp-hero-kicker inline-flex items-center gap-2 text-xs font-black px-5 py-2 rounded-full mb-7"
+              className="lp-hero-kicker inline-flex items-center gap-2 text-xs font-black px-5 py-2 rounded-full mb-6"
               style={{ background: 'rgba(255,255,255,0.72)', color: C.textMuted, border: `1px solid ${C.purple}55` }}
             >
               +500 PRODUCTOS · MAYOREO Y MENUDEO
             </span>
 
-            {/* Nombre animado de sucursal */}
-            <div className="mb-6"><BranchTyper branchNames={[ENV.suc1.nombre, ENV.suc2.nombre]} /></div>
+            <div className="mb-6">
+              <BranchTyper branchNames={[ENV.suc1.nombre, ENV.suc2.nombre]} />
+            </div>
 
             <p className="lp-hero-copy text-base sm:text-lg leading-relaxed mb-7 max-w-2xl mx-auto" style={{ color: C.textBody }}>
-              Distribuidora de globos, cortinas, guirnaldas y todo para tu fiesta en Uruapan.
-              Arma tu pedido y envíalo por WhatsApp en un toque, sin llamadas ni esperas.
+              Compra por pieza o aprovecha precios de mayoreo en globos y decoración.
+              Elige tus productos y envía el pedido listo por WhatsApp.
             </p>
 
             <div className="lp-hero-actions w-full max-w-[340px] mx-auto sm:max-w-none flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -615,7 +617,7 @@ export default function LandingPage() {
                 iconRight={<ArrowRight size={16} aria-hidden="true" />}
                 className="lp-hero-primary max-w-full sm:w-auto"
               >
-                Ver Catálogo
+                Explorar productos
               </Button>
               <Button
                 variant="outline"
@@ -629,17 +631,15 @@ export default function LandingPage() {
                 className="lp-hero-whatsapp max-w-full sm:w-auto whitespace-nowrap"
                 onClick={() => trackEvent('hero_whatsapp_click')}
               >
-                Pedir por WhatsApp
+                Cotizar por WhatsApp
               </Button>
             </div>
 
-            <div className="lp-hero-proof mt-6 mx-auto inline-flex flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-full px-5 py-3 text-xs font-black" style={{ color: C.textBody }}>
-              <span className="text-yellow-400 tracking-[0.12em]">★★★★★</span>
-              <span>4.9 · Google Maps</span>
-              <span className="lp-proof-separator" aria-hidden="true" />
-              <span>🚚 Envíos a todo México</span>
-              <span className="lp-proof-separator" aria-hidden="true" />
-              <span>📍 2 sucursales en Uruapan</span>
+            <div className="lp-hero-proof mt-6 mx-auto" style={{ color: C.textBody }} aria-label="Ventajas de comprar en Full Party">
+              <span className="lp-proof-item"><span aria-hidden="true">★</span> 4.7 en Google</span>
+              <span className="lp-proof-item"><span aria-hidden="true">✓</span> Compra desde 1 pieza</span>
+              <span className="lp-proof-item"><span aria-hidden="true">🚚</span> Envíos a todo México</span>
+              <span className="lp-proof-item"><span aria-hidden="true">📍</span> 2 sucursales</span>
             </div>
 
             {/* Stats */}
