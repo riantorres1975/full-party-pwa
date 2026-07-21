@@ -132,6 +132,10 @@ test('the catalog can be sorted and the cart guides order completion', async ({ 
     .locator('article.product-card button[aria-label^="Agregar "][aria-label$=" al carrito"]:not([disabled])')
     .first();
   await expect(availableProduct).toBeVisible();
+  const selectedProductName = await availableProduct
+    .locator('xpath=ancestor::article')
+    .locator('h3')
+    .innerText();
   await availableProduct.click();
 
   const cartButton = page.locator('button[aria-label^="Carrito con "]');
@@ -143,6 +147,25 @@ test('the catalog can be sorted and the cart guides order completion', async ({ 
   await expect(cart.getByText('1 producto · 1 pieza')).toBeVisible();
   await expect(cart.getByText(/Completa: nombre, teléfono válido/)).toBeVisible();
   await expect(cart.getByRole('button', { name: 'Revisar pedido' })).toBeDisabled();
+
+  await cart.getByLabel('Nombre completo').fill('María Prueba');
+  await cart.getByLabel('Número de teléfono').fill('4521234567');
+  const cartPanel = page.locator('[role="dialog"][aria-label="🎁 Mi Pedido"]');
+  await cart.getByRole('button', { name: 'Cerrar carrito' }).click();
+  await expect(cartPanel).toHaveAttribute('aria-hidden', 'true');
+
+  await cartButton.click();
+  await expect(cart.getByLabel('Nombre completo')).toHaveValue('María Prueba');
+  await expect(cart.getByLabel('Número de teléfono')).toHaveValue('4521234567');
+
+  const reviewButton = cart.getByRole('button', { name: 'Revisar pedido' });
+  await expect(reviewButton).toBeEnabled();
+  await reviewButton.click();
+  await expect(cart.getByText('¡Pedido listo!')).toBeVisible();
+  await expect(cart.getByText(selectedProductName, { exact: true })).toBeVisible();
+  await expect(cart.getByText('María Prueba', { exact: true })).toBeVisible();
+  await expect(cart.getByText(/Precios y disponibilidad verificados/)).toBeVisible();
+  await expect(cart.getByRole('button', { name: '← Editar pedido' })).toBeVisible();
 });
 
 test('a product detail is shareable and supports shopping without closing', async ({ page }) => {

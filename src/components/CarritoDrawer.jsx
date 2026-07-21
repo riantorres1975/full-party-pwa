@@ -11,6 +11,39 @@ import { getProductPlaceholderUrl, getSafeProductImageUrl } from '../utils/image
 // Session rate limit (max orders per time window)
 const MAX_ORDERS_PER_SESSION = 5;
 const WINDOW_MS = 30 * 60 * 1000; // 30 minutes
+const CHECKOUT_DRAFT_KEY = 'fp_checkout_draft_v1';
+
+function readCheckoutDraft() {
+  try {
+    const draft = JSON.parse(localStorage.getItem(CHECKOUT_DRAFT_KEY) || '{}');
+    return {
+      deliveryType: draft.deliveryType === 'envio' ? 'envio' : 'tienda',
+      customerName: typeof draft.customerName === 'string' ? draft.customerName : '',
+      phone: typeof draft.phone === 'string' ? draft.phone : '',
+      address: typeof draft.address === 'string' ? draft.address : '',
+    };
+  } catch {
+    return { deliveryType: 'tienda', customerName: '', phone: '', address: '' };
+  }
+}
+
+function writeCheckoutDraft(draft) {
+  try {
+    const hasData = draft.customerName || draft.phone || draft.address || draft.deliveryType !== 'tienda';
+    if (hasData) localStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify(draft));
+    else localStorage.removeItem(CHECKOUT_DRAFT_KEY);
+  } catch {
+    // Ignore storage errors in private browsing.
+  }
+}
+
+function clearCheckoutDraft() {
+  try {
+    localStorage.removeItem(CHECKOUT_DRAFT_KEY);
+  } catch {
+    // Ignore storage errors in private browsing.
+  }
+}
 
 function checkRateLimit() {
   try {
@@ -41,14 +74,16 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
 
   const { guardarPedido, guardando } = usePedido();
   const { t } = useLanguage();
+  const [initialDraft] = useState(readCheckoutDraft);
 
-  const [deliveryType, setDeliveryType] = useState('tienda');
-  const [customerName, setCustomerName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
+  const [deliveryType, setDeliveryType] = useState(initialDraft.deliveryType);
+  const [customerName, setCustomerName] = useState(initialDraft.customerName);
+  const [phone, setPhone] = useState(initialDraft.phone);
+  const [address, setAddress] = useState(initialDraft.address);
   const [errors, setErrors] = useState({});
   const [honeypot,  setHoneypot]  = useState('');
   const [pendingOrder, setPendingOrder] = useState(null);
+  const [reviewUpdated, setReviewUpdated] = useState(false);
   const panelRef = useRef(null);
   useFocusTrap(panelRef, isOpen);
 
@@ -64,8 +99,15 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
   useEffect(() => { setErrors({}); }, [deliveryType]);
 
   useEffect(() => {
+    writeCheckoutDraft({ deliveryType, customerName, phone, address });
+  }, [deliveryType, customerName, phone, address]);
+
+  useEffect(() => {
     if (!isOpen) {
-      const t = setTimeout(() => setPendingOrder(null), 600);
+      const t = setTimeout(() => {
+        setPendingOrder(null);
+        setReviewUpdated(false);
+      }, 600);
       return () => clearTimeout(t);
     }
   }, [isOpen]);
@@ -77,16 +119,22 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
   const phoneValidation = validarTelefonoMX(cleanedPhone);
   const isPhoneValid = phoneValidation.valido;
 
-  const hasOutOfStockItems = items.some(item => {
-    const real = productos.find(p => p.id === item.id);
-    if (!real) return false;
-    return real.activo === false || (real.stock_ilimitado === false && (real.stock_actual || 0) === 0);
+  const currentItems = items.map((item) => {
+    const real = productos.find((producto) => String(producto.id) === String(item.id));
+    return real ? { ...item, ...real, id: item.id, cantidad: item.cantidad } : item;
   });
 
-  const isFormReady = customerName.trim().length > 0 && isPhoneValid &&
-    (deliveryType === 'tienda' || address.trim().length > 0) && !hasOutOfStockItems && pedidosHabilitados;
+  const stockIssues = currentItems.filter((item) => {
+    if (item.activo === false) return true;
+    if (item.stock_ilimitado !== false) return false;
+    return item.cantidad > (Number(item.stock_actual) || 0);
+  });
+  const hasStockIssues = stockIssues.length > 0;
 
-  const calculatedTotal = items.reduce((acc, item) => {
+  const isFormReady = customerName.trim().length > 0 && isPhoneValid &&
+    (deliveryType === 'tienda' || address.trim().length > 0) && !hasStockIssues && pedidosHabilitados;
+
+  const calculatedTotal = currentItems.reduce((acc, item) => {
     const precioAplicable = obtenerPrecioAplicable(item, item.cantidad);
     return acc + (precioAplicable * item.cantidad);
   }, 0);
@@ -96,6 +144,12 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
     !isPhoneValid ? t('form.fieldPhone') : null,
     deliveryType === 'envio' && address.trim().length === 0 ? t('form.fieldAddress') : null,
   ].filter(Boolean);
+
+  const createItemsSnapshot = () => currentItems.map((item) => ({
+    ...item,
+    precio_base: Number(item.precio) || 0,
+    precio: obtenerPrecioAplicable(item, item.cantidad),
+  }));
 
   const validateForm = () => {
     const e = {};
@@ -124,16 +178,7 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
 
     if (honeypot) return;
 
-    if (!checkRateLimit()) {
-      setErrors({ nombre: t('form.tooManyOrders') });
-      return;
-    }
-
-    const itemsWithAppliedPrice = items.map(item => ({
-      ...item,
-      precio_base: Number(item.precio) || 0,
-      precio: obtenerPrecioAplicable(item, item.cantidad),
-    }));
+    const itemsWithAppliedPrice = createItemsSnapshot();
 
     const normalizedAddress = deliveryType === 'envio' ? address.trim() : '';
 
@@ -146,6 +191,7 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
       telefono: cleanedPhone,
       direccion: normalizedAddress,
     });
+    setReviewUpdated(false);
   };
 
   const handleOpenWhatsApp = async () => {
@@ -153,6 +199,40 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
     if (!pedidosHabilitados) {
       setErrors({ nombre: t('cart.ordersPausedError') });
       setPendingOrder(null);
+      return;
+    }
+
+    if (hasStockIssues) {
+      setPendingOrder(null);
+      setReviewUpdated(false);
+      return;
+    }
+
+    const latestItems = createItemsSnapshot();
+    const latestTotal = latestItems.reduce(
+      (total, item) => total + (Number(item.precio) || 0) * item.cantidad,
+      0,
+    );
+    const summarize = (orderItems) => JSON.stringify(orderItems.map((item) => ({
+      id: String(item.id),
+      cantidad: item.cantidad,
+      precio: Number(item.precio) || 0,
+    })));
+
+    if (latestTotal !== pendingOrder.total || summarize(latestItems) !== summarize(pendingOrder.itemsSnapshot)) {
+      setPendingOrder((current) => ({
+        ...current,
+        itemsSnapshot: latestItems,
+        total: latestTotal,
+      }));
+      setReviewUpdated(true);
+      return;
+    }
+
+    if (!checkRateLimit()) {
+      setErrors({ nombre: t('form.tooManyOrders') });
+      setPendingOrder(null);
+      setReviewUpdated(false);
       return;
     }
 
@@ -191,7 +271,9 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
     onLimpiar();
     setCustomerName(''); setPhone(''); setAddress('');
     setDeliveryType('tienda');
+    clearCheckoutDraft();
     setPendingOrder(null);
+    setReviewUpdated(false);
   };
 
   return (
@@ -212,12 +294,14 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
         role="dialog"
         aria-label={t('cart.title')}
         aria-modal="true"
+        aria-hidden={!isOpen}
+        {...(!isOpen ? { inert: '' } : {})}
         className={`
           fixed inset-x-0 bottom-0 z-50 rounded-t-3xl shadow-2xl
           max-h-[92vh] flex flex-col safe-bottom
           sm:w-[26rem] sm:max-w-[calc(100vw-3rem)] sm:left-auto sm:right-6 sm:rounded-3xl sm:bottom-6
           transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
-          ${isOpen ? 'translate-y-0' : 'translate-y-full sm:translate-y-[calc(100%+2rem)]'}
+          ${isOpen ? 'translate-y-0' : 'pointer-events-none translate-y-full sm:translate-y-[calc(100%+2rem)]'}
         `}
         style={{ background: 'var(--surface-primary)', border: '1px solid var(--border-soft)' }}
       >
@@ -296,6 +380,38 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
                 </div>
               )}
               <div className="w-full rounded-2xl p-4 space-y-2"
+                   style={{ background: 'var(--surface-card)', border: '2px solid var(--border-default)' }}>
+                <p className="text-xs font-body font-black uppercase tracking-wide text-ink-500">
+                  {t('cart.customerDetails')}
+                </p>
+                <p className="font-body text-sm font-black text-ink-800">{pendingOrder.nombre}</p>
+                <p className="font-body text-xs font-semibold text-ink-500">{pendingOrder.telefono}</p>
+                {pendingOrder.tipoEntrega === 'envio' && pendingOrder.direccion && (
+                  <p className="font-body text-xs leading-relaxed text-ink-500">{pendingOrder.direccion}</p>
+                )}
+              </div>
+              <div className="w-full rounded-2xl p-4 space-y-3"
+                   style={{ background: 'var(--surface-card)', border: '2px solid var(--border-default)' }}>
+                <p className="text-xs font-body font-black uppercase tracking-wide text-ink-500">
+                  {t('cart.productSummary')}
+                </p>
+                <ul className="max-h-44 space-y-2 overflow-y-auto pr-1">
+                  {pendingOrder.itemsSnapshot.map((item) => (
+                    <li key={item.id} className="flex items-start justify-between gap-3 text-xs font-body">
+                      <div className="min-w-0">
+                        <p className="font-black text-ink-800">{item.nombre}</p>
+                        <p className="font-semibold text-ink-400">
+                          {item.cantidad} × {SIMBOLO_MONEDA}{Number(item.precio).toFixed(2)}
+                        </p>
+                      </div>
+                      <span className="flex-shrink-0 font-black text-ink-700">
+                        {SIMBOLO_MONEDA}{(Number(item.precio) * item.cantidad).toFixed(2)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="w-full rounded-2xl p-4 space-y-2"
                    style={{ background: 'var(--surface-section-gradient)', border: '2px solid var(--border-default)' }}>
                 <div className="flex justify-between text-sm">
                   <span className="font-body text-ink-500">{t('cart.productsLabel')}</span>
@@ -316,7 +432,21 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
                     {SIMBOLO_MONEDA}{pendingOrder.total.toFixed(2)}
                   </span>
                 </div>
+                {pendingOrder.tipoEntrega === 'envio' && (
+                  <p className="text-[10px] font-body font-bold leading-relaxed text-ink-500">
+                    {t('cart.shippingCostPending')}
+                  </p>
+                )}
               </div>
+              <p className="text-center text-[10px] font-body font-bold text-green-700">
+                {t('cart.catalogVerified')}
+              </p>
+              {reviewUpdated && (
+                <p className="w-full rounded-xl bg-amber-50 px-3 py-2 text-center text-[11px] font-body font-black text-amber-700"
+                   role="status">
+                  {t('cart.reviewUpdated')}
+                </p>
+              )}
             </div>
           ) : (
           <>
@@ -339,7 +469,7 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
               </div>
             ) : (
               <ul className="space-y-3">
-                {items.map((item) => {
+                {currentItems.map((item) => {
                   const c = 'var(--accent-primary)';
                   const precioBase = Number(item.precio) || 0;
                   const precioAplicable = obtenerPrecioAplicable(item, item.cantidad);
@@ -348,17 +478,20 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
                   const fallbackImage = getProductPlaceholderUrl(item.nombre, '56x56');
                   const imageSrc = getSafeProductImageUrl(item.imagen_url, item.nombre, '56x56');
 
-                  const prodReal = productos.find(p => p.id === item.id);
-                  const agotadoRT = prodReal
-                    ? (prodReal.activo === false || (prodReal.stock_ilimitado === false && (prodReal.stock_actual || 0) === 0))
-                    : false;
-                  const stockBajoRT = prodReal && !agotadoRT && prodReal.stock_ilimitado === false
-                    && (prodReal.stock_actual || 0) > 0 && item.cantidad >= (prodReal.stock_actual || 0);
+                  const stockActualRT = Number(item.stock_actual) || 0;
+                  const agotadoRT = item.activo === false || (
+                    item.stock_ilimitado === false && stockActualRT === 0
+                  );
+                  const stockInsuficienteRT = !agotadoRT && item.stock_ilimitado === false &&
+                    item.cantidad > stockActualRT;
+                  const stockMaximoRT = !agotadoRT && !stockInsuficienteRT && item.stock_ilimitado === false &&
+                    stockActualRT > 0 && item.cantidad >= stockActualRT;
+                  const tieneProblemaStock = agotadoRT || stockInsuficienteRT;
 
                   return (
-                    <li key={item.id}
+                      <li key={item.id}
                         className="relative flex gap-3 items-center bg-white rounded-2xl p-3"
-                        style={{ border: `2px solid ${agotadoRT ? 'var(--color-danger)' : 'var(--color-brand-soft)'}`, opacity: agotadoRT ? 0.7 : 1 }}>
+                        style={{ border: `2px solid ${tieneProblemaStock ? 'var(--color-danger)' : 'var(--color-brand-soft)'}`, opacity: agotadoRT ? 0.7 : 1 }}>
 
                       {agotadoRT && (
                         <div className="absolute -top-2 -right-2 z-10 bg-red-500 text-white text-[9px] font-body font-black
@@ -395,23 +528,23 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
                         <p className="font-body text-sm font-black mt-0.5" style={{ color: agotadoRT ? 'var(--text-inactive)' : c }}>
                           {SIMBOLO_MONEDA}{subtotal.toFixed(2)}
                         </p>
-                        {stockBajoRT && !agotadoRT && (
+                        {(stockInsuficienteRT || stockMaximoRT) && (
                           <span
                             className="mt-1 inline-flex rounded-full px-2 py-0.5 text-[9px] font-body font-black text-white"
                             style={{ background: 'linear-gradient(135deg, #f97316, #dc2626)' }}
                           >
-                            {t('product.max', { count: prodReal.stock_actual })}
+                            {stockInsuficienteRT
+                              ? t('cart.stockAvailable', { count: stockActualRT })
+                              : t('product.max', { count: stockActualRT })}
                           </span>
                         )}
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <button onClick={() => !agotadoRT && onReducir(item.id)}
-                          disabled={agotadoRT}
+                        <button onClick={() => onReducir(item.id)}
                           aria-label={t('product.removeOne', { name: item.nombre })}
-                          className={`w-7 h-7 flex items-center justify-center rounded-full
+                          className="w-7 h-7 flex items-center justify-center rounded-full
                                      bg-ink-100 text-ink-600 border-2 border-ink-200
-                                     transition-all hover:border-fiesta-magenta
-                                     ${agotadoRT ? 'opacity-40 cursor-not-allowed' : 'active:scale-90'}`}>
+                                     transition-all hover:border-fiesta-magenta active:scale-90">
                           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" />
                           </svg>
@@ -420,8 +553,8 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
 
                         {(() => {
                           const maxStockAlcanzado = agotadoRT || (
-                            prodReal?.stock_ilimitado === false &&
-                            item.cantidad >= (Number(prodReal.stock_actual) || 0)
+                            item.stock_ilimitado === false &&
+                            item.cantidad >= stockActualRT
                           );
                           return (
                             <button onClick={() => !maxStockAlcanzado && onAgregar(item)}
@@ -497,6 +630,9 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
                       value={customerName}
                       onChange={(e) => setCustomerName(capitalizeName(e.target.value))}
                       placeholder={t('form.namePlaceholder')}
+                      aria-label={t('form.nameLabel')}
+                      autoComplete="name"
+                      maxLength={100}
                       className={INPUT_CLASS}
                       style={errors.nombre ? { ...inputDynStyle, borderColor: 'var(--color-danger)' } : inputDynStyle}
                     />
@@ -513,6 +649,9 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
                       value={phone}
                       onChange={(e) => setPhone(e.target.value.replace(/[^\d]/g, ''))}
                       placeholder={t('form.phonePlaceholder')}
+                      aria-label={t('form.phoneLabel')}
+                      autoComplete="tel-national"
+                      inputMode="numeric"
                       maxLength={10}
                       className={INPUT_CLASS}
                       style={errors.telefono ? { ...inputDynStyle, borderColor: 'var(--color-danger)' } : isPhoneValid ? { ...inputDynStyle, borderColor: 'var(--accent-success)' } : inputDynStyle}
@@ -549,6 +688,9 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
                         placeholder={t('form.addressPlaceholder')}
+                        aria-label={t('form.addressLabel')}
+                        autoComplete="street-address"
+                        maxLength={300}
                         rows={2}
                         className={INPUT_CLASS + ' resize-none'}
                         style={errors.direccion ? { ...inputDynStyle, borderColor: 'var(--color-danger)' } : inputDynStyle}
@@ -589,11 +731,14 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
                   {guardando ? t('cart.savingOrder') : t('cart.sendOrder')}
                 </button>
                 <button
-                    onClick={() => setPendingOrder(null)}
+                    onClick={() => {
+                      setPendingOrder(null);
+                      setReviewUpdated(false);
+                    }}
                   className="w-full text-center text-xs font-body font-semibold py-1"
                   style={{ color: 'var(--text-secondary)' }}
                 >
-                  {t('cart.backToCart')}
+                  {t('cart.editOrder')}
                 </button>
               </>
             ) : (
@@ -607,9 +752,9 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
                   </span>
                 </div>
 
-                {hasOutOfStockItems && (
+                {hasStockIssues && (
                   <p className="text-xs font-body font-bold text-red-500 text-center py-1">
-                    {t('cart.outOfStockWarning')}
+                    {t('cart.stockIssueWarning')}
                   </p>
                 )}
 
@@ -619,7 +764,7 @@ export default function CarritoDrawer({ items, isOpen, onCerrar, onAgregar, onRe
                   </p>
                 )}
 
-                {!isFormReady && !hasOutOfStockItems && pedidosHabilitados && missingFields.length > 0 && (
+                {!isFormReady && !hasStockIssues && pedidosHabilitados && missingFields.length > 0 && (
                   <p className="text-center text-xs font-body font-bold" style={{ color: 'var(--text-secondary)' }} role="status">
                     {t('cart.completeFields', { fields: missingFields.join(', ') })}
                   </p>
