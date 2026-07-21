@@ -1,4 +1,4 @@
-import { ArrowDownUp, ChevronDown, RotateCcw } from 'lucide-react';
+import { ArrowDownUp, ChevronDown, Heart, RotateCcw } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage';
 
 export default function CatalogToolbar({
@@ -7,12 +7,15 @@ export default function CatalogToolbar({
   onSortChange,
   isFiltered = false,
   onClear,
+  favoriteCount = 0,
+  showFavorites = false,
+  onToggleFavorites,
 }) {
   const { t } = useLanguage();
 
   return (
     <div
-      className="mx-3 mb-1 mt-2 flex min-h-12 items-center justify-between gap-3 rounded-2xl border px-3 py-2 sm:mx-4 lg:mx-0"
+      className="mx-3 mb-1 mt-2 flex min-h-12 items-center justify-between gap-2 rounded-2xl border px-3 py-2 sm:mx-4 lg:mx-0"
       style={{
         background: 'var(--surface-card-alpha80)',
         borderColor: 'var(--border-soft)',
@@ -36,6 +39,23 @@ export default function CatalogToolbar({
           </button>
         )}
       </div>
+
+      <button
+        type="button"
+        onClick={onToggleFavorites}
+        className="flex min-h-10 flex-shrink-0 items-center gap-1.5 rounded-xl border px-2 text-xs font-body font-black transition-colors focus-visible:ring-2 sm:px-3"
+        style={showFavorites
+          ? { background: '#fff0f7', borderColor: '#ff3dac', color: '#d91b83' }
+          : { background: 'var(--surface-input)', borderColor: 'var(--border-default)', color: 'var(--text-secondary)' }}
+        aria-pressed={showFavorites}
+        aria-label={showFavorites
+          ? t('catalog.hideFavorites')
+          : t('catalog.showFavorites', { count: favoriteCount })}
+      >
+        <Heart className="h-4 w-4" fill={showFavorites ? 'currentColor' : 'none'} aria-hidden="true" />
+        <span className="hidden sm:inline">{t('catalog.favorites')}</span>
+        <span>{favoriteCount}</span>
+      </button>
 
       <label className="relative flex min-w-0 max-w-[11.5rem] flex-1 items-center sm:flex-none" htmlFor="catalog-sort">
         <ArrowDownUp

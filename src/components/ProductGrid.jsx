@@ -5,6 +5,7 @@ import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { useLanguage } from '../hooks/useLanguage';
 import { obtenerProductosRelacionados } from '../utils/productosRelacionados';
 import { buildProductAnalyticsParams, trackEvent } from '../utils/analytics';
+import RecentlyViewed from './RecentlyViewed';
 
 const ProductoDetalleModal = lazy(() => import('./ProductoDetalleModal'));
 
@@ -16,6 +17,10 @@ export default function ProductGrid({
   onReducir,
   isFiltered = false,
   onClear,
+  isFavorite = () => false,
+  onToggleFavorite,
+  onViewProduct,
+  recentProducts = [],
 }) {
   const { visibleCount, sentinelRef, hayMas, cargando, reset } = useInfiniteScroll(productos.length);
   const [productoDetalle, setProductoDetalle] = useState(null);
@@ -47,7 +52,8 @@ export default function ProductGrid({
       'catalog_product_view',
       buildProductAnalyticsParams(productoDetalle),
     );
-  }, [productoDetalle]);
+    onViewProduct?.(productoDetalle.id);
+  }, [onViewProduct, productoDetalle]);
 
   const openProductDetail = (producto) => {
     setProductoDetalle(producto);
@@ -73,30 +79,53 @@ export default function ProductGrid({
     [productos, visibleCount],
   );
 
+  const productDetail = productoDetalle && (
+    <Suspense fallback={null}>
+      <ProductoDetalleModal
+        producto={productoDetalle}
+        cantidad={getCantidad(productoDetalle.id)}
+        relacionados={relatedProducts}
+        onCerrar={closeProductDetail}
+        onAgregar={onAgregar}
+        onReducir={onReducir}
+        onSeleccionarRelacionado={openProductDetail}
+        isFavorite={isFavorite(productoDetalle.id)}
+        onToggleFavorite={onToggleFavorite}
+      />
+    </Suspense>
+  );
+
   if (productos.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
-        <div className="text-5xl mb-4 animate-float">🎈</div>
-        <h3 className="font-display text-2xl text-ink-500 mb-1">{t('grid.noResults')}</h3>
-        <p className="text-sm text-ink-400 font-body mb-4">
-          {t('grid.noResultsDesc')}
-        </p>
-        {isFiltered && onClear && (
-          <button
-            type="button"
-            onClick={onClear}
-            className="px-5 py-2.5 rounded-2xl font-body font-black text-sm text-white transition-all duration-200 active:scale-95"
-            style={{ background: 'var(--gradient-accent)', boxShadow: 'var(--shadow-accent-soft)' }}
-          >
-            {t('grid.clearFilters')}
-          </button>
-        )}
-      </div>
+      <>
+        <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
+          <div className="text-5xl mb-4 animate-float">🎈</div>
+          <h3 className="font-display text-2xl text-ink-500 mb-1">{t('grid.noResults')}</h3>
+          <p className="text-sm text-ink-400 font-body mb-4">
+            {t('grid.noResultsDesc')}
+          </p>
+          {isFiltered && onClear && (
+            <button
+              type="button"
+              onClick={onClear}
+              className="px-5 py-2.5 rounded-2xl font-body font-black text-sm text-white transition-all duration-200 active:scale-95"
+              style={{ background: 'var(--gradient-accent)', boxShadow: 'var(--shadow-accent-soft)' }}
+            >
+              {t('grid.clearFilters')}
+            </button>
+          )}
+        </div>
+        {productDetail}
+      </>
     );
   }
 
   return (
     <div className="w-full">
+      {!isFiltered && (
+        <RecentlyViewed products={recentProducts} onSelectProduct={openProductDetail} />
+      )}
+
       <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(195px,1fr))] gap-2.5 sm:gap-3 lg:gap-4 p-3 sm:p-4 lg:p-0 animate-fade-in">
         {visibles.map((producto, index) => (
           <ProductCard
@@ -107,6 +136,8 @@ export default function ProductGrid({
             onAgregar={onAgregar}
             onReducir={onReducir}
             onAbrirDetalle={openProductDetail}
+            isFavorite={isFavorite(producto.id)}
+            onToggleFavorite={onToggleFavorite}
           />
         ))}
       </div>
@@ -145,19 +176,7 @@ export default function ProductGrid({
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
 
-      {productoDetalle && (
-        <Suspense fallback={null}>
-          <ProductoDetalleModal
-            producto={productoDetalle}
-            cantidad={getCantidad(productoDetalle.id)}
-            relacionados={relatedProducts}
-            onCerrar={closeProductDetail}
-            onAgregar={onAgregar}
-            onReducir={onReducir}
-            onSeleccionarRelacionado={openProductDetail}
-          />
-        </Suspense>
-      )}
+      {productDetail}
     </div>
   );
 }

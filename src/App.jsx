@@ -22,6 +22,7 @@ import CatalogToolbar from './components/CatalogToolbar';
 import { fuzzySearch } from './utils/fuzzySearch';
 import { buildProductAnalyticsParams, trackEvent } from './utils/analytics';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
+import { useProductPreferences } from './hooks/useProductPreferences';
 
 const PRODUCT_SEARCH_KEYS = [
   { name: 'nombre', weight: 0.5 },
@@ -53,6 +54,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   const [isCategoryBrowserOpen, setIsCategoryBrowserOpen] = useState(false);
   const [bottomNavActive, setBottomNavActive] = useState('inicio');
   const [sortOrder, setSortOrder] = useState('featured');
+  const [showFavorites, setShowFavorites] = useState(false);
   const searchRef = useRef(null);
   const searchMetricRef = useRef('');
 
@@ -72,6 +74,12 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   const toast = useToast();
   const { t } = useLanguage();
   const isOnline = useOnlineStatus();
+  const {
+    recentIds,
+    isFavorite,
+    toggleFavorite,
+    recordViewedProduct,
+  } = useProductPreferences();
 
   const addCatalogItem = useCallback((product) => {
     agregarItem(product);
@@ -99,6 +107,15 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     });
     setIsCartOpen(true);
   }, [cantidadTotal, items.length, total]);
+
+  const handleToggleFavorite = useCallback((product, source) => {
+    const nextFavoriteState = !isFavorite(product.id);
+    toggleFavorite(product.id);
+    trackEvent('favorite_toggle', buildProductAnalyticsParams(product, {
+      source,
+      is_favorite: nextFavoriteState,
+    }));
+  }, [isFavorite, toggleFavorite]);
 
   useEffect(() => {
     if (stockError) toast.warning(stockError);
@@ -151,6 +168,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
   const filteredProducts = useMemo(() => {
     const base = productos.filter(p => {
+      if (showFavorites && !isFavorite(p.id)) return false;
       const matchesCategory =
         activeFilters.categorias.length === 0 || activeFilters.categorias.includes(p.categoria);
       const matchesBrand =
@@ -182,7 +200,19 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
       if (aNuevo !== bNuevo) return bNuevo - aNuevo;
       return String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base' });
     });
-  }, [productos, searchQuery, activeFilters, sortOrder]);
+  }, [productos, searchQuery, activeFilters, sortOrder, showFavorites, isFavorite]);
+
+  const favoriteCount = useMemo(
+    () => productos.filter((product) => isFavorite(product.id)).length,
+    [isFavorite, productos],
+  );
+
+  const recentProducts = useMemo(() => {
+    const productsById = new Map(productos.map((product) => [String(product.id), product]));
+    return recentIds
+      .map((id) => productsById.get(id))
+      .filter((product) => product?.activo !== false);
+  }, [productos, recentIds]);
 
   useEffect(() => {
     const query = searchQuery.trim();
@@ -263,6 +293,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     clearFilters();
     setIsCategoryBrowserOpen(false);
     setBottomNavActive('inicio');
+    setShowFavorites(false);
     scrollCatalogTop();
   };
 
@@ -272,6 +303,8 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     scrollCatalogTop();
     setTimeout(() => searchRef.current?.focus(), 180);
   };
+
+  const catalogIsFiltered = searchQuery.trim().length > 0 || activeFilterCount > 0 || showFavorites;
 
   // Render
   // Full-screen tracking view
@@ -430,8 +463,17 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     total={filteredProducts.length}
                     sortOrder={sortOrder}
                     onSortChange={setSortOrder}
-                    isFiltered={searchQuery.trim().length > 0 || activeFilterCount > 0}
+                    isFiltered={catalogIsFiltered}
                     onClear={resetCatalog}
+                    favoriteCount={favoriteCount}
+                    showFavorites={showFavorites}
+                    onToggleFavorites={() => {
+                      setShowFavorites((current) => !current);
+                      trackEvent('catalog_filter', {
+                        filter_type: 'favorites',
+                        has_value: !showFavorites,
+                      });
+                    }}
                   />
                 )}
 
@@ -464,8 +506,12 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                       getCantidad={getCantidad}
                       onAgregar={addCatalogItem}
                       onReducir={reducirItem}
-                      isFiltered={searchQuery.trim().length > 0 || activeFilterCount > 0}
+                      isFiltered={catalogIsFiltered}
                       onClear={resetCatalog}
+                      isFavorite={isFavorite}
+                      onToggleFavorite={handleToggleFavorite}
+                      onViewProduct={recordViewedProduct}
+                      recentProducts={recentProducts}
                     />
                   )}
 

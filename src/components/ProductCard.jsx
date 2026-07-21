@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { Heart } from 'lucide-react';
 import { SIMBOLO_MONEDA } from '../data/productos';
 import { obtenerPrecioAplicable, obtenerSiguienteEscalaMayoreo } from '../utils/precios';
 import { useLanguage } from '../hooks/useLanguage';
@@ -12,6 +13,8 @@ function ProductCardInner({
   onAgregar,
   onReducir,
   onAbrirDetalle,
+  isFavorite = false,
+  onToggleFavorite,
   index = 0,
 }) {
   const { t } = useLanguage();
@@ -38,7 +41,7 @@ function ProductCardInner({
 
   return (
     <article
-      className="product-card rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-300 flex flex-col h-full"
+      className="product-card relative rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-300 flex flex-col h-full"
       style={{
         background: 'var(--surface-card)',
         border: esNuevo ? '1.5px solid rgba(168,85,247,0.35)' : '1px solid var(--border-soft)',
@@ -75,7 +78,7 @@ function ProductCardInner({
           )}
 
           {enCarrito && !agotado && (
-            <div className="absolute top-2 right-2 text-[11px] font-body font-black min-w-[24px] h-6
+            <div className="absolute top-2 right-12 text-[11px] font-body font-black min-w-[24px] h-6
                             flex items-center justify-center px-1.5 rounded-full animate-scale-in
                             bg-white text-ink-900 shadow-md"
                  style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
@@ -121,6 +124,20 @@ function ProductCardInner({
             )}
           </div>
         </div>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => onToggleFavorite?.(producto, 'card')}
+        className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full border bg-white/95 shadow-sm transition-transform hover:scale-105 active:scale-90 focus-visible:ring-2"
+        style={{
+          borderColor: isFavorite ? '#ff3dac' : 'var(--border-soft)',
+          color: isFavorite ? '#e11d88' : '#6b4d86',
+        }}
+        aria-pressed={isFavorite}
+        aria-label={t(isFavorite ? 'product.removeFavorite' : 'product.addFavorite', { name: producto.nombre })}
+      >
+        <Heart className="h-4 w-4" fill={isFavorite ? 'currentColor' : 'none'} aria-hidden="true" />
       </button>
 
       <div className="px-2 pb-2 sm:px-3 sm:pb-3">

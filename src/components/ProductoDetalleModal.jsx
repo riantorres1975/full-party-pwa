@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Check,
+  Heart,
   Minus,
   PackageCheck,
   Plus,
@@ -26,6 +27,8 @@ export default function ProductoDetalleModal({
   onSeleccionarRelacionado,
   relacionados = [],
   cantidad = 0,
+  isFavorite = false,
+  onToggleFavorite,
 }) {
   const [cerrando, setCerrando] = useState(false);
   const [shareStatus, setShareStatus] = useState('idle');
@@ -239,6 +242,23 @@ export default function ProductoDetalleModal({
                     ? t('product.shareError')
                     : t('product.share')}
               </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onToggleFavorite?.(producto, 'detail')}
+              className="flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200 hover:scale-105 active:scale-95"
+              style={{
+                background: 'var(--surface-card-alpha80)',
+                backdropFilter: 'blur(8px)',
+                border: `1px solid ${isFavorite ? '#ff3dac' : 'var(--border-default)'}`,
+                color: isFavorite ? '#e11d88' : 'var(--text-primary)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              }}
+              aria-pressed={isFavorite}
+              aria-label={t(isFavorite ? 'product.removeFavorite' : 'product.addFavorite', { name: producto.nombre })}
+            >
+              <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} strokeWidth={2.5} />
             </button>
 
             <button

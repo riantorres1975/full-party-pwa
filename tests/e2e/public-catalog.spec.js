@@ -214,6 +214,52 @@ test('an offline checkout stays intact until the connection returns', async ({ p
   await expect(cart.getByRole('button', { name: 'Enviar pedido a Full Party' })).toBeEnabled();
 });
 
+test('favorites and recently viewed products persist across reloads', async ({ page }) => {
+  await page.goto('/catalogo');
+  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
+
+  const firstProduct = page.locator('article.product-card').first();
+  const productName = await firstProduct.locator('h3').innerText();
+  await firstProduct.getByRole('button', { name: `Agregar ${productName} a favoritos` }).click();
+  await expect(
+    firstProduct.getByRole('button', { name: `Quitar ${productName} de favoritos` }),
+  ).toBeVisible();
+
+  const favoritesFilter = page.getByRole('button', { name: 'Mostrar 1 favoritos' });
+  await favoritesFilter.click();
+  await expect(page.locator('article.product-card')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Ver todos los productos' })).toHaveAttribute('aria-pressed', 'true');
+
+  await page.getByRole('button', { name: 'Ver todos los productos' }).click();
+  await firstProduct.locator('.product-card-detail-trigger').click();
+  const detail = page.getByRole('dialog', { name: `Ver detalle de ${productName}` });
+  await expect(detail).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(detail).toBeHidden();
+  await expect(page).not.toHaveURL(/[?&]producto=/);
+
+  const recentlyViewed = page.getByRole('region', { name: 'Vistos recientemente' });
+  await expect(recentlyViewed).toBeVisible();
+  await expect(
+    recentlyViewed.getByRole('button', { name: `Abrir ${productName} visto recientemente` }),
+  ).toBeVisible();
+
+  const favoriteEvent = (await readAnalyticsEvents(page)).find(({ name }) => name === 'favorite_toggle');
+  expect(favoriteEvent.params).toMatchObject({ source: 'card', is_favorite: true });
+
+  await page.reload();
+  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
+  const restoredProduct = page.locator('article.product-card').filter({ hasText: productName });
+  await expect(
+    restoredProduct.getByRole('button', { name: `Quitar ${productName} de favoritos` }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: `Abrir ${productName} visto recientemente` }),
+  ).toBeVisible();
+
+  expect((await readAnalyticsEvents(page)).filter(({ name }) => name === 'favorite_toggle')).toHaveLength(0);
+});
+
 test('a product detail is shareable and supports shopping without closing', async ({ page }) => {
   await page.goto('/catalogo');
   await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
