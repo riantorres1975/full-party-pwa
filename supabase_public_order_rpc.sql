@@ -1,4 +1,4 @@
--- PUBLIC ORDER CREATION RPC
+-- PUBLIC ORDER CREATION AND TRACKING RPCS
 -- Run after supabase_security_hardening.sql and supabase_order_integrity.sql.
 -- Safe to run more than once.
 
@@ -111,14 +111,55 @@ REVOKE ALL ON FUNCTION public.crear_pedido_publico(TEXT, TEXT, TEXT, TEXT, NUMER
 GRANT EXECUTE ON FUNCTION public.crear_pedido_publico(TEXT, TEXT, TEXT, TEXT, NUMERIC, JSONB)
   TO anon, authenticated;
 
+-- Exact lookup for the public tracking page. Only the fields required by the
+-- customer view are returned; the orders table remains private.
+CREATE OR REPLACE FUNCTION public.buscar_pedido_por_folio(p_folio TEXT)
+RETURNS TABLE (
+  folio TEXT,
+  cliente_nombre TEXT,
+  estado TEXT,
+  total NUMERIC,
+  tipo_entrega TEXT,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ,
+  detalles_json JSONB
+)
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public, pg_temp
+AS $$
+  SELECT
+    pedido.folio,
+    pedido.cliente_nombre,
+    pedido.estado,
+    pedido.total,
+    pedido.tipo_entrega,
+    pedido.created_at,
+    pedido.updated_at,
+    pedido.detalles_json
+  FROM public.pedidos AS pedido
+  WHERE upper(btrim(p_folio)) ~ '^FP-[A-Z0-9-]{4,32}$'
+    AND pedido.folio = upper(btrim(p_folio))
+  LIMIT 1;
+$$;
+
+REVOKE ALL ON FUNCTION public.buscar_pedido_por_folio(TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.buscar_pedido_por_folio(TEXT) TO anon, authenticated;
+
 DROP POLICY IF EXISTS pedidos_insert_returning_select ON public.pedidos;
 REVOKE SELECT (folio) ON TABLE public.pedidos FROM anon;
 REVOKE INSERT ON TABLE public.pedidos FROM anon;
 
 COMMIT;
 
+-- Make newly created RPCs visible to the REST API without waiting for its
+-- schema cache refresh interval.
+NOTIFY pgrst, 'reload schema';
+
 -- Verification (run separately):
 -- SELECT public.crear_pedido_publico(
 --   'Cliente prueba', '4521234567', 'tienda', NULL, 1,
 --   '[{"id":"PRODUCT-UUID","cantidad":1}]'::JSONB
 -- );
+-- SELECT * FROM public.buscar_pedido_por_folio('FP-REPLACE-WITH-A-REAL-FOLIO');

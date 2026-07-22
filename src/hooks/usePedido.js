@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { crearPedidoPublico } from '../lib/pedidosPublicos';
+import { buscarPedidoPublico, crearPedidoPublico } from '../lib/pedidosPublicos';
 import { obtenerPrecioAplicable } from '../utils/precios';
 
 /**
@@ -68,14 +68,8 @@ export function usePedido() {
         return { pedidos: [], error: 'Ingresa un folio válido (ej. FP-00001).' };
       }
 
-      // Se usa un RPC SECURITY DEFINER (buscar_pedido_por_folio) en lugar de leer
-      // la tabla `pedidos` directamente: la tabla solo permite SELECT a admins, y
-      // exponerla públicamente permitiría enumerar pedidos ajenos (folios secuenciales).
-      const { data, error } = await supabase
-        .rpc('buscar_pedido_por_folio', { p_folio: folio });
-
-      if (error) throw error;
-      return { pedidos: data ?? [], error: null };
+      const pedidos = await buscarPedidoPublico(supabase, folio);
+      return { pedidos, error: null };
     } catch (err) {
       return { pedidos: [], error: 'No se pudo buscar el pedido. Intenta de nuevo.' };
     } finally {
