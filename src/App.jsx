@@ -392,6 +392,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   };
 
   const catalogIsFiltered = searchQuery.trim().length > 0 || activeFilterCount > 0 || showFavorites;
+  const catalogMetadataPending = loading || isInitialSyncing || (isPartialData && refreshing);
 
   // Render
   // Full-screen tracking view
@@ -432,7 +433,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
               totalFiltrosActivos={activeFilterCount}
               onAbrirFiltros={openFilters}
               productos={productos}
-              categoryStats={isInitialSyncing ? [] : categoryStats}
+              categoryStats={catalogMetadataPending ? [] : categoryStats}
               onSelectCategory={selectCategory}
               routeCategoryLabel={categoryRoute?.label}
               priceBounds={priceBounds}
@@ -490,7 +491,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
           </div>
         )}
 
-        {isOnline && (usingCachedData || isPartialData) && !error && (
+        {isOnline && (usingCachedData || (isPartialData && !refreshing)) && !error && (
           <div
             role="status"
             aria-live="polite"
@@ -520,9 +521,9 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
               />
 
               <section className="lg:h-full lg:flex lg:flex-col min-h-0">
-                {(loading || isInitialSyncing) && !error && <CategoryGridSkeleton />}
+                {catalogMetadataPending && !error && <CategoryGridSkeleton />}
 
-                {!loading && !isInitialSyncing && !error && (
+                {!catalogMetadataPending && !error && (
                   <CategoryGrid
                     categories={topHomeCategories}
                     totalCategories={categoryStats.length || categoryPills.length}
@@ -551,7 +552,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                   </div>
                 </div>
 
-                {!loading && !isInitialSyncing && !error && (
+                {!catalogMetadataPending && !error && (
                   <CatalogToolbar
                     total={filteredProducts.length}
                     sortOrder={sortOrder}
@@ -571,7 +572,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                   />
                 )}
 
-                {(loading || isInitialSyncing) && !error && <CatalogToolbarSkeleton />}
+                {catalogMetadataPending && !error && <CatalogToolbarSkeleton />}
 
                 <div data-catalog-scroll-root className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-16">
                   {loading && <ProductosSkeleton cantidad={12} />}

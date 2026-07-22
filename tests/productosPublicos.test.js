@@ -54,6 +54,29 @@ test('loads every product across as many pages as needed', async () => {
   assert.deepEqual(seenPages, [[1, 2], [1, 2, 3, 4], [1, 2, 3, 4, 5]]);
 });
 
+test('loads a compact initial page before continuing with the full page size', async () => {
+  const client = createClient([
+    { data: [{ id: 1 }, { id: 2 }], error: null },
+    { data: [{ id: 3 }, { id: 4 }, { id: 5 }], error: null },
+  ]);
+  const pageStates = [];
+
+  const result = await fetchAllPublicProducts(client, {
+    initialPageSize: 2,
+    pageSize: 5,
+    onPage: (products, metadata) => {
+      pageStates.push({ ids: products.map(({ id }) => id), ...metadata });
+    },
+  });
+
+  assert.deepEqual(result.data.map(({ id }) => id), [1, 2, 3, 4, 5]);
+  assert.deepEqual(client.calls.map((call) => call.range), [[0, 1], [2, 6]]);
+  assert.deepEqual(pageStates, [
+    { ids: [1, 2], pageIndex: 0, isLastPage: false },
+    { ids: [1, 2, 3, 4, 5], pageIndex: 1, isLastPage: true },
+  ]);
+});
+
 test('uses a stable order and requests only public catalog fields', async () => {
   const client = createClient([{ data: [], error: null }]);
 
@@ -63,6 +86,7 @@ test('uses a stable order and requests only public catalog fields', async () => 
   assert.equal(client.calls[0].fields, PUBLIC_PRODUCT_FIELDS);
   assert.deepEqual(client.calls[0].orders, [
     ['activo', { ascending: false }],
+    ['es_nuevo', { ascending: false, nullsFirst: false }],
     ['nombre', { ascending: true }],
     ['id', { ascending: true }],
   ]);

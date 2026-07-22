@@ -23,7 +23,9 @@ export default function ProductGrid({
   recentProducts = [],
 }) {
   const productSetKey = useMemo(
-    () => productos.map((producto) => String(producto.id)).join('|'),
+    // Appending background pages must not collapse the visible grid back to its
+    // initial size. Filter and sort changes still alter this leading window.
+    () => productos.slice(0, 16).map((producto) => String(producto.id)).join('|'),
     [productos],
   );
   const {

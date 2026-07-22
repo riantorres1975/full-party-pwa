@@ -6,9 +6,9 @@ import AppErrorBoundary from './components/ui/AppErrorBoundary';
 import { buildCatalogCategoryMeta } from './utils/catalogSeo';
 import { buildRouteStructuredData } from './utils/structuredData';
 import { trackPageView } from './utils/analytics';
+import PublicCatalogRoute from './routes/PublicCatalogRoute';
 
 const AuthCatalogRoutes = lazy(() => import('./routes/AuthCatalogRoutes'));
-const PublicCatalogRoute = lazy(() => import('./routes/PublicCatalogRoute'));
 const Sucursales        = lazy(() => import('./pages/Sucursales'));
 const ComoFunciona      = lazy(() => import('./pages/ComoFunciona'));
 const Destacados        = lazy(() => import('./pages/Destacados'));
