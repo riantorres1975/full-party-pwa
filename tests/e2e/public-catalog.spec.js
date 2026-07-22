@@ -192,10 +192,17 @@ test('a 500-product catalog renders progressively without limiting search', asyn
   const countBeforeMore = await cards.count();
   expect(countBeforeMore).toBeLessThan(500);
 
-  const showMore = page.getByRole('button', { name: /Mostrar \d+ productos m.s/ }).first();
+  const showMore = page.getByRole('button', { name: /Mostrar \d+ productos m.s/ });
   await expect(showMore).toBeAttached();
+  await expect(showMore).toHaveCount(1);
+  const automaticBatchCount = Number((await showMore.innerText()).match(/\d+/)?.[0]);
+  await showMore.evaluate((button) => button.scrollIntoView({ block: 'center' }));
+  await expect(cards).toHaveCount(countBeforeMore + automaticBatchCount);
+
+  const countBeforeManualLoad = await cards.count();
+  const manualBatchCount = Number((await showMore.innerText()).match(/\d+/)?.[0]);
   await showMore.evaluate((button) => button.click());
-  await expect.poll(() => cards.count()).toBeGreaterThan(countBeforeMore);
+  await expect(cards).toHaveCount(countBeforeManualLoad + manualBatchCount);
   expect(await cards.count()).toBeLessThan(500);
 });
 

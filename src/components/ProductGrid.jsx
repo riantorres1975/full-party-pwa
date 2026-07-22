@@ -179,21 +179,6 @@ export default function ProductGrid({
           </p>
         )}
 
-        {cargando && (
-          <div className="flex items-center justify-center gap-3 py-6 animate-fade-in">
-            <div
-              className="w-6 h-6 rounded-full border-[3px] border-ink-200"
-              style={{
-                borderTopColor: '#ff3dac',
-                animation: 'spin 0.7s linear infinite',
-              }}
-            />
-            <span className="text-sm font-body font-bold text-ink-400">
-              {t('grid.loadingMore')}
-            </span>
-          </div>
-        )}
-
         {!cargando && !hayMas && productos.length > 12 && (
           <div className="flex flex-col items-center gap-1 py-5">
             <span className="text-lg">🎉</span>
@@ -203,17 +188,33 @@ export default function ProductGrid({
           </div>
         )}
 
-        {hayMas && !cargando && (
+        {hayMas && (
           <div ref={sentinelRef} className="flex min-h-14 items-center justify-center py-2">
-            <button
-              type="button"
-              onClick={cargarMas}
-              className="min-h-10 rounded-xl border px-4 font-body text-xs font-black transition-colors hover:bg-purple-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-fiesta-purple"
-              style={{ borderColor: 'var(--border-default)', color: 'var(--text-secondary)' }}
-              aria-controls="catalog-product-grid"
-            >
-              {t('grid.showMore', { count: nextCount })}
-            </button>
+            {cargando ? (
+              <div className="flex items-center justify-center gap-3 animate-fade-in" role="status">
+                <div
+                  className="w-6 h-6 rounded-full border-[3px] border-ink-200"
+                  style={{
+                    borderTopColor: '#ff3dac',
+                    animation: 'spin 0.7s linear infinite',
+                  }}
+                  aria-hidden="true"
+                />
+                <span className="text-sm font-body font-bold text-ink-400">
+                  {t('grid.loadingMore')}
+                </span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={cargarMas}
+                className="min-h-10 rounded-xl border px-4 font-body text-xs font-black transition-colors hover:bg-purple-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-fiesta-purple"
+                style={{ borderColor: 'var(--border-default)', color: 'var(--text-secondary)' }}
+                aria-controls="catalog-product-grid"
+              >
+                {t('grid.showMore', { count: nextCount })}
+              </button>
+            )}
           </div>
         )}
       </div>

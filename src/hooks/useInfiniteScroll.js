@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+const OBSERVER_REARM_DELAY_MS = 400;
+
 export function getCatalogPagePlan(viewportWidth) {
   const width = Number.isFinite(viewportWidth) ? viewportWidth : 1024;
 
@@ -32,10 +34,16 @@ export function useInfiniteScroll(totalItems, {
   const [cargando, setCargando] = useState(false);
   const observerRef = useRef(null);
   const animationFrameRef = useRef(null);
+  const rearmTimerRef = useRef(null);
   const pendingRef = useRef(false);
+  const observerArmedRef = useRef(true);
+  const sentinelIntersectingRef = useRef(false);
+  const lastLoadAtRef = useRef(0);
   const totalRef = useRef(totalItems);
+  const visibleCountRef = useRef(visibleCount);
 
   totalRef.current = totalItems;
+  visibleCountRef.current = visibleCount;
   const hayMas = visibleCount < totalItems;
   const nextCount = Math.min(getCurrentPagePlan().batch, Math.max(0, totalItems - visibleCount));
 
@@ -44,7 +52,12 @@ export function useInfiniteScroll(totalItems, {
       window.cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
+    if (rearmTimerRef.current !== null) {
+      window.clearTimeout(rearmTimerRef.current);
+      rearmTimerRef.current = null;
+    }
     pendingRef.current = false;
+    observerArmedRef.current = true;
     setCargando(false);
     setVisibleCount(Math.min(getCurrentPagePlan().initial, totalRef.current));
   }, []);
@@ -54,9 +67,16 @@ export function useInfiniteScroll(totalItems, {
   }, [reset, resetKey]);
 
   const cargarMas = useCallback(() => {
-    if (pendingRef.current || visibleCount >= totalRef.current) return;
+    if (pendingRef.current || visibleCountRef.current >= totalRef.current) return;
 
     pendingRef.current = true;
+    observerArmedRef.current = false;
+    lastLoadAtRef.current = Date.now();
+    if (rearmTimerRef.current !== null) window.clearTimeout(rearmTimerRef.current);
+    rearmTimerRef.current = window.setTimeout(() => {
+      if (!sentinelIntersectingRef.current) observerArmedRef.current = true;
+      rearmTimerRef.current = null;
+    }, OBSERVER_REARM_DELAY_MS);
     setCargando(true);
     animationFrameRef.current = window.requestAnimationFrame(() => {
       const { batch } = getCurrentPagePlan();
@@ -65,7 +85,7 @@ export function useInfiniteScroll(totalItems, {
       pendingRef.current = false;
       setCargando(false);
     });
-  }, [visibleCount]);
+  }, []);
 
   const sentinelRef = useCallback((node) => {
     observerRef.current?.disconnect();
@@ -73,7 +93,14 @@ export function useInfiniteScroll(totalItems, {
 
     observerRef.current = new IntersectionObserver(
       ([entry]) => {
-        if (entry?.isIntersecting) cargarMas();
+        sentinelIntersectingRef.current = Boolean(entry?.isIntersecting);
+        if (!entry?.isIntersecting) {
+          if (Date.now() - lastLoadAtRef.current >= OBSERVER_REARM_DELAY_MS) {
+            observerArmedRef.current = true;
+          }
+          return;
+        }
+        if (observerArmedRef.current) cargarMas();
       },
       {
         root: getScrollRoot(node, rootSelector),
@@ -88,6 +115,7 @@ export function useInfiniteScroll(totalItems, {
     if (animationFrameRef.current !== null) {
       window.cancelAnimationFrame(animationFrameRef.current);
     }
+    if (rearmTimerRef.current !== null) window.clearTimeout(rearmTimerRef.current);
   }, []);
 
   return {
