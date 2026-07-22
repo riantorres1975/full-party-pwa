@@ -223,3 +223,32 @@ body.theme-dark {
   }
 }
 
+
+/* -- Footer oscuro compartido (Landing + SiteLayout) ----------- */
+.lp-footer {
+  background:
+    radial-gradient(90% 120% at 100% 0%, rgba(168, 85, 247, 0.2), transparent 55%),
+    radial-gradient(70% 100% at 0% 100%, rgba(255, 61, 172, 0.13), transparent 55%),
+    linear-gradient(180deg, #2a1150, #1d0a3a);
+}
+
+.lp-footer-heading {
+  color: #ffffff;
+}
+
+.lp-footer-text {
+  color: #b9a4e4;
+}
+
+.lp-footer-link {
+  color: #b9a4e4;
+  transition: color 0.2s ease;
+}
+.lp-footer-link:hover {
+  color: #f9a8d4;
+}
+
+.lp-footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  color: #9d86cc;
+}

@@ -444,10 +444,6 @@
   .lp-branch-logo {
     filter: none;
   }
-
-  .lp-hero-proof {
-    backdrop-filter: none;
-  }
 }
 
 .lp-card {
@@ -465,19 +461,54 @@
 .lp-scale-hover:hover { transform: scale(1.05); }
 
 .lp-hero {
-  padding-top: 3.5rem;
-  padding-bottom: 3rem;
+  position: relative;
+  padding-top: clamp(3.25rem, 7vw, 5rem);
+  padding-bottom: clamp(3.5rem, 8vw, 5.5rem);
 }
 
-/* Todas las secciones de la landing son transparentes —
-   el gradiente del wrapper padre fluye sin interrupciones */
-#top main > section {
-  background: transparent !important;
+/* Aurora festiva detrás del hero */
+.lp-hero::before {
+  content: '';
+  position: absolute;
+  inset: -12% -6% 0;
+  background:
+    radial-gradient(38% 52% at 16% 18%, rgba(255, 61, 172, 0.17), transparent 72%),
+    radial-gradient(36% 48% at 84% 12%, rgba(34, 211, 238, 0.16), transparent 72%),
+    radial-gradient(52% 58% at 50% 88%, rgba(168, 85, 247, 0.15), transparent 74%),
+    radial-gradient(30% 38% at 68% 52%, rgba(251, 146, 60, 0.1), transparent 70%);
+  pointer-events: none;
+}
+
+/* Halo suave detrás del lockup "Full Party" */
+.lp-hero-aura {
+  position: absolute;
+  inset: -22% -8%;
+  margin: auto;
+  background: radial-gradient(50% 50% at 50% 42%, rgba(192, 132, 252, 0.22), rgba(244, 114, 182, 0.1) 46%, transparent 72%);
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+/* ── Ritmo de secciones: blancas translúcidas vs. tintadas ──
+   El gradiente ambiente del wrapper sigue visible a través. */
+.lp-section-white {
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.lp-section-tint {
+  background: linear-gradient(180deg, rgba(250, 246, 255, 0.92), rgba(243, 235, 253, 0.92));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .lp-hero-kicker {
   letter-spacing: 0.18em;
-  box-shadow: 0 10px 30px rgba(192, 132, 252, 0.1);
+  border: 1px solid transparent !important;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.88)) padding-box,
+    linear-gradient(120deg, rgba(255, 61, 172, 0.65), rgba(168, 85, 247, 0.65), rgba(34, 211, 238, 0.65)) border-box !important;
+  box-shadow: 0 12px 32px rgba(192, 132, 252, 0.18);
 }
 
 .lp-branch-lockup {
@@ -523,25 +554,38 @@
   grid-template-columns: repeat(4, auto);
   width: fit-content;
   max-width: 100%;
-  gap: 0.35rem;
-  padding: 0.4rem;
-  border-radius: 1.35rem;
-  border: 1px solid rgba(192, 132, 252, 0.24);
-  background: rgba(255, 255, 255, 0.66);
-  box-shadow: 0 12px 30px rgba(86, 26, 122, 0.07);
-  backdrop-filter: blur(10px);
+  gap: 0.45rem;
+  padding: 0.45rem;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(192, 132, 252, 0.28);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 16px 40px rgba(86, 26, 122, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .lp-proof-item {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  min-height: 2.35rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.95rem;
-  background: rgba(255, 255, 255, 0.72);
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 1.05rem;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(237, 224, 248, 0.9);
+  font-weight: 800;
   white-space: nowrap;
+}
+
+.lp-proof-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  border-radius: 999px;
+  flex-shrink: 0;
 }
 
 .lp-map-placeholder {
@@ -554,6 +598,28 @@
 
 .lp-main-nav {
   overflow: visible;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(16px) saturate(1.5);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  border-bottom: 1px solid rgba(237, 224, 248, 0.9);
+  box-shadow: 0 4px 24px rgba(86, 26, 122, 0.07);
+}
+
+.lp-main-nav::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 4%,
+    rgba(255, 61, 172, 0.55) 30%,
+    rgba(168, 85, 247, 0.55) 55%,
+    rgba(34, 211, 238, 0.55) 78%,
+    transparent 96%);
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 .lp-main-nav-inner {
@@ -710,6 +776,93 @@
   box-shadow:   var(--cat-shadow-hover) !important;
   transform:    scale(1.04);
 }
+
+.lp-cat-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 1.35rem;
+  font-size: 1.9rem;
+}
+
+/* ── Títulos de sección: eyebrow + barra gradiente ─────────── */
+.lp-eyebrow {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.9rem;
+  margin-bottom: 0.85rem;
+  border-radius: 999px;
+  color: #be185d;
+  background: rgba(244, 114, 182, 0.09);
+  border: 1px solid rgba(244, 114, 182, 0.22);
+}
+
+.lp-title-bar {
+  display: block;
+  width: 56px;
+  height: 4px;
+  margin: 0.9rem auto 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff3dac, #a855f7, #22d3ee);
+}
+
+/* ── CTA final: panel gradiente de alto impacto ────────────── */
+.lp-cta-panel {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 160% at 8% 0%, rgba(255, 255, 255, 0.22), transparent 46%),
+    linear-gradient(118deg, #e0349b 0%, #8b3de8 52%, #4f46e5 100%);
+  box-shadow:
+    0 30px 80px rgba(124, 58, 237, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.lp-cta-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(24% 34% at 88% 82%, rgba(34, 211, 238, 0.32), transparent 70%),
+    radial-gradient(20% 30% at 12% 88%, rgba(253, 224, 71, 0.18), transparent 70%);
+  pointer-events: none;
+}
+
+.lp-cta-emoji {
+  position: absolute;
+  font-size: 2.4rem;
+  opacity: 0.85;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.18));
+  pointer-events: none;
+  user-select: none;
+}
+
+.lp-cta-btn-white {
+  background: #ffffff !important;
+  color: #7c3aed !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22) !important;
+}
+.lp-cta-btn-white:hover {
+  background: #faf5ff !important;
+}
+
+.lp-cta-btn-outline {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  border: 2px solid rgba(255, 255, 255, 0.65) !important;
+  box-shadow: none !important;
+}
+.lp-cta-btn-outline:hover {
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-color: #ffffff !important;
+}
+
+/* ── Footer oscuro: definido en src/index.css (compartido con SiteLayout) ── */
 
 /* ── Aplazar render de secciones bajo el primer viewport ───── */
 /* ── Ocultar scrollbar en el dot-strip de reseñas ─────────── */

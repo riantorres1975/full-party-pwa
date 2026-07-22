@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   ShoppingBag, MessageCircle, MapPin, Star, Package,
   Sparkles, ArrowRight, Menu, X, Navigation, Clock,
+  BadgeCheck, Truck,
 } from 'lucide-react';
 import './LandingPage.css';
 import { C } from '../styles/tokens';
@@ -23,7 +24,7 @@ const NovedadesSection = lazy(() => import('../components/landing/NovedadesSecti
 
 function NovedadesPlaceholder() {
   return (
-    <section className="lp-below-fold lp-novedades-section px-5 pt-8 pb-16" style={{ background: C.bgHero }} aria-hidden="true">
+    <section className="lp-below-fold lp-section-white lp-novedades-section px-5 pt-8 pb-16" aria-hidden="true">
       <div className="max-w-[1100px] mx-auto">
         <div className="lp-novedades-heading mb-7">
           <div className="min-w-0">
@@ -461,8 +462,7 @@ export default function LandingPage() {
 
         {/* ══ NAV ════════════════════════════════════════ */}
         <nav
-          className="lp-main-nav sticky top-0 z-50 bg-white border-b"
-          style={{ borderColor: C.borderSoft, boxShadow: `0 2px 16px ${C.shadowLavender}` }}
+          className="lp-main-nav sticky top-0 z-50"
           aria-label="Navegación principal"
         >
           <div className="lp-main-nav-inner max-w-6xl mx-auto px-5 flex items-center justify-between">
@@ -589,12 +589,14 @@ export default function LandingPage() {
             </h1>
             <span
               className="lp-hero-kicker inline-flex items-center gap-2 text-xs font-black px-5 py-2 rounded-full mb-6"
-              style={{ background: 'rgba(255,255,255,0.72)', color: C.textMuted, border: `1px solid ${C.purple}55` }}
+              style={{ color: C.textMuted }}
             >
+              <Sparkles size={12} aria-hidden="true" style={{ color: C.pink }} />
               +500 PRODUCTOS · MAYOREO Y MENUDEO
             </span>
 
-            <div className="mb-6">
+            <div className="relative mb-6">
+              <div className="lp-hero-aura" aria-hidden="true" />
               <BranchTyper branchNames={[ENV.suc1.nombre, ENV.suc2.nombre]} />
             </div>
 
@@ -631,11 +633,20 @@ export default function LandingPage() {
               </Button>
             </div>
 
-            <div className="lp-hero-proof mt-6 mx-auto" style={{ color: C.textBody }} aria-label="Ventajas de comprar en Full Party">
-              <span className="lp-proof-item"><span aria-hidden="true">★</span> 4.7 en Google</span>
-              <span className="lp-proof-item"><span aria-hidden="true">✓</span> Compra desde 1 pieza</span>
-              <span className="lp-proof-item"><span aria-hidden="true">🚚</span> Envíos a todo México</span>
-              <span className="lp-proof-item"><span aria-hidden="true">📍</span> 2 sucursales</span>
+            <div className="lp-hero-proof mt-7 mx-auto text-xs sm:text-sm" style={{ color: C.textBody }} aria-label="Ventajas de comprar en Full Party">
+              {[
+                { icon: Star,       label: '4.7 en Google',        color: C.orange },
+                { icon: BadgeCheck, label: 'Compra desde 1 pieza', color: C.green  },
+                { icon: Truck,      label: 'Envíos a todo México', color: C.cyan   },
+                { icon: MapPin,     label: '2 sucursales',         color: C.pink   },
+              ].map(({ icon: Icon, label, color }) => (
+                <span key={label} className="lp-proof-item">
+                  <span className="lp-proof-icon" style={{ background: `${color}1a`, color }} aria-hidden="true">
+                    <Icon size={12} strokeWidth={2.75} />
+                  </span>
+                  {label}
+                </span>
+              ))}
             </div>
 
             {/* Stats */}
@@ -666,16 +677,19 @@ export default function LandingPage() {
           )}
         </Suspense>
         {/* ══ BENEFICIOS ══════════════════════════════════ */}
-        <section className="lp-below-fold px-5 py-16" style={{ background: C.bgBenefits }}>
+        <section className="lp-below-fold lp-section-white px-5 py-16">
           <div className="max-w-5xl mx-auto">
-            <Reveal><SectionTitle title="¿Por qué Full Party?" subtitle="Todo lo que necesitas para hacer tu fiesta un éxito." /></Reveal>
+            <Reveal><SectionTitle eyebrow="Ventajas" title="¿Por qué Full Party?" subtitle="Todo lo que necesitas para hacer tu fiesta un éxito." /></Reveal>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
               {BENEFICIOS.map(({ icon: Icon, titulo, desc, color, gradient }, i) => (
                 <Reveal key={titulo} delay={i * 0.1}>
                   <GradCard gradient={gradient} hoverColor={`${color}22`} className="h-full">
                     <div className="p-6 flex flex-col gap-4">
-                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: `${color}18` }}>
-                        <Icon size={24} style={{ color }} aria-hidden="true" />
+                      <div
+                        className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                        style={{ background: gradient, boxShadow: `0 8px 20px ${color}40` }}
+                      >
+                        <Icon size={22} style={{ color: '#ffffff' }} aria-hidden="true" />
                       </div>
                       <h3 className="font-display text-base" style={{ color: C.textHead }}>{titulo}</h3>
                       <p className="text-sm leading-relaxed"  style={{ color: C.textBody }}>{desc}</p>
@@ -688,9 +702,9 @@ export default function LandingPage() {
         </section>
 
         {/* ══ CATEGORÍAS ══════════════════════════════════ */}
-        <section className="lp-below-fold px-5 py-16" style={{ background: C.bgBenefits }}>
+        <section className="lp-below-fold lp-section-tint px-5 py-16">
           <div className="max-w-5xl mx-auto">
-            <Reveal><SectionTitle title="Categorías Destacadas" subtitle="Los artículos más solicitados para tus eventos." /></Reveal>
+            <Reveal><SectionTitle eyebrow="Explora" title="Categorías Destacadas" subtitle="Los artículos más solicitados para tus eventos." /></Reveal>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {CATEGORIAS.map(({ emoji, titulo, desc, color }, i) => (
                 <Reveal key={titulo} delay={i * 0.08}>
@@ -704,7 +718,7 @@ export default function LandingPage() {
                       '--cat-shadow-hover': `0 8px 28px ${color}22`,
                     }}
                   >
-                    <span className="text-4xl" aria-hidden="true">{emoji}</span>
+                    <span className="lp-cat-emoji" style={{ background: `${color}14`, border: `1.5px solid ${color}30` }} aria-hidden="true">{emoji}</span>
                     <h3 className="font-display text-sm leading-snug" style={{ color: C.textHead }}>{titulo}</h3>
                     <p  className="text-xs leading-snug"              style={{ color: C.textMuted }}>{desc}</p>
                     <span className="text-xs font-black flex items-center gap-1" style={{ color }}>Ver más <ArrowRight size={11} aria-hidden="true" /></span>
@@ -716,9 +730,9 @@ export default function LandingPage() {
         </section>
 
         {/* ══ CÓMO FUNCIONA ═══════════════════════════════ */}
-        <section className="lp-below-fold px-5 py-16" style={{ background: C.bgSteps }}>
+        <section className="lp-below-fold lp-section-white px-5 py-16">
           <div className="max-w-5xl mx-auto">
-            <Reveal><SectionTitle title="¿Cómo funciona?" subtitle="Pedir al mayoreo nunca había sido tan fácil." /></Reveal>
+            <Reveal><SectionTitle eyebrow="Paso a paso" title="¿Cómo funciona?" subtitle="Pedir al mayoreo nunca había sido tan fácil." /></Reveal>
 
             {/* Desktop */}
             <div className="hidden md:grid grid-cols-4 gap-0 relative">
@@ -780,9 +794,9 @@ export default function LandingPage() {
         </section>
 
         {/* ══ MARCAS ══════════════════════════════════════ */}
-        <section className="lp-below-fold px-5 py-16" style={{ background: C.bgHero }}>
+        <section className="lp-below-fold lp-section-tint px-5 py-16">
           <div className="max-w-5xl mx-auto">
-            <Reveal><SectionTitle title="Trabajamos con las Mejores Marcas" subtitle="Distribuidores autorizados de globos de látex y globos de personajes." /></Reveal>
+            <Reveal><SectionTitle eyebrow="Calidad garantizada" title="Trabajamos con las Mejores Marcas" subtitle="Distribuidores autorizados de globos de látex y globos de personajes." /></Reveal>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
               {MARCAS.map((m, i) => (
                 <Reveal key={m.nombre} delay={i * 0.09}>
@@ -811,10 +825,11 @@ export default function LandingPage() {
         </section>
 
         {/* ══ RESEÑAS ═════════════════════════════════════ */}
-        <section id="resenas" className="lp-below-fold px-5 py-16" style={{ background: C.bgReviews }}>
+        <section id="resenas" className="lp-below-fold lp-section-white px-5 py-16">
           <div className="max-w-5xl mx-auto">
             <Reveal>
               <SectionTitle
+                eyebrow="Testimonios"
                 title="Lo que dicen nuestros clientes"
                 subtitle="Reseñas verificadas de clientes satisfechos en Google Maps."
               />
@@ -826,10 +841,11 @@ export default function LandingPage() {
         </section>
 
         {/* ══ GALERÍA DE CLIENTES ═════════════════════════ */}
-        <section className="lp-below-fold px-5 py-16" style={{ background: C.bgHero }}>
+        <section className="lp-below-fold lp-section-tint px-5 py-16">
           <div className="max-w-5xl mx-auto">
             <Reveal>
               <SectionTitle
+                eyebrow="Inspiración"
                 title="Así celebran nuestros clientes"
                 subtitle="Decoraciones reales creadas con productos Full Party Uruapan."
               />
@@ -879,10 +895,11 @@ export default function LandingPage() {
         </section>
 
         {/* ══ FAQ ═════════════════════════════════════════ */}
-        <section id="faq" className="lp-below-fold px-5 py-16" style={{ background: C.bgSteps }}>
+        <section id="faq" className="lp-below-fold lp-section-white px-5 py-16">
           <div className="max-w-3xl mx-auto">
             <Reveal>
               <SectionTitle
+                eyebrow="Ayuda"
                 title="Preguntas Frecuentes"
                 subtitle="Todo lo que necesitas saber antes de hacer tu primer pedido."
               />
@@ -901,9 +918,9 @@ export default function LandingPage() {
         </section>
 
         {/* ══ SUCURSALES ══════════════════════════════════ */}
-        <section id="sucursales" className="lp-below-fold px-5 py-16" style={{ background: C.bgBranches }}>
+        <section id="sucursales" className="lp-below-fold lp-section-tint px-5 py-16">
           <div className="max-w-5xl mx-auto">
-            <Reveal><SectionTitle title="Nuestras Sucursales" subtitle="Visítanos en Uruapan, Michoacán." /></Reveal>
+            <Reveal><SectionTitle eyebrow="Visítanos" title="Nuestras Sucursales" subtitle="Visítanos en Uruapan, Michoacán." /></Reveal>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {SUCURSALES.map(({ nombre, direccion, horario, mapsUrl, embedUrl, badge, color, accent, facebook }, i) => (
                 <Reveal key={nombre} delay={i * 0.1} direction={i === 0 ? 'left' : 'right'}>
@@ -979,44 +996,44 @@ export default function LandingPage() {
         </section>
 
         {/* ══ CTA FINAL ═══════════════════════════════════ */}
-        <section id="contacto" className="lp-below-fold px-5 py-16" style={{ background: C.bgBenefits }}>
+        <section id="contacto" className="lp-below-fold lp-section-white px-5 py-16">
           <div className="max-w-4xl mx-auto text-center">
             <Reveal>
-              <div
-                className="rounded-3xl px-8 py-14"
-                style={{
-                  backgroundImage:  `linear-gradient(${C.bgBenefits}, ${C.bgBenefits}), linear-gradient(135deg, ${C.pink}, ${C.purple}, ${C.cyan})`,
-                  backgroundOrigin: 'border-box',
-                  backgroundClip:   'padding-box, border-box',
-                  border:           '2px solid transparent',
-                }}
-              >
-                <div className="text-5xl mb-4" aria-hidden="true">🎉</div>
-                <h2 className="font-display text-3xl sm:text-4xl mb-4" style={{ color: C.textHead }}>¿Listo para ordenar al mayoreo?</h2>
-                <p className="text-sm leading-relaxed mb-10 max-w-lg mx-auto" style={{ color: C.textBody }}>
-                  Escríbenos por WhatsApp o explora el catálogo. Atención personalizada para distribuidores y organizadores de eventos.
-                </p>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    onClick={irAlCatalogo}
-                    iconLeft={<ShoppingBag size={18} aria-hidden="true" />}
-                  >
-                    Explorar Catálogo
-                  </Button>
-                  <Button
-                    variant="whatsapp"
-                    size="lg"
-                    as="a"
-                    href={WA_HREF}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    iconLeft={<WaIcon size={18} />}
-                    onClick={() => trackEvent('cta_whatsapp_click')}
-                  >
-                    Contactar por WhatsApp
-                  </Button>
+              <div className="lp-cta-panel rounded-[2rem] px-8 py-14 sm:py-16">
+                <span className="lp-cta-emoji" style={{ top: '12%', left: '7%', transform: 'rotate(-14deg)' }} aria-hidden="true">🎈</span>
+                <span className="lp-cta-emoji" style={{ top: '16%', right: '8%', transform: 'rotate(12deg)' }} aria-hidden="true">🎊</span>
+                <span className="lp-cta-emoji hidden sm:block" style={{ bottom: '14%', left: '12%', transform: 'rotate(8deg)' }} aria-hidden="true">🎀</span>
+                <span className="lp-cta-emoji hidden sm:block" style={{ bottom: '12%', right: '11%', transform: 'rotate(-10deg)' }} aria-hidden="true">✨</span>
+                <div className="relative" style={{ zIndex: 1 }}>
+                  <div className="text-5xl mb-4" aria-hidden="true">🎉</div>
+                  <h2 className="font-display text-3xl sm:text-4xl mb-4 text-white">¿Listo para ordenar al mayoreo?</h2>
+                  <p className="text-sm sm:text-base leading-relaxed mb-10 max-w-lg mx-auto" style={{ color: 'rgba(255,255,255,0.88)' }}>
+                    Escríbenos por WhatsApp o explora el catálogo. Atención personalizada para distribuidores y organizadores de eventos.
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      onClick={irAlCatalogo}
+                      iconLeft={<ShoppingBag size={18} aria-hidden="true" />}
+                      className="lp-cta-btn-white"
+                    >
+                      Explorar Catálogo
+                    </Button>
+                    <Button
+                      variant="whatsapp"
+                      size="lg"
+                      as="a"
+                      href={WA_HREF}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      iconLeft={<WaIcon size={18} />}
+                      className="lp-cta-btn-outline"
+                      onClick={() => trackEvent('cta_whatsapp_click')}
+                    >
+                      Contactar por WhatsApp
+                    </Button>
+                  </div>
                 </div>
               </div>
             </Reveal>
@@ -1026,7 +1043,7 @@ export default function LandingPage() {
         </main>
 
         {/* ══ FOOTER — 3 columnas ══════════════════════════ */}
-        <footer className="lp-below-fold border-t bg-white" style={{ borderColor: C.borderSoft }}>
+        <footer className="lp-footer lp-below-fold">
           <div className="max-w-5xl mx-auto px-5 pt-10 pb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
 
             {/* Columna 1: Logo + tagline + WhatsApp */}
@@ -1045,7 +1062,7 @@ export default function LandingPage() {
                   {ENV.negocio}
                 </span>
               </div>
-              <p className="text-xs leading-relaxed mb-4" style={{ color: C.textMuted }}>
+              <p className="lp-footer-text text-xs leading-relaxed mb-4">
                 Distribuidora de artículos para fiesta en Uruapan, Michoacán. +500 productos al mayoreo y menudeo. Envíos a todo México.
               </p>
               {/* Botones de redes sociales */}
@@ -1113,14 +1130,13 @@ export default function LandingPage() {
 
             {/* Columna 2: Navegación */}
             <div>
-              <h3 className="font-display text-sm mb-4" style={{ color: C.textHead }}>Navegación</h3>
+              <h3 className="lp-footer-heading font-display text-sm mb-4">Navegación</h3>
               <ul className="flex flex-col gap-2">
                 {NAV_LINKS.map(l => (
                   <li key={l.label}>
                     <button
                       onClick={() => handleNav(l)}
-                      className="text-xs font-bold hover:text-pink-400 transition-colors text-left"
-                      style={{ color: C.textMuted }}
+                      className="lp-footer-link text-xs font-bold text-left"
                     >
                       {l.label}
                     </button>
@@ -1131,13 +1147,12 @@ export default function LandingPage() {
 
             {/* Columna 3: Secciones */}
             <div>
-              <h3 className="font-display text-sm mb-4" style={{ color: C.textHead }}>Secciones</h3>
+              <h3 className="lp-footer-heading font-display text-sm mb-4">Secciones</h3>
               <ul className="flex flex-col gap-2">
                 <li>
                   <Link
                     to="/catalogo"
-                    className="text-xs font-bold hover:text-pink-400 transition-colors"
-                    style={{ color: C.textMuted }}
+                    className="lp-footer-link text-xs font-bold"
                   >
                     Catálogo
                   </Link>
@@ -1145,8 +1160,7 @@ export default function LandingPage() {
                 <li>
                   <Link
                     to="/destacados"
-                    className="text-xs font-bold hover:text-pink-400 transition-colors"
-                    style={{ color: C.textMuted }}
+                    className="lp-footer-link text-xs font-bold"
                   >
                     Categorías destacadas
                   </Link>
@@ -1154,8 +1168,7 @@ export default function LandingPage() {
                 <li>
                   <Link
                     to="/sucursales"
-                    className="text-xs font-bold hover:text-pink-400 transition-colors"
-                    style={{ color: C.textMuted }}
+                    className="lp-footer-link text-xs font-bold"
                   >
                     Sucursales
                   </Link>
@@ -1163,8 +1176,7 @@ export default function LandingPage() {
                 <li>
                   <Link
                     to="/como-funciona"
-                    className="text-xs font-bold hover:text-pink-400 transition-colors"
-                    style={{ color: C.textMuted }}
+                    className="lp-footer-link text-xs font-bold"
                   >
                     ¿Cómo hacer un pedido?
                   </Link>
@@ -1172,8 +1184,7 @@ export default function LandingPage() {
                 <li>
                   <Link
                     to="/blog"
-                    className="text-xs font-bold hover:text-pink-400 transition-colors"
-                    style={{ color: C.textMuted }}
+                    className="lp-footer-link text-xs font-bold"
                   >
                     Blog
                   </Link>
@@ -1183,12 +1194,12 @@ export default function LandingPage() {
 
             {/* Columna 4: Contacto */}
             <div>
-              <h3 className="font-display text-sm mb-4" style={{ color: C.textHead }}>Contacto</h3>
-              <ul className="flex flex-col gap-3 text-xs" style={{ color: C.textMuted }}>
+              <h3 className="lp-footer-heading font-display text-sm mb-4">Contacto</h3>
+              <ul className="lp-footer-text flex flex-col gap-3 text-xs">
                 <li className="flex items-start gap-2">
                   <MapPin size={12} className="mt-0.5 flex-shrink-0" style={{ color: C.pink }} aria-hidden="true" />
                   <span>
-                    <span className="font-bold" style={{ color: C.textHead }}>Suc. Francisco Villa</span><br />
+                    <span className="font-bold" style={{ color: '#ede7fb' }}>Suc. Francisco Villa</span><br />
                     C. Francisco Villa 103, Centro<br />
                     <Clock size={10} className="inline mr-0.5" aria-hidden="true" />Lun–Sáb 9am–7pm
                   </span>
@@ -1196,14 +1207,14 @@ export default function LandingPage() {
                 <li className="flex items-start gap-2">
                   <MapPin size={12} className="mt-0.5 flex-shrink-0" style={{ color: C.purple }} aria-hidden="true" />
                   <span>
-                    <span className="font-bold" style={{ color: C.textHead }}>Suc. Sol Naciente</span><br />
+                    <span className="font-bold" style={{ color: '#ede7fb' }}>Suc. Sol Naciente</span><br />
                     Universo 117, Sol Naciente<br />
                     <Clock size={10} className="inline mr-0.5" aria-hidden="true" />Lun–Sáb 9am–7pm · Dom 9am–2pm
                   </span>
                 </li>
                 <li className="flex items-center gap-2">
                   <MessageCircle size={12} style={{ color: C.pink }} aria-hidden="true" />
-                  <a href={WA_HREF} target="_blank" rel="noopener noreferrer" className="hover:text-pink-400 transition-colors font-bold">
+                  <a href={WA_HREF} target="_blank" rel="noopener noreferrer" className="lp-footer-link font-bold">
                     WhatsApp: 452 104 0377
                   </a>
                 </li>
@@ -1213,14 +1224,13 @@ export default function LandingPage() {
 
           {/* Barra inferior */}
           <div
-            className="border-t px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs"
-            style={{ borderColor: C.borderSoft, color: C.textMuted }}
+            className="lp-footer-bottom px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs"
           >
             <span>© {new Date().getFullYear()} {ENV.negocio} · Uruapan, Michoacán · Todos los derechos reservados</span>
             <div className="flex gap-4">
               <button
                 onClick={irAlCatalogo}
-                className="font-bold hover:text-pink-400 transition-colors"
+                className="lp-footer-link font-bold"
               >
                 Catálogo
               </button>
@@ -1228,7 +1238,7 @@ export default function LandingPage() {
                 href={WA_HREF}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-bold hover:text-pink-400 transition-colors"
+                className="lp-footer-link font-bold"
               >
                 WhatsApp
               </a>

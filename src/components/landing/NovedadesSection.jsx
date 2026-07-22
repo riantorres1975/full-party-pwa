@@ -8,7 +8,7 @@ import NovedadesCarrusel from './NovedadesCarrusel';
 
 function NovedadesLoadingState() {
   return (
-    <section className="lp-below-fold lp-novedades-section px-5 pt-8 pb-16" style={{ background: C.bgHero }} aria-hidden="true">
+    <section className="lp-below-fold lp-section-white lp-novedades-section px-5 pt-8 pb-16" aria-hidden="true">
       <div className="max-w-[1100px] mx-auto">
         <div className="lp-novedades-heading mb-7">
           <div className="min-w-0">
@@ -71,7 +71,7 @@ export default function NovedadesSection() {
   if (novedades.length === 0) return null;
 
   return (
-    <section className="lp-below-fold lp-novedades-section px-5 pt-8 pb-16" style={{ background: C.bgHero }}>
+    <section className="lp-below-fold lp-section-white lp-novedades-section px-5 pt-8 pb-16">
       <div className="max-w-[1100px] mx-auto">
         <Reveal>
           <div className="lp-novedades-heading mb-7">
