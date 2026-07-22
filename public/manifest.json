@@ -5,7 +5,7 @@
   "scope": "/",
   "lang": "es-MX",
   "dir": "ltr",
-  "description": "Catálogo mayoreo de artículos para fiesta en Uruapan. Globos, kits de personajes, cortinas de lluvia y más.",
+  "description": "Cat\u00e1logo mayoreo de art\u00edculos para fiesta en Uruapan. Globos, kits de personajes, cortinas de lluvia y m\u00e1s.",
   "start_url": "/catalogo",
   "display": "standalone",
   "background_color": "#fbf7f3",
@@ -33,27 +33,27 @@
     }
   ],
   "categories": ["shopping"],
-  "screenshots": [
+  "shortcuts": [
     {
-      "src": "/screenshots/catalogo-mobile.webp",
-      "sizes": "390x844",
-      "type": "image/webp",
-      "form_factor": "narrow",
-      "label": "Catálogo de productos con categorías y filtros"
+      "name": "Explorar cat\u00e1logo",
+      "short_name": "Cat\u00e1logo",
+      "description": "Busca productos y prepara tu pedido.",
+      "url": "/catalogo",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
-      "src": "/screenshots/carrito-mobile.webp",
-      "sizes": "390x844",
-      "type": "image/webp",
-      "form_factor": "narrow",
-      "label": "Productos en el carrito con barra flotante"
+      "name": "Rastrear pedido",
+      "short_name": "Rastrear",
+      "description": "Consulta el estado de tu pedido con tu folio.",
+      "url": "/rastrear",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
-      "src": "/screenshots/detalle-mobile.webp",
-      "sizes": "390x844",
-      "type": "image/webp",
-      "form_factor": "narrow",
-      "label": "Detalle de producto con precios por mayoreo"
+      "name": "Ver sucursales",
+      "short_name": "Sucursales",
+      "description": "Consulta ubicaciones y horarios en Uruapan.",
+      "url": "/sucursales",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

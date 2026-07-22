@@ -607,6 +607,11 @@ test('the PWA exposes a valid manifest and registers its service worker', async 
     expect.objectContaining({ sizes: '192x192' }),
     expect.objectContaining({ sizes: '512x512' }),
   ]));
+  expect(manifest.shortcuts).toEqual(expect.arrayContaining([
+    expect.objectContaining({ url: '/catalogo' }),
+    expect.objectContaining({ url: '/rastrear' }),
+    expect.objectContaining({ url: '/sucursales' }),
+  ]));
 
   await page.goto('/catalogo');
   await expect.poll(
@@ -618,6 +623,31 @@ test('the PWA exposes a valid manifest and registers its service worker', async 
     }),
     { timeout: 15_000 }
   ).toBe(true);
+});
+
+test('the installed catalog reloads from its app shell while offline', async ({ page, context }) => {
+  await page.goto('/catalogo');
+  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
+  await expect.poll(
+    () => page.evaluate(() => Boolean(navigator.serviceWorker.controller)),
+    { timeout: 15_000 }
+  ).toBe(true);
+  await expect.poll(() => page.evaluate(() => {
+    try {
+      return JSON.parse(localStorage.getItem('fp_productos_cache_v1'))?.data?.length || 0;
+    } catch {
+      return 0;
+    }
+  })).toBeGreaterThan(0);
+
+  await context.setOffline(true);
+  try {
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByText(/Sin conexi/i).first()).toBeVisible();
+    await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
+  } finally {
+    await context.setOffline(false);
+  }
 });
 
 test('the public catalog has no automatically detectable accessibility violations', async ({ page }) => {

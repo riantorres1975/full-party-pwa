@@ -1,7 +1,8 @@
 const CACHE_PREFIX = 'full-party';
-const APP_CACHE = `${CACHE_PREFIX}-app-v1`;
-const ASSET_CACHE = `${CACHE_PREFIX}-assets-v1`;
-const IMAGE_CACHE = `${CACHE_PREFIX}-images-v1`;
+const CACHE_VERSION = 'v2';
+const APP_CACHE = `${CACHE_PREFIX}-app-${CACHE_VERSION}`;
+const ASSET_CACHE = `${CACHE_PREFIX}-assets-${CACHE_VERSION}`;
+const IMAGE_CACHE = `${CACHE_PREFIX}-images-${CACHE_VERSION}`;
 const APP_SHELL_KEY = '/__full_party_app_shell__';
 const OFFLINE_URL = '/offline.html';
 const MAX_ASSET_CACHE = 80;
@@ -172,16 +173,19 @@ async function fetchAndCacheImage(request) {
   }
 }
 
-async function handleImage(request) {
-  const cached = await caches.match(request);
-  if (cached) return cached;
+async function handleImage(request, event) {
+  const cached = await caches.match(request, { ignoreVary: true });
+  if (cached) {
+    event.waitUntil(fetchAndCacheImage(request));
+    return cached;
+  }
 
   return (await fetchAndCacheImage(request)) || new Response('', { status: 404 });
 }
 
 async function handleHashedAsset(request, event) {
   const cache = await caches.open(ASSET_CACHE);
-  const cached = await cache.match(request);
+  const cached = await cache.match(request, { ignoreVary: true });
   if (cached) return cached;
 
   try {
@@ -216,7 +220,7 @@ async function handleSameOriginRequest(request, event) {
 
     return response;
   } catch {
-    return (await cache.match(request)) || Response.error();
+    return (await cache.match(request, { ignoreVary: true })) || Response.error();
   }
 }
 
@@ -232,7 +236,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isImageRequest(request)) {
-    event.respondWith(handleImage(request));
+    event.respondWith(handleImage(request, event));
     return;
   }
 

@@ -88,7 +88,7 @@ if (typeof window !== 'undefined' && !window.__fpInstallPromptListenerAttached) 
 if ('serviceWorker' in navigator) {
   if (import.meta.env.PROD) {
     window.addEventListener('load', () => {
-      const hadServiceWorkerController = Boolean(navigator.serviceWorker.controller);
+      let hasControlledPage = Boolean(navigator.serviceWorker.controller);
 
       navigator.serviceWorker
         .register('/sw.js', { updateViaCache: 'none' })
@@ -114,9 +114,10 @@ if ('serviceWorker' in navigator) {
 
           // When the new SW takes control, reload to use fresh assets
           navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (hadServiceWorkerController) {
+            if (hasControlledPage) {
               reloadWithFreshAssets();
             } else {
+              hasControlledPage = true;
               cacheLoadedAppAssets();
             }
           });
