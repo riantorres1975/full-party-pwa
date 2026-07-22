@@ -20,11 +20,11 @@ const C = {
 };
 
 const COLORS = {
-  pink:   { base: C.pink,   accent: C.purple },
-  purple: { base: C.purple, accent: C.cyan   },
-  cyan:   { base: C.cyan,   accent: C.blue   },
-  orange: { base: C.orange, accent: C.pink   },
-  green:  { base: C.green,  accent: C.cyan   },
+  pink:   { base: C.pink,   accent: C.purple, text: '#BE185D' },
+  purple: { base: C.purple, accent: C.cyan,   text: '#7E22CE' },
+  cyan:   { base: C.cyan,   accent: C.blue,   text: '#0E7490' },
+  orange: { base: C.orange, accent: C.pink,   text: '#C2410C' },
+  green:  { base: C.green,  accent: C.cyan,   text: '#047857' },
 };
 
 const SITE_URL = 'https://www.fullpartyuruapan.com.mx';
@@ -92,7 +92,7 @@ export default function BlogArticulo() {
 
   if (!articulo) return <Navigate to="/blog" replace />;
 
-  const { base, accent } = COLORS[articulo.color] || COLORS.pink;
+  const { base, accent, text } = COLORS[articulo.color] || COLORS.pink;
 
   const otros = ARTICULOS.filter((a) => a.slug !== articulo.slug).slice(0, 3);
 
@@ -113,7 +113,7 @@ export default function BlogArticulo() {
             <div className="flex items-center gap-3 mb-4 text-xs" style={{ color: C.textMuted }}>
               <span
                 className="px-3 py-1 rounded-full font-black"
-                style={{ background: `${base}14`, color: base }}
+                style={{ background: `${base}14`, color: text }}
               >
                 {articulo.categoria}
               </span>
@@ -219,7 +219,7 @@ export default function BlogArticulo() {
                     </h3>
                     <span
                       className="mt-auto inline-flex items-center gap-1 text-xs font-black group-hover:gap-2 transition-all"
-                      style={{ color: c.base }}
+                      style={{ color: c.text }}
                     >
                       Leer <ArrowRight size={10} aria-hidden="true" />
                     </span>

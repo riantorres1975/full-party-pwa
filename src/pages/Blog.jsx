@@ -18,11 +18,11 @@ const C = {
 };
 
 const COLORS = {
-  pink:   { base: C.pink,   accent: C.purple },
-  purple: { base: C.purple, accent: C.cyan   },
-  cyan:   { base: C.cyan,   accent: C.blue   },
-  orange: { base: C.orange, accent: C.pink   },
-  green:  { base: C.green,  accent: C.cyan   },
+  pink:   { base: C.pink,   accent: C.purple, text: '#BE185D' },
+  purple: { base: C.purple, accent: C.cyan,   text: '#7E22CE' },
+  cyan:   { base: C.cyan,   accent: C.blue,   text: '#0E7490' },
+  orange: { base: C.orange, accent: C.pink,   text: '#C2410C' },
+  green:  { base: C.green,  accent: C.cyan,   text: '#047857' },
 };
 
 export default function Blog() {
@@ -52,7 +52,7 @@ export default function Blog() {
 
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {ARTICULOS.map(({ slug, titulo, extracto, fecha, fechaLegible, categoria, emoji, color }) => {
-            const { base, accent } = COLORS[color] || COLORS.pink;
+            const { base, accent, text } = COLORS[color] || COLORS.pink;
             return (
               <Link
                 key={slug}
@@ -74,7 +74,7 @@ export default function Blog() {
                   <div className="flex items-center gap-3 mb-3 text-xs" style={{ color: C.textMuted }}>
                     <span
                       className="px-2 py-1 rounded-full font-black"
-                      style={{ background: `${base}14`, color: base }}
+                      style={{ background: `${base}14`, color: text }}
                     >
                       {categoria}
                     </span>
@@ -94,7 +94,7 @@ export default function Blog() {
                   </p>
                   <span
                     className="mt-4 inline-flex items-center gap-1 text-xs font-black group-hover:gap-2 transition-all"
-                    style={{ color: base }}
+                    style={{ color: text }}
                   >
                     Leer artículo <ArrowRight size={12} aria-hidden="true" />
                   </span>

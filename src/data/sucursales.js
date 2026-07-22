@@ -21,6 +21,7 @@ export const SUCURSALES = [
     embedUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3762.8065692929063!2d-102.0549798!3d19.420761799999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x842de367f2d59469%3A0x4799181c21c26fd5!2sFull%20Party%20Uruapan%20Suc%20Francisco%20Villa!5e0!3m2!1ses-419!2smx!4v1776194961609!5m2!1ses-419!2smx',
     color: '#F472B6',
     accent: '#FB923C',
+    textColor: '#BE185D',
   },
   {
     id: 'sol-naciente',
@@ -45,5 +46,6 @@ export const SUCURSALES = [
     embedUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3763.1415130404407!2d-102.0274577!3d19.4062907!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x842de3bcdec90e8d%3A0x5158156fe2efca48!2sFull%20Party%20Uruapan%20Suc%20Sol%20Naciente!5e0!3m2!1ses-419!2smx!4v1776194928231!5m2!1ses-419!2smx',
     color: '#C084FC',
     accent: '#22D3EE',
+    textColor: '#7E22CE',
   },
 ];

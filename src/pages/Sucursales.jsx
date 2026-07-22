@@ -47,7 +47,7 @@ export default function Sucursales() {
         </header>
 
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-14">
-          {SUCURSALES.map(({ id, nombre, badge, direccion, cp, telefono, telefonoHref, horario, horarioExtra, mapsUrl, embedUrl, color, accent }) => (
+          {SUCURSALES.map(({ id, nombre, badge, direccion, cp, telefono, telefonoHref, horario, horarioExtra, mapsUrl, embedUrl, color, accent, textColor }) => (
             <article
               key={id}
               id={id}
@@ -71,7 +71,7 @@ export default function Sucursales() {
                   className="absolute top-3 left-3 text-xs font-black px-3 py-1 rounded-full"
                   style={{
                     background: 'rgba(255,255,255,0.92)',
-                    color,
+                    color: textColor,
                     border: `1px solid ${color}44`,
                     backdropFilter: 'blur(6px)',
                   }}
@@ -115,7 +115,7 @@ export default function Sucursales() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black transition-transform hover:scale-[1.02]"
-                  style={{ background: `${color}14`, color, border: `1px solid ${color}33` }}
+                  style={{ background: `${color}14`, color: textColor, border: `1px solid ${color}33` }}
                 >
                   <Navigation size={14} aria-hidden="true" /> Ver en Google Maps
                 </a>

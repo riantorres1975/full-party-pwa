@@ -28,6 +28,7 @@ const CATEGORIAS = [
     desc: 'Glomex, Decoratex y Sempertex. Colores sólidos, metalizados y fantasía. Calidad helio y tamaños del 5" al 36" para decoración profesional de eventos.',
     color: C.pink,
     accent: C.purple,
+    textColor: '#BE185D',
   },
   {
     slug: 'globos-foil',
@@ -36,6 +37,7 @@ const CATEGORIAS = [
     desc: 'Globos foil en todas las formas: estrellas, corazones, figuras y tamaños jumbo. Perfectos para arcos, bouquets y centros de mesa.',
     color: C.cyan,
     accent: C.blue,
+    textColor: '#0E7490',
   },
   {
     slug: 'globos-numeros',
@@ -44,6 +46,7 @@ const CATEGORIAS = [
     desc: 'Números y letras gigantes foil para cumpleaños, aniversarios y graduaciones. Colores oro, plata, rosa y más.',
     color: C.yellow,
     accent: C.orange,
+    textColor: '#854D0E',
   },
   {
     slug: 'personajes',
@@ -52,6 +55,7 @@ const CATEGORIAS = [
     desc: 'Personajes de moda para fiestas infantiles: superhéroes, princesas, animales y licencias populares. Renovamos el catálogo cada temporada.',
     color: C.orange,
     accent: C.pink,
+    textColor: '#C2410C',
   },
   {
     slug: 'cortinas-guirnaldas',
@@ -60,6 +64,7 @@ const CATEGORIAS = [
     desc: 'Cortinas de lluvia metalizadas, guirnaldas de papel y tela, flecos decorativos y banners personalizados para todo tipo de evento.',
     color: C.purple,
     accent: C.pink,
+    textColor: '#7E22CE',
   },
   {
     slug: 'sets-accesorios',
@@ -68,6 +73,7 @@ const CATEGORIAS = [
     desc: 'Sets de 5 piezas coordinados, bombas eléctricas, infladoras manuales, cinta curly, listones y todo lo necesario para decorar.',
     color: C.green,
     accent: C.cyan,
+    textColor: '#047857',
   },
   {
     slug: 'velas',
@@ -76,6 +82,7 @@ const CATEGORIAS = [
     desc: 'Velas de números, letras, figuras y velas mágicas para pastel. Variedad de colores y estilos para cumpleaños de todas las edades.',
     color: C.orange,
     accent: C.yellow,
+    textColor: '#C2410C',
   },
   {
     slug: 'brillo-acabados',
@@ -84,6 +91,7 @@ const CATEGORIAS = [
     desc: 'Mega Shine y Glow Shine: brillo para globos, acabados metalizados y tratamientos premium que dan el toque final a tus decoraciones.',
     color: C.blue,
     accent: C.cyan,
+    textColor: '#4338CA',
   },
 ];
 
@@ -113,7 +121,7 @@ export default function Destacados() {
         </header>
 
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-14">
-          {CATEGORIAS.map(({ slug, emoji, titulo, desc, color, accent }) => (
+          {CATEGORIAS.map(({ slug, emoji, titulo, desc, color, accent, textColor }) => (
             <Link
               key={slug}
               to={`/catalogo/${slug}`}
@@ -138,7 +146,7 @@ export default function Destacados() {
               </p>
               <span
                 className="mt-4 inline-flex items-center gap-1 text-xs font-black group-hover:gap-2 transition-all"
-                style={{ color }}
+                style={{ color: textColor }}
               >
                 Ver productos <ArrowRight size={12} aria-hidden="true" />
               </span>
