@@ -2,7 +2,7 @@
 // CONFIGURACIÓN DEL NEGOCIO
 // ─────────────────────────────────────────────────────────────────────────────
 export const NUMERO_WHATSAPP   = import.meta.env.VITE_WHATSAPP_NUMBER;
-export const NOMBRE_NEGOCIO    = import.meta.env.VITE_NOMBRE_NEGOCIO;
+export const NOMBRE_NEGOCIO    = import.meta.env.VITE_NOMBRE_NEGOCIO || 'Full Party';
 // Moneda y símbolo se derivan del código de moneda
 const MONEDAS = { MXN: '$', USD: '$', EUR: '€', GBP: '£', COP: '$', ARS: '$', CLP: '$', PEN: 'S/', BRL: 'R$' };
 export const MONEDA            = import.meta.env.VITE_MONEDA || 'MXN';
