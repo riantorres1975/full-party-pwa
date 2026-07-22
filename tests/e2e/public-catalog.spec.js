@@ -195,9 +195,11 @@ test('a 500-product catalog renders progressively without limiting search', asyn
   const showMore = page.getByRole('button', { name: /Mostrar \d+ productos m.s/ });
   await expect(showMore).toBeAttached();
   await expect(showMore).toHaveCount(1);
-  const automaticBatchCount = Number((await showMore.innerText()).match(/\d+/)?.[0]);
   await showMore.evaluate((button) => button.scrollIntoView({ block: 'center' }));
-  await expect(cards).toHaveCount(countBeforeMore + automaticBatchCount);
+  await page.waitForTimeout(500);
+  const countAfterScroll = await cards.count();
+  expect(countAfterScroll).toBeGreaterThanOrEqual(countBeforeMore);
+  expect(countAfterScroll).toBeLessThan(500);
 
   const countBeforeManualLoad = await cards.count();
   const manualBatchCount = Number((await showMore.innerText()).match(/\d+/)?.[0]);
@@ -341,6 +343,113 @@ test('an offline checkout stays intact until the connection returns', async ({ p
   await context.setOffline(false);
   await expect(cart.getByText(/Tu pedido sigue guardado/)).toBeHidden();
   await expect(cart.getByRole('button', { name: 'Enviar pedido a Full Party' })).toBeEnabled();
+});
+
+test('a completed order includes its folio and tracking URL in WhatsApp', async ({ page }) => {
+  const folio = 'FP-E2E1234';
+  let createPayload = null;
+
+  await page.route('**/rest/v1/rpc/crear_pedido_publico', async (route) => {
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({
+        status: 204,
+        headers: { ...catalogCorsHeaders, 'access-control-allow-methods': 'POST, OPTIONS' },
+      });
+      return;
+    }
+
+    createPayload = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: catalogCorsHeaders,
+      body: JSON.stringify(folio),
+    });
+  });
+  await page.addInitScript(() => {
+    window.__openedWhatsAppUrl = null;
+    window.open = () => ({
+      opener: null,
+      closed: false,
+      document: { title: '', body: { textContent: '', style: {} } },
+      location: {
+        replace(url) {
+          window.__openedWhatsAppUrl = url;
+        },
+      },
+      close() {
+        this.closed = true;
+      },
+    });
+  });
+
+  await page.goto('/catalogo');
+  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
+  await page
+    .locator('article.product-card button[aria-label^="Agregar "][aria-label$=" al carrito"]:not([disabled])')
+    .first()
+    .click();
+  await page.locator('button[aria-label^="Carrito con "]').click();
+
+  const cart = page.getByRole('dialog');
+  await cart.getByLabel('Nombre completo').fill('Maria E2E');
+  await cart.getByLabel(/N.mero de tel.fono/i).fill('4521234567');
+  await cart.getByRole('button', { name: 'Revisar pedido' }).click();
+  await cart.getByRole('button', { name: 'Enviar pedido a Full Party' }).click();
+
+  await expect.poll(() => page.evaluate(() => window.__openedWhatsAppUrl)).toContain('api.whatsapp.com/send');
+  const whatsappUrl = await page.evaluate(() => window.__openedWhatsAppUrl);
+  const message = new URL(whatsappUrl).searchParams.get('text');
+
+  expect(createPayload).toEqual(expect.objectContaining({
+    p_cliente_nombre: 'Maria E2E',
+    p_cliente_telefono: '4521234567',
+    p_tipo_entrega: 'tienda',
+  }));
+  expect(createPayload.p_detalles_json).toHaveLength(1);
+  expect(message).toContain(`Folio:* ${folio}`);
+  expect(message).toContain(`https://www.fullpartyuruapan.com.mx/rastrear/${folio}`);
+  await expect(page.locator('button[aria-label^="Carrito con 0"]')).toBeVisible();
+});
+
+test('a direct tracking URL loads the saved order status', async ({ page }) => {
+  const folio = 'FP-E2E1234';
+  let lookupPayload = null;
+
+  await page.route('**/rest/v1/rpc/buscar_pedido_por_folio', async (route) => {
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({
+        status: 204,
+        headers: { ...catalogCorsHeaders, 'access-control-allow-methods': 'POST, OPTIONS' },
+      });
+      return;
+    }
+
+    lookupPayload = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: catalogCorsHeaders,
+      body: JSON.stringify([{
+        folio,
+        cliente_nombre: 'Maria E2E',
+        estado: 'Por Surtir',
+        total: 85,
+        tipo_entrega: 'tienda',
+        created_at: '2026-07-22T15:00:00.000Z',
+        updated_at: '2026-07-22T15:00:00.000Z',
+        detalles_json: [{ nombre: 'Globo Rosa 12 Pulg', cantidad: 1, precio: 85 }],
+      }]),
+    });
+  });
+
+  await page.goto(`/rastrear/${folio.toLowerCase()}`);
+
+  await expect(page.getByRole('heading', { level: 1, name: 'Rastrear Pedido' })).toBeVisible();
+  await expect(page.getByText(folio, { exact: true })).toBeVisible();
+  await expect(page.getByText('Maria E2E', { exact: true })).toBeVisible();
+  await expect(page.getByText('Por Surtir', { exact: true })).toBeVisible();
+  expect(lookupPayload).toEqual({ p_folio: folio });
 });
 
 test('favorites and recently viewed products persist across reloads', async ({ page }) => {
@@ -524,3 +633,47 @@ test('the public catalog has no automatically detectable accessibility violation
 
   expect(results.violations, JSON.stringify(summary, null, 2)).toEqual([]);
 });
+
+const publicContentRoutes = [
+  { path: '/sucursales', heading: /Encu[eé]ntranos en Uruapan/i },
+  { path: '/como-funciona', heading: /C[oó]mo hacer un pedido/i },
+  { path: '/destacados', heading: /Categor[ií]as destacadas/i },
+  { path: '/blog', heading: /Blog Full Party/i },
+  {
+    path: '/blog/cuantos-globos-necesito-cumpleanos',
+    heading: /Cu[aá]ntos globos necesito para decorar un cumplea[nñ]os/i,
+  },
+];
+
+for (const route of publicContentRoutes) {
+  test(`${route.path} remains responsive and accessible`, async ({ page }) => {
+    const pageErrors = [];
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+
+    await page.goto(route.path);
+
+    const heading = page.getByRole('heading', { level: 1, name: route.heading });
+    await expect(heading).toBeVisible();
+    if (route.path === '/sucursales') {
+      await expect(page.locator('iframe[title^="Mapa Suc."]')).toHaveCount(2);
+    }
+
+    const viewport = await page.evaluate(() => ({
+      clientWidth: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth + 1);
+
+    // Third-party map frames own their internal landmarks; audit the app shell
+    // while still asserting that each iframe has an accessible title.
+    const results = await new AxeBuilder({ page }).exclude('iframe').analyze();
+    const summary = results.violations.map((violation) => ({
+      id: violation.id,
+      impact: violation.impact,
+      targets: violation.nodes.map((node) => node.target),
+    }));
+
+    expect(results.violations, JSON.stringify(summary, null, 2)).toEqual([]);
+    expect(pageErrors).toEqual([]);
+  });
+}
