@@ -388,11 +388,18 @@ test('a completed order includes its folio and tracking URL in WhatsApp', async 
   await cart.getByRole('button', { name: 'Revisar pedido' }).click();
 
   const popupPromise = page.waitForEvent('popup');
+  const whatsappRequestPromise = context.waitForEvent('request', {
+    predicate: (request) => (
+      request.isNavigationRequest()
+      && request.url().startsWith('https://api.whatsapp.com/send')
+    ),
+    timeout: 10_000,
+  });
   await cart.getByRole('button', { name: 'Enviar pedido a Full Party' }).click();
-  const whatsappPage = await popupPromise;
+  await popupPromise;
 
-  await whatsappPage.waitForURL(/api\.whatsapp\.com\/send/, { timeout: 10_000 });
-  const whatsappUrl = whatsappPage.url();
+  const whatsappRequest = await whatsappRequestPromise;
+  const whatsappUrl = whatsappRequest.url();
   const message = new URL(whatsappUrl).searchParams.get('text');
 
   expect(createPayload).toEqual(expect.objectContaining({
