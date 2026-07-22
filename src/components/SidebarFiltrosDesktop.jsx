@@ -31,7 +31,8 @@ function PillFiltro({ label, activo, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`w-full text-xs font-body font-bold px-2.5 py-1.5 rounded-lg transition-all duration-150
+      title={label}
+      className={`min-h-9 w-full rounded-lg px-2.5 py-1.5 text-xs font-body font-bold leading-tight transition-all duration-150
                   ${activo ? 'text-white shadow-sm' : 'hover:bg-ink-100'}`}
       style={activo
         ? {
@@ -54,6 +55,7 @@ function FilaFiltro({ label, activo, onClick }) {
   return (
     <button
       onClick={onClick}
+      title={label}
       className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left
                  transition-all duration-150 active:scale-[0.98]
                  ${activo ? '' : 'hover:bg-ink-50'}`}
@@ -171,7 +173,7 @@ export default function SidebarFiltrosDesktop({ filtros, toggleFiltro, limpiarFi
               cat.label.toLowerCase().includes(busqueda.toLowerCase())
             );
             return (
-              <div className="flex flex-col 2xl:grid 2xl:grid-cols-2 gap-0.5 2xl:gap-1">
+              <div className="flex flex-col gap-0.5">
                 {filtradas.length > 0 ? filtradas.map(cat => (
                   <FilaFiltro
                     key={cat.id}
@@ -196,7 +198,7 @@ export default function SidebarFiltrosDesktop({ filtros, toggleFiltro, limpiarFi
               m.toLowerCase().includes(busqueda.toLowerCase())
             );
             return (
-               <div className="grid grid-cols-2 2xl:grid-cols-3 gap-1.5">
+               <div className="grid grid-cols-2 gap-2">
                  {filtradas.length > 0 ? filtradas.map(marca => (
                    <PillFiltro
                     key={marca}
@@ -214,7 +216,7 @@ export default function SidebarFiltrosDesktop({ filtros, toggleFiltro, limpiarFi
 
         <SeccionFiltro titulo={`📐 ${t('filters.size')}`} abiertaInicial={false}
                        count={filtros.tamanios.length}>
-           <div className="grid grid-cols-2 2xl:grid-cols-3 gap-1.5">
+           <div className="grid grid-cols-2 gap-2">
              {tamanios.map(tamano => (
               <PillFiltro
                 key={tamano}

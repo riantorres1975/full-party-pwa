@@ -512,7 +512,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
         <main className="pb-[calc(6.25rem+env(safe-area-inset-bottom,0px))] transition-all duration-300 lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:pb-0">
           <h1 className="sr-only">Catálogo de Artículos para Fiesta al Mayoreo | Full Party Uruapan</h1>
           <div className="mx-auto h-full w-full max-w-[1760px] px-3 lg:px-6 xl:px-8">
-            <div className="lg:grid lg:h-full lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start lg:gap-4 xl:grid-cols-[250px_minmax(0,1fr)] xl:gap-5 2xl:grid-cols-[260px_minmax(0,1fr)] 2xl:gap-6">
+            <div className="lg:grid lg:h-full lg:grid-cols-[270px_minmax(0,1fr)] lg:items-start lg:gap-4 xl:grid-cols-[285px_minmax(0,1fr)] xl:gap-5 2xl:grid-cols-[300px_minmax(0,1fr)] 2xl:gap-6">
               <SidebarFiltrosDesktop
                 filtros={displayedFilters}
                 toggleFiltro={toggleFilter}
