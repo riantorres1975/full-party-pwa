@@ -574,7 +574,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
                 {catalogMetadataPending && !error && <CatalogToolbarSkeleton />}
 
-                <div data-catalog-scroll-root className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-16">
+                <div data-catalog-scroll-root className="hide-scrollbar lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pb-16">
                   {loading && <ProductosSkeleton cantidad={12} />}
 
                   {!loading && error && (
