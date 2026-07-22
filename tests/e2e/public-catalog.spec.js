@@ -8,6 +8,7 @@ const catalogFixture = [
   { id: 'e2e-4', nombre: 'Globo Amarillo 12 Pulg', precio: 85, categoria: 'Globo Latex', marca: 'Glomex', tamano: '12 Pulg', stock_actual: 12, es_nuevo: false },
   { id: 'e2e-5', nombre: 'Bomba Manual para Globos', precio: 45, categoria: 'Infladora de globos', marca: 'Económico', tamano: '', stock_actual: 4, es_nuevo: true },
   { id: 'e2e-6', nombre: 'Confeti Dorado', precio: 10, categoria: 'Confeti', marca: 'Genérico', tamano: '', stock_actual: 30, es_nuevo: false },
+  { id: 'e2e-7', nombre: 'Globo Número Azul 0', precio: 25, categoria: 'Globo Número-16', marca: 'Genérico', tamano: '16 Pulg', stock_actual: 8, es_nuevo: false },
 ].map((producto) => ({
   descripcion: `${producto.nombre} para pruebas del catálogo`,
   imagen_url: '/icons/icon-192.png',
@@ -148,6 +149,30 @@ test('an empty catalog is distinguished from a search without results', async ({
   await expect(page.getByRole('heading', { name: 'Catálogo en preparación' })).toBeVisible();
   await expect(page.getByText('Aún no hay productos disponibles. Vuelve a intentarlo más tarde.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Sin resultados' })).toHaveCount(0);
+});
+
+test('category URLs filter products and stay in sync with navigation', async ({ page }) => {
+  await page.goto('/catalogo/globos-latex');
+
+  await expect(page).toHaveURL(/\/catalogo\/globos-latex$/);
+  await expect(page.getByText('Viendo: Globos de Látex')).toBeVisible();
+  await expect(page.locator('article.product-card')).toHaveCount(4);
+
+  await page.getByRole('button', { name: 'Quitar filtros' }).first().click();
+  await expect(page).toHaveURL(/\/catalogo$/);
+  await expect(page.getByText(`${catalogFixture.length} productos`, { exact: true })).toBeVisible();
+
+  await page.locator('button:visible').filter({ hasText: /^Confeti$/ }).first().click();
+  await expect(page).toHaveURL(/\/catalogo\/confeti$/);
+  await expect(page.locator('article.product-card')).toHaveCount(1);
+
+  await page.goBack();
+  await expect(page).toHaveURL(/\/catalogo$/);
+  await expect(page.getByText(`${catalogFixture.length} productos`, { exact: true })).toBeVisible();
+
+  await page.goto('/catalogo/globos-numeros');
+  await expect(page).toHaveURL(/\/catalogo\/globos-numero$/);
+  await expect(page.locator('article.product-card')).toHaveCount(1);
 });
 
 test('the catalog can be sorted and the cart guides order completion', async ({ page }) => {

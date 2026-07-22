@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState, useMemo, useEffect, useRef, useCallback, useDeferredValue } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useProductos }      from './hooks/useProductos';
 import { useCarrito }        from './hooks/useCarrito';
 import { useToast }          from './components/ui/ToastProvider';
@@ -19,6 +20,7 @@ import { createFuzzySearchIndex } from './utils/fuzzySearch';
 import { buildProductAnalyticsParams, trackEvent } from './utils/analytics';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useProductPreferences } from './hooks/useProductPreferences';
+import { resolveCategoryRoute, slugifyCategory } from './utils/categoryRoutes';
 
 const CarritoDrawer = lazy(() => import('./components/CarritoDrawer'));
 const CategoryBrowser = lazy(() => import('./components/CategoryBrowser'));
@@ -34,6 +36,10 @@ const PRODUCT_SEARCH_KEYS = [
 ];
 
 export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { categoria: categoryRouteSlug } = useParams();
+
   // Data from Supabase
   const {
     productos,
@@ -156,8 +162,43 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     if (productos.length > 0) sincronizarStock(productos);
   }, [productos, sincronizarStock]);
 
+  const categoryRoute = useMemo(
+    () => resolveCategoryRoute(categoryRouteSlug, productos),
+    [categoryRouteSlug, productos],
+  );
+
+  useEffect(() => {
+    if (!categoryRouteSlug) return;
+
+    if (categoryRoute && categoryRoute.requestedSlug !== categoryRoute.canonicalSlug) {
+      navigate({
+        pathname: `/catalogo/${categoryRoute.canonicalSlug}`,
+        search: location.search,
+      }, { replace: true });
+      return;
+    }
+
+    const catalogIsComplete = !loading && !isInitialSyncing && !refreshing && !isPartialData;
+    if (catalogIsComplete && !categoryRoute) {
+      navigate({ pathname: '/catalogo', search: location.search }, { replace: true });
+    }
+  }, [categoryRoute, categoryRouteSlug, isInitialSyncing, isPartialData, loading, location.search, navigate, refreshing]);
+
   // Filter logic
   const toggleFilter = (dimension, valor) => {
+    if (dimension === 'categorias') {
+      const isSelected = categoryRoute
+        ? categoryRoute.categoryIds.includes(valor)
+        : activeFilters.categorias.includes(valor);
+
+      setActiveFilters(prev => ({ ...prev, categorias: [] }));
+      navigate(isSelected ? '/catalogo' : `/catalogo/${slugifyCategory(valor)}`);
+      trackEvent('catalog_filter', {
+        filter_type: 'category',
+        has_value: !isSelected,
+      });
+      return;
+    }
     setActiveFilters(prev => {
       const actual = prev[dimension];
       return {
@@ -169,8 +210,10 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     });
   };
 
-  const clearFilters = () =>
+  const clearFilters = () => {
     setActiveFilters({ categorias: [], marcas: [], tamanios: [], precioMin: null, precioMax: null });
+    if (categoryRouteSlug) navigate('/catalogo');
+  };
 
   const setPriceFilter = ({ min, max }) => {
     setActiveFilters(prev => ({
@@ -191,7 +234,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   }, [productos]);
 
   const activeFilterCount =
-    activeFilters.categorias.length +
+    (categoryRouteSlug ? 1 : activeFilters.categorias.length) +
     activeFilters.marcas.length +
     activeFilters.tamanios.length +
     (Number.isFinite(activeFilters.precioMin) || Number.isFinite(activeFilters.precioMax) ? 1 : 0);
@@ -200,7 +243,9 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     productos.filter(p => {
       if (showFavorites && !isFavorite(p.id)) return false;
       const matchesCategory =
-        activeFilters.categorias.length === 0 || activeFilters.categorias.includes(p.categoria);
+        categoryRouteSlug
+          ? Boolean(categoryRoute?.matches(p))
+          : activeFilters.categorias.length === 0 || activeFilters.categorias.includes(p.categoria);
       const matchesBrand =
         activeFilters.marcas.length === 0 || (p.marca && activeFilters.marcas.includes(p.marca));
       const matchesSize =
@@ -212,7 +257,13 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
       return matchesCategory && matchesBrand && matchesSize && matchesPrice;
     })
-  ), [productos, activeFilters, showFavorites, isFavorite]);
+  ), [productos, activeFilters, categoryRoute, categoryRouteSlug, showFavorites, isFavorite]);
+
+  const displayedFilters = useMemo(() => (
+    categoryRoute
+      ? { ...activeFilters, categorias: categoryRoute.categoryIds }
+      : activeFilters
+  ), [activeFilters, categoryRoute]);
 
   const productSearchIndex = useMemo(
     () => createFuzzySearchIndex(
@@ -314,11 +365,8 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
       filter_type: 'category',
       has_value: Boolean(catId),
     });
-    if (!catId) {
-      setActiveFilters(prev => ({ ...prev, categorias: [] }));
-    } else {
-      setActiveFilters(prev => ({ ...prev, categorias: [catId] }));
-    }
+    setActiveFilters(prev => ({ ...prev, categorias: [] }));
+    navigate(catId ? `/catalogo/${slugifyCategory(catId)}` : '/catalogo');
     setSearchQuery('');
     setIsCategoryBrowserOpen(false);
     setBottomNavActive('categorias');
@@ -377,13 +425,14 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
               ref={searchRef}
               busqueda={searchQuery}
               setBusqueda={setSearchQuery}
-              filtros={activeFilters}
+              filtros={displayedFilters}
               toggleFiltro={toggleFilter}
               totalFiltrosActivos={activeFilterCount}
               onAbrirFiltros={openFilters}
               productos={productos}
               categoryStats={isInitialSyncing ? [] : categoryStats}
               onSelectCategory={selectCategory}
+              routeCategoryLabel={categoryRoute?.label}
               priceBounds={priceBounds}
               onPrecioChange={setPriceFilter}
             />
@@ -462,7 +511,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
           <div className="max-w-[1600px] mx-auto w-full px-3 lg:px-6 h-full">
             <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(0,1fr)] lg:gap-6 xl:gap-8 lg:items-start lg:h-full">
               <SidebarFiltrosDesktop
-                filtros={activeFilters}
+                filtros={displayedFilters}
                 toggleFiltro={toggleFilter}
                 limpiarFiltros={clearFilters}
                 totalFiltrosActivos={activeFilterCount}
@@ -507,6 +556,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     onSortChange={setSortOrder}
                     isFiltered={catalogIsFiltered}
                     onClear={resetCatalog}
+                    filterLabel={categoryRoute?.label}
                     favoriteCount={favoriteCount}
                     showFavorites={showFavorites}
                     onToggleFavorites={() => {
@@ -602,7 +652,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
           <ModalFiltros
             isOpen={areFiltersOpen}
             onCerrar={() => setAreFiltersOpen(false)}
-            filtros={activeFilters}
+            filtros={displayedFilters}
             toggleFiltro={toggleFilter}
             onPrecioChange={setPriceFilter}
             priceBounds={priceBounds}

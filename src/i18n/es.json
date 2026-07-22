@@ -69,6 +69,7 @@
   "catalog.recentlyViewed": "Vistos recientemente",
   "catalog.openRecentProduct": "Abrir {name} visto recientemente",
   "catalog.clearView": "Quitar filtros",
+  "catalog.viewingCategory": "Viendo: {category}",
 
   "search.placeholder": "Buscar productos...",
   "search.searchingIn": "Buscando en:",

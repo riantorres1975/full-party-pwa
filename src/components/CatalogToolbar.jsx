@@ -7,6 +7,7 @@ export default function CatalogToolbar({
   onSortChange,
   isFiltered = false,
   onClear,
+  filterLabel,
   favoriteCount = 0,
   showFavorites = false,
   onToggleFavorites,
@@ -27,6 +28,11 @@ export default function CatalogToolbar({
         <p className="font-body text-sm font-black" style={{ color: 'var(--text-primary)' }}>
           {total === 1 ? t('grid.resultCountOne') : t('grid.resultCount', { count: total })}
         </p>
+        {filterLabel && (
+          <p className="truncate text-[11px] font-body font-bold" style={{ color: 'var(--text-secondary)' }}>
+            {t('catalog.viewingCategory', { category: filterLabel })}
+          </p>
+        )}
         {isFiltered && (
           <button
             type="button"

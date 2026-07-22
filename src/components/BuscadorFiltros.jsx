@@ -17,6 +17,7 @@ function BuscadorFiltros({
   productos = [],
   categoryStats = [],
   onSelectCategory,
+  routeCategoryLabel,
   priceBounds = { min: null, max: null },
   onPrecioChange,
 }, ref) {
@@ -65,9 +66,9 @@ function BuscadorFiltros({
     ...filtros.tamanios.map(v   => ({ dim: 'tamanios',   val: v, label: v })),
   ];
 
-  const categoriaActivaLabel = categoriaActiva
+  const categoriaActivaLabel = routeCategoryLabel || (categoriaActiva
     ? (LABELS.categorias[categoriaActiva] ?? categoryStats.find(c => c.id === categoriaActiva)?.label ?? categoriaActiva)
-    : null;
+    : null);
 
   // Three quick price tiers split evenly across the catalog's price range, with readable labels.
   const priceTiers = (() => {
@@ -215,7 +216,7 @@ function BuscadorFiltros({
             <>
               <CategoryChip
                 label={t('common.all')}
-                active={!categoriaActiva}
+                active={!categoriaActiva && !routeCategoryLabel}
                 onClick={() => seleccionarCategoria(null)}
               />
               {priceTiers.map(tier => (
@@ -229,10 +230,10 @@ function BuscadorFiltros({
               {categoryStats.slice(0, 14).map(cat => (
                 <CategoryChip
                   key={cat.id}
-                  ref={categoriaActiva === cat.id ? activeChipRef : null}
+                  ref={filtros.categorias.includes(cat.id) ? activeChipRef : null}
                   label={cat.label}
-                  active={categoriaActiva === cat.id}
-                  onClick={() => seleccionarCategoria(categoriaActiva === cat.id ? null : cat)}
+                  active={filtros.categorias.includes(cat.id)}
+                  onClick={() => seleccionarCategoria(filtros.categorias.includes(cat.id) ? null : cat)}
                 />
               ))}
             </>
