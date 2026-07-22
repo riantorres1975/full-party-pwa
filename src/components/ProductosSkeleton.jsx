@@ -4,10 +4,10 @@
  */
 function TarjetaSkeleton() {
   return (
-    <div className="skeleton-card min-h-[330px] lg:min-h-[380px] bg-white rounded-2xl overflow-hidden"
+    <div className="skeleton-card min-h-[330px] overflow-hidden rounded-2xl bg-white lg:min-h-[300px]"
          style={{ border: '1px solid var(--border-soft)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
       {/* Imagen */}
-      <div className="aspect-square bg-ink-100 relative overflow-hidden">
+      <div className="relative aspect-square overflow-hidden bg-ink-100 lg:aspect-[4/3]">
         <div className="absolute inset-0 skeleton-shimmer" />
       </div>
       {/* Contenido */}
@@ -31,7 +31,7 @@ function TarjetaSkeleton() {
 
 export default function ProductosSkeleton({ cantidad = 8 }) {
   return (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(195px,1fr))] gap-2.5 sm:gap-3 lg:gap-4 p-3 sm:p-4 lg:p-0">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-2.5 p-3 sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] sm:gap-3 sm:p-4 lg:grid-cols-[repeat(auto-fill,minmax(195px,1fr))] lg:gap-4 lg:p-0 2xl:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]">
       {Array.from({ length: cantidad }).map((_, i) => (
         <TarjetaSkeleton key={i} />
       ))}

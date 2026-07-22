@@ -33,8 +33,6 @@ export default function ProductGrid({
     sentinelRef,
     hayMas,
     cargando,
-    cargarMas,
-    nextCount,
   } = useInfiniteScroll(productos.length, { resetKey: productSetKey });
   const [productoDetalle, setProductoDetalle] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -158,7 +156,7 @@ export default function ProductGrid({
         <RecentlyViewed products={recentProducts} onSelectProduct={openProductDetail} />
       )}
 
-      <div id="catalog-product-grid" aria-busy={cargando} className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(195px,1fr))] gap-2.5 sm:gap-3 lg:gap-4 p-3 sm:p-4 lg:p-0 animate-fade-in">
+      <div id="catalog-product-grid" aria-busy={cargando} className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-2.5 p-3 animate-fade-in sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] sm:gap-3 sm:p-4 lg:grid-cols-[repeat(auto-fill,minmax(195px,1fr))] lg:gap-4 lg:p-0 2xl:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]">
         {visibles.map((producto, index) => (
           <ProductCard
             key={producto.id}
@@ -191,7 +189,11 @@ export default function ProductGrid({
         )}
 
         {hayMas && (
-          <div ref={sentinelRef} className="flex min-h-14 items-center justify-center py-2">
+          <div
+            ref={sentinelRef}
+            data-catalog-load-sentinel
+            className="flex min-h-14 items-center justify-center py-2"
+          >
             {cargando ? (
               <div className="flex items-center justify-center gap-3 animate-fade-in" role="status">
                 <div
@@ -206,17 +208,7 @@ export default function ProductGrid({
                   {t('grid.loadingMore')}
                 </span>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={cargarMas}
-                className="min-h-10 rounded-xl border px-4 font-body text-xs font-black transition-colors hover:bg-purple-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-fiesta-purple"
-                style={{ borderColor: 'var(--border-default)', color: 'var(--text-secondary)' }}
-                aria-controls="catalog-product-grid"
-              >
-                {t('grid.showMore', { count: nextCount })}
-              </button>
-            )}
+            ) : null}
           </div>
         )}
       </div>

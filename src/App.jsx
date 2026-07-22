@@ -406,9 +406,9 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
   return (
     <div className={`min-h-screen lg:h-screen lg:overflow-hidden transition-colors duration-300 ${temaOscuro ? 'bg-[#0f1124]' : 'bg-cream'}`}>
-      <div className={temaOscuro ? 'theme-dark-catalog' : ''}>
+      <div className={`${temaOscuro ? 'theme-dark-catalog' : ''} lg:flex lg:h-screen lg:flex-col`}>
         <header
-          className={`sticky top-0 z-50 w-full backdrop-blur-md shadow-sm border-b pb-2 transition-colors duration-300 ${
+          className={`sticky top-0 z-50 w-full flex-none backdrop-blur-md shadow-sm border-b pb-2 lg:pb-1 transition-colors duration-300 ${
             temaOscuro
               ? 'bg-[#0f1328]/86 border-[#2b2f52]'
               : 'bg-[#fbf7f3]/90 border-gray-100'
@@ -423,7 +423,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
             isAdmin={isAdmin}
           />
 
-          <div className="pt-1">
+          <div className="pt-1 lg:pt-0">
             <BuscadorFiltros
               ref={searchRef}
               busqueda={searchQuery}
@@ -509,10 +509,10 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
           </div>
         )}
 
-        <main className="pb-[calc(6.25rem+env(safe-area-inset-bottom,0px))] lg:pb-0 lg:h-[calc(100vh-130px)] lg:overflow-hidden transition-all duration-300">
+        <main className="pb-[calc(6.25rem+env(safe-area-inset-bottom,0px))] transition-all duration-300 lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:pb-0">
           <h1 className="sr-only">Catálogo de Artículos para Fiesta al Mayoreo | Full Party Uruapan</h1>
-          <div className="max-w-[1600px] mx-auto w-full px-3 lg:px-6 h-full">
-            <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(0,1fr)] lg:gap-6 xl:gap-8 lg:items-start lg:h-full">
+          <div className="mx-auto h-full w-full max-w-[1760px] px-3 lg:px-6 xl:px-8">
+            <div className="lg:grid lg:h-full lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start lg:gap-4 xl:grid-cols-[250px_minmax(0,1fr)] xl:gap-5 2xl:grid-cols-[260px_minmax(0,1fr)] 2xl:gap-6">
               <SidebarFiltrosDesktop
                 filtros={displayedFilters}
                 toggleFiltro={toggleFilter}
@@ -536,7 +536,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                 )}
 
                  {/* Trust strip */}
-                <div className="px-3 lg:px-0 pt-2 pb-1">
+                <div className="px-3 pt-2 pb-1 lg:px-0 lg:pt-1 lg:pb-0">
                   <div className="flex items-center justify-start lg:justify-center gap-3 lg:gap-5 text-[10px] lg:text-xs font-body font-bold overflow-x-auto hide-scrollbar"
                        style={{ color: 'var(--text-secondary)' }}>
                     <span className="whitespace-nowrap">{t('trust.shipping')}</span>

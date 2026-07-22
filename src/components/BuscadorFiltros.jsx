@@ -110,9 +110,9 @@ function BuscadorFiltros({
   };
 
   return (
-    <div className="px-4 lg:px-10 pt-3 pb-2 space-y-2 max-w-[1500px] mx-auto">
+    <div className="mx-auto max-w-[1760px] space-y-2 px-4 pt-3 pb-2 lg:px-6 lg:pt-1 lg:pb-1 xl:px-8">
 
-      <div ref={rootRef} className="relative flex gap-2">
+      <div ref={rootRef} className="relative mx-auto flex w-full gap-2 lg:max-w-[980px]">
         <div className="relative flex-1">
           <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none">
             <Search className="w-4 h-4 text-ink-400" />

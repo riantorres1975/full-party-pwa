@@ -62,6 +62,7 @@ function ProductCardInner({
             alt={producto.nombre}
             priority={isPriority}
             fallbackText={producto.nombre}
+            aspectClass="aspect-square lg:aspect-[4/3]"
             style={{ filter: agotado ? 'grayscale(60%)' : 'none' }}
           />
 
@@ -93,12 +94,12 @@ function ProductCardInner({
           )}
         </div>
 
-        <div className="px-2 pt-2 pb-1.5 sm:px-3 sm:pt-3 sm:pb-2 flex-1 flex flex-col">
+        <div className="flex flex-1 flex-col px-2 pt-2 pb-1.5 sm:px-3 sm:pt-3 sm:pb-2 lg:pt-2 lg:pb-1.5">
           <h3 className="font-display text-[12px] sm:text-[13px] leading-snug text-ink-900 line-clamp-2">
             {producto.nombre}
           </h3>
           {producto.descripcion && (
-            <p className="text-[11px] font-body text-ink-500 leading-snug mt-0.5 line-clamp-1 sm:line-clamp-2">
+            <p className="mt-0.5 line-clamp-1 text-[11px] font-body leading-snug text-ink-500 sm:line-clamp-2 lg:line-clamp-1">
               {producto.descripcion}
             </p>
           )}
@@ -140,7 +141,7 @@ function ProductCardInner({
         <Heart className="h-4 w-4" fill={isFavorite ? 'currentColor' : 'none'} aria-hidden="true" />
       </button>
 
-      <div className="px-2 pb-2 sm:px-3 sm:pb-3">
+      <div className="px-2 pb-2 sm:px-3 sm:pb-3 lg:pb-2.5">
         {agotado ? (
           <Button variant="ghost" size="sm" fullWidth disabled>
             {t('common.notAvailable')}

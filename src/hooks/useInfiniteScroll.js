@@ -32,13 +32,14 @@ export function useInfiniteScroll(totalItems, {
     Math.min(getCurrentPagePlan().initial, totalItems)
   ));
   const [cargando, setCargando] = useState(false);
+  const [sentinelNode, setSentinelNode] = useState(null);
   const observerRef = useRef(null);
   const animationFrameRef = useRef(null);
+  const proximityFrameRef = useRef(null);
   const rearmTimerRef = useRef(null);
+  const sentinelNodeRef = useRef(null);
+  const checkProximityRef = useRef(null);
   const pendingRef = useRef(false);
-  const observerArmedRef = useRef(true);
-  const sentinelIntersectingRef = useRef(false);
-  const lastLoadAtRef = useRef(0);
   const totalRef = useRef(totalItems);
   const visibleCountRef = useRef(visibleCount);
 
@@ -57,63 +58,114 @@ export function useInfiniteScroll(totalItems, {
       rearmTimerRef.current = null;
     }
     pendingRef.current = false;
-    observerArmedRef.current = true;
     setCargando(false);
     setVisibleCount(Math.min(getCurrentPagePlan().initial, totalRef.current));
   }, []);
-
-  useEffect(() => {
-    reset();
-  }, [reset, resetKey]);
 
   const cargarMas = useCallback(() => {
     if (pendingRef.current || visibleCountRef.current >= totalRef.current) return;
 
     pendingRef.current = true;
-    observerArmedRef.current = false;
-    lastLoadAtRef.current = Date.now();
     if (rearmTimerRef.current !== null) window.clearTimeout(rearmTimerRef.current);
-    rearmTimerRef.current = window.setTimeout(() => {
-      if (!sentinelIntersectingRef.current) observerArmedRef.current = true;
-      rearmTimerRef.current = null;
-    }, OBSERVER_REARM_DELAY_MS);
     setCargando(true);
     animationFrameRef.current = window.requestAnimationFrame(() => {
       const { batch } = getCurrentPagePlan();
-      setVisibleCount((current) => Math.min(current + batch, totalRef.current));
+      setVisibleCount((current) => {
+        const next = Math.min(current + batch, totalRef.current);
+        visibleCountRef.current = next;
+        return next;
+      });
       animationFrameRef.current = null;
       pendingRef.current = false;
       setCargando(false);
+
+      // If the appended row still leaves the sentinel near the viewport, keep
+      // filling the catalog automatically instead of requiring another click.
+      rearmTimerRef.current = window.setTimeout(() => {
+        rearmTimerRef.current = null;
+        checkProximityRef.current?.();
+      }, OBSERVER_REARM_DELAY_MS);
     });
   }, []);
 
-  const sentinelRef = useCallback((node) => {
-    observerRef.current?.disconnect();
-    if (!node || !('IntersectionObserver' in window)) return;
+  const checkProximity = useCallback(() => {
+    const node = sentinelNodeRef.current;
+    if (!node || pendingRef.current || visibleCountRef.current >= totalRef.current) return;
 
-    observerRef.current = new IntersectionObserver(
-      ([entry]) => {
-        sentinelIntersectingRef.current = Boolean(entry?.isIntersecting);
-        if (!entry?.isIntersecting) {
-          if (Date.now() - lastLoadAtRef.current >= OBSERVER_REARM_DELAY_MS) {
-            observerArmedRef.current = true;
-          }
-          return;
-        }
-        if (observerArmedRef.current) cargarMas();
-      },
-      {
-        root: getScrollRoot(node, rootSelector),
-        rootMargin: '600px 0px',
-      },
-    );
-    observerRef.current.observe(node);
+    const root = getScrollRoot(node, rootSelector);
+    const rootBottom = root?.getBoundingClientRect().bottom ?? window.innerHeight;
+    if (node.getBoundingClientRect().top <= rootBottom + 600) cargarMas();
   }, [cargarMas, rootSelector]);
+
+  checkProximityRef.current = checkProximity;
+
+  useEffect(() => {
+    reset();
+
+    // Recheck an already-visible sentinel after resetting a search or sort.
+    // IntersectionObserver does not emit again while its intersection state
+    // remains unchanged.
+    rearmTimerRef.current = window.setTimeout(() => {
+      rearmTimerRef.current = null;
+      checkProximityRef.current?.();
+    }, 0);
+  }, [cargarMas, reset, resetKey]);
+
+  const sentinelRef = useCallback((node) => {
+    sentinelNodeRef.current = node;
+    setSentinelNode(node);
+  }, []);
+
+  useEffect(() => {
+    if (!sentinelNode) return undefined;
+
+    const root = getScrollRoot(sentinelNode, rootSelector);
+    const scheduleCheck = () => {
+      if (proximityFrameRef.current !== null) return;
+      proximityFrameRef.current = window.requestAnimationFrame(() => {
+        proximityFrameRef.current = null;
+        checkProximityRef.current?.();
+      });
+    };
+    const scrollTarget = root || window;
+    scrollTarget.addEventListener('scroll', scheduleCheck, { passive: true });
+    window.addEventListener('resize', scheduleCheck, { passive: true });
+
+    if (typeof window.IntersectionObserver === 'function') {
+      observerRef.current = new IntersectionObserver(
+        ([entry]) => {
+          if (entry?.isIntersecting) scheduleCheck();
+        },
+        { root, rootMargin: '600px 0px' },
+      );
+      observerRef.current.observe(sentinelNode);
+    }
+
+    scheduleCheck();
+
+    return () => {
+      observerRef.current?.disconnect();
+      observerRef.current = null;
+      scrollTarget.removeEventListener('scroll', scheduleCheck);
+      window.removeEventListener('resize', scheduleCheck);
+      if (proximityFrameRef.current !== null) {
+        window.cancelAnimationFrame(proximityFrameRef.current);
+        proximityFrameRef.current = null;
+      }
+    };
+  }, [rootSelector, sentinelNode]);
+
+  useEffect(() => {
+    checkProximityRef.current?.();
+  }, [totalItems]);
 
   useEffect(() => () => {
     observerRef.current?.disconnect();
     if (animationFrameRef.current !== null) {
       window.cancelAnimationFrame(animationFrameRef.current);
+    }
+    if (proximityFrameRef.current !== null) {
+      window.cancelAnimationFrame(proximityFrameRef.current);
     }
     if (rearmTimerRef.current !== null) window.clearTimeout(rearmTimerRef.current);
   }, []);

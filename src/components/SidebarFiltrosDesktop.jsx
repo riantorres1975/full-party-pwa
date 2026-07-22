@@ -82,7 +82,15 @@ function FilaFiltro({ label, activo, onClick }) {
   );
 }
 
-function SeccionFiltro({ titulo, abiertaInicial = true, children, count, searchable = false, searchPlaceholder }) {
+function SeccionFiltro({
+  titulo,
+  abiertaInicial = true,
+  children,
+  count,
+  searchable = false,
+  searchPlaceholder,
+  fixedBodyClass = '',
+}) {
   const [abierta, setAbierta] = useState(abiertaInicial);
   const [busqueda, setBusqueda] = useState('');
 
@@ -113,7 +121,7 @@ function SeccionFiltro({ titulo, abiertaInicial = true, children, count, searcha
         </svg>
       </button>
       {abierta && (
-          <div className="px-3.5 pb-3.5">
+          <div className={`px-3.5 pb-3.5 ${fixedBodyClass ? `flex flex-col ${fixedBodyClass}` : ''}`}>
           {searchable && (
             <BuscadorSeccion
               value={busqueda}
@@ -121,7 +129,7 @@ function SeccionFiltro({ titulo, abiertaInicial = true, children, count, searcha
               placeholder={searchPlaceholder}
             />
           )}
-          <div className="overflow-y-auto max-h-[190px] xl:max-h-[220px] 2xl:max-h-[260px] pr-1 custom-scrollbar">
+          <div className={`custom-scrollbar overflow-y-auto pr-1 ${fixedBodyClass ? 'min-h-0 flex-1' : 'max-h-[190px] xl:max-h-[220px] 2xl:max-h-[260px]'}`}>
             {typeof children === 'function' ? children(busqueda) : children}
           </div>
         </div>
@@ -134,9 +142,9 @@ export default function SidebarFiltrosDesktop({ filtros, toggleFiltro, limpiarFi
   const { t } = useLanguage();
 
   return (
-    <aside className="hidden lg:block sidebar-filtros-desktop">
+    <aside className="sidebar-filtros-desktop hidden lg:block lg:h-full lg:min-h-0 lg:py-2">
       <div
-        className="sticky top-36 rounded-2xl p-4 xl:p-5 space-y-3.5 max-h-[calc(100vh-9.5rem)] overflow-y-auto custom-scrollbar"
+        className="custom-scrollbar h-full space-y-3 overflow-y-auto rounded-2xl p-4"
         style={{ background: 'var(--surface-primary)', border: '1px solid var(--border-soft)',
                  boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}
       >
@@ -156,7 +164,8 @@ export default function SidebarFiltrosDesktop({ filtros, toggleFiltro, limpiarFi
 
         <SeccionFiltro titulo={`📁 ${t('filters.category')}`} abiertaInicial={true}
                        count={filtros.categorias.length}
-                       searchable={true} searchPlaceholder={t('filters.searchCategory')}>
+                       searchable={true} searchPlaceholder={t('filters.searchCategory')}
+                       fixedBodyClass="h-[230px] 2xl:h-[210px]">
           {(busqueda) => {
             const filtradas = categorias.filter(cat =>
               cat.label.toLowerCase().includes(busqueda.toLowerCase())
@@ -180,7 +189,8 @@ export default function SidebarFiltrosDesktop({ filtros, toggleFiltro, limpiarFi
 
         <SeccionFiltro titulo={`🏷️ ${t('filters.brand')}`} abiertaInicial={true}
                        count={filtros.marcas.length}
-                       searchable={true} searchPlaceholder={t('filters.searchBrand')}>
+                       searchable={true} searchPlaceholder={t('filters.searchBrand')}
+                       fixedBodyClass="h-[145px] 2xl:h-[130px]">
           {(busqueda) => {
             const filtradas = marcas.filter(m =>
               m.toLowerCase().includes(busqueda.toLowerCase())

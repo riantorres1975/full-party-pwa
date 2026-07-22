@@ -4,7 +4,7 @@ import { useLanguage } from '../hooks/useLanguage';
 export function CatalogToolbarSkeleton() {
   return (
     <div
-      className="mx-3 mb-1 mt-2 flex min-h-12 items-center justify-between gap-2 rounded-2xl border px-3 py-2 sm:mx-4 lg:mx-0"
+      className="mx-3 mb-1 mt-2 flex min-h-12 items-center justify-between gap-2 rounded-2xl border px-3 py-2 sm:mx-4 lg:mx-0 lg:py-1.5"
       style={{ background: 'var(--surface-card-alpha80)', borderColor: 'var(--border-soft)' }}
       aria-hidden="true"
     >
@@ -30,7 +30,7 @@ export default function CatalogToolbar({
 
   return (
     <div
-      className="mx-3 mb-1 mt-2 flex min-h-12 items-center justify-between gap-2 rounded-2xl border px-3 py-2 sm:mx-4 lg:mx-0"
+      className="mx-3 mb-1 mt-2 flex min-h-12 items-center justify-between gap-2 rounded-2xl border px-3 py-2 sm:mx-4 lg:mx-0 lg:py-1.5"
       style={{
         background: 'var(--surface-card-alpha80)',
         borderColor: 'var(--border-soft)',
@@ -47,17 +47,17 @@ export default function CatalogToolbar({
             {t('catalog.viewingCategory', { category: filterLabel })}
           </p>
         )}
-        {isFiltered && (
-          <button
-            type="button"
-            onClick={onClear}
-            className="mt-0.5 inline-flex min-h-6 items-center gap-1 text-[11px] font-body font-black transition-opacity hover:opacity-70"
-            style={{ color: 'var(--accent-primary)' }}
-          >
-            <RotateCcw className="h-3 w-3" aria-hidden="true" />
-            {t('catalog.clearView')}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={onClear}
+          className={`mt-0.5 min-h-6 items-center gap-1 text-[11px] font-body font-black transition-opacity hover:opacity-70 ${isFiltered ? 'inline-flex' : 'hidden lg:invisible lg:pointer-events-none lg:inline-flex'}`}
+          style={{ color: 'var(--accent-primary)' }}
+          aria-hidden={!isFiltered}
+          tabIndex={isFiltered ? 0 : -1}
+        >
+          <RotateCcw className="h-3 w-3" aria-hidden="true" />
+          {t('catalog.clearView')}
+        </button>
       </div>
 
       <button

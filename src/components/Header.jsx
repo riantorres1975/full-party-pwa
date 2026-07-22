@@ -44,7 +44,7 @@ export default function Header({ cantidadTotal, onAbrirCarrito, temaOscuro, onTo
 
   return (
     <div className="safe-top">
-      <div className="max-w-[1500px] mx-auto px-4 lg:px-10 py-3 flex items-center justify-between gap-2">
+      <div className="mx-auto flex max-w-[1760px] items-center justify-between gap-2 px-4 py-3 lg:px-6 lg:py-2 xl:px-8">
         {/* Logo / Nombre */}
         <div className="flex items-center gap-2 min-w-0">
           <span className="fp-header-balloon-wrap" aria-hidden>

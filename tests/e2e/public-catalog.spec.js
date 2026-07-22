@@ -164,15 +164,16 @@ test('a 500-product catalog renders progressively without limiting search', asyn
     descripcion: `Articulo ${index + 1} del catalogo de escala`,
     es_nuevo: false,
   }));
-  let pageRequest = 0;
-
   await page.unroute('**/rest/v1/productos*');
   await page.route('**/rest/v1/productos*', async (route) => {
     if (route.request().method() === 'OPTIONS') {
       await fulfillCatalogRequest(route, []);
       return;
     }
-    await fulfillCatalogRequest(route, pageRequest++ === 0 ? largeCatalog : []);
+    const [from = 0, to = largeCatalog.length - 1] = String(
+      route.request().headers().range || `0-${largeCatalog.length - 1}`,
+    ).split('-').map(Number);
+    await fulfillCatalogRequest(route, largeCatalog.slice(from, to + 1));
   });
 
   await page.goto('/catalogo');
@@ -189,23 +190,16 @@ test('a 500-product catalog renders progressively without limiting search', asyn
 
   await search.fill('');
   await expect.poll(() => cards.count()).toBeGreaterThan(0);
+  await page.waitForTimeout(1_200);
   const countBeforeMore = await cards.count();
   expect(countBeforeMore).toBeLessThan(500);
 
-  const showMore = page.getByRole('button', { name: /Mostrar \d+ productos m.s/ });
-  await expect(showMore).toBeAttached();
-  await expect(showMore).toHaveCount(1);
-  await showMore.evaluate((button) => button.scrollIntoView({ block: 'center' }));
-  await page.waitForTimeout(500);
-  const countAfterScroll = await cards.count();
-  expect(countAfterScroll).toBeGreaterThanOrEqual(countBeforeMore);
-  expect(countAfterScroll).toBeLessThan(500);
-
-  const countBeforeManualLoad = await cards.count();
-  const manualBatchCount = Number((await showMore.innerText()).match(/\d+/)?.[0]);
-  await showMore.evaluate((button) => button.click());
-  await expect(cards).toHaveCount(countBeforeManualLoad + manualBatchCount);
+  const sentinel = page.locator('[data-catalog-load-sentinel]');
+  await expect(sentinel).toBeAttached();
+  await sentinel.evaluate((node) => node.scrollIntoView({ block: 'center' }));
+  await expect.poll(() => cards.count()).toBeGreaterThan(countBeforeMore);
   expect(await cards.count()).toBeLessThan(500);
+  await expect(page.getByRole('button', { name: /Mostrar \d+ productos m.s/ })).toHaveCount(0);
 });
 
 test('an empty catalog is distinguished from a search without results', async ({ page }) => {
