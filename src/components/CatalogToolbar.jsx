@@ -1,6 +1,20 @@
 import { ArrowDownUp, ChevronDown, Heart, RotateCcw } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage';
 
+export function CatalogToolbarSkeleton() {
+  return (
+    <div
+      className="mx-3 mb-1 mt-2 flex min-h-12 items-center justify-between gap-2 rounded-2xl border px-3 py-2 sm:mx-4 lg:mx-0"
+      style={{ background: 'var(--surface-card-alpha80)', borderColor: 'var(--border-soft)' }}
+      aria-hidden="true"
+    >
+      <div className="h-4 w-24 rounded-full bg-ink-100 skeleton-shimmer" />
+      <div className="h-10 w-20 rounded-xl bg-ink-100 skeleton-shimmer" />
+      <div className="h-10 w-32 rounded-xl bg-ink-100 skeleton-shimmer" />
+    </div>
+  );
+}
+
 export default function CatalogToolbar({
   total,
   sortOrder,

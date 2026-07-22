@@ -15,7 +15,7 @@ import RedesSociales      from './components/RedesSociales';
 import SidebarFiltrosDesktop from './components/SidebarFiltrosDesktop';
 import CategoryGrid, { CategoryGridSkeleton } from './components/CategoryGrid';
 import BottomNav from './components/BottomNav';
-import CatalogToolbar from './components/CatalogToolbar';
+import CatalogToolbar, { CatalogToolbarSkeleton } from './components/CatalogToolbar';
 import { createFuzzySearchIndex } from './utils/fuzzySearch';
 import { buildProductAnalyticsParams, trackEvent } from './utils/analytics';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
@@ -569,8 +569,10 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                   />
                 )}
 
+                {(loading || isInitialSyncing) && !error && <CatalogToolbarSkeleton />}
+
                 <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-16">
-                  {loading && <ProductosSkeleton cantidad={8} />}
+                  {loading && <ProductosSkeleton cantidad={12} />}
 
                   {!loading && error && (
                     <div className="flex flex-col items-center justify-center py-20 px-8 text-center gap-4">

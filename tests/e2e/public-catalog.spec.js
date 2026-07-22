@@ -114,6 +114,18 @@ test('the landing proof remains contained at the tablet breakpoint', async ({ pa
 test('the public catalog remains usable without horizontal overflow', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
+  await page.addInitScript(() => {
+    window.__catalogCls = 0;
+    try {
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          if (!entry.hadRecentInput) window.__catalogCls += entry.value;
+        }
+      }).observe({ type: 'layout-shift', buffered: true });
+    } catch {
+      // LayoutShift is not available in every browser engine.
+    }
+  });
 
   await page.goto('/catalogo');
 
@@ -140,6 +152,7 @@ test('the public catalog remains usable without horizontal overflow', async ({ p
   }));
 
   expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth + 1);
+  expect(await page.evaluate(() => window.__catalogCls)).toBeLessThanOrEqual(0.1);
   expect(pageErrors).toEqual([]);
 });
 

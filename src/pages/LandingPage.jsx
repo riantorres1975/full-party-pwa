@@ -473,7 +473,7 @@ export default function LandingPage() {
               aria-label="Ir al inicio de Full Party"
             >
               <img
-                src="/icons/icon-64.png"
+                src="/icons/icon-192.png"
                 alt={`${ENV.negocio} logo`}
                 width="44"
                 height="44"

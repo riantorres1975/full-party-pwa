@@ -14,6 +14,7 @@
     "test:permissions": "node --test tests/permissions.test.js",
     "lighthouse": "lighthouse http://localhost:4173 --output html --output-path ./lighthouse-report.html --chrome-flags=\"--headless\"",
     "lighthouse:pwa": "lighthouse http://localhost:4173/catalogo --preset=perf --only-categories=performance,accessibility,best-practices,seo --output html --output-path ./lighthouse-report.html --chrome-flags=\"--headless\"",
+    "quality:lighthouse": "npm run build && node scripts/run-lighthouse-audit.mjs",
     "axe": "axe http://localhost:4173"
   },
   "dependencies": {
