@@ -58,10 +58,11 @@ function registrarMetadatosProductos(lista) {
 /**
  * useProductos
  * Fetch de todos los productos desde Supabase + suscripción Realtime.
- * Retorna { productos, loading, error, refetch }
+ * Retorna productos y estados de carga, actualización, caché y carga parcial.
  *
  * - productos : array con los datos ([] mientras carga)
- * - loading   : true durante el fetch inicial y cada refetch
+ * - loading   : true durante el fetch inicial sin datos disponibles
+ * - refreshing: true cuando actualiza productos que ya están visibles
  * - error     : string con mensaje legible, o null si todo fue bien
  * - refetch   : función para reintentar manualmente
  */
@@ -71,6 +72,8 @@ export function useProductos() {
   const [loading,   setLoading]   = useState(() => cacheSeed.length === 0);
   const [error,     setError]     = useState(null);
   const [usingCachedData, setUsingCachedData] = useState(false);
+  const [isPartialData, setIsPartialData] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [isInitialSyncing, setIsInitialSyncing] = useState(() => cacheSeed.length === 0);
   const [tick,      setTick]      = useState(0); // dispara refetch
 
@@ -82,6 +85,7 @@ export function useProductos() {
 
   useEffect(() => {
     let cancelado = false; // evita setState en componente desmontado
+    let hasUsableProducts = productos.length > 0;
 
     const baseQuery = async ({ acceptPartial = false, ...options } = {}) => {
       const result = await fetchAllPublicProducts(supabase, options);
@@ -95,26 +99,33 @@ export function useProductos() {
     };
 
     async function fetchProductos() {
-      if (productos.length === 0) {
+      const hasExistingProducts = productos.length > 0;
+
+      if (!hasExistingProducts) {
         setLoading(true);
+      } else {
+        setRefreshing(true);
       }
       setError(null);
 
       const enPrimerArranqueSinCache = productos.length === 0 && tick === 0;
 
       if (enPrimerArranqueSinCache) {
-        const { data: primerLote, error: primerError } = await baseQuery({
+        const { data: primerLote, error: primerError, complete: primerComplete } = await baseQuery({
           acceptPartial: true,
-          onPage: (partialProducts, { pageIndex }) => {
+          onPage: (partialProducts, { pageIndex, isLastPage }) => {
             if (cancelado || pageIndex !== 0 || partialProducts.length === 0) return;
 
             registrarMetadatosProductos(partialProducts);
             writeProductosCache(partialProducts);
             writeLcpImageHint(partialProducts);
+            hasUsableProducts = true;
             setProductos(partialProducts);
             setUsingCachedData(false);
+            setIsPartialData(!isLastPage);
             setIsInitialSyncing(false);
             setLoading(false);
+            setRefreshing(!isLastPage);
           },
         });
 
@@ -126,12 +137,14 @@ export function useProductos() {
           writeLcpImageHint(primerLote);
           setProductos(primerLote);
           setUsingCachedData(false);
+          setIsPartialData(primerComplete === false);
           setIsInitialSyncing(false);
           setLoading(false);
+          setRefreshing(false);
           return;
         }
 
-        const { data, error: sbError } = await baseQuery();
+        const { data, error: sbError, complete } = await baseQuery();
         if (cancelado) return;
 
         if (sbError) {
@@ -143,6 +156,7 @@ export function useProductos() {
                 : 'Error al cargar productos. Intenta de nuevo más tarde.'
             );
             setProductos([]);
+            setIsPartialData(false);
           } else {
             setUsingCachedData(true);
           }
@@ -153,14 +167,16 @@ export function useProductos() {
           writeLcpImageHint(lista);
           setProductos(lista);
           setUsingCachedData(false);
+          setIsPartialData(complete === false);
         }
 
         setIsInitialSyncing(false);
         setLoading(false);
+        setRefreshing(false);
         return;
       }
 
-      const { data, error: sbError } = await baseQuery();
+      const { data, error: sbError, complete } = await baseQuery();
       if (cancelado) return;
 
       if (sbError) {
@@ -172,6 +188,7 @@ export function useProductos() {
               : 'Error al cargar productos. Intenta de nuevo más tarde.'
           );
           setProductos([]);
+          setIsPartialData(false);
         } else {
           setUsingCachedData(true);
         }
@@ -179,14 +196,31 @@ export function useProductos() {
         const lista = data ?? [];
         registrarMetadatosProductos(lista);
         writeProductosCache(lista);
+        writeLcpImageHint(lista);
         setProductos(lista);
         setUsingCachedData(false);
+        setIsPartialData(complete === false);
       }
 
       setLoading(false);
+      setRefreshing(false);
     }
 
-    fetchProductos();
+    fetchProductos().catch((unexpectedError) => {
+      if (cancelado) return;
+
+      console.error('[useProductos] Error inesperado', unexpectedError);
+      if (hasUsableProducts) {
+        setUsingCachedData(true);
+      } else {
+        setError('Error al cargar productos. Intenta de nuevo más tarde.');
+        setProductos([]);
+        setIsPartialData(false);
+      }
+      setIsInitialSyncing(false);
+      setLoading(false);
+      setRefreshing(false);
+    });
     return () => { cancelado = true; };
   }, [tick]);
 
@@ -245,7 +279,19 @@ export function useProductos() {
     return () => supabase.removeChannel(channel);
   }, []);
 
-  const refetch = () => setTick(t => t + 1);
+  const refetch = () => {
+    if (loading || refreshing) return;
+    setTick(t => t + 1);
+  };
 
-  return { productos, loading, error, usingCachedData, isInitialSyncing, refetch };
+  return {
+    productos,
+    loading,
+    error,
+    usingCachedData,
+    isPartialData,
+    refreshing,
+    isInitialSyncing,
+    refetch,
+  };
 }

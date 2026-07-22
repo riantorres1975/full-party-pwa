@@ -78,9 +78,28 @@ export default function ProductGrid({
     () => productos.slice(0, visibleCount),
     [productos, visibleCount],
   );
+  const isCatalogEmpty = catalogProducts.length === 0 && !isFiltered;
 
   const productDetail = productoDetalle && (
-    <Suspense fallback={null}>
+    <Suspense fallback={(
+      <div
+        className="fixed inset-0 z-[80] flex items-center justify-center bg-ink-950/45 px-4 backdrop-blur-sm"
+        role="status"
+        aria-live="polite"
+      >
+        <div
+          className="flex items-center gap-3 rounded-2xl px-5 py-4 font-body text-sm font-black"
+          style={{ background: 'var(--surface-elevated)', color: 'var(--text-primary)', boxShadow: 'var(--shadow-accent-soft)' }}
+        >
+          <span
+            className="h-5 w-5 rounded-full border-[3px] border-ink-200"
+            style={{ borderTopColor: '#ff3dac', animation: 'spin 0.7s linear infinite' }}
+            aria-hidden="true"
+          />
+          {t('product.loadingDetail')}
+        </div>
+      </div>
+    )}>
       <ProductoDetalleModal
         producto={productoDetalle}
         cantidad={getCantidad(productoDetalle.id)}
@@ -100,9 +119,11 @@ export default function ProductGrid({
       <>
         <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
           <div className="text-5xl mb-4 animate-float">🎈</div>
-          <h3 className="font-display text-2xl text-ink-500 mb-1">{t('grid.noResults')}</h3>
+          <h3 className="font-display text-2xl text-ink-500 mb-1">
+            {t(isCatalogEmpty ? 'grid.emptyCatalog' : 'grid.noResults')}
+          </h3>
           <p className="text-sm text-ink-400 font-body mb-4">
-            {t('grid.noResultsDesc')}
+            {t(isCatalogEmpty ? 'grid.emptyCatalogDesc' : 'grid.noResultsDesc')}
           </p>
           {isFiltered && onClear && (
             <button

@@ -24,29 +24,33 @@ const readAnalyticsEvents = (page) => page.evaluate(() => (
     .map(([, name, params]) => ({ name, params: params || {} }))
 ));
 
+const catalogCorsHeaders = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-headers': 'authorization, apikey, content-type, x-client-info',
+  'access-control-allow-methods': 'GET, OPTIONS',
+  'access-control-expose-headers': 'content-range',
+};
+
+async function fulfillCatalogRequest(route, products) {
+  if (route.request().method() === 'OPTIONS') {
+    await route.fulfill({ status: 204, headers: catalogCorsHeaders });
+    return;
+  }
+
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    headers: {
+      ...catalogCorsHeaders,
+      'content-range': products.length > 0 ? `0-${products.length - 1}/${products.length}` : '*/0',
+    },
+    body: JSON.stringify(products),
+  });
+}
+
 test.beforeEach(async ({ page }) => {
   await page.route('**/rest/v1/productos*', async (route) => {
-    const corsHeaders = {
-      'access-control-allow-origin': '*',
-      'access-control-allow-headers': 'authorization, apikey, content-type, x-client-info',
-      'access-control-allow-methods': 'GET, OPTIONS',
-      'access-control-expose-headers': 'content-range',
-    };
-
-    if (route.request().method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: corsHeaders });
-      return;
-    }
-
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      headers: {
-        ...corsHeaders,
-        'content-range': `0-${catalogFixture.length - 1}/${catalogFixture.length}`,
-      },
-      body: JSON.stringify(catalogFixture),
-    });
+    await fulfillCatalogRequest(route, catalogFixture);
   });
 });
 
@@ -131,6 +135,19 @@ test('the public catalog remains usable without horizontal overflow', async ({ p
 
   expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth + 1);
   expect(pageErrors).toEqual([]);
+});
+
+test('an empty catalog is distinguished from a search without results', async ({ page }) => {
+  await page.unroute('**/rest/v1/productos*');
+  await page.route('**/rest/v1/productos*', async (route) => {
+    await fulfillCatalogRequest(route, []);
+  });
+
+  await page.goto('/catalogo');
+
+  await expect(page.getByRole('heading', { name: 'Catálogo en preparación' })).toBeVisible();
+  await expect(page.getByText('Aún no hay productos disponibles. Vuelve a intentarlo más tarde.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sin resultados' })).toHaveCount(0);
 });
 
 test('the catalog can be sorted and the cart guides order completion', async ({ page }) => {

@@ -98,7 +98,7 @@ function ProductCardInner({
             {producto.nombre}
           </h3>
           {producto.descripcion && (
-            <p className="text-[11px] font-body text-ink-400 leading-snug mt-0.5 line-clamp-1 sm:line-clamp-2">
+            <p className="text-[11px] font-body text-ink-500 leading-snug mt-0.5 line-clamp-1 sm:line-clamp-2">
               {producto.descripcion}
             </p>
           )}
@@ -113,7 +113,7 @@ function ProductCardInner({
                   </span>
                   <Badge variant="discount" size="sm">−{Math.round((1 - precioAplicable / precioBase) * 100)}%</Badge>
                 </div>
-                <span className="text-[10px] text-ink-400 line-through font-body font-medium">
+                <span className="text-[10px] text-ink-500 line-through font-body font-medium">
                   {SIMBOLO_MONEDA}{precioBase.toFixed(2)}
                 </span>
               </div>

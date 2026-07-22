@@ -40,6 +40,8 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     loading,
     error,
     usingCachedData,
+    isPartialData,
+    refreshing,
     isInitialSyncing,
     refetch,
   } = useProductos();
@@ -433,23 +435,24 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
             aria-live="polite"
             className="border-y border-orange-200 bg-orange-50 px-4 py-2 text-center font-body text-xs font-bold text-orange-900"
           >
-            {t('catalog.offline')}
+            {t(productos.length > 0 ? 'catalog.offline' : 'catalog.offlineNoCache')}
           </div>
         )}
 
-        {isOnline && usingCachedData && !error && (
+        {isOnline && (usingCachedData || isPartialData) && !error && (
           <div
             role="status"
             aria-live="polite"
-            className="flex items-center justify-center gap-3 border-y border-amber-200 bg-amber-50 px-4 py-2 text-center font-body text-xs font-bold text-amber-900"
+            className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 border-y border-amber-200 bg-amber-50 px-4 py-2 text-center font-body text-xs font-bold text-amber-900"
           >
-            <span>{t('catalog.cachedData')}</span>
+            <span>{t(usingCachedData ? 'catalog.cachedData' : 'catalog.partialData')}</span>
             <button
               type="button"
               onClick={refetch}
-              className="min-h-10 flex-shrink-0 rounded-xl border border-amber-300 bg-white px-3 font-black text-amber-900 transition-colors hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
+              disabled={refreshing}
+              className="min-h-10 flex-shrink-0 rounded-xl border border-amber-300 bg-white px-3 font-black text-amber-900 transition-colors hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 disabled:cursor-wait disabled:opacity-60"
             >
-              {t('catalog.refresh')}
+              {t(refreshing ? 'catalog.refreshing' : 'catalog.refresh')}
             </button>
           </div>
         )}
@@ -525,14 +528,18 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                       <div className="bg-white rounded-3xl p-6 max-w-sm w-full"
                            style={{ border: '2px solid var(--border-default)', boxShadow: 'var(--shadow-accent-soft)' }}>
                         <p className="font-display text-lg text-ink-800 mb-1">{t('error.title')}</p>
-                        <p className="text-xs font-body text-ink-400 mb-4 leading-relaxed">{error}</p>
+                        <p className="text-xs font-body text-ink-400 mb-4 leading-relaxed">
+                          {!isOnline && productos.length === 0 ? t('catalog.offlineNoCache') : error}
+                        </p>
                         <button
+                          type="button"
                           onClick={refetch}
+                          disabled={!isOnline || refreshing}
                           className="w-full py-3 rounded-2xl font-body font-black text-sm text-white
-                                     transition-all duration-200 active:scale-95"
+                                     transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
                           style={{ background: 'var(--gradient-accent)', boxShadow: 'var(--shadow-accent-soft)' }}
                         >
-                          {t('error.retry')}
+                          {t(!isOnline ? 'catalog.waitingConnection' : refreshing ? 'catalog.refreshing' : 'error.retry')}
                         </button>
                       </div>
                     </div>
