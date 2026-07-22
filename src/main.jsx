@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import AppRouter from './AppRouter';
 import './index.css';
 import { trackAppError } from './utils/analytics';
+import { observeWebVitals } from './utils/webVitals';
 
 const UPDATE_RELOAD_KEY = 'fp-update-reload-at';
 const UPDATE_QUERY_KEY = '__fp_update';
@@ -173,3 +174,5 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <AppRouter />
   </React.StrictMode>
 );
+
+if (import.meta.env.PROD) observeWebVitals();

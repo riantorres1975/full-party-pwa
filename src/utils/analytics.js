@@ -3,6 +3,7 @@ const PARAM_NAME_PATTERN = /^[a-z][a-z0-9_]{0,39}$/;
 const SENSITIVE_PARAM_PATTERN = /name|nombre|phone|telefono|email|address|direccion|message|mensaje|search_term/i;
 const MAX_STRING_LENGTH = 80;
 const reportedErrors = new WeakSet();
+const PUBLIC_PATH_PATTERN = /^\/(?:catalogo(?:\/[a-z0-9-]+)?|sucursales|como-funciona|destacados|blog(?:\/[a-z0-9-]+)?)?$/;
 
 function getWindowTarget(target) {
   if (target) return target;
@@ -33,6 +34,17 @@ export function trackEvent(name, params = {}, target) {
   } catch {
     return false;
   }
+}
+
+export function normalizePublicAnalyticsPath(pathname) {
+  const path = String(pathname || '').split(/[?#]/, 1)[0].replace(/\/+$/, '') || '/';
+  return PUBLIC_PATH_PATTERN.test(path) ? path : null;
+}
+
+export function trackPageView(pathname, target) {
+  const pagePath = normalizePublicAnalyticsPath(pathname);
+  if (!pagePath) return false;
+  return trackEvent('page_view', { page_path: pagePath }, target);
 }
 
 export function buildProductAnalyticsParams(product, extra = {}) {

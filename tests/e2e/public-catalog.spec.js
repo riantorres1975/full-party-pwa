@@ -82,6 +82,11 @@ test('the landing page presents a clear path to shop on every viewport', async (
 
   await catalogCta.click();
   await expect(page).toHaveURL(/\/catalogo$/);
+  await expect.poll(async () => (
+    (await readAnalyticsEvents(page)).filter(({ name, params }) => (
+      name === 'page_view' && params.page_path === '/catalogo'
+    )).length
+  )).toBe(1);
   expect(pageErrors).toEqual([]);
 });
 

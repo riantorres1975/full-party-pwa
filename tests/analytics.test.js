@@ -3,9 +3,11 @@ import test from 'node:test';
 import {
   buildProductAnalyticsParams,
   classifyError,
+  normalizePublicAnalyticsPath,
   sanitizeAnalyticsParams,
   trackAppError,
   trackEvent,
+  trackPageView,
 } from '../src/utils/analytics.js';
 
 test('removes sensitive and unsupported analytics parameters', () => {
@@ -29,6 +31,22 @@ test('tracks only valid events through an available gtag function', () => {
   assert.equal(trackEvent('catalog_search', { query_length: 5 }, target), true);
   assert.equal(trackEvent('Invalid Event', {}, target), false);
   assert.deepEqual(calls, [['event', 'catalog_search', { query_length: 5 }]]);
+});
+
+test('tracks only normalized public page paths', () => {
+  const calls = [];
+  const target = { gtag: (...args) => calls.push(args) };
+
+  assert.equal(normalizePublicAnalyticsPath('/catalogo/globos-latex?producto=private'), '/catalogo/globos-latex');
+  assert.equal(normalizePublicAnalyticsPath('/admin/clientes'), null);
+  assert.equal(normalizePublicAnalyticsPath('/clientes/4521234567'), null);
+  assert.equal(trackPageView('/blog/ideas-decoracion-xv-anos', target), true);
+  assert.equal(trackPageView('/admin/catalogo', target), false);
+  assert.deepEqual(calls, [[
+    'event',
+    'page_view',
+    { page_path: '/blog/ideas-decoracion-xv-anos' },
+  ]]);
 });
 
 test('builds anonymous product parameters', () => {

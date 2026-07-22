@@ -1,10 +1,11 @@
-import { useEffect, useLayoutEffect, lazy, Suspense } from 'react';
+import { useEffect, useLayoutEffect, useRef, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import { LanguageProvider } from './hooks/useLanguage';
 import AppErrorBoundary from './components/ui/AppErrorBoundary';
 import { buildCatalogCategoryMeta } from './utils/catalogSeo';
 import { buildRouteStructuredData } from './utils/structuredData';
+import { trackPageView } from './utils/analytics';
 
 const AuthCatalogRoutes = lazy(() => import('./routes/AuthCatalogRoutes'));
 const PublicCatalogRoute = lazy(() => import('./routes/PublicCatalogRoute'));
@@ -191,6 +192,7 @@ function RouterEffects() {
   const location = useLocation();
   const navigate = useNavigate();
   const esRutaLanding = location.pathname === '/';
+  const trackedPathRef = useRef(location.pathname);
 
   useEffect(() => {
     if (!('scrollRestoration' in window.history)) return undefined;
@@ -246,6 +248,12 @@ function RouterEffects() {
       (path.startsWith('/catalogo')? PAGE_META['/catalogo']: null) ??
       PAGE_META['/'];
     setPageMeta(meta);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (trackedPathRef.current === location.pathname) return;
+    trackedPathRef.current = location.pathname;
+    trackPageView(location.pathname);
   }, [location.pathname]);
 
   useEffect(() => {
