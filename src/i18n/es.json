@@ -207,6 +207,7 @@
   "cart.ordersPausedError": "Los pedidos están temporalmente desactivados. Intenta más tarde.",
   "cart.ordersPausedCta": "Pedidos temporalmente pausados",
   "cart.offlineOrderError": "Sin conexión. Tu pedido sigue guardado; reconéctate para enviarlo por WhatsApp.",
+  "cart.saveOrderError": "No pudimos registrar tu pedido ni generar el folio. Tu carrito sigue guardado; intenta nuevamente.",
 
   "delivery.title": "¿Cómo lo recibimos? 🎀",
   "delivery.pickupLabel": "Recoger\nen tienda",

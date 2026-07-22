@@ -1,4 +1,5 @@
 import { NUMERO_WHATSAPP, NOMBRE_NEGOCIO, SIMBOLO_MONEDA } from '../data/productos';
+import { construirUrlRastreo } from './rastreo';
 
 /**
  * generarMensajeWhatsApp
@@ -38,7 +39,8 @@ export function generarMensajeWhatsApp(items, total, entrega) {
   // Folio — solo si Supabase lo generó correctamente
   if (entrega.folio) {
     mensaje += `${EMOJI.folio} *Folio:* ${entrega.folio}\n`;
-    mensaje += `${EMOJI.lupa} Rastrea tu pedido con este folio en nuestra tienda\n`;
+    mensaje += `${EMOJI.lupa} *Consulta el estado de tu pedido:*\n`;
+    mensaje += `${construirUrlRastreo(entrega.folio)}\n`;
   }
 
   mensaje += `${sep}\n\n`;

@@ -52,11 +52,21 @@ function checkRateLimit() {
     const timestamps = raw ? JSON.parse(raw) : [];
     const ahora = Date.now();
     const recentOrders = timestamps.filter(t => ahora - t < WINDOW_MS);
-    if (recentOrders.length >= MAX_ORDERS_PER_SESSION) return false;
+    return recentOrders.length < MAX_ORDERS_PER_SESSION;
+  } catch { return true; }
+}
+
+function recordOrderSubmission() {
+  try {
+    const raw = localStorage.getItem('fp_order_ts');
+    const timestamps = raw ? JSON.parse(raw) : [];
+    const ahora = Date.now();
+    const recentOrders = timestamps.filter(t => ahora - t < WINDOW_MS);
     recentOrders.push(ahora);
     localStorage.setItem('fp_order_ts', JSON.stringify(recentOrders));
-    return true;
-  } catch { return true; }
+  } catch {
+    // The database still enforces its own rate limit if storage is unavailable.
+  }
 }
 
 const INPUT_CLASS = `
@@ -95,6 +105,7 @@ export default function CarritoDrawer({
   const [honeypot,  setHoneypot]  = useState('');
   const [pendingOrder, setPendingOrder] = useState(null);
   const [reviewUpdated, setReviewUpdated] = useState(false);
+  const [orderSaveError, setOrderSaveError] = useState('');
   const panelRef = useRef(null);
   useFocusTrap(panelRef, isOpen);
 
@@ -203,6 +214,7 @@ export default function CarritoDrawer({
       telefono: cleanedPhone,
       direccion: normalizedAddress,
     });
+    setOrderSaveError('');
     setReviewUpdated(false);
     trackEvent('checkout_review', {
       delivery_type: deliveryType,
@@ -259,6 +271,8 @@ export default function CarritoDrawer({
       return;
     }
 
+    setOrderSaveError('');
+
     const whatsappWindow = window.open('about:blank', '_blank');
     if (whatsappWindow) {
       whatsappWindow.opener = null;
@@ -276,14 +290,19 @@ export default function CarritoDrawer({
       nombre: name, telefono: phoneNumber, tipoEntrega: type, direccion: normalizedAddress, total, items: itemsSnapshot,
     });
 
-    if (error) {
+    if (error || !folio) {
       console.warn('[Pedido] No se pudo guardar en Supabase:', error);
       trackEvent('order_save_failed', {
         error_type: 'backend',
         delivery_type: type,
         item_count: itemsSnapshot.reduce((count, item) => count + item.cantidad, 0),
       });
+      if (whatsappWindow && !whatsappWindow.closed) whatsappWindow.close();
+      setOrderSaveError(t('cart.saveOrderError'));
+      return;
     }
+
+    recordOrderSubmission();
 
     // 2) Build WhatsApp URL with order reference
     const url = generarMensajeWhatsApp(itemsSnapshot, total, {
@@ -759,6 +778,11 @@ export default function CarritoDrawer({
                 {!isOnline && (
                   <p className="text-center text-xs font-body font-bold text-orange-700" role="status">
                     {t('cart.offlineOrderError')}
+                  </p>
+                )}
+                {orderSaveError && (
+                  <p className="rounded-xl bg-red-50 px-3 py-2 text-center text-xs font-body font-bold text-red-700" role="alert">
+                    {orderSaveError}
                   </p>
                 )}
                 <button

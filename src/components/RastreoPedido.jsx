@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePedido } from '../hooks/usePedido';
 import { SIMBOLO_MONEDA } from '../data/productos';
 import { useLanguage } from '../hooks/useLanguage';
@@ -224,16 +224,18 @@ function checkTrackingRateLimit() {
   } catch { return true; }
 }
 
-export default function RastreoPedido({ onCerrar }) {
-  const [query,    setQuery]   = useState('');
+export default function RastreoPedido({ onCerrar, initialFolio = '' }) {
+  const normalizedInitialFolio = String(initialFolio || '').trim().toUpperCase();
+  const [query,    setQuery]   = useState(normalizedInitialFolio);
   const [pedidos,  setPedidos] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [enCooldown, setEnCooldown] = useState(false);
+  const searchedInitialFolio = useRef('');
   const { buscarPedido, buscando } = usePedido();
   const { t } = useLanguage();
 
-  const handleBuscar = async () => {
-    const q = query.trim();
+  const buscarFolio = async (value) => {
+    const q = String(value || '').trim().toUpperCase();
     if (!q || enCooldown) return;
 
     if (!checkTrackingRateLimit()) {
@@ -249,6 +251,15 @@ export default function RastreoPedido({ onCerrar }) {
     if (error) { setErrorMsg(error); return; }
     setPedidos(resultado);
   };
+
+  const handleBuscar = () => buscarFolio(query);
+
+  useEffect(() => {
+    if (!normalizedInitialFolio || searchedInitialFolio.current === normalizedInitialFolio) return;
+    searchedInitialFolio.current = normalizedInitialFolio;
+    setQuery(normalizedInitialFolio);
+    buscarFolio(normalizedInitialFolio);
+  }, [normalizedInitialFolio]);
 
   const handleKeyDown = (e) => { if (e.key === 'Enter') handleBuscar(); };
 

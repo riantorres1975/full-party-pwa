@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { crearPedidoPublico } from '../lib/pedidosPublicos';
 import { obtenerPrecioAplicable } from '../utils/precios';
 
 /**
@@ -36,25 +37,19 @@ export function usePedido() {
         };
       });
 
-      const { data, error } = await supabase
-        .from('pedidos')
-        .insert({
-          cliente_nombre:   nombre,
-          cliente_telefono: telefono,
-          tipo_entrega:     tipoEntrega,
-          direccion:        direccion || null,
-          total,
-          estado:          'Por Surtir',
-          detalles_json:   detalles,
-        })
-        .select('folio')
-        .single();
+      const folio = await crearPedidoPublico(supabase, {
+        nombre,
+        telefono,
+        tipoEntrega,
+        direccion,
+        total,
+        detalles,
+      });
 
-      if (error) throw error;
-      return { folio: data.folio, error: null };
+      return { folio, error: null };
     } catch (err) {
       console.error('[usePedido] guardarPedido:', err.message);
-      return { folio: null, error: 'No se pudo registrar el pedido. Tu pedido se enviará por WhatsApp.' };
+      return { folio: null, error: 'No se pudo registrar el pedido ni generar el folio.' };
     } finally {
       setGuardando(false);
     }
@@ -73,11 +68,11 @@ export function usePedido() {
         return { pedidos: [], error: 'Ingresa un folio válido (ej. FP-00001).' };
       }
 
+      // Se usa un RPC SECURITY DEFINER (buscar_pedido_por_folio) en lugar de leer
+      // la tabla `pedidos` directamente: la tabla solo permite SELECT a admins, y
+      // exponerla públicamente permitiría enumerar pedidos ajenos (folios secuenciales).
       const { data, error } = await supabase
-        .from('pedidos')
-        .select('folio, cliente_nombre, estado, total, tipo_entrega, created_at, updated_at, detalles_json')
-        .eq('folio', folio)
-        .limit(5);
+        .rpc('buscar_pedido_por_folio', { p_folio: folio });
 
       if (error) throw error;
       return { pedidos: data ?? [], error: null };

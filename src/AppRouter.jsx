@@ -14,6 +14,7 @@ const ComoFunciona      = lazy(() => import('./pages/ComoFunciona'));
 const Destacados        = lazy(() => import('./pages/Destacados'));
 const Blog              = lazy(() => import('./pages/Blog'));
 const BlogArticulo      = lazy(() => import('./pages/BlogArticulo'));
+const TrackingRoute     = lazy(() => import('./routes/TrackingRoute'));
 
 const Spinner = (
   <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--surface-primary)' }}>
@@ -119,6 +120,12 @@ const PAGE_META = {
   '/admin': {
     title:       `Administración | ${SITE_NAME}`,
     description: null,
+    canonical:   null,
+    robots:      'noindex, nofollow',
+  },
+  '/rastrear': {
+    title:       `Rastrear pedido | ${SITE_NAME}`,
+    description: 'Consulta el estado de tu pedido con el folio recibido por WhatsApp.',
     canonical:   null,
     robots:      'noindex, nofollow',
   },
@@ -244,6 +251,7 @@ function RouterEffects() {
     const meta =
       PAGE_META[path] ??
       (path.startsWith('/admin')   ? PAGE_META['/admin']   : null) ??
+      (path.startsWith('/rastrear')? PAGE_META['/rastrear']: null) ??
       dynamicCatalogMeta ??
       (path.startsWith('/catalogo')? PAGE_META['/catalogo']: null) ??
       PAGE_META['/'];
@@ -347,6 +355,14 @@ export default function AppRouter() {
             element={
               <Suspense fallback={Spinner}>
                 <PublicCatalogRoute />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/rastrear/:folio"
+            element={
+              <Suspense fallback={Spinner}>
+                <TrackingRoute />
               </Suspense>
             }
           />

@@ -207,6 +207,7 @@
   "cart.ordersPausedError": "Orders are temporarily disabled. Please try again later.",
   "cart.ordersPausedCta": "Orders temporarily paused",
   "cart.offlineOrderError": "You are offline. Your order is still saved; reconnect to send it through WhatsApp.",
+  "cart.saveOrderError": "We could not save your order or generate its number. Your cart is still saved; please try again.",
 
   "delivery.title": "How do you want it? 🎀",
   "delivery.pickupLabel": "Pick up\nat store",
