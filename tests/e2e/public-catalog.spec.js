@@ -157,6 +157,11 @@ test('category URLs filter products and stay in sync with navigation', async ({ 
   await expect(page).toHaveURL(/\/catalogo\/globos-latex$/);
   await expect(page.getByText('Viendo: Globos de Látex')).toBeVisible();
   await expect(page.locator('article.product-card')).toHaveCount(4);
+  await expect(page).toHaveTitle('Globos de Látex al Mayoreo en Uruapan | Full Party Uruapan');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    'href',
+    'https://www.fullpartyuruapan.com.mx/catalogo/globos-latex',
+  );
 
   await page.getByRole('button', { name: 'Quitar filtros' }).first().click();
   await expect(page).toHaveURL(/\/catalogo$/);
@@ -165,6 +170,11 @@ test('category URLs filter products and stay in sync with navigation', async ({ 
   await page.locator('button:visible').filter({ hasText: /^Confeti$/ }).first().click();
   await expect(page).toHaveURL(/\/catalogo\/confeti$/);
   await expect(page.locator('article.product-card')).toHaveCount(1);
+  await expect(page).toHaveTitle('Confeti al Mayoreo en Uruapan | Full Party Uruapan');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    'href',
+    'https://www.fullpartyuruapan.com.mx/catalogo/confeti',
+  );
 
   await page.goBack();
   await expect(page).toHaveURL(/\/catalogo$/);
@@ -378,6 +388,9 @@ test('the admin route presents an accessible login when signed out', async ({ pa
   await expect(page.locator('#admin-email')).toBeVisible();
   await expect(page.locator('#admin-password')).toBeVisible();
   await expect(page.locator('button[type="submit"]')).toBeDisabled();
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
+  await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', '');
 });
 
 test('the PWA exposes a valid manifest and registers its service worker', async ({ page, request }) => {

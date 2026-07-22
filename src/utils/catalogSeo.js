@@ -1,0 +1,49 @@
+import { resolveCategoryRoute, slugifyCategory } from './categoryRoutes.js';
+
+const DEFAULT_SITE_NAME = 'Full Party Uruapan';
+const DEFAULT_SITE_URL = 'https://www.fullpartyuruapan.com.mx';
+
+const DISPLAY_WORDS = {
+  comunion: 'Comunión',
+  foil: 'Foil',
+  latex: 'Látex',
+  led: 'LED',
+  mdf: 'MDF',
+  numero: 'Número',
+};
+
+function humanizeCategorySlug(slug) {
+  return slug
+    .split('-')
+    .filter(Boolean)
+    .map((word, index) => {
+      if (DISPLAY_WORDS[word]) return DISPLAY_WORDS[word];
+      if (index > 0 && ['de', 'para', 'y'].includes(word)) return word;
+      return `${word.charAt(0).toUpperCase()}${word.slice(1)}`;
+    })
+    .join(' ');
+}
+
+export function buildCatalogCategoryMeta(
+  pathname,
+  { siteName = DEFAULT_SITE_NAME, siteUrl = DEFAULT_SITE_URL } = {},
+) {
+  const cleanPath = String(pathname || '').split(/[?#]/, 1)[0].replace(/\/+$/, '');
+  if (!cleanPath.startsWith('/catalogo/')) return null;
+
+  const rawSlug = cleanPath.slice('/catalogo/'.length);
+  if (!rawSlug || rawSlug.includes('/')) return null;
+
+  const resolved = resolveCategoryRoute(rawSlug, []);
+  const canonicalSlug = resolved?.canonicalSlug || slugifyCategory(rawSlug);
+  if (!canonicalSlug) return null;
+
+  const label = resolved?.label || humanizeCategorySlug(canonicalSlug);
+  const canonical = new URL(`/catalogo/${canonicalSlug}`, siteUrl).toString();
+
+  return {
+    title: `${label} al Mayoreo en Uruapan | ${siteName}`,
+    description: `Compra ${label.toLocaleLowerCase('es-MX')} al mayoreo y menudeo en ${siteName}. Consulta productos, precios y disponibilidad. Envíos a todo México y atención por WhatsApp.`,
+    canonical,
+  };
+}

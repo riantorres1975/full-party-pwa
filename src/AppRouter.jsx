@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from
 import LandingPage from './pages/LandingPage';
 import { LanguageProvider } from './hooks/useLanguage';
 import AppErrorBoundary from './components/ui/AppErrorBoundary';
+import { buildCatalogCategoryMeta } from './utils/catalogSeo';
 
 const AuthCatalogRoutes = lazy(() => import('./routes/AuthCatalogRoutes'));
 const PublicCatalogRoute = lazy(() => import('./routes/PublicCatalogRoute'));
@@ -20,6 +21,7 @@ const Spinner = (
 
 const SITE_NAME   = 'Full Party Uruapan';
 const SITE_URL    = 'https://www.fullpartyuruapan.com.mx';
+const PUBLIC_ROBOTS = 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
 
 const PAGE_META = {
   '/': {
@@ -116,6 +118,7 @@ const PAGE_META = {
     title:       `Administración | ${SITE_NAME}`,
     description: null,
     canonical:   null,
+    robots:      'noindex, nofollow',
   },
   '/sucursales': {
     title:       `Sucursales en Uruapan | ${SITE_NAME}`,
@@ -139,43 +142,48 @@ const PAGE_META = {
   },
 };
 
-function setPageMeta({ title, description, canonical }) {
+function setPageMeta({ title, description, canonical, robots = PUBLIC_ROBOTS }) {
   if (title) document.title = title;
 
   const mDesc = document.querySelector('meta[name="description"]');
-  if (mDesc && description) mDesc.setAttribute('content', description);
+  if (mDesc) mDesc.setAttribute('content', description || '');
+
+  const robotsMeta = document.querySelector('meta[name="robots"]');
+  if (robotsMeta) robotsMeta.setAttribute('content', robots);
 
   const ogTitle = document.querySelector('meta[property="og:title"]');
   if (ogTitle && title) ogTitle.setAttribute('content', title);
 
   const ogDesc = document.querySelector('meta[property="og:description"]');
-  if (ogDesc && description) ogDesc.setAttribute('content', description);
+  if (ogDesc) ogDesc.setAttribute('content', description || '');
 
   const ogUrl = document.querySelector('meta[property="og:url"]');
-  if (ogUrl && canonical) ogUrl.setAttribute('content', canonical);
+  if (ogUrl) ogUrl.setAttribute('content', canonical || '');
 
   const twTitle = document.querySelector('meta[name="twitter:title"]');
   if (twTitle && title) twTitle.setAttribute('content', title);
 
   const twDesc = document.querySelector('meta[name="twitter:description"]');
-  if (twDesc && description) twDesc.setAttribute('content', description);
+  if (twDesc) twDesc.setAttribute('content', description || '');
 
   let canonicalEl = document.querySelector('link[rel="canonical"]');
-  if (!canonicalEl) {
+  if (canonical && !canonicalEl) {
     canonicalEl = document.createElement('link');
     canonicalEl.rel = 'canonical';
     document.head.appendChild(canonicalEl);
   }
   if (canonical) canonicalEl.href = canonical;
+  else canonicalEl?.remove();
 
   let hreflangEl = document.querySelector('link[rel="alternate"][hreflang="es-MX"]');
-  if (!hreflangEl) {
+  if (canonical && !hreflangEl) {
     hreflangEl = document.createElement('link');
     hreflangEl.rel = 'alternate';
     hreflangEl.hreflang = 'es-MX';
     document.head.appendChild(hreflangEl);
   }
   if (canonical) hreflangEl.href = canonical;
+  else hreflangEl?.remove();
 }
 
 function RouterEffects() {
@@ -221,10 +229,19 @@ function RouterEffects() {
   useEffect(() => {
     const path = location.pathname;
     // /blog/:slug lo maneja el propio componente BlogArticulo con su meta dinámico
-    if (path.startsWith('/blog/')) return;
+    if (path.startsWith('/blog/')) {
+      const robotsMeta = document.querySelector('meta[name="robots"]');
+      if (robotsMeta) robotsMeta.setAttribute('content', PUBLIC_ROBOTS);
+      return;
+    }
+    const dynamicCatalogMeta = buildCatalogCategoryMeta(path, {
+      siteName: SITE_NAME,
+      siteUrl: SITE_URL,
+    });
     const meta =
       PAGE_META[path] ??
       (path.startsWith('/admin')   ? PAGE_META['/admin']   : null) ??
+      dynamicCatalogMeta ??
       (path.startsWith('/catalogo')? PAGE_META['/catalogo']: null) ??
       PAGE_META['/'];
     setPageMeta(meta);
