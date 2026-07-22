@@ -4,6 +4,7 @@ import LandingPage from './pages/LandingPage';
 import { LanguageProvider } from './hooks/useLanguage';
 import AppErrorBoundary from './components/ui/AppErrorBoundary';
 import { buildCatalogCategoryMeta } from './utils/catalogSeo';
+import { buildRouteStructuredData } from './utils/structuredData';
 
 const AuthCatalogRoutes = lazy(() => import('./routes/AuthCatalogRoutes'));
 const PublicCatalogRoute = lazy(() => import('./routes/PublicCatalogRoute'));
@@ -245,6 +246,27 @@ function RouterEffects() {
       (path.startsWith('/catalogo')? PAGE_META['/catalogo']: null) ??
       PAGE_META['/'];
     setPageMeta(meta);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const data = buildRouteStructuredData(location.pathname, {
+      siteName: SITE_NAME,
+      siteUrl: SITE_URL,
+    });
+    let script = document.getElementById('route-jsonld');
+
+    if (!data) {
+      script?.remove();
+      return;
+    }
+
+    if (!script) {
+      script = document.createElement('script');
+      script.id = 'route-jsonld';
+      script.type = 'application/ld+json';
+      document.head.appendChild(script);
+    }
+    script.textContent = JSON.stringify(data).replace(/</g, '\\u003c');
   }, [location.pathname]);
 
   useEffect(() => {

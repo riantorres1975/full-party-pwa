@@ -162,6 +162,15 @@ test('category URLs filter products and stay in sync with navigation', async ({ 
     'href',
     'https://www.fullpartyuruapan.com.mx/catalogo/globos-latex',
   );
+  const categorySchema = await page.locator('#route-jsonld').textContent();
+  expect(JSON.parse(categorySchema)['@graph'][0]).toMatchObject({
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      expect.objectContaining({ position: 1, name: 'Full Party Uruapan' }),
+      expect.objectContaining({ position: 2, name: 'Catálogo' }),
+      expect.objectContaining({ position: 3, name: 'Globos de Látex' }),
+    ],
+  });
 
   await page.getByRole('button', { name: 'Quitar filtros' }).first().click();
   await expect(page).toHaveURL(/\/catalogo$/);
@@ -391,6 +400,23 @@ test('the admin route presents an accessible login when signed out', async ({ pa
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
   await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', '');
+  await expect(page.locator('#route-jsonld')).toHaveCount(0);
+});
+
+test('the branches route publishes both stores as structured data', async ({ page }) => {
+  await page.goto('/sucursales');
+
+  await expect(page.getByRole('heading', { name: 'Encuéntranos en Uruapan' })).toBeVisible();
+  const data = JSON.parse(await page.locator('#route-jsonld').textContent());
+  const stores = data['@graph'].filter((entry) => entry['@type'] === 'Store');
+
+  expect(stores).toHaveLength(2);
+  expect(stores.map(({ name }) => name)).toEqual([
+    'Full Party Uruapan Suc. Francisco Villa',
+    'Full Party Uruapan Suc. Sol Naciente',
+  ]);
+  await expect(page.locator('#francisco-villa')).toBeVisible();
+  await expect(page.locator('#sol-naciente')).toBeVisible();
 });
 
 test('the PWA exposes a valid manifest and registers its service worker', async ({ page, request }) => {

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { MapPin, Clock, Phone, Navigation, Truck, MessageCircle, ShoppingBag } from 'lucide-react';
 import SiteLayout from '../components/SiteLayout';
+import { SUCURSALES } from '../data/sucursales';
 
 const C = {
   pink:    '#F472B6',
@@ -19,39 +20,6 @@ const C = {
 };
 
 const WA_HREF = 'https://wa.me/5214521040377?text=' + encodeURIComponent('Hola, quisiera más información de sus sucursales 🎉');
-
-const SUCURSALES = [
-  {
-    id: 'francisco-villa',
-    nombre: 'Suc. Francisco Villa',
-    badge: 'Sucursal Principal',
-    direccion: 'C. Francisco Villa 103, Centro, Uruapan, Michoacán',
-    cp: '60000',
-    telefono: '452 525 4596',
-    telefonoHref: 'tel:+524525254596',
-    horario: 'Lun–Sáb · 9:00 am – 7:00 pm',
-    horarioExtra: 'Cerrado domingos',
-    mapsUrl: 'https://share.google/9X5mrN6G5bMTOGfvH',
-    embedUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3762.8065692929063!2d-102.0549798!3d19.420761799999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x842de367f2d59469%3A0x4799181c21c26fd5!2sFull%20Party%20Uruapan%20Suc%20Francisco%20Villa!5e0!3m2!1ses-419!2smx!4v1776194961609!5m2!1ses-419!2smx',
-    color: C.pink,
-    accent: C.orange,
-  },
-  {
-    id: 'sol-naciente',
-    nombre: 'Suc. Sol Naciente',
-    badge: 'Sucursal Norte',
-    direccion: 'Universo 117, Col. Sol Naciente, Uruapan, Michoacán',
-    cp: '60190',
-    telefono: '452 104 0377',
-    telefonoHref: 'tel:+524521040377',
-    horario: 'Lun–Sáb · 9:00 am – 7:00 pm',
-    horarioExtra: 'Domingo · 9:00 am – 2:00 pm',
-    mapsUrl: 'https://share.google/p2JTqttWEQ1QYPWja',
-    embedUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3763.1415130404407!2d-102.0274577!3d19.4062907!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x842de3bcdec90e8d%3A0x5158156fe2efca48!2sFull%20Party%20Uruapan%20Suc%20Sol%20Naciente!5e0!3m2!1ses-419!2smx!4v1776194928231!5m2!1ses-419!2smx',
-    color: C.purple,
-    accent: C.cyan,
-  },
-];
 
 export default function Sucursales() {
   return (
@@ -82,6 +50,7 @@ export default function Sucursales() {
           {SUCURSALES.map(({ id, nombre, badge, direccion, cp, telefono, telefonoHref, horario, horarioExtra, mapsUrl, embedUrl, color, accent }) => (
             <article
               key={id}
+              id={id}
               className="rounded-2xl overflow-hidden bg-white shadow-sm"
               style={{
                 border: '2px solid transparent',

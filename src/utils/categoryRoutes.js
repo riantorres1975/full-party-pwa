@@ -1,4 +1,4 @@
-const CATEGORY_ROUTE_RULES = [
+export const CATEGORY_ROUTE_RULES = [
   { slug: 'globos-latex', label: 'Globos de Látex', groups: [['globo latex']] },
   { slug: 'globos-numero', aliases: ['globos-numeros'], label: 'Globos de Número', groups: [['globo numero']] },
   { slug: 'globos-foil', label: 'Globos Foil', groups: [['foil'], ['orbz']] },

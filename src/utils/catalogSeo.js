@@ -45,5 +45,6 @@ export function buildCatalogCategoryMeta(
     title: `${label} al Mayoreo en Uruapan | ${siteName}`,
     description: `Compra ${label.toLocaleLowerCase('es-MX')} al mayoreo y menudeo en ${siteName}. Consulta productos, precios y disponibilidad. Envíos a todo México y atención por WhatsApp.`,
     canonical,
+    breadcrumbLabel: label,
   };
 }
