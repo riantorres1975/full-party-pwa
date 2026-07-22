@@ -1,72 +1,101 @@
-import { useState, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-function getInitialCount() {
-  if (typeof window === 'undefined') return 12;
-  const w = window.innerWidth;
-  if (w < 640)  return 6;   // móvil: 2 cols × 3 filas
-  if (w < 1024) return 12;  // tablet: 3-4 cols × 3 filas
-  if (w < 1536) return 20;  // laptop: 5-6 cols × ~3-4 filas
-  return 28;                // desktop ancho: 7-9 cols × ~3-4 filas
+export function getCatalogPagePlan(viewportWidth) {
+  const width = Number.isFinite(viewportWidth) ? viewportWidth : 1024;
+
+  if (width < 640) return { initial: 6, batch: 8 };
+  if (width < 1024) return { initial: 12, batch: 12 };
+  if (width < 1536) return { initial: 12, batch: 20 };
+  return { initial: 16, batch: 28 };
 }
 
-function getBatchSize() {
-  if (typeof window === 'undefined') return 12;
-  const w = window.innerWidth;
-  if (w < 640)  return 8;
-  if (w < 1024) return 12;
-  if (w < 1536) return 20;
-  return 28;
+function getCurrentPagePlan() {
+  return getCatalogPagePlan(typeof window === 'undefined' ? 1024 : window.innerWidth);
 }
 
-/**
- * useInfiniteScroll
- * Expone:
- *  - visibleCount   → cuántos items mostrar actualmente
- *  - sentinelRef    → callback ref para el elemento centinela (div al final del grid)
- *  - hayMas         → boolean: ¿quedan items por mostrar?
- *  - cargando       → boolean: true durante el breve flash de carga
- *  - reset()        → llama al cambiar el array (búsqueda/filtros)
- */
-export function useInfiniteScroll(totalItems) {
-  const [visibleCount, setVisibleCount] = useState(() => getInitialCount());
-  const [cargando,     setCargando]     = useState(false);
+function getScrollRoot(node, selector) {
+  if (!selector || typeof window === 'undefined') return null;
+  const candidate = node.closest(selector);
+  if (!candidate) return null;
+
+  const { overflowY } = window.getComputedStyle(candidate);
+  return /(auto|scroll|overlay)/.test(overflowY) ? candidate : null;
+}
+
+export function useInfiniteScroll(totalItems, {
+  resetKey = totalItems,
+  rootSelector = '[data-catalog-scroll-root]',
+} = {}) {
+  const [visibleCount, setVisibleCount] = useState(() => (
+    Math.min(getCurrentPagePlan().initial, totalItems)
+  ));
+  const [cargando, setCargando] = useState(false);
   const observerRef = useRef(null);
-  const totalRef    = useRef(totalItems);
+  const animationFrameRef = useRef(null);
+  const pendingRef = useRef(false);
+  const totalRef = useRef(totalItems);
 
   totalRef.current = totalItems;
   const hayMas = visibleCount < totalItems;
+  const nextCount = Math.min(getCurrentPagePlan().batch, Math.max(0, totalItems - visibleCount));
 
-  // Reset to first page when dataset changes (filters/search)
   const reset = useCallback(() => {
-    setVisibleCount(getInitialCount());
+    if (animationFrameRef.current !== null) {
+      window.cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    pendingRef.current = false;
     setCargando(false);
+    setVisibleCount(Math.min(getCurrentPagePlan().initial, totalRef.current));
   }, []);
 
-  // Cargar siguiente batch sin delay artificial
-  const cargarMasRef = useRef(null);
-  cargarMasRef.current = () => {
-    if (cargando || visibleCount >= totalRef.current) return;
+  useEffect(() => {
+    reset();
+  }, [reset, resetKey]);
+
+  const cargarMas = useCallback(() => {
+    if (pendingRef.current || visibleCount >= totalRef.current) return;
+
+    pendingRef.current = true;
     setCargando(true);
-    requestAnimationFrame(() => {
-      const batchSize = getBatchSize();
-      setVisibleCount(prev => Math.min(prev + batchSize, totalRef.current));
+    animationFrameRef.current = window.requestAnimationFrame(() => {
+      const { batch } = getCurrentPagePlan();
+      setVisibleCount((current) => Math.min(current + batch, totalRef.current));
+      animationFrameRef.current = null;
+      pendingRef.current = false;
       setCargando(false);
     });
-  };
+  }, [visibleCount]);
 
-  // Callback ref: reconecta el observer cada vez que el sentinel se monta/desmonta
   const sentinelRef = useCallback((node) => {
-    if (observerRef.current) observerRef.current.disconnect();
-    if (!node) return;
+    observerRef.current?.disconnect();
+    if (!node || !('IntersectionObserver' in window)) return;
 
     observerRef.current = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) cargarMasRef.current?.();
+      ([entry]) => {
+        if (entry?.isIntersecting) cargarMas();
       },
-      { rootMargin: '200px' }
+      {
+        root: getScrollRoot(node, rootSelector),
+        rootMargin: '600px 0px',
+      },
     );
     observerRef.current.observe(node);
+  }, [cargarMas, rootSelector]);
+
+  useEffect(() => () => {
+    observerRef.current?.disconnect();
+    if (animationFrameRef.current !== null) {
+      window.cancelAnimationFrame(animationFrameRef.current);
+    }
   }, []);
 
-  return { visibleCount, sentinelRef, hayMas, cargando, reset };
+  return {
+    visibleCount: Math.min(visibleCount, totalItems),
+    sentinelRef,
+    hayMas,
+    cargando,
+    cargarMas,
+    nextCount,
+  };
 }

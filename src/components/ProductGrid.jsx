@@ -22,14 +22,23 @@ export default function ProductGrid({
   onViewProduct,
   recentProducts = [],
 }) {
-  const { visibleCount, sentinelRef, hayMas, cargando, reset } = useInfiniteScroll(productos.length);
+  const productSetKey = useMemo(
+    () => productos.map((producto) => String(producto.id)).join('|'),
+    [productos],
+  );
+  const {
+    visibleCount,
+    sentinelRef,
+    hayMas,
+    cargando,
+    cargarMas,
+    nextCount,
+  } = useInfiniteScroll(productos.length, { resetKey: productSetKey });
   const [productoDetalle, setProductoDetalle] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const lastViewedProductRef = useRef(null);
   const { t } = useLanguage();
   const productId = searchParams.get('producto');
-
-  useEffect(() => { reset(); }, [productos, reset]);
 
   useEffect(() => {
     if (!productId) {
@@ -147,7 +156,7 @@ export default function ProductGrid({
         <RecentlyViewed products={recentProducts} onSelectProduct={openProductDetail} />
       )}
 
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(195px,1fr))] gap-2.5 sm:gap-3 lg:gap-4 p-3 sm:p-4 lg:p-0 animate-fade-in">
+      <div id="catalog-product-grid" aria-busy={cargando} className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(195px,1fr))] gap-2.5 sm:gap-3 lg:gap-4 p-3 sm:p-4 lg:p-0 animate-fade-in">
         {visibles.map((producto, index) => (
           <ProductCard
             key={producto.id}
@@ -164,6 +173,12 @@ export default function ProductGrid({
       </div>
 
       <div className="px-4 pb-2">
+        {hayMas && (
+          <p className="py-2 text-center text-xs font-body font-bold text-ink-400" aria-live="polite">
+            {t('grid.ofProducts', { shown: visibles.length, total: productos.length })}
+          </p>
+        )}
+
         {cargando && (
           <div className="flex items-center justify-center gap-3 py-6 animate-fade-in">
             <div
@@ -183,13 +198,23 @@ export default function ProductGrid({
           <div className="flex flex-col items-center gap-1 py-5">
             <span className="text-lg">🎉</span>
             <p className="text-xs font-body font-bold text-ink-300">
-              {t('grid.ofProducts', { shown: productos.length, total: productos.length })}
+              {t('grid.allProductsLoaded')}
             </p>
           </div>
         )}
 
         {hayMas && !cargando && (
-          <div ref={sentinelRef} className="h-4" aria-hidden="true" />
+          <div ref={sentinelRef} className="flex min-h-14 items-center justify-center py-2">
+            <button
+              type="button"
+              onClick={cargarMas}
+              className="min-h-10 rounded-xl border px-4 font-body text-xs font-black transition-colors hover:bg-purple-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-fiesta-purple"
+              style={{ borderColor: 'var(--border-default)', color: 'var(--text-secondary)' }}
+              aria-controls="catalog-product-grid"
+            >
+              {t('grid.showMore', { count: nextCount })}
+            </button>
+          </div>
         )}
       </div>
 

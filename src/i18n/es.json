@@ -153,6 +153,8 @@
   "grid.emptyCatalogDesc": "Aún no hay productos disponibles. Vuelve a intentarlo más tarde.",
   "grid.loadingMore": "Cargando más productos...",
   "grid.ofProducts": "{shown} de {total} productos",
+  "grid.showMore": "Mostrar {count} productos más",
+  "grid.allProductsLoaded": "Ya viste todo el catálogo",
   "grid.resultCount": "{count} productos",
   "grid.resultCountOne": "1 producto",
   "grid.clearFilters": "Quitar filtros y ver todo",

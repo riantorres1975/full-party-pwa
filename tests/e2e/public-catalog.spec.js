@@ -156,6 +156,49 @@ test('the public catalog remains usable without horizontal overflow', async ({ p
   expect(pageErrors).toEqual([]);
 });
 
+test('a 500-product catalog renders progressively without limiting search', async ({ page }) => {
+  const largeCatalog = Array.from({ length: 500 }, (_, index) => ({
+    ...catalogFixture[0],
+    id: `scale-${index + 1}`,
+    nombre: `Producto Escalable ${String(index + 1).padStart(3, '0')}`,
+    descripcion: `Articulo ${index + 1} del catalogo de escala`,
+    es_nuevo: false,
+  }));
+  let pageRequest = 0;
+
+  await page.unroute('**/rest/v1/productos*');
+  await page.route('**/rest/v1/productos*', async (route) => {
+    if (route.request().method() === 'OPTIONS') {
+      await fulfillCatalogRequest(route, []);
+      return;
+    }
+    await fulfillCatalogRequest(route, pageRequest++ === 0 ? largeCatalog : []);
+  });
+
+  await page.goto('/catalogo');
+
+  const cards = page.locator('article.product-card');
+  await expect(page.getByText('500 productos', { exact: true })).toBeVisible();
+  await expect.poll(() => cards.count()).toBeGreaterThan(0);
+  expect(await cards.count()).toBeLessThan(500);
+
+  const search = page.locator('input:visible').first();
+  await search.fill('Producto Escalable 500');
+  await expect(cards.getByRole('heading', { name: 'Producto Escalable 500' })).toBeVisible();
+  expect(await cards.count()).toBeLessThan(500);
+
+  await search.fill('');
+  await expect.poll(() => cards.count()).toBeGreaterThan(0);
+  const countBeforeMore = await cards.count();
+  expect(countBeforeMore).toBeLessThan(500);
+
+  const showMore = page.getByRole('button', { name: /Mostrar \d+ productos m.s/ }).first();
+  await expect(showMore).toBeAttached();
+  await showMore.evaluate((button) => button.click());
+  await expect.poll(() => cards.count()).toBeGreaterThan(countBeforeMore);
+  expect(await cards.count()).toBeLessThan(500);
+});
+
 test('an empty catalog is distinguished from a search without results', async ({ page }) => {
   await page.unroute('**/rest/v1/productos*');
   await page.route('**/rest/v1/productos*', async (route) => {

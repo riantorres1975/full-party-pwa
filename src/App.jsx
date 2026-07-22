@@ -276,6 +276,8 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
   const filteredProducts = useMemo(() => {
     const matches = productSearchIndex.search(deferredSearchQuery);
+    if (deferredSearchQuery.trim() && sortOrder === 'featured') return [...matches];
+
     return [...matches].sort((a, b) => {
       if (sortOrder === 'name-asc') {
         return String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base' });
@@ -571,7 +573,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
                 {(loading || isInitialSyncing) && !error && <CatalogToolbarSkeleton />}
 
-                <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-16">
+                <div data-catalog-scroll-root className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-16">
                   {loading && <ProductosSkeleton cantidad={12} />}
 
                   {!loading && error && (

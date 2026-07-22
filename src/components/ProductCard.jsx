@@ -41,7 +41,7 @@ function ProductCardInner({
 
   return (
     <article
-      className="product-card relative rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-300 flex flex-col h-full"
+      className={`product-card relative rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-300 flex flex-col h-full ${index >= 8 ? 'product-card-deferred' : ''}`}
       style={{
         background: 'var(--surface-card)',
         border: esNuevo ? '1.5px solid rgba(168,85,247,0.35)' : '1px solid var(--border-soft)',
