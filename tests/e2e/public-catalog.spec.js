@@ -345,7 +345,7 @@ test('an offline checkout stays intact until the connection returns', async ({ p
   await expect(cart.getByRole('button', { name: 'Enviar pedido a Full Party' })).toBeEnabled();
 });
 
-test('a completed order includes its folio and tracking URL in WhatsApp', async ({ page }) => {
+test('a completed order includes its folio and tracking URL in WhatsApp', async ({ page, context }) => {
   const folio = 'FP-E2E1234';
   let createPayload = null;
 
@@ -366,20 +366,11 @@ test('a completed order includes its folio and tracking URL in WhatsApp', async 
       body: JSON.stringify(folio),
     });
   });
-  await page.addInitScript(() => {
-    window.__openedWhatsAppUrl = null;
-    window.open = () => ({
-      opener: null,
-      closed: false,
-      document: { title: '', body: { textContent: '', style: {} } },
-      location: {
-        replace(url) {
-          window.__openedWhatsAppUrl = url;
-        },
-      },
-      close() {
-        this.closed = true;
-      },
+  await context.route('https://api.whatsapp.com/send**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/html',
+      body: '<!doctype html><title>WhatsApp</title>',
     });
   });
 
@@ -395,10 +386,13 @@ test('a completed order includes its folio and tracking URL in WhatsApp', async 
   await cart.getByLabel('Nombre completo').fill('Maria E2E');
   await cart.getByLabel(/N.mero de tel.fono/i).fill('4521234567');
   await cart.getByRole('button', { name: 'Revisar pedido' }).click();
-  await cart.getByRole('button', { name: 'Enviar pedido a Full Party' }).click();
 
-  await expect.poll(() => page.evaluate(() => window.__openedWhatsAppUrl)).toContain('api.whatsapp.com/send');
-  const whatsappUrl = await page.evaluate(() => window.__openedWhatsAppUrl);
+  const popupPromise = page.waitForEvent('popup');
+  await cart.getByRole('button', { name: 'Enviar pedido a Full Party' }).click();
+  const whatsappPage = await popupPromise;
+
+  await whatsappPage.waitForURL(/api\.whatsapp\.com\/send/, { timeout: 10_000 });
+  const whatsappUrl = whatsappPage.url();
   const message = new URL(whatsappUrl).searchParams.get('text');
 
   expect(createPayload).toEqual(expect.objectContaining({
