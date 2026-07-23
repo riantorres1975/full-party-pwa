@@ -259,6 +259,12 @@ test('the public catalog remains usable without horizontal overflow', async ({ p
   await expect(search).toBeVisible();
   await expect.poll(() => main.locator('button').count()).toBeGreaterThan(0);
 
+  if ((page.viewportSize()?.width || 0) < 1024) {
+    const categoryImages = page.getByTestId('category-image');
+    await expect.poll(() => categoryImages.count()).toBeGreaterThan(0);
+    await expect(categoryImages.first().locator('img')).toHaveAttribute('src', '/icons/icon-192.png');
+  }
+
   await search.fill('globo');
   await expect(search).toHaveValue('globo');
   if ((page.viewportSize()?.width || 0) >= 1024) {

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -39,6 +40,41 @@ export function getCategoryEmoji(label = '') {
   return CATEGORY_EMOJI.find(({ match }) => match.some(word => normalized.includes(word)))?.emoji || '🎀';
 }
 
+function CategoryArtwork({ category, color, compact }) {
+  const imageUrl = typeof category.imagen === 'string' ? category.imagen.trim() : '';
+  const [failedImageUrl, setFailedImageUrl] = useState('');
+  const showImage = imageUrl && imageUrl !== failedImageUrl;
+
+  return (
+    <span
+      className={`relative mx-auto flex items-center justify-center overflow-hidden rounded-xl ${
+        compact ? 'h-11 w-11 text-2xl' : 'h-14 w-14 text-[34px]'
+      }`}
+      style={{
+        background: `linear-gradient(145deg, ${color.bg}, var(--surface-card))`,
+        color: color.fg,
+      }}
+      aria-hidden="true"
+      data-testid={showImage ? 'category-image' : 'category-icon'}
+    >
+      {showImage ? (
+        <img
+          src={imageUrl}
+          alt=""
+          width="112"
+          height="112"
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-contain p-1"
+          onError={() => setFailedImageUrl(imageUrl)}
+        />
+      ) : (
+        getCategoryEmoji(category.label)
+      )}
+    </span>
+  );
+}
+
 export function CategoryCard({ category, index = 0, onSelect, compact = false }) {
   const color = CATEGORY_COLORS[index % CATEGORY_COLORS.length];
 
@@ -54,13 +90,7 @@ export function CategoryCard({ category, index = 0, onSelect, compact = false })
         boxShadow: '0 2px 10px rgba(107,53,184,0.06)',
       }}
     >
-      <span
-        className={`mx-auto flex items-center justify-center rounded-xl ${compact ? 'h-11 w-11 text-2xl' : 'h-14 w-14 text-[34px]'}`}
-        style={{ background: color.bg, color: color.fg }}
-        aria-hidden="true"
-      >
-        {getCategoryEmoji(category.label)}
-      </span>
+      <CategoryArtwork category={category} color={color} compact={compact} />
       <span className="mt-2 block min-h-[32px] text-[11px] font-body font-black leading-tight text-ink-700 line-clamp-2">
         {category.label}
       </span>
