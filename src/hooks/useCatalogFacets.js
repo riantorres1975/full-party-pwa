@@ -6,6 +6,8 @@ import {
 } from '../lib/productosPublicos';
 import { getPublicRestClient } from '../lib/supabasePublicRest';
 import { trackCatalogDataRequest } from '../utils/analytics';
+import { mergeCategoryStats } from '../utils/categoryConfig';
+import { useCategoryConfig } from './useCategoryConfig';
 
 const FACETS_CACHE_KEY = 'fp_catalog_facets_v1';
 const FACETS_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -76,7 +78,7 @@ function rowsFromProducts(products) {
   ];
 }
 
-function buildFacetState(rows) {
+function buildFacetState(rows, categoryConfig) {
   const labels = Object.fromEntries(CATEGORIAS_CONFIG.map(({ id, label }) => [id, label]));
   const categoryRows = rows.filter(({ dimension, valor }) => dimension === 'categoria' && valor);
   const brandRows = rows.filter(({ dimension, valor }) => dimension === 'marca' && valor);
@@ -87,7 +89,7 @@ function buildFacetState(rows) {
   brandRows.forEach(({ valor }) => registrarMarca(valor));
   sizeRows.forEach(({ valor }) => registrarTamano(valor));
 
-  const categoryStats = categoryRows
+  const baseCategoryStats = categoryRows
     .map((row) => ({
       id: row.valor,
       label: labels[row.valor] || row.valor,
@@ -98,6 +100,7 @@ function buildFacetState(rows) {
       b.count - a.count
       || String(a.label).localeCompare(String(b.label), 'es', { sensitivity: 'base' })
     ));
+  const categoryStats = mergeCategoryStats(baseCategoryStats, categoryConfig);
 
   return {
     categoryStats,
@@ -121,7 +124,11 @@ function buildFacetState(rows) {
 export function useCatalogFacets() {
   const [rows, setRows] = useState(readFacetsCache);
   const [loading, setLoading] = useState(() => rows.length === 0);
-  const facetState = useMemo(() => buildFacetState(rows), [rows]);
+  const { items: categoryConfig } = useCategoryConfig();
+  const facetState = useMemo(
+    () => buildFacetState(rows, categoryConfig),
+    [categoryConfig, rows],
+  );
 
   useEffect(() => {
     const controller = new AbortController();

@@ -39,6 +39,14 @@ import {
 import { CatalogCards, CatalogTable } from './admin/catalog/CatalogProductViews';
 import CatalogBulkActionsBar from './admin/catalog/CatalogBulkActionsBar';
 import CatalogQualityPanel from './admin/catalog/CatalogQualityPanel';
+import CategoryManagerModal from './admin/catalog/CategoryManagerModal';
+import {
+  CATEGORY_CONFIG_KEY,
+  normalizeCategoryConfig,
+  removeCategoryConfig,
+  renameCategoryConfig,
+  serializeCategoryConfig,
+} from '../utils/categoryConfig';
 
 const PRODUCT_SEARCH_KEYS = [
   { name: 'nombre', weight: 0.5 },
@@ -56,6 +64,7 @@ export default function AdminCatalogo() {
   const { t } = useLanguage();
   const canEdit = usePermission('catalogo.edit');
   const canDelete = usePermission('catalogo.delete');
+  const canConfigure = usePermission('configuracion.edit');
   const { isOpen: confirmOpen, config: confirmConfig, confirm: confirmDialog, onConfirm, onCancel } = useConfirm();
   const [creando, setCreando] = useState(false);
   const [productos, setProductos] = useState([]);
@@ -147,9 +156,9 @@ export default function AdminCatalogo() {
   }, [vista]);
 
   const [showCatMgr, setShowCatMgr] = useState(false);
-  const [catEditando, setCatEditando] = useState(null);
-  const [catNuevoNombre, setCatNuevoNombre] = useState('');
   const [catGuardando, setCatGuardando] = useState(null);
+  const [categoryConfig, setCategoryConfig] = useState([]);
+  const [categoryConfigSaving, setCategoryConfigSaving] = useState(false);
 
   const [showMarcaMgr, setShowMarcaMgr] = useState(false);
   const [marcaEditando, setMarcaEditando] = useState(null);
@@ -177,6 +186,10 @@ export default function AdminCatalogo() {
 
     getConfig('pedidos_habilitados', true).then(v => {
       setPedidosHabilitados(v !== false);
+    });
+
+    getConfig(CATEGORY_CONFIG_KEY, []).then((value) => {
+      setCategoryConfig(normalizeCategoryConfig(value));
     });
   }, []);
 
@@ -690,38 +703,79 @@ export default function AdminCatalogo() {
     }
   }
 
-  async function handleRenameCategoria(vieja) {
-    const nueva = catNuevoNombre.trim();
-    if (!nueva || nueva === vieja) { setCatEditando(null); return; }
+  async function handleSaveCategoryConfig(items) {
+    if (!canConfigure) return null;
+    setCategoryConfigSaving(true);
+    try {
+      const payload = serializeCategoryConfig(items);
+      await setConfig(CATEGORY_CONFIG_KEY, payload);
+      setCategoryConfig(payload.items);
+      toast.success('Presentación de categorías guardada');
+      return payload.items;
+    } catch (err) {
+      toast.error(err.message || 'No se pudo guardar la presentación de categorías');
+      return null;
+    } finally {
+      setCategoryConfigSaving(false);
+    }
+  }
+
+  async function handleRenameCategoria(vieja, nueva, currentDraft) {
+    const nombreLimpio = nueva.trim();
+    if (!nombreLimpio || nombreLimpio === vieja) return currentDraft;
     setCatGuardando(vieja);
     try {
-      await renameCategoria(vieja, nueva);
-      setProductos(prev => prev.map(p => p.categoria === vieja ? { ...p, categoria: nueva } : p));
-      toast.success(`Categoría renombrada a "${nueva}"`);
-      setCatEditando(null);
-      setCatNuevoNombre('');
+      await renameCategoria(vieja, nombreLimpio);
+      setProductos(prev => prev.map(p => (
+        p.categoria === vieja ? { ...p, categoria: nombreLimpio } : p
+      )));
+
+      const nextConfig = renameCategoryConfig(currentDraft, vieja, nombreLimpio);
+      setCategoryConfig(nextConfig);
+      if (canConfigure) {
+        try {
+          await setConfig(CATEGORY_CONFIG_KEY, serializeCategoryConfig(nextConfig));
+        } catch (configError) {
+          toast.warning(configError.message || 'La categoría se renombró, pero falta guardar su presentación');
+        }
+      }
+      toast.success(`Categoría renombrada a "${nombreLimpio}"`);
+      return nextConfig;
     } catch (err) {
       toast.error(err.message || 'Error al renombrar');
+      return null;
     } finally {
       setCatGuardando(null);
     }
   }
 
-  async function handleEliminarCategoria(nombre) {
+  async function handleEliminarCategoria(nombre, currentDraft) {
     const ok = await confirmDialog({
       title: '¿Eliminar categoría?',
       message: `Los productos con la categoría "${nombre}" quedarán sin categoría. ¿Continuar?`,
       confirmLabel: 'Eliminar',
       variant: 'danger',
     });
-    if (!ok) return;
+    if (!ok) return null;
     setCatGuardando(nombre);
     try {
       await eliminarCategoria(nombre);
       setProductos(prev => prev.map(p => p.categoria === nombre ? { ...p, categoria: null } : p));
+
+      const nextConfig = removeCategoryConfig(currentDraft, nombre);
+      setCategoryConfig(nextConfig);
+      if (canConfigure) {
+        try {
+          await setConfig(CATEGORY_CONFIG_KEY, serializeCategoryConfig(nextConfig));
+        } catch (configError) {
+          toast.warning(configError.message || 'La categoría se eliminó, pero falta actualizar su presentación');
+        }
+      }
       toast.success(`Categoría "${nombre}" eliminada`);
+      return nextConfig;
     } catch (err) {
       toast.error(err.message || 'Error al eliminar');
+      return null;
     } finally {
       setCatGuardando(null);
     }
@@ -1224,81 +1278,21 @@ export default function AdminCatalogo() {
         </div>
       )}
 
-            {/* Modal gestión de categorías */}
-            {showCatMgr && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={e => { if (e.target === e.currentTarget) { setShowCatMgr(false); setCatEditando(null); } }}>
-                <div className="bg-admin-card border border-admin-border rounded-2xl w-full max-w-sm shadow-2xl flex flex-col max-h-[80vh]">
-                  <div className="flex items-center justify-between px-5 py-4 border-b border-admin-border shrink-0">
-                    <div className="flex items-center gap-2">
-                      <Tag size={18} className="text-purple-500" />
-                      <h2 className="text-base font-body font-black text-admin-text">{t('admin.catalog.manageCategories')}</h2>
-                    </div>
-                    <button onClick={() => { setShowCatMgr(false); setCatEditando(null); setCatNuevoNombre(''); }} className="text-admin-muted hover:text-admin-text transition-colors" aria-label={t('common.close')}>
-                      <X size={20} />
-                    </button>
-                  </div>
-                  <div className="overflow-y-auto px-4 py-3 space-y-2 flex-1">
-                    {todasCategorias.length === 0 && (
-                      <p className="text-sm text-admin-muted text-center py-6">{t('admin.catalog.noCategoriesYet')}</p>
-                    )}
-                    {todasCategorias.map(cat => (
-                      <div key={cat} className="flex items-center gap-2 bg-admin-elevated rounded-xl px-3 py-2 border border-admin-border">
-                        {catEditando === cat ? (
-                          <>
-                            <input
-                              autoFocus
-                              type="text"
-                              value={catNuevoNombre}
-                              onChange={e => setCatNuevoNombre(e.target.value)}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') handleRenameCategoria(cat);
-                                if (e.key === 'Escape') { setCatEditando(null); setCatNuevoNombre(''); }
-                              }}
-                              className="flex-1 bg-admin-card border border-admin-border rounded-lg px-2 py-1 text-sm font-body text-admin-text outline-none focus:border-purple-400"
-                            />
-                            <button
-                              onClick={() => handleRenameCategoria(cat)}
-                              disabled={catGuardando === cat}
-                              className="shrink-0 text-emerald-600 hover:text-emerald-500 disabled:opacity-40 transition-colors"
-                              aria-label="Confirmar"
-                            >
-                              <Check size={18} />
-                            </button>
-                            <button
-                              onClick={() => { setCatEditando(null); setCatNuevoNombre(''); }}
-                              className="shrink-0 text-admin-muted hover:text-admin-text transition-colors"
-                              aria-label="Cancelar"
-                            >
-                              <X size={16} />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <span className="flex-1 text-sm font-body font-bold text-admin-text truncate">{cat}</span>
-                            <span className="text-xs text-admin-muted shrink-0">{productos.filter(p => p.categoria === cat).length} {t('admin.catalog.productsShort')}</span>
-                            <button
-                              onClick={() => { setCatEditando(cat); setCatNuevoNombre(cat); }}
-                              className="shrink-0 text-admin-muted hover:text-purple-500 transition-colors"
-                              aria-label={`Renombrar ${cat}`}
-                            >
-                              <Pencil size={15} />
-                            </button>
-                            <button
-                              onClick={() => handleEliminarCategoria(cat)}
-                              disabled={catGuardando === cat}
-                              className="shrink-0 text-admin-muted hover:text-red-500 disabled:opacity-40 transition-colors"
-                              aria-label={`Eliminar ${cat}`}
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+            <CategoryManagerModal
+              isOpen={showCatMgr}
+              categories={todasCategorias}
+              products={productos}
+              config={categoryConfig}
+              canEditCatalog={canEdit && canConfigure}
+              canDeleteCategory={canDelete && canConfigure}
+              canConfigure={canConfigure}
+              saving={categoryConfigSaving}
+              busyCategory={catGuardando}
+              onClose={() => setShowCatMgr(false)}
+              onSave={handleSaveCategoryConfig}
+              onRename={handleRenameCategoria}
+              onDelete={handleEliminarCategoria}
+            />
 
             {/* Brand management modal */}
             {showMarcaMgr && (

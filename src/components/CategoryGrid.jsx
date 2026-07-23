@@ -82,6 +82,8 @@ export function CategoryCard({ category, index = 0, onSelect, compact = false })
     <button
       type="button"
       onClick={() => onSelect?.(category)}
+      data-testid="category-card"
+      data-category-id={category.id}
       className="min-w-0 overflow-hidden rounded-xl p-2 text-center transition-all duration-200 active:scale-95 hover:-translate-y-0.5"
       style={{
         height: compact ? 116 : 132,

@@ -51,11 +51,12 @@ function PillFiltro({ label, activo, onClick }) {
   );
 }
 
-function FilaFiltro({ label, activo, onClick }) {
+function FilaFiltro({ label, activo, onClick, categoryId }) {
   return (
     <button
       onClick={onClick}
       title={label}
+      data-category-filter={categoryId}
       className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left
                  transition-all duration-150 active:scale-[0.98]
                  ${activo ? '' : 'hover:bg-ink-50'}`}
@@ -140,8 +141,16 @@ function SeccionFiltro({
   );
 }
 
-export default function SidebarFiltrosDesktop({ filtros, toggleFiltro, limpiarFiltros, totalFiltrosActivos }) {
+export default function SidebarFiltrosDesktop({
+  filtros,
+  toggleFiltro,
+  limpiarFiltros,
+  totalFiltrosActivos,
+  categoryStats = [],
+  categoriesReady = false,
+}) {
   const { t } = useLanguage();
+  const categoryOptions = categoriesReady ? categoryStats : categorias;
 
   return (
     <aside className="sidebar-filtros-desktop hidden lg:block lg:h-full lg:min-h-0 lg:py-2">
@@ -169,7 +178,7 @@ export default function SidebarFiltrosDesktop({ filtros, toggleFiltro, limpiarFi
                        searchable={true} searchPlaceholder={t('filters.searchCategory')}
                        fixedBodyClass="h-[230px] 2xl:h-[210px]">
           {(busqueda) => {
-            const filtradas = categorias.filter(cat =>
+            const filtradas = categoryOptions.filter(cat =>
               cat.label.toLowerCase().includes(busqueda.toLowerCase())
             );
             return (
@@ -180,6 +189,7 @@ export default function SidebarFiltrosDesktop({ filtros, toggleFiltro, limpiarFi
                     label={cat.label}
                     activo={filtros.categorias.includes(cat.id)}
                     onClick={() => toggleFiltro('categorias', cat.id)}
+                    categoryId={cat.id}
                   />
                 )) : (
                   <p className="text-[11px] text-ink-300 font-body py-1 px-2">{t('search.noMatches')}</p>

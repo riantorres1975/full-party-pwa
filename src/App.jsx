@@ -332,6 +332,13 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
   const topHomeCategories = useMemo(() => categoryStats.slice(0, 9), [categoryStats]);
   const topBrowserCategories = useMemo(() => categoryStats.slice(0, 8), [categoryStats]);
+  const activeCategoryMeta = useMemo(() => {
+    if (!categoryRoute || categoryRoute.categoryIds.length !== 1) return null;
+    return categoryStats.find(({ id }) => id === categoryRoute.categoryIds[0]) || null;
+  }, [categoryRoute, categoryStats]);
+  const activeCategoryLabel = activeCategoryMeta?.hasCustomLabel
+    ? activeCategoryMeta.label
+    : categoryRoute?.label || activeCategoryMeta?.label || '';
 
   const activeCatalogChips = useMemo(() => {
     const chips = [];
@@ -342,7 +349,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
     if (query) chips.push({ id: 'search', type: 'search', label: `"${query}"` });
     if (categoryRoute) {
-      chips.push({ id: 'category-route', type: 'category', label: categoryRoute.label });
+      chips.push({ id: 'category-route', type: 'category', label: activeCategoryLabel });
     } else {
       activeFilters.categorias.forEach((category) => {
         chips.push({
@@ -377,7 +384,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
       chips.push({ id: 'favorites', type: 'favorites', label: t('catalog.favorites') });
     }
     return chips;
-  }, [activeFilters, categoryRoute, searchQuery, showFavorites, t]);
+  }, [activeCategoryLabel, activeFilters, categoryRoute, searchQuery, showFavorites, t]);
 
   const removeCatalogChip = (chip) => {
     if (chip.type === 'search') setSearchQuery('');
@@ -488,7 +495,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
               productos={productos}
               categoryStats={catalogMetadataPending ? [] : categoryStats}
               onSelectCategory={selectCategory}
-              routeCategoryLabel={categoryRoute?.label}
+              routeCategoryLabel={activeCategoryLabel}
               priceBounds={priceBounds}
               onPrecioChange={setPriceFilter}
             />
@@ -577,11 +584,43 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     toggleFiltro={toggleFilter}
                     limpiarFiltros={clearFilters}
                     totalFiltrosActivos={activeFilterCount}
+                    categoryStats={categoryStats}
+                    categoriesReady={!catalogMetadataPending}
                   />
                 </Suspense>
               )}
 
               <section className="relative min-h-0 lg:flex lg:h-full lg:flex-col">
+                {categoryRoute && activeCategoryMeta?.description && (
+                  <div className="px-4 pt-3 lg:px-0 lg:pt-2">
+                    <div
+                      className="flex items-center gap-3 rounded-2xl px-3 py-2.5"
+                      style={{
+                        background: 'var(--surface-card-alpha80)',
+                        border: '1px solid var(--border-soft)',
+                      }}
+                    >
+                      {activeCategoryMeta.imagen && (
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white">
+                          <img
+                            src={activeCategoryMeta.imagen}
+                            alt=""
+                            width="96"
+                            height="96"
+                            className="h-full w-full object-contain p-1"
+                          />
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-black text-ink-800">{activeCategoryLabel}</p>
+                        <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-ink-500">
+                          {activeCategoryMeta.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {catalogMetadataPending && !error && <CategoryGridSkeleton />}
 
                 {!catalogMetadataPending && !error && (
@@ -620,7 +659,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     onSortChange={changeSortOrder}
                     isFiltered={catalogIsFiltered}
                     onClear={resetCatalog}
-                    filterLabel={categoryRoute?.label}
+                    filterLabel={activeCategoryLabel}
                     favoriteCount={favoriteCount}
                     showFavorites={showFavorites}
                     activeChips={activeCatalogChips}

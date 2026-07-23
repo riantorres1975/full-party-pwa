@@ -169,7 +169,35 @@ async function fulfillFacetRequest(route, products) {
   });
 }
 
+async function fulfillConfigRequest(route, values = {}) {
+  if (route.request().method() === 'OPTIONS') {
+    await route.fulfill({ status: 204, headers: catalogCorsHeaders });
+    return;
+  }
+
+  const filter = new URL(route.request().url()).searchParams.get('clave') || '';
+  const key = filter.startsWith('eq.') ? filter.slice(3) : '';
+  const hasValue = Object.prototype.hasOwnProperty.call(values, key);
+  const body = hasValue ? [{ valor: values[key] }] : [];
+
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    headers: {
+      ...catalogCorsHeaders,
+      'content-range': hasValue ? '0-0/1' : '*/0',
+    },
+    body: JSON.stringify(body),
+  });
+}
+
 test.beforeEach(async ({ page }) => {
+  await page.route('**/rest/v1/configuracion*', async (route) => {
+    await fulfillConfigRequest(route, {
+      anuncio: { mensaje: '', activo: false },
+      pedidos_habilitados: true,
+    });
+  });
   await page.route('**/rest/v1/catalogo_facetas_publicas*', async (route) => {
     await fulfillFacetRequest(route, catalogFixture);
   });
@@ -288,6 +316,53 @@ test('the public catalog remains usable without horizontal overflow', async ({ p
   expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth + 1);
   expect(await page.evaluate(() => window.__catalogCls)).toBeLessThanOrEqual(0.1);
   expect(pageErrors).toEqual([]);
+});
+
+test('category presentation controls labels, order and visibility', async ({ page }) => {
+  await page.unroute('**/rest/v1/configuracion*');
+  await page.route('**/rest/v1/configuracion*', async (route) => {
+    await fulfillConfigRequest(route, {
+      anuncio: { mensaje: '', activo: false },
+      pedidos_habilitados: true,
+      catalogo_categorias: {
+        version: 1,
+        items: [
+          {
+            id: 'Infladora de globos',
+            label: 'Bombas e infladores',
+            description: 'Infla tus globos con menos esfuerzo.',
+            imageUrl: '/icons/icon-192.png',
+            visible: true,
+            order: 0,
+          },
+          {
+            id: 'Confeti',
+            label: 'Confeti',
+            description: '',
+            imageUrl: '',
+            visible: false,
+            order: 1,
+          },
+        ],
+      },
+    });
+  });
+
+  await page.goto('/catalogo');
+
+  if ((page.viewportSize()?.width || 0) < 1024) {
+    const categoryCards = page.getByTestId('category-card');
+    await expect(categoryCards.first()).toContainText('Bombas e infladores');
+    await expect(categoryCards.filter({ hasText: /^Confeti/ })).toHaveCount(0);
+  } else {
+    const firstCategory = page.locator('[data-category-filter="Infladora de globos"]');
+    await expect(firstCategory).toBeVisible();
+    await expect(firstCategory).toContainText('Bombas e infladores');
+    await expect(page.locator('[data-category-filter="Confeti"]')).toHaveCount(0);
+  }
+
+  await page.goto('/catalogo/infladora-de-globos');
+  await expect(page.getByText('Infla tus globos con menos esfuerzo.')).toBeVisible();
 });
 
 test('a 1000-product catalog renders progressively without limiting search', async ({ page }) => {

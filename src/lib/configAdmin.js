@@ -28,4 +28,8 @@ export async function setConfig(clave, valor) {
   );
   if (error) throwIfSessionError(error);
   if (error) throw new Error(`Error guardando config "${clave}": ${error.message}`);
+
+  window.dispatchEvent(new CustomEvent('fp:config-updated', {
+    detail: { clave, valor },
+  }));
 }

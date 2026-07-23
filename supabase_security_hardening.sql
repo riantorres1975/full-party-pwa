@@ -275,7 +275,7 @@ GRANT SELECT, INSERT, UPDATE ON TABLE public.pedidos TO authenticated;
 CREATE POLICY configuracion_public_select
   ON public.configuracion FOR SELECT
   TO anon, authenticated
-  USING (clave IN ('anuncio', 'pedidos_habilitados'));
+  USING (clave IN ('anuncio', 'pedidos_habilitados', 'catalogo_categorias'));
 
 CREATE POLICY configuracion_panel_select
   ON public.configuracion FOR SELECT
