@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'full-party';
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const APP_CACHE = `${CACHE_PREFIX}-app-${CACHE_VERSION}`;
 const ASSET_CACHE = `${CACHE_PREFIX}-assets-${CACHE_VERSION}`;
 const IMAGE_CACHE = `${CACHE_PREFIX}-images-${CACHE_VERSION}`;
@@ -36,6 +36,28 @@ async function precacheAppShell() {
   }
 }
 
+async function precachePublicRouteAssets() {
+  const response = await fetch('/public-route-assets.json', { cache: 'no-store' });
+  if (!response.ok) throw new Error('Public route asset manifest unavailable');
+
+  const payload = await response.json();
+  const assets = Array.isArray(payload?.assets)
+    ? payload.assets.filter((value) => typeof value === 'string' && value.startsWith('/assets/'))
+    : [];
+
+  if (assets.length === 0) throw new Error('Public route asset manifest is empty');
+
+  const cache = await caches.open(ASSET_CACHE);
+  await Promise.all(assets.map(async (url) => {
+    const assetResponse = await fetch(url);
+    if (!isCacheable(assetResponse)) {
+      throw new Error(`Unable to cache public route asset: ${url}`);
+    }
+    await cache.put(url, assetResponse);
+  }));
+  await trimCache(ASSET_CACHE, MAX_ASSET_CACHE);
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     Promise.all([
@@ -43,6 +65,7 @@ self.addEventListener('install', (event) => {
         Promise.all(PRECACHE_ASSETS.map((asset) => cache.add(asset).catch(() => null)))
       ),
       precacheAppShell().catch(() => null),
+      precachePublicRouteAssets(),
     ])
   );
   self.skipWaiting();

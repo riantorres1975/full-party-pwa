@@ -470,7 +470,6 @@ export default function LandingPage() {
             <Link
               to="/"
               className="flex items-center gap-3 min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
-              aria-label="Ir al inicio de Full Party"
             >
               <img
                 src="/icons/icon-192.png"
@@ -1255,7 +1254,7 @@ export default function LandingPage() {
           rel="noopener noreferrer"
           className="wa-pulse fixed bottom-6 right-6 z-50 flex items-center justify-center rounded-full font-black text-sm text-white lp-scale-hover w-14 h-14 p-0 sm:w-auto sm:h-auto sm:gap-2.5 sm:pl-4 sm:pr-5 sm:py-3.5"
           style={{ background: 'linear-gradient(135deg, #25d366, #1aab56)', boxShadow: '0 6px 20px rgba(37,211,102,0.5)' }}
-          aria-label="Contactar por WhatsApp"
+          aria-label="¿Dudas? ¡Escríbenos!"
           onClick={() => trackEvent('fab_whatsapp_click')}
         >
           <WaIcon size={20} />

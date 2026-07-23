@@ -1,5 +1,6 @@
 import { ArrowDownUp, ChevronDown, Heart, RotateCcw } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage';
+import ActiveCatalogFilters from './ActiveCatalogFilters';
 
 export function CatalogToolbarSkeleton() {
   return (
@@ -24,6 +25,8 @@ export default function CatalogToolbar({
   filterLabel,
   favoriteCount = 0,
   showFavorites = false,
+  activeChips = [],
+  onRemoveFilter,
   onToggleFavorites,
 }) {
   const { t } = useLanguage();
@@ -59,6 +62,8 @@ export default function CatalogToolbar({
           {t('catalog.clearView')}
         </button>
       </div>
+
+      <ActiveCatalogFilters chips={activeChips} onRemove={onRemoveFilter} />
 
       <button
         type="button"

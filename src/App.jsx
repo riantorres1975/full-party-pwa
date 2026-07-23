@@ -12,13 +12,10 @@ import BuscadorFiltros    from './components/BuscadorFiltros';
 import ProductGrid        from './components/ProductGrid';
 import ProductosSkeleton  from './components/ProductosSkeleton';
 import RedesSociales      from './components/RedesSociales';
-import SidebarFiltrosDesktop from './components/SidebarFiltrosDesktop';
 import CategoryGrid, { CategoryGridSkeleton } from './components/CategoryGrid';
 import BottomNav from './components/BottomNav';
 import CatalogToolbar, { CatalogToolbarSkeleton } from './components/CatalogToolbar';
-import ActiveCatalogFilters from './components/ActiveCatalogFilters';
 import CatalogBackToTop from './components/CatalogBackToTop';
-import { createFuzzySearchIndex } from './utils/fuzzySearch';
 import { buildProductAnalyticsParams, trackEvent } from './utils/analytics';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useProductPreferences } from './hooks/useProductPreferences';
@@ -28,6 +25,7 @@ const CarritoDrawer = lazy(() => import('./components/CarritoDrawer'));
 const CategoryBrowser = lazy(() => import('./components/CategoryBrowser'));
 const ModalFiltros = lazy(() => import('./components/ModalFiltros'));
 const RastreoPedido = lazy(() => import('./components/RastreoPedido'));
+const SidebarFiltrosDesktop = lazy(() => import('./components/SidebarFiltrosDesktop'));
 
 const PRODUCT_SEARCH_KEYS = [
   { name: 'nombre', weight: 0.5 },
@@ -36,6 +34,42 @@ const PRODUCT_SEARCH_KEYS = [
   { name: 'marca', weight: 0.1 },
   { name: 'tamano', weight: 0.05 },
 ];
+
+const BASIC_SEARCH_FIELDS = ['nombre', 'descripcion', 'categoria', 'marca', 'tamano'];
+
+function normalizeSearchValue(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('es');
+}
+
+function basicProductSearch(collection, query) {
+  const terms = normalizeSearchValue(query).trim().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return collection;
+
+  return collection.filter((product) => {
+    const searchableText = BASIC_SEARCH_FIELDS
+      .map((field) => normalizeSearchValue(product[field]))
+      .join(' ');
+    return terms.every((term) => searchableText.includes(term));
+  });
+}
+
+function useDesktopViewport() {
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches,
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    const updateViewport = () => setIsDesktop(mediaQuery.matches);
+    mediaQuery.addEventListener('change', updateViewport);
+    return () => mediaQuery.removeEventListener('change', updateViewport);
+  }, []);
+
+  return isDesktop;
+}
 
 export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   const location = useLocation();
@@ -69,6 +103,8 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   const [bottomNavActive, setBottomNavActive] = useState('inicio');
   const [sortOrder, setSortOrder] = useState('featured');
   const [showFavorites, setShowFavorites] = useState(false);
+  const [createSearchIndex, setCreateSearchIndex] = useState(null);
+  const isDesktopViewport = useDesktopViewport();
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const searchRef = useRef(null);
   const searchMetricRef = useRef('');
@@ -279,14 +315,36 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
       : activeFilters
   ), [activeFilters, categoryRoute]);
 
-  const productSearchIndex = useMemo(
-    () => createFuzzySearchIndex(
+  useEffect(() => {
+    if (!deferredSearchQuery.trim() || createSearchIndex) return undefined;
+
+    let active = true;
+    import('./utils/fuzzySearch')
+      .then(({ createFuzzySearchIndex }) => {
+        if (active) setCreateSearchIndex(() => createFuzzySearchIndex);
+      })
+      .catch(() => {
+        // Basic search remains available if the optional fuzzy-search chunk fails.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [createSearchIndex, deferredSearchQuery]);
+
+  const productSearchIndex = useMemo(() => {
+    if (!createSearchIndex) {
+      return {
+        search: (query) => basicProductSearch(productsMatchingFilters, query),
+      };
+    }
+
+    return createSearchIndex(
       productsMatchingFilters,
       PRODUCT_SEARCH_KEYS,
       { threshold: 0.38 },
-    ),
-    [productsMatchingFilters],
-  );
+    );
+  }, [createSearchIndex, productsMatchingFilters]);
 
   const filteredProducts = useMemo(() => {
     const matches = productSearchIndex.search(deferredSearchQuery);
@@ -602,12 +660,20 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
           <h1 className="sr-only">Catálogo de Artículos para Fiesta al Mayoreo | Full Party Uruapan</h1>
           <div className="mx-auto h-full w-full max-w-[1760px] px-3 lg:px-6 xl:px-8">
             <div className="lg:grid lg:h-full lg:grid-cols-[270px_minmax(0,1fr)] lg:items-start lg:gap-4 xl:grid-cols-[285px_minmax(0,1fr)] xl:gap-5 2xl:grid-cols-[300px_minmax(0,1fr)] 2xl:gap-6">
-              <SidebarFiltrosDesktop
-                filtros={displayedFilters}
-                toggleFiltro={toggleFilter}
-                limpiarFiltros={clearFilters}
-                totalFiltrosActivos={activeFilterCount}
-              />
+              {isDesktopViewport && (
+                <Suspense fallback={(
+                  <aside className="hidden lg:block lg:h-full lg:py-2" aria-hidden="true">
+                    <div className="h-full rounded-2xl border border-ink-100 bg-white/70 skeleton-shimmer" />
+                  </aside>
+                )}>
+                  <SidebarFiltrosDesktop
+                    filtros={displayedFilters}
+                    toggleFiltro={toggleFilter}
+                    limpiarFiltros={clearFilters}
+                    totalFiltrosActivos={activeFilterCount}
+                  />
+                </Suspense>
+              )}
 
               <section className="relative min-h-0 lg:flex lg:h-full lg:flex-col">
                 {catalogMetadataPending && !error && <CategoryGridSkeleton />}
@@ -651,6 +717,8 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     filterLabel={categoryRoute?.label}
                     favoriteCount={favoriteCount}
                     showFavorites={showFavorites}
+                    activeChips={activeCatalogChips}
+                    onRemoveFilter={removeCatalogChip}
                     onToggleFavorites={() => {
                       setShowFavorites((current) => !current);
                       trackEvent('catalog_filter', {
@@ -668,10 +736,6 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                   data-catalog-scroll-root
                   className="hide-scrollbar lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pb-16"
                 >
-                  <ActiveCatalogFilters
-                    chips={activeCatalogChips}
-                    onRemove={removeCatalogChip}
-                  />
                   {loading && <ProductosSkeleton cantidad={12} />}
 
                   {!loading && error && (

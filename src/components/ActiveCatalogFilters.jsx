@@ -4,11 +4,13 @@ import { useLanguage } from '../hooks/useLanguage';
 export default function ActiveCatalogFilters({ chips = [], onRemove }) {
   const { t } = useLanguage();
 
-  if (chips.length === 0) return null;
+  if (chips.length === 0) {
+    return <div className="hidden min-w-0 flex-1 lg:block" aria-hidden="true" />;
+  }
 
   return (
     <div
-      className="hide-scrollbar hidden items-center gap-2 overflow-x-auto px-1 py-2 lg:flex"
+      className="hide-scrollbar hidden min-w-0 flex-1 items-center gap-2 overflow-x-auto lg:flex"
       aria-label={t('catalog.activeFilters')}
     >
       <span

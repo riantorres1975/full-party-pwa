@@ -398,9 +398,12 @@
 }
 
 /* ── Clases de utilidad ────────────────────────────────────── */
+.btn-pink-pulse {
+  position: relative;
+}
+
 .btn-pink-pulse,
 .wa-pulse {
-  position: relative;
   isolation: isolate;
 }
 

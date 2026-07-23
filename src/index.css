@@ -241,6 +241,9 @@ body.theme-dark {
 }
 
 .lp-footer-link {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
   color: #b9a4e4;
   transition: color 0.2s ease;
 }

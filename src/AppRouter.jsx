@@ -1,13 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import LandingPage from './pages/LandingPage';
 import { LanguageProvider } from './hooks/useLanguage';
 import AppErrorBoundary from './components/ui/AppErrorBoundary';
 import { buildCatalogCategoryMeta } from './utils/catalogSeo';
 import { buildRouteStructuredData } from './utils/structuredData';
 import { trackPageView } from './utils/analytics';
-import PublicCatalogRoute from './routes/PublicCatalogRoute';
 
+const LandingPage       = lazy(() => import('./pages/LandingPage'));
+const PublicCatalogRoute = lazy(() => import('./routes/PublicCatalogRoute'));
 const AuthCatalogRoutes = lazy(() => import('./routes/AuthCatalogRoutes'));
 const Sucursales        = lazy(() => import('./pages/Sucursales'));
 const ComoFunciona      = lazy(() => import('./pages/ComoFunciona'));
@@ -18,6 +18,17 @@ const TrackingRoute     = lazy(() => import('./routes/TrackingRoute'));
 
 const Spinner = (
   <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--surface-primary)' }}>
+    <div className="w-8 h-8 rounded-full border-[3px] border-purple-700 border-t-purple-300 animate-spin" />
+  </div>
+);
+
+const CatalogSpinner = (
+  <div
+    className="fixed inset-0 flex items-center justify-center"
+    style={{ background: 'var(--surface-primary)' }}
+    aria-label="Cargando catálogo"
+    role="status"
+  >
     <div className="w-8 h-8 rounded-full border-[3px] border-purple-700 border-t-purple-300 animate-spin" />
   </div>
 );
@@ -341,11 +352,18 @@ export default function AppRouter() {
         <RouterEffects />
         <AppErrorBoundary>
           <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route
+            path="/"
+            element={
+              <Suspense fallback={Spinner}>
+                <LandingPage />
+              </Suspense>
+            }
+          />
           <Route
             path="/catalogo"
             element={
-              <Suspense fallback={Spinner}>
+              <Suspense fallback={CatalogSpinner}>
                 <PublicCatalogRoute />
               </Suspense>
             }
@@ -353,7 +371,7 @@ export default function AppRouter() {
           <Route
             path="/catalogo/:categoria"
             element={
-              <Suspense fallback={Spinner}>
+              <Suspense fallback={CatalogSpinner}>
                 <PublicCatalogRoute />
               </Suspense>
             }

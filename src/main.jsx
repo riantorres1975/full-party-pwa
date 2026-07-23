@@ -88,12 +88,21 @@ if (typeof window !== 'undefined' && !window.__fpInstallPromptListenerAttached) 
 if ('serviceWorker' in navigator) {
   if (import.meta.env.PROD) {
     window.addEventListener('load', () => {
+      const registerWhenIdle = window.requestIdleCallback
+        ? (callback) => window.requestIdleCallback(callback, { timeout: 2_000 })
+        : (callback) => window.setTimeout(callback, 0);
+
+      registerWhenIdle(() => {
       let hasControlledPage = Boolean(navigator.serviceWorker.controller);
 
       navigator.serviceWorker
         .register('/sw.js', { updateViaCache: 'none' })
         .then((registration) => {
           cacheLoadedAppAssets();
+          navigator.serviceWorker.ready.then(() => {
+            cacheLoadedAppAssets();
+            window.setTimeout(cacheLoadedAppAssets, 1_000);
+          }).catch(() => {});
 
           // Si hay un SW esperando, activarlo inmediatamente
           if (registration.waiting) {
@@ -143,6 +152,7 @@ if ('serviceWorker' in navigator) {
           }, 30 * 60 * 1000);
         })
         .catch(() => {});
+      });
     });
   } else {
     // Evita comportamiento offline del SW durante desarrollo local
