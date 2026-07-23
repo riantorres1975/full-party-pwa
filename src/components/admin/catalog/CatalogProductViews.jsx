@@ -4,7 +4,8 @@ import { SIMBOLO_MONEDA } from '../../../data/productos';
 import Toggle from '../../ui/Toggle';
 
 function ProductThumbnail({ url, name, sizeClass = 'w-14 h-14' }) {
-  const [failed, setFailed] = useState(false);
+  const [failedUrl, setFailedUrl] = useState('');
+  const failed = Boolean(url) && failedUrl === url;
 
   return (
     <div className={`${sizeClass} rounded-xl overflow-hidden flex-shrink-0 bg-admin-elevated border border-admin-border flex items-center justify-center`}>
@@ -12,10 +13,11 @@ function ProductThumbnail({ url, name, sizeClass = 'w-14 h-14' }) {
         <Package size={22} className="text-ink-300" />
       ) : (
         <img
+          key={url}
           src={url}
           alt={name || ''}
           className="w-full h-full object-contain"
-          onError={() => setFailed(true)}
+          onError={() => setFailedUrl(url)}
         />
       )}
     </div>
