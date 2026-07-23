@@ -24,9 +24,33 @@ function humanizeCategorySlug(slug) {
     .join(' ');
 }
 
+function normalizeText(value) {
+  return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
+}
+
+function truncateDescription(value, maxLength = 160) {
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function resolveImageUrl(value, siteUrl) {
+  const image = normalizeText(value);
+  if (!image) return '';
+
+  try {
+    return new URL(image, siteUrl).toString();
+  } catch {
+    return '';
+  }
+}
+
 export function buildCatalogCategoryMeta(
   pathname,
-  { siteName = DEFAULT_SITE_NAME, siteUrl = DEFAULT_SITE_URL } = {},
+  {
+    siteName = DEFAULT_SITE_NAME,
+    siteUrl = DEFAULT_SITE_URL,
+    category,
+  } = {},
 ) {
   const cleanPath = String(pathname || '').split(/[?#]/, 1)[0].replace(/\/+$/, '');
   if (!cleanPath.startsWith('/catalogo/')) return null;
@@ -38,13 +62,22 @@ export function buildCatalogCategoryMeta(
   const canonicalSlug = resolved?.canonicalSlug || slugifyCategory(rawSlug);
   if (!canonicalSlug) return null;
 
-  const label = resolved?.label || humanizeCategorySlug(canonicalSlug);
+  const label = normalizeText(category?.label)
+    || resolved?.label
+    || humanizeCategorySlug(canonicalSlug);
   const canonical = new URL(`/catalogo/${canonicalSlug}`, siteUrl).toString();
+  const customDescription = normalizeText(category?.description);
+  const description = customDescription
+    ? truncateDescription(customDescription)
+    : `Compra ${label.toLocaleLowerCase('es-MX')} al mayoreo y menudeo en ${siteName}. Consulta productos, precios y disponibilidad. Envíos a todo México y atención por WhatsApp.`;
 
   return {
     title: `${label} al Mayoreo en Uruapan | ${siteName}`,
-    description: `Compra ${label.toLocaleLowerCase('es-MX')} al mayoreo y menudeo en ${siteName}. Consulta productos, precios y disponibilidad. Envíos a todo México y atención por WhatsApp.`,
+    description,
     canonical,
     breadcrumbLabel: label,
+    name: label,
+    image: resolveImageUrl(category?.imageUrl, siteUrl),
+    count: Number.isInteger(category?.count) ? Math.max(0, category.count) : null,
   };
 }

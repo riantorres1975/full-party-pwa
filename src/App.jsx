@@ -22,6 +22,7 @@ import { buildProductAnalyticsParams, trackEvent } from './utils/analytics';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useProductPreferences } from './hooks/useProductPreferences';
 import { resolveCategoryRoute, slugifyCategory } from './utils/categoryRoutes';
+import { useCatalogSeo } from './contexts/CatalogSeoContext';
 
 const CarritoDrawer = lazy(() => import('./components/CarritoDrawer'));
 const CategoryBrowser = lazy(() => import('./components/CategoryBrowser'));
@@ -98,6 +99,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   } = useCarrito();
 
   const toast = useToast();
+  const { setCategoryPresentation } = useCatalogSeo();
   const { t } = useLanguage();
   const isOnline = useOnlineStatus();
   const {
@@ -340,6 +342,28 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   const activeCategoryLabel = activeCategoryMeta?.hasCustomLabel
     ? activeCategoryMeta.label
     : categoryRoute?.label || activeCategoryMeta?.label || '';
+
+  useEffect(() => {
+    if (!categoryRoute || !activeCategoryMeta) {
+      setCategoryPresentation(null);
+      return;
+    }
+
+    setCategoryPresentation({
+      pathname: location.pathname,
+      id: activeCategoryMeta.id,
+      label: activeCategoryLabel,
+      description: activeCategoryMeta.description || '',
+      imageUrl: activeCategoryMeta.imagen || '',
+      count: activeCategoryMeta.count,
+    });
+  }, [
+    activeCategoryLabel,
+    activeCategoryMeta,
+    categoryRoute,
+    location.pathname,
+    setCategoryPresentation,
+  ]);
 
   const activeCatalogChips = useMemo(() => {
     const chips = [];

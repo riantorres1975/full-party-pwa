@@ -21,7 +21,7 @@ function absoluteUrl(pathname, siteUrl) {
   return new URL(pathname, siteUrl).toString();
 }
 
-function buildBreadcrumbList(pathname, { siteName, siteUrl }) {
+function buildBreadcrumbList(pathname, { siteName, siteUrl, category }) {
   const path = cleanPathname(pathname);
   if (path === '/' || path.startsWith('/admin')) return null;
 
@@ -32,7 +32,7 @@ function buildBreadcrumbList(pathname, { siteName, siteUrl }) {
       { name: PUBLIC_PAGE_LABELS[path], path },
     ];
   } else {
-    const categoryMeta = buildCatalogCategoryMeta(path, { siteName, siteUrl });
+    const categoryMeta = buildCatalogCategoryMeta(path, { siteName, siteUrl, category });
     if (categoryMeta) {
       const canonicalPath = new URL(categoryMeta.canonical).pathname;
       entries = [
@@ -53,6 +53,37 @@ function buildBreadcrumbList(pathname, { siteName, siteUrl }) {
       name,
       item: absoluteUrl(entryPath, siteUrl),
     })),
+  };
+}
+
+function buildCategoryCollectionPage(pathname, { siteName, siteUrl, category }) {
+  const categoryMeta = buildCatalogCategoryMeta(pathname, {
+    siteName,
+    siteUrl,
+    category,
+  });
+  if (!categoryMeta) return null;
+
+  return {
+    '@type': 'CollectionPage',
+    '@id': `${categoryMeta.canonical}#collection`,
+    name: categoryMeta.name,
+    description: categoryMeta.description,
+    url: categoryMeta.canonical,
+    inLanguage: 'es-MX',
+    isPartOf: { '@id': `${siteUrl}/#website` },
+    ...(categoryMeta.image ? {
+      primaryImageOfPage: {
+        '@type': 'ImageObject',
+        url: categoryMeta.image,
+      },
+    } : {}),
+    ...(categoryMeta.count !== null ? {
+      mainEntity: {
+        '@type': 'ItemList',
+        numberOfItems: categoryMeta.count,
+      },
+    } : {}),
   };
 }
 
@@ -92,12 +123,20 @@ function buildBranchStore(branch, siteUrl) {
 
 export function buildRouteStructuredData(
   pathname,
-  { siteName = DEFAULT_SITE_NAME, siteUrl = DEFAULT_SITE_URL } = {},
+  {
+    siteName = DEFAULT_SITE_NAME,
+    siteUrl = DEFAULT_SITE_URL,
+    category,
+  } = {},
 ) {
   const path = cleanPathname(pathname);
   const graph = [];
-  const breadcrumb = buildBreadcrumbList(path, { siteName, siteUrl });
+  const seoOptions = { siteName, siteUrl, category };
+  const breadcrumb = buildBreadcrumbList(path, seoOptions);
   if (breadcrumb) graph.push(breadcrumb);
+
+  const categoryPage = buildCategoryCollectionPage(path, seoOptions);
+  if (categoryPage) graph.push(categoryPage);
 
   if (path === '/sucursales') {
     graph.push(...SUCURSALES.map((branch) => buildBranchStore(branch, siteUrl)));

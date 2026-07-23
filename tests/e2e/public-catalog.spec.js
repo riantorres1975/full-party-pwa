@@ -363,6 +363,28 @@ test('category presentation controls labels, order and visibility', async ({ pag
 
   await page.goto('/catalogo/infladora-de-globos');
   await expect(page.getByText('Infla tus globos con menos esfuerzo.')).toBeVisible();
+  await expect(page).toHaveTitle(
+    'Bombas e infladores al Mayoreo en Uruapan | Full Party Uruapan',
+  );
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    'content',
+    'Infla tus globos con menos esfuerzo.',
+  );
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    'content',
+    'https://www.fullpartyuruapan.com.mx/icons/icon-192.png',
+  );
+  const categorySchema = JSON.parse(await page.locator('#route-jsonld').textContent());
+  const collection = categorySchema['@graph'].find(
+    ({ '@type': type }) => type === 'CollectionPage',
+  );
+  expect(collection).toMatchObject({
+    name: 'Bombas e infladores',
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: 1,
+    },
+  });
 });
 
 test('a 1000-product catalog renders progressively without limiting search', async ({ page }) => {

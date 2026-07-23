@@ -33,3 +33,22 @@ test('does not publish route schemas on private or unknown pages', () => {
   assert.equal(buildRouteStructuredData('/admin/catalogo'), null);
   assert.equal(buildRouteStructuredData('/pagina-inexistente'), null);
 });
+
+test('describes configured catalog categories as collection pages', () => {
+  const data = buildRouteStructuredData('/catalogo/infladora-de-globos', {
+    category: {
+      label: 'Bombas e infladores',
+      description: 'Infla tus globos con menos esfuerzo.',
+      imageUrl: '/productos/bomba.webp',
+      count: 5,
+    },
+  });
+  const collection = data['@graph'].find(({ '@type': type }) => type === 'CollectionPage');
+
+  assert.equal(collection.name, 'Bombas e infladores');
+  assert.equal(collection.mainEntity.numberOfItems, 5);
+  assert.equal(
+    collection.primaryImageOfPage.url,
+    'https://www.fullpartyuruapan.com.mx/productos/bomba.webp',
+  );
+});

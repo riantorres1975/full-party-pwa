@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { LanguageProvider } from './hooks/useLanguage';
+import { CatalogSeoProvider, useCatalogSeo } from './contexts/CatalogSeoContext';
 import AppErrorBoundary from './components/ui/AppErrorBoundary';
 import { buildCatalogCategoryMeta } from './utils/catalogSeo';
 import { buildRouteStructuredData } from './utils/structuredData';
@@ -35,6 +36,7 @@ const CatalogSpinner = (
 
 const SITE_NAME   = 'Full Party Uruapan';
 const SITE_URL    = 'https://www.fullpartyuruapan.com.mx';
+const DEFAULT_SOCIAL_IMAGE = `${SITE_URL}/og-image.jpg`;
 const PUBLIC_ROBOTS = 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
 
 const PAGE_META = {
@@ -162,7 +164,13 @@ const PAGE_META = {
   },
 };
 
-function setPageMeta({ title, description, canonical, robots = PUBLIC_ROBOTS }) {
+function setPageMeta({
+  title,
+  description,
+  canonical,
+  image = DEFAULT_SOCIAL_IMAGE,
+  robots = PUBLIC_ROBOTS,
+}) {
   if (title) document.title = title;
 
   const mDesc = document.querySelector('meta[name="description"]');
@@ -180,11 +188,17 @@ function setPageMeta({ title, description, canonical, robots = PUBLIC_ROBOTS }) 
   const ogUrl = document.querySelector('meta[property="og:url"]');
   if (ogUrl) ogUrl.setAttribute('content', canonical || '');
 
+  const ogImage = document.querySelector('meta[property="og:image"]');
+  if (ogImage) ogImage.setAttribute('content', image);
+
   const twTitle = document.querySelector('meta[name="twitter:title"]');
   if (twTitle && title) twTitle.setAttribute('content', title);
 
   const twDesc = document.querySelector('meta[name="twitter:description"]');
   if (twDesc) twDesc.setAttribute('content', description || '');
+
+  const twImage = document.querySelector('meta[name="twitter:image"]');
+  if (twImage) twImage.setAttribute('content', image);
 
   let canonicalEl = document.querySelector('link[rel="canonical"]');
   if (canonical && !canonicalEl) {
@@ -209,6 +223,7 @@ function setPageMeta({ title, description, canonical, robots = PUBLIC_ROBOTS }) 
 function RouterEffects() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { categoryPresentation } = useCatalogSeo();
   const esRutaLanding = location.pathname === '/';
   const trackedPathRef = useRef(location.pathname);
 
@@ -255,11 +270,17 @@ function RouterEffects() {
       if (robotsMeta) robotsMeta.setAttribute('content', PUBLIC_ROBOTS);
       return;
     }
+    const activeCategory = categoryPresentation?.pathname === path
+      ? categoryPresentation
+      : null;
     const dynamicCatalogMeta = buildCatalogCategoryMeta(path, {
       siteName: SITE_NAME,
       siteUrl: SITE_URL,
+      category: activeCategory,
     });
+    if (new URLSearchParams(location.search).has('producto')) return;
     const meta =
+      (activeCategory ? dynamicCatalogMeta : null) ??
       PAGE_META[path] ??
       (path.startsWith('/admin')   ? PAGE_META['/admin']   : null) ??
       (path.startsWith('/rastrear')? PAGE_META['/rastrear']: null) ??
@@ -267,7 +288,7 @@ function RouterEffects() {
       (path.startsWith('/catalogo')? PAGE_META['/catalogo']: null) ??
       PAGE_META['/'];
     setPageMeta(meta);
-  }, [location.pathname]);
+  }, [categoryPresentation, location.pathname, location.search]);
 
   useEffect(() => {
     if (trackedPathRef.current === location.pathname) return;
@@ -276,9 +297,13 @@ function RouterEffects() {
   }, [location.pathname]);
 
   useEffect(() => {
+    const activeCategory = categoryPresentation?.pathname === location.pathname
+      ? categoryPresentation
+      : null;
     const data = buildRouteStructuredData(location.pathname, {
       siteName: SITE_NAME,
       siteUrl: SITE_URL,
+      category: activeCategory,
     });
     let script = document.getElementById('route-jsonld');
 
@@ -294,7 +319,7 @@ function RouterEffects() {
       document.head.appendChild(script);
     }
     script.textContent = JSON.stringify(data).replace(/</g, '\\u003c');
-  }, [location.pathname]);
+  }, [categoryPresentation, location.pathname]);
 
   useEffect(() => {
     document.body.classList.toggle('landing-page', esRutaLanding);
@@ -349,9 +374,10 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <LanguageProvider>
-        <RouterEffects />
-        <AppErrorBoundary>
-          <Routes>
+        <CatalogSeoProvider>
+          <RouterEffects />
+          <AppErrorBoundary>
+            <Routes>
           <Route
             path="/"
             element={
@@ -433,8 +459,9 @@ export default function AppRouter() {
             }
           />
           <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </AppErrorBoundary>
+            </Routes>
+          </AppErrorBoundary>
+        </CatalogSeoProvider>
       </LanguageProvider>
     </BrowserRouter>
   );

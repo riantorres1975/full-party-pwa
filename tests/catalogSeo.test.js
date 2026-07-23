@@ -27,3 +27,25 @@ test('ignores catalog root and nested paths', () => {
   assert.equal(buildCatalogCategoryMeta('/catalogo'), null);
   assert.equal(buildCatalogCategoryMeta('/catalogo/globos/azules'), null);
 });
+
+test('uses configured category presentation in public metadata', () => {
+  const meta = buildCatalogCategoryMeta('/catalogo/infladora-de-globos', {
+    category: {
+      label: 'Bombas e infladores',
+      description: 'Infla tus globos con menos esfuerzo.',
+      imageUrl: '/productos/bomba.webp',
+      count: 5,
+    },
+  });
+
+  assert.equal(
+    meta.title,
+    'Bombas e infladores al Mayoreo en Uruapan | Full Party Uruapan',
+  );
+  assert.equal(meta.description, 'Infla tus globos con menos esfuerzo.');
+  assert.equal(
+    meta.image,
+    'https://www.fullpartyuruapan.com.mx/productos/bomba.webp',
+  );
+  assert.equal(meta.count, 5);
+});
