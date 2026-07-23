@@ -33,6 +33,7 @@ import { usePermission } from '../hooks/usePermission';
 import { fuzzySearch } from '../utils/fuzzySearch';
 import {
   analyzeCatalogQuality,
+  buildCatalogCorrectionQueue,
   getPublishingBlockers,
 } from '../utils/catalogQuality';
 import { CatalogCards, CatalogTable } from './admin/catalog/CatalogProductViews';
@@ -77,6 +78,7 @@ export default function AdminCatalogo() {
   const [procesandoLote, setProcesandoLote] = useState(false);
   const [showMobileMore, setShowMobileMore] = useState(false);
   const [editando, setEditando] = useState(null);
+  const [colaCorreccionIds, setColaCorreccionIds] = useState([]);
   const [toggleId, setToggleId] = useState(null);
   const [eliminandoId, setEliminandoId] = useState(null);
   const [limiteVisible, setLimiteVisible] = useState(ADMIN_RENDER_BATCH_SIZE);
@@ -390,6 +392,13 @@ export default function AdminCatalogo() {
   }, [productos]);
 
   const calidadCatalogo = useMemo(() => analyzeCatalogQuality(productos), [productos]);
+  const colaCorreccion = useMemo(
+    () => buildCatalogCorrectionQueue(productos, calidadCatalogo.byId),
+    [productos, calidadCatalogo],
+  );
+  const indiceCorreccionActual = editando
+    ? colaCorreccionIds.indexOf(String(editando.id))
+    : -1;
 
   const todasCategorias = useMemo(() => {
     const seen = new Set();
@@ -480,6 +489,38 @@ export default function AdminCatalogo() {
   function limpiarFiltros() {
     setBusquedaInput('');
     setFiltroActivo('todos');
+  }
+
+  function abrirSiguienteCorreccion() {
+    if (colaCorreccion.length === 0) return;
+    setColaCorreccionIds(colaCorreccion.map((product) => String(product.id)));
+    setEditando(colaCorreccion[0]);
+  }
+
+  function handleProductoGuardado(saved, { continueToNext = false } = {}) {
+    const currentIndex = colaCorreccionIds.indexOf(String(saved.id));
+    const nextId = currentIndex >= 0 ? colaCorreccionIds[currentIndex + 1] : null;
+    const nextProduct = nextId
+      ? productos.find((product) => String(product.id) === nextId)
+      : null;
+
+    setProductos((current) => current.map((product) => (
+      product.id === saved.id ? { ...product, ...saved } : product
+    )));
+
+    if (continueToNext && nextProduct) {
+      setEditando(nextProduct);
+      toast.success(t('admin.catalog.qualitySavedNext'));
+      return;
+    }
+
+    setEditando(null);
+    setColaCorreccionIds([]);
+    toast.success(
+      continueToNext
+        ? t('admin.catalog.qualityQueueFinished')
+        : t('admin.catalog.qualitySaved'),
+    );
   }
 
   function toggleSeleccion(id) {
@@ -1109,6 +1150,9 @@ export default function AdminCatalogo() {
             analysis={calidadCatalogo}
             activeFilter={filtroActivo}
             onSelectFilter={setFiltroActivo}
+            correctionCount={colaCorreccion.length}
+            canEdit={canEdit}
+            onStartCorrection={abrirSiguienteCorreccion}
             t={t}
           />
         </div>
@@ -1523,12 +1567,20 @@ export default function AdminCatalogo() {
 
       {editando && (
         <ModalEditarProducto
+          key={editando.id}
           producto={editando}
-          onClose={() => setEditando(null)}
-          onGuardado={() => {
-            fetchProductos();
+          quality={calidadCatalogo.byId.get(String(editando.id))}
+          correctionPosition={indiceCorreccionActual + 1}
+          correctionTotal={indiceCorreccionActual >= 0 ? colaCorreccionIds.length : 0}
+          hasNextCorrection={
+            indiceCorreccionActual >= 0
+            && indiceCorreccionActual < colaCorreccionIds.length - 1
+          }
+          onClose={() => {
             setEditando(null);
+            setColaCorreccionIds([]);
           }}
+          onGuardado={handleProductoGuardado}
         />
       )}
       <ConfirmModal

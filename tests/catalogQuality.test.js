@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   analyzeCatalogQuality,
+  buildCatalogCorrectionQueue,
   CATALOG_QUALITY_ISSUES,
   getPublishingBlockers,
   isPlaceholderProductImage,
@@ -100,4 +101,51 @@ test('analyzes a 1000-product catalog without truncating results', () => {
   assert.equal(quality.summary.completeCount, 1000);
   assert.equal(quality.summary.duplicateCount, 0);
   assert.equal(quality.byId.size, 1000);
+});
+
+test('prioritizes blocked products in the correction queue', () => {
+  const products = [
+    completeProduct({
+      id: 'duplicate',
+      nombre: 'Producto completo',
+      imagen_url: 'https://cdn.example.com/duplicate.webp',
+    }),
+    completeProduct({
+      id: 'blocked-two',
+      nombre: 'Sin datos',
+      descripcion: '',
+      categoria: '',
+      marca: '',
+      imagen_url: 'https://cdn.example.com/two.webp',
+    }),
+    completeProduct({
+      id: 'blocked-one',
+      nombre: 'Sin descripción',
+      descripcion: '',
+      imagen_url: 'https://cdn.example.com/one.webp',
+    }),
+    completeProduct({
+      id: 'complete',
+      nombre: 'Producto completo',
+      imagen_url: 'https://cdn.example.com/other.webp',
+    }),
+  ];
+  const analysis = analyzeCatalogQuality(products);
+  const queue = buildCatalogCorrectionQueue(products, analysis.byId);
+
+  assert.deepEqual(queue.slice(0, 2).map((product) => product.id), [
+    'blocked-two',
+    'blocked-one',
+  ]);
+  assert.deepEqual(
+    new Set(queue.slice(2).map((product) => product.id)),
+    new Set(['complete', 'duplicate']),
+  );
+});
+
+test('returns an empty correction queue for a healthy catalog', () => {
+  const products = [completeProduct()];
+  const analysis = analyzeCatalogQuality(products);
+
+  assert.deepEqual(buildCatalogCorrectionQueue(products, analysis.byId), []);
 });

@@ -1,4 +1,12 @@
-import { AlertTriangle, CheckCircle2, Copy, ImageOff, ShieldAlert, Sparkles } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  Copy,
+  ImageOff,
+  ShieldAlert,
+  Sparkles,
+} from 'lucide-react';
 import { CATALOG_QUALITY_ISSUES } from '../../../utils/catalogQuality';
 
 const ISSUE_FILTERS = [
@@ -49,6 +57,9 @@ export default function CatalogQualityPanel({
   analysis,
   activeFilter,
   onSelectFilter,
+  correctionCount = 0,
+  canEdit = false,
+  onStartCorrection,
   t,
 }) {
   const { summary, issueCounts } = analysis;
@@ -61,7 +72,7 @@ export default function CatalogQualityPanel({
       className="rounded-2xl border border-admin-border bg-admin-card p-3 sm:p-4"
       aria-labelledby="catalog-quality-title"
     >
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
             <Sparkles size={17} className="text-amber-500" aria-hidden="true" />
@@ -73,9 +84,21 @@ export default function CatalogQualityPanel({
             {t('admin.catalog.qualitySubtitle', { count: summary.total })}
           </p>
         </div>
-        <p className="text-xs font-body font-black text-admin-text-secondary">
-          {t('admin.catalog.qualityAverage', { score: summary.averageScore })}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-xs font-body font-black text-admin-text-secondary">
+            {t('admin.catalog.qualityAverage', { score: summary.averageScore })}
+          </p>
+          {canEdit && correctionCount > 0 && (
+            <button
+              type="button"
+              onClick={onStartCorrection}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-fiesta-magenta px-3 py-2 text-xs font-body font-black text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
+            >
+              {t('admin.catalog.qualityFixNext')}
+              <ArrowRight size={14} aria-hidden="true" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4">

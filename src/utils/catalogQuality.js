@@ -181,3 +181,31 @@ export function analyzeCatalogQuality(products = []) {
     },
   };
 }
+
+export function buildCatalogCorrectionQueue(products = [], qualityById = new Map()) {
+  const safeProducts = Array.isArray(products) ? products.filter(Boolean) : [];
+
+  return safeProducts
+    .filter((product) => {
+      const quality = qualityById.get(String(product.id));
+      return quality && (!quality.isComplete || quality.hasDuplicates);
+    })
+    .sort((productA, productB) => {
+      const qualityA = qualityById.get(String(productA.id));
+      const qualityB = qualityById.get(String(productB.id));
+      const blockerDifference = qualityB.blockers.length - qualityA.blockers.length;
+      if (blockerDifference !== 0) return blockerDifference;
+
+      const issueDifference = qualityB.issues.length - qualityA.issues.length;
+      if (issueDifference !== 0) return issueDifference;
+
+      const scoreDifference = qualityA.score - qualityB.score;
+      if (scoreDifference !== 0) return scoreDifference;
+
+      return String(productA.nombre || '').localeCompare(
+        String(productB.nombre || ''),
+        'es',
+        { sensitivity: 'base' },
+      );
+    });
+}

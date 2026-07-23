@@ -1,4 +1,4 @@
-import { X, ImagePlus, Link2, Loader2 } from 'lucide-react';
+import { AlertTriangle, ArrowRight, X, ImagePlus, Link2, Loader2 } from 'lucide-react';
 import {
   categorias,
   marcas,
@@ -25,7 +25,15 @@ const inputBase =
   'text-ink-900 placeholder:text-ink-300 outline-none border-2 border-ink-200 ' +
   'focus:border-fiesta-magenta transition-colors';
 
-export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
+export default function ModalEditarProducto({
+  producto,
+  quality,
+  correctionPosition = 0,
+  correctionTotal = 0,
+  hasNextCorrection = false,
+  onClose,
+  onGuardado,
+}) {
   const { t } = useLanguage();
   const {
     nombre, setNombre, descripcion, setDescripcion, precio, setPrecio,
@@ -46,17 +54,18 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    const continueToNext = e.nativeEvent.submitter?.value === 'next';
     setError('');
     setEnviando(true);
     try {
       const payload = await buildPayload();
-      await actualizarProducto(producto.id, payload);
+      const saved = await actualizarProducto(producto.id, payload);
 
       if (payload.categoria) registrarCategoria(payload.categoria);
       if (payload.marca) registrarMarca(payload.marca);
       if (payload.tamano) registrarTamano(payload.tamano);
 
-      onGuardado?.();
+      onGuardado?.(saved, { continueToNext });
     } catch (err) {
       setError(err.message || t('admin.catalog.saveError'));
     } finally {
@@ -77,9 +86,19 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
         style={{ boxShadow: '0 24px 60px rgba(26, 7, 51, 0.25)' }}
       >
         <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-ink-100 bg-white rounded-t-2xl sm:rounded-t-3xl pt-[max(env(safe-area-inset-top),0.75rem)]">
-          <h2 id="modal-editar-titulo" className="font-display text-base text-ink-900 pl-1">
-            {t('admin.edit.title')}
-          </h2>
+          <div className="min-w-0 pl-1">
+            <h2 id="modal-editar-titulo" className="font-display text-base text-ink-900">
+              {t('admin.edit.title')}
+            </h2>
+            {correctionTotal > 0 && (
+              <p className="mt-0.5 text-[10px] font-body font-black uppercase tracking-wide text-fiesta-magenta">
+                {t('admin.catalog.qualityCorrectionProgress', {
+                  current: correctionPosition,
+                  total: correctionTotal,
+                })}
+              </p>
+            )}
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -91,6 +110,36 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 pb-[max(env(safe-area-inset-bottom),1.25rem)]">
+          {quality && quality.issues.length > 0 && (
+            <div className={`rounded-2xl border p-3 ${
+              quality.isReadyToPublish
+                ? 'border-amber-200 bg-amber-50'
+                : 'border-rose-200 bg-rose-50'
+            }`}>
+              <div className="flex items-start gap-2">
+                <AlertTriangle
+                  size={17}
+                  className={quality.isReadyToPublish ? 'text-amber-600' : 'text-rose-600'}
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <p className="text-xs font-body font-black text-ink-800">
+                    {t('admin.catalog.qualityCorrectionTitle')}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {quality.issues.map((issue) => (
+                      <span
+                        key={issue}
+                        className="rounded-full border border-black/10 bg-white/75 px-2 py-1 text-[10px] font-body font-black text-ink-700"
+                      >
+                        {t(`admin.catalog.qualityIssue.${issue}`)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           <div>
             <label className="block text-xs font-body font-black text-ink-600 mb-1.5 pl-1">
               {t('admin.form.productName')}
@@ -362,7 +411,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
             <GestorPrecios precios={preciosMayoreo} setPrecios={setPreciosMayoreo} />
           </div>
 
-          <div className="flex gap-3 pt-1">
+          <div className="grid grid-cols-2 gap-3 pt-1">
             <button
               type="button"
               onClick={onClose}
@@ -373,6 +422,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
             </button>
             <button
               type="submit"
+              value="save"
               disabled={enviando}
               className="flex-1 py-3 rounded-2xl font-body font-black text-sm text-white
                          disabled:opacity-60 flex items-center justify-center gap-2"
@@ -384,6 +434,19 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado }) {
               {enviando ? <Loader2 size={18} className="animate-spin" /> : null}
               {enviando ? t('admin.catalog.saving') : t('admin.edit.saveChanges')}
             </button>
+            {correctionTotal > 0 && (
+              <button
+                type="submit"
+                value="next"
+                disabled={enviando}
+                className="col-span-2 inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-fiesta-magenta bg-fiesta-magenta/5 py-3 text-sm font-body font-black text-fiesta-magenta transition-colors hover:bg-fiesta-magenta/10 disabled:opacity-60"
+              >
+                {hasNextCorrection
+                  ? t('admin.catalog.qualitySaveAndNext')
+                  : t('admin.catalog.qualitySaveAndFinish')}
+                {hasNextCorrection && <ArrowRight size={17} aria-hidden="true" />}
+              </button>
+            )}
           </div>
         </form>
       </div>
