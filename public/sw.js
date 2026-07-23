@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'full-party';
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const APP_CACHE = `${CACHE_PREFIX}-app-${CACHE_VERSION}`;
 const ASSET_CACHE = `${CACHE_PREFIX}-assets-${CACHE_VERSION}`;
 const IMAGE_CACHE = `${CACHE_PREFIX}-images-${CACHE_VERSION}`;
@@ -106,6 +106,15 @@ function isImageRequest(request) {
     /\.(jpe?g|png|gif|webp|avif|svg|ico)(\?|$)/i.test(request.url);
 }
 
+function isImmutableProductImage(request) {
+  try {
+    const url = new URL(request.url);
+    return url.pathname.includes('/storage/v1/object/public/productos-imagenes/');
+  } catch {
+    return false;
+  }
+}
+
 function isHashedAsset(url) {
   return url.origin === self.location.origin && url.pathname.startsWith('/assets/');
 }
@@ -176,6 +185,9 @@ async function fetchAndCacheImage(request) {
 async function handleImage(request, event) {
   const cached = await caches.match(request, { ignoreVary: true });
   if (cached) {
+    // Admin uploads use UUID paths and are never overwritten.
+    if (isImmutableProductImage(request)) return cached;
+
     event.waitUntil(fetchAndCacheImage(request));
     return cached;
   }
