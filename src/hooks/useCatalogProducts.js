@@ -5,6 +5,7 @@ import {
   PUBLIC_PRODUCTS_PAGE_SIZE,
 } from '../lib/productosPublicos';
 import { getPublicRestClient } from '../lib/supabasePublicRest';
+import { trackCatalogDataRequest } from '../utils/analytics';
 import { deferSupabase } from '../utils/deferSupabase';
 
 const CATALOG_CACHE_KEY = 'fp_catalog_pages_v2';
@@ -49,6 +50,18 @@ function isDefaultQuery(query) {
     && query.maxPrice === null
     && query.ids.length === 0
     && query.sortOrder === 'featured';
+}
+
+function hasActiveFilters(query) {
+  return Boolean(
+    query.search
+    || query.categories.length
+    || query.brands.length
+    || query.sizes.length
+    || query.minPrice !== null
+    || query.maxPrice !== null
+    || query.ids.length,
+  );
 }
 
 function readCatalogCache() {
@@ -129,11 +142,21 @@ export function useCatalogProducts(queryInput, {
       return currentProducts;
     }
 
+    const startedAt = Date.now();
     const result = await fetchPublicProductPage(getPublicRestClient(), {
       limit: 1,
       filters: { ids: [id] },
       signal,
     });
+    if (!signal?.aborted) {
+      trackCatalogDataRequest({
+        requestType: 'shared_product',
+        status: result.error ? 'error' : 'success',
+        durationMs: Date.now() - startedAt,
+        resultCount: result.data.length,
+        hasFilters: true,
+      });
+    }
     if (result.error || result.data.length === 0) return currentProducts;
     return appendUnique(currentProducts, result.data);
   }, []);
@@ -165,6 +188,7 @@ export function useCatalogProducts(queryInput, {
     setError(null);
 
     async function loadInitialPage() {
+      const startedAt = Date.now();
       const result = await fetchPublicProductPage(getPublicRestClient(), {
         limit: PUBLIC_PRODUCTS_INITIAL_PAGE_SIZE,
         filters: currentQuery,
@@ -174,6 +198,13 @@ export function useCatalogProducts(queryInput, {
 
       if (controller.signal.aborted || requestVersionRef.current !== version) return;
       if (result.error) {
+        trackCatalogDataRequest({
+          requestType: 'initial',
+          status: 'error',
+          durationMs: Date.now() - startedAt,
+          hasFilters: hasActiveFilters(currentQuery),
+          usingCache: hasExistingProducts,
+        });
         if (!hasExistingProducts) {
           setError('Error al cargar productos. Intenta de nuevo mas tarde.');
         } else {
@@ -190,6 +221,14 @@ export function useCatalogProducts(queryInput, {
       extraProductIdRef.current = nextProducts.length > result.data.length
         ? String(requiredProductIdRef.current || '')
         : null;
+      trackCatalogDataRequest({
+        requestType: 'initial',
+        status: 'success',
+        durationMs: Date.now() - startedAt,
+        resultCount: result.data.length,
+        hasFilters: hasActiveFilters(currentQuery),
+        usingCache: hasExistingProducts,
+      });
 
       startTransition(() => {
         setProductos(nextProducts);
@@ -204,6 +243,12 @@ export function useCatalogProducts(queryInput, {
 
     loadInitialPage().catch(() => {
       if (controller.signal.aborted || requestVersionRef.current !== version) return;
+      trackCatalogDataRequest({
+        requestType: 'initial',
+        status: 'error',
+        hasFilters: hasActiveFilters(currentQuery),
+        usingCache: hasExistingProducts,
+      });
       setError('Error al cargar productos. Intenta de nuevo mas tarde.');
       setLoading(false);
       setRefreshing(false);
@@ -221,6 +266,7 @@ export function useCatalogProducts(queryInput, {
     const offset = productsRef.current.filter(
       (product) => String(product.id) !== extraProductIdRef.current,
     ).length;
+    const startedAt = Date.now();
 
     try {
       const result = await fetchPublicProductPage(getPublicRestClient(), {
@@ -230,7 +276,15 @@ export function useCatalogProducts(queryInput, {
         sortOrder: currentQuery.sortOrder,
         includeCount: false,
       });
-      if (requestVersionRef.current !== version || result.error) return;
+      if (requestVersionRef.current !== version) return;
+      trackCatalogDataRequest({
+        requestType: 'load_more',
+        status: result.error ? 'error' : 'success',
+        durationMs: Date.now() - startedAt,
+        resultCount: result.data.length,
+        hasFilters: hasActiveFilters(currentQuery),
+      });
+      if (result.error) return;
 
       const next = appendUnique(productsRef.current, result.data);
       productsRef.current = next;

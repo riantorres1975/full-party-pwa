@@ -6,6 +6,7 @@ import {
   normalizePublicAnalyticsPath,
   sanitizeAnalyticsParams,
   trackAppError,
+  trackCatalogDataRequest,
   trackEvent,
   trackPageView,
 } from '../src/utils/analytics.js';
@@ -67,6 +68,32 @@ test('builds anonymous product parameters', () => {
       source: 'catalog',
     },
   );
+});
+
+test('tracks anonymous catalog data health metrics', () => {
+  const calls = [];
+  const target = { gtag: (...args) => calls.push(args) };
+
+  assert.equal(trackCatalogDataRequest({
+    requestType: 'load_more',
+    status: 'success',
+    durationMs: 148.7,
+    resultCount: 48,
+    hasFilters: true,
+    usingCache: false,
+  }, target), true);
+  assert.deepEqual(calls, [[
+    'event',
+    'catalog_data_request',
+    {
+      request_type: 'load_more',
+      request_status: 'success',
+      duration_ms: 149,
+      result_count: 48,
+      has_filters: true,
+      using_cache: false,
+    },
+  ]]);
 });
 
 test('classifies and reports errors without sending their message', () => {

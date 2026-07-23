@@ -5,6 +5,7 @@ import {
   fetchPublicCatalogFacets,
 } from '../lib/productosPublicos';
 import { getPublicRestClient } from '../lib/supabasePublicRest';
+import { trackCatalogDataRequest } from '../utils/analytics';
 
 const FACETS_CACHE_KEY = 'fp_catalog_facets_v1';
 const FACETS_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -129,10 +130,20 @@ export function useCatalogFacets() {
 
     async function loadFacets() {
       const client = getPublicRestClient();
+      const startedAt = Date.now();
       const result = await fetchPublicCatalogFacets(client, { signal: controller.signal });
       let nextRows = result.data;
 
       if (result.error) {
+        if (!controller.signal.aborted) {
+          trackCatalogDataRequest({
+            requestType: 'facets',
+            status: 'error',
+            durationMs: Date.now() - startedAt,
+            usingCache: rows.length > 0,
+          });
+        }
+        const fallbackStartedAt = Date.now();
         const fallback = await fetchAllPublicProducts(client, {
           fields: FACET_FALLBACK_FIELDS,
           initialPageSize: 500,
@@ -140,10 +151,31 @@ export function useCatalogFacets() {
           signal: controller.signal,
         });
         if (fallback.error || fallback.cancelled) {
+          if (!controller.signal.aborted) {
+            trackCatalogDataRequest({
+              requestType: 'facets_fallback',
+              status: 'error',
+              durationMs: Date.now() - fallbackStartedAt,
+              resultCount: fallback.data.length,
+            });
+          }
           if (active) setLoading(false);
           return;
         }
+        trackCatalogDataRequest({
+          requestType: 'facets_fallback',
+          status: 'success',
+          durationMs: Date.now() - fallbackStartedAt,
+          resultCount: fallback.data.length,
+        });
         nextRows = rowsFromProducts(fallback.data);
+      } else {
+        trackCatalogDataRequest({
+          requestType: 'facets',
+          status: 'success',
+          durationMs: Date.now() - startedAt,
+          resultCount: Array.isArray(nextRows) ? nextRows.length : 0,
+        });
       }
 
       if (!active || !Array.isArray(nextRows)) return;
@@ -152,13 +184,22 @@ export function useCatalogFacets() {
       setLoading(false);
     }
 
-    loadFacets().catch(() => {
-      if (active) setLoading(false);
-    });
+    const handleUnexpectedError = () => {
+      if (active && !controller.signal.aborted) {
+        trackCatalogDataRequest({
+          requestType: 'facets',
+          status: 'error',
+          usingCache: rows.length > 0,
+        });
+        setLoading(false);
+      }
+    };
+
+    loadFacets().catch(handleUnexpectedError);
     const refreshFacets = () => {
       window.clearTimeout(refreshTimer);
       refreshTimer = window.setTimeout(() => {
-        loadFacets().catch(() => {});
+        loadFacets().catch(handleUnexpectedError);
       }, 300);
     };
     window.addEventListener('fp:catalog-facets-stale', refreshFacets);

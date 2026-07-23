@@ -60,6 +60,24 @@ export function buildProductAnalyticsParams(product, extra = {}) {
   });
 }
 
+export function trackCatalogDataRequest({
+  requestType = 'unknown',
+  status = 'success',
+  durationMs = 0,
+  resultCount = 0,
+  hasFilters = false,
+  usingCache = false,
+} = {}, target) {
+  return trackEvent('catalog_data_request', {
+    request_type: requestType,
+    request_status: status,
+    duration_ms: Math.max(0, Math.round(Number(durationMs) || 0)),
+    result_count: Math.max(0, Math.round(Number(resultCount) || 0)),
+    has_filters: Boolean(hasFilters),
+    using_cache: Boolean(usingCache),
+  }, target);
+}
+
 export function classifyError(error) {
   const signature = `${error?.name || ''} ${error?.message || ''}`.toLowerCase();
   if (/chunkloaderror|loading chunk|dynamically imported module/.test(signature)) {
