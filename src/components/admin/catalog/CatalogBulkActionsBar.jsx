@@ -3,12 +3,14 @@ import { Trash2, X } from 'lucide-react';
 export default function CatalogBulkActionsBar({
   selectedCount,
   categories,
+  brands,
   processing,
   canEdit,
   canDelete,
   onActivate,
   onHide,
   onChangeCategory,
+  onChangeBrand,
   onDelete,
   onClear,
   t,
@@ -17,6 +19,9 @@ export default function CatalogBulkActionsBar({
 
   const safeCategories = Array.isArray(categories)
     ? categories.filter(category => typeof category === 'string' && category.trim())
+    : [];
+  const safeBrands = Array.isArray(brands)
+    ? brands.filter(brand => typeof brand === 'string' && brand.trim())
     : [];
 
   return (
@@ -61,6 +66,21 @@ export default function CatalogBulkActionsBar({
               <option value="">{t('admin.catalog.changeCategory')}</option>
               {safeCategories.map(category => (
                 <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+            <select
+              defaultValue=""
+              onChange={event => {
+                if (event.target.value) onChangeBrand(event.target.value);
+                event.target.value = '';
+              }}
+              disabled={processing}
+              className="max-w-[150px] rounded-lg border border-white/20 bg-ink-600 px-2 py-1.5 text-[11px] font-body font-black text-white outline-none disabled:opacity-50"
+              aria-label={t('admin.catalog.changeBrand')}
+            >
+              <option value="">{t('admin.catalog.changeBrand')}</option>
+              {safeBrands.map(brand => (
+                <option key={brand} value={brand}>{brand}</option>
               ))}
             </select>
           </>

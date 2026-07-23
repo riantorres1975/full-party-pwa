@@ -3,11 +3,23 @@ import { categorias } from '../data/productos';
 import { toTitleCase } from '../utils/normalizar';
 import { subirImagenProducto } from '../lib/productosAdmin';
 import { getProductPlaceholderUrl } from '../utils/imagenes';
+import {
+  CATALOG_QUALITY_ISSUES,
+  getPublishingBlockers,
+} from '../utils/catalogQuality';
 
 export const CATEGORIA_NUEVA_ID = '__agregar_nueva__';
 export const MARCA_NUEVA_ID = '__agregar_marca__';
 export const TAMANO_NUEVO_ID = '__agregar_tamano__';
 export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+const PUBLISHING_FIELD_LABELS = {
+  [CATALOG_QUALITY_ISSUES.MISSING_IMAGE]: 'imagen real',
+  [CATALOG_QUALITY_ISSUES.MISSING_DESCRIPTION]: 'descripcion',
+  [CATALOG_QUALITY_ISSUES.MISSING_CATEGORY]: 'categoria',
+  [CATALOG_QUALITY_ISSUES.INVALID_PRICE]: 'precio mayor a cero',
+  [CATALOG_QUALITY_ISSUES.INVALID_STOCK]: 'stock valido',
+};
 
 function parsearPreciosMayoreo(producto) {
   const valor = producto?.precios_mayoreo ?? producto?.familia_mayoreo;
@@ -224,7 +236,7 @@ export function useProductForm(producto = null) {
       ? preciosParaGuardar
       : [{ etiqueta: 'Precio 1', cantidad_minima: 1, precio: precioBaseNum }];
 
-    return {
+    const payload = {
       nombre: toTitleCase(nombre),
       descripcion,
       precio: precioBaseNum,
@@ -241,6 +253,17 @@ export function useProductForm(producto = null) {
       precios_mayoreo: preciosMayoreoFinal,
       activo: disponible,
     };
+
+    const isNewPublication = disponible && (!isEdit || producto?.activo === false);
+    if (isNewPublication) {
+      const blockers = getPublishingBlockers(payload);
+      if (blockers.length > 0) {
+        const fields = blockers.map((issue) => PUBLISHING_FIELD_LABELS[issue]).filter(Boolean);
+        throw new Error(`Para publicar completa: ${fields.join(', ')}. Tambien puedes guardarlo como oculto.`);
+      }
+    }
+
+    return payload;
   }
 
   // ── Reset ─────────────────────────────────────────────────────

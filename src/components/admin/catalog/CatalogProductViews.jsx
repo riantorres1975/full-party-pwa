@@ -46,6 +46,39 @@ function StockBadge({ product, t }) {
   );
 }
 
+function QualityBadge({ quality, t }) {
+  if (!quality) return null;
+
+  const issueLabels = quality.issues
+    .map((issue) => t(`admin.catalog.qualityIssue.${issue}`))
+    .join(', ');
+  if (quality.isComplete && !quality.hasDuplicates) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-body font-black text-emerald-700">
+        <Check size={10} strokeWidth={3} />
+        {t('admin.catalog.qualityReady')}
+      </span>
+    );
+  }
+
+  const isBlocked = !quality.isReadyToPublish;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-body font-black ${
+        isBlocked
+          ? 'border-rose-200 bg-rose-50 text-rose-700'
+          : 'border-amber-200 bg-amber-50 text-amber-800'
+      }`}
+      title={issueLabels}
+    >
+      <AlertTriangle size={10} strokeWidth={2.5} />
+      {isBlocked
+        ? t('admin.catalog.qualityNeedsFix')
+        : t('admin.catalog.qualityReview')}
+    </span>
+  );
+}
+
 function SelectionCheckbox({ product, selected, onToggle, t }) {
   return (
     <label className="relative inline-flex items-center justify-center cursor-pointer" onClick={event => event.stopPropagation()}>
@@ -72,7 +105,7 @@ function QuickEditor({ product, saving, onSave, onCancel, t }) {
     event.preventDefault();
     const parsedPrice = Number(String(price).replace(',', '.'));
     const parsedStock = Number(stock);
-    if (!Number.isFinite(parsedPrice) || parsedPrice < 0) return;
+    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) return;
     if (tracksStock && (!Number.isFinite(parsedStock) || parsedStock < 0)) return;
     await onSave(product, {
       precio: parsedPrice,
@@ -90,7 +123,7 @@ function QuickEditor({ product, saving, onSave, onCancel, t }) {
           <span className="pl-2 text-xs font-bold text-admin-muted">{SIMBOLO_MONEDA}</span>
           <input
             type="number"
-            min="0"
+            min="0.01"
             step="0.01"
             value={price}
             onChange={event => setPrice(event.target.value)}
@@ -179,6 +212,7 @@ function ProductActions({ product, deleting, onQuickEdit, onEdit, onDelete, canE
 
 export function CatalogCards({
   products,
+  qualityById,
   selectable,
   selectedIds,
   onToggleSelection,
@@ -233,6 +267,7 @@ export function CatalogCards({
                     {SIMBOLO_MONEDA}{Number(product.precio).toFixed(2)}
                   </p>
                   <StockBadge product={product} t={t} />
+                  <QualityBadge quality={qualityById?.get(String(product.id))} t={t} />
                 </div>
               )}
             </div>
@@ -280,6 +315,7 @@ export function CatalogCards({
 
 export function CatalogTable({
   products,
+  qualityById,
   selectable,
   selectedIds,
   onToggleSelection,
@@ -329,6 +365,7 @@ export function CatalogTable({
             <TableProductRows
               key={product.id}
               product={product}
+              quality={qualityById?.get(String(product.id))}
               selectable={selectable}
               selected={selectedIds.has(product.id)}
               onToggleSelection={onToggleSelection}
@@ -355,6 +392,7 @@ export function CatalogTable({
 
 function TableProductRows({
   product,
+  quality,
   selectable,
   selected,
   onToggleSelection,
@@ -385,7 +423,10 @@ function TableProductRows({
             <ProductThumbnail url={product.imagen_url} name={product.nombre} sizeClass="w-11 h-11" />
             <div className="min-w-0">
               <p className="text-sm font-body font-black text-admin-text line-clamp-1">{product.nombre}</p>
-              <p className="text-[11px] text-admin-muted line-clamp-1">{product.marca || t('admin.catalog.noBrand')}</p>
+              <div className="mt-0.5 flex items-center gap-2">
+                <p className="text-[11px] text-admin-muted line-clamp-1">{product.marca || t('admin.catalog.noBrand')}</p>
+                <QualityBadge quality={quality} t={t} />
+              </div>
             </div>
           </div>
         </td>

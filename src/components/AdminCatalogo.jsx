@@ -31,8 +31,13 @@ import { useDebounce } from '../hooks/useDebounce';
 import { useLanguage } from '../hooks/useLanguage';
 import { usePermission } from '../hooks/usePermission';
 import { fuzzySearch } from '../utils/fuzzySearch';
+import {
+  analyzeCatalogQuality,
+  getPublishingBlockers,
+} from '../utils/catalogQuality';
 import { CatalogCards, CatalogTable } from './admin/catalog/CatalogProductViews';
 import CatalogBulkActionsBar from './admin/catalog/CatalogBulkActionsBar';
+import CatalogQualityPanel from './admin/catalog/CatalogQualityPanel';
 
 const PRODUCT_SEARCH_KEYS = [
   { name: 'nombre', weight: 0.5 },
@@ -41,6 +46,9 @@ const PRODUCT_SEARCH_KEYS = [
   { name: 'marca', weight: 0.1 },
   { name: 'tamano', weight: 0.05 },
 ];
+
+const ADMIN_FETCH_BATCH_SIZE = 500;
+const ADMIN_RENDER_BATCH_SIZE = 100;
 
 export default function AdminCatalogo() {
   const toast = useToast();
@@ -71,36 +79,58 @@ export default function AdminCatalogo() {
   const [editando, setEditando] = useState(null);
   const [toggleId, setToggleId] = useState(null);
   const [eliminandoId, setEliminandoId] = useState(null);
-  const [pagina, setPagina] = useState(0);
-  const [hayMas, setHayMas] = useState(false);
-  const PAGE_SIZE = 100;
+  const [limiteVisible, setLimiteVisible] = useState(ADMIN_RENDER_BATCH_SIZE);
 
-  const fetchProductos = useCallback(async (page = 0, append = false) => {
-    if (!append) setCargando(true);
+  const fetchProductos = useCallback(async () => {
+    setCargando(true);
     setErrorLista('');
-    const from = page * PAGE_SIZE;
-    const { data, error, count } = await guardedQuery((client) =>
-      client
-        .from('productos')
-        .select('*', { count: 'exact' })
-        .order('nombre', { ascending: true })
-        .range(from, from + PAGE_SIZE - 1)
-    );
+    const allProducts = [];
+    const knownIds = new Set();
+    let from = 0;
+    let totalCount = null;
 
-    if (error) {
-      setErrorLista(error.message);
-      if (!append) setProductos([]);
-    } else {
-      const lista = data ?? [];
-      lista.forEach(p => {
-        registrarCategoria(p.categoria);
-        registrarMarca(p.marca);
-        registrarTamano(p.tamano);
+    while (true) {
+      const { data, error, count } = await guardedQuery((client) =>
+        client
+          .from('productos')
+          .select('*', from === 0 ? { count: 'exact' } : undefined)
+          .order('nombre', { ascending: true })
+          .range(from, from + ADMIN_FETCH_BATCH_SIZE - 1)
+      );
+
+      if (error) {
+        setErrorLista(error.message);
+        setProductos([]);
+        setCargando(false);
+        return;
+      }
+
+      const page = data ?? [];
+      const uniquePage = page.filter((product) => {
+        const id = String(product?.id ?? '');
+        if (!id || knownIds.has(id)) return false;
+        knownIds.add(id);
+        return true;
       });
-      setProductos(prev => append ? [...prev, ...lista] : lista);
-      setHayMas((count ?? 0) > from + PAGE_SIZE);
-      setPagina(page);
+      allProducts.push(...uniquePage);
+      if (from === 0 && Number.isInteger(count)) totalCount = count;
+      if (
+        page.length < ADMIN_FETCH_BATCH_SIZE
+        || uniquePage.length === 0
+        || (Number.isInteger(totalCount) && allProducts.length >= totalCount)
+      ) {
+        break;
+      }
+      from += ADMIN_FETCH_BATCH_SIZE;
     }
+
+    allProducts.forEach(p => {
+      registrarCategoria(p.categoria);
+      registrarMarca(p.marca);
+      registrarTamano(p.tamano);
+    });
+    setProductos(allProducts);
+    setLimiteVisible(ADMIN_RENDER_BATCH_SIZE);
     setCargando(false);
   }, []);
 
@@ -314,6 +344,7 @@ export default function AdminCatalogo() {
       if (invalidos.length > 0) throw new Error(`Hay ${invalidos.length} producto(s) sin nombre o precio.`);
 
       // Limpiar y preparar rows
+      let ocultadosPorCalidad = 0;
       const rows = datos.map(p => {
         const row = {};
         CAMPOS_EXPORTABLES.forEach(k => { if (p[k] !== undefined) row[k] = p[k]; });
@@ -321,6 +352,10 @@ export default function AdminCatalogo() {
         row.precio = Number(row.precio);
         if (Number.isNaN(row.precio) || row.precio < 0) row.precio = 0;
         if (row.activo === undefined) row.activo = true;
+        if (row.activo && getPublishingBlockers(row).length > 0) {
+          row.activo = false;
+          ocultadosPorCalidad += 1;
+        }
         return row;
       });
 
@@ -335,6 +370,9 @@ export default function AdminCatalogo() {
       }
 
       toast.success(`${insertados} artículos importados`);
+      if (ocultadosPorCalidad > 0) {
+        toast.warning(t('admin.catalog.importHiddenByQuality', { count: ocultadosPorCalidad }));
+      }
       fetchProductos();
     } catch (err) {
       toast.error(err.message || 'Error al importar');
@@ -350,6 +388,8 @@ export default function AdminCatalogo() {
   const productosNuevos = useMemo(() => {
     return productos.filter(p => p.es_nuevo === true);
   }, [productos]);
+
+  const calidadCatalogo = useMemo(() => analyzeCatalogQuality(productos), [productos]);
 
   const todasCategorias = useMemo(() => {
     const seen = new Set();
@@ -376,6 +416,27 @@ export default function AdminCatalogo() {
       lista = productosEnAlerta;
     } else if (filtroActivo === 'nuevo') {
       lista = productosNuevos;
+    } else if (filtroActivo === 'quality:complete') {
+      lista = productos.filter((product) => (
+        calidadCatalogo.byId.get(String(product.id))?.isComplete
+      ));
+    } else if (filtroActivo === 'quality:incomplete') {
+      lista = productos.filter((product) => (
+        !calidadCatalogo.byId.get(String(product.id))?.isComplete
+      ));
+    } else if (filtroActivo === 'quality:blocked') {
+      lista = productos.filter((product) => (
+        !calidadCatalogo.byId.get(String(product.id))?.isReadyToPublish
+      ));
+    } else if (filtroActivo === 'quality:duplicates') {
+      lista = productos.filter((product) => (
+        calidadCatalogo.byId.get(String(product.id))?.hasDuplicates
+      ));
+    } else if (filtroActivo.startsWith('issue:')) {
+      const issue = filtroActivo.slice('issue:'.length);
+      lista = productos.filter((product) => (
+        calidadCatalogo.byId.get(String(product.id))?.issues.includes(issue)
+      ));
     }
 
     const q = busqueda.trim();
@@ -394,7 +455,25 @@ export default function AdminCatalogo() {
       }
       return String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base' });
     });
-  }, [productos, busqueda, filtroActivo, orden, productosEnAlerta, productosNuevos]);
+  }, [
+    productos,
+    busqueda,
+    filtroActivo,
+    orden,
+    productosEnAlerta,
+    productosNuevos,
+    calidadCatalogo,
+  ]);
+
+  useEffect(() => {
+    setLimiteVisible(ADMIN_RENDER_BATCH_SIZE);
+  }, [busqueda, filtroActivo, orden]);
+
+  const productosVisibles = useMemo(
+    () => filtrados.slice(0, limiteVisible),
+    [filtrados, limiteVisible],
+  );
+  const hayMasVisibles = productosVisibles.length < filtrados.length;
 
   const hayFiltrosActivos = filtroActivo !== 'todos' || busquedaInput.trim().length > 0;
 
@@ -413,7 +492,7 @@ export default function AdminCatalogo() {
   }
 
   function toggleTodosVisibles() {
-    const visibleIds = filtrados.map(producto => producto.id);
+    const visibleIds = productosVisibles.map(producto => producto.id);
     const todosSeleccionados = visibleIds.length > 0 && visibleIds.every(id => seleccionados.has(id));
     setSeleccionados(prev => {
       const next = new Set(prev);
@@ -423,6 +502,17 @@ export default function AdminCatalogo() {
   }
 
   async function handleGuardarRapido(producto, changes) {
+    const currentBlockers = new Set(getPublishingBlockers(producto));
+    const introducedBlockers = getPublishingBlockers({ ...producto, ...changes })
+      .filter((issue) => !currentBlockers.has(issue));
+    if (producto.activo !== false && introducedBlockers.length > 0) {
+      const fields = introducedBlockers
+        .map((issue) => t(`admin.catalog.qualityIssue.${issue}`))
+        .join(', ');
+      toast.warning(t('admin.catalog.publishBlocked', { fields }));
+      return;
+    }
+
     setGuardandoRapidoId(producto.id);
     try {
       const saved = await actualizarCamposProductos(producto.id, changes);
@@ -445,6 +535,39 @@ export default function AdminCatalogo() {
       setProductos(prev => prev.map(item => seleccionados.has(item.id) ? { ...item, ...saved } : item));
       setSeleccionados(new Set());
       toast.success(t(successKey, { count: ids.length }));
+    } catch (err) {
+      toast.error(err.message || t('admin.catalog.saveError'));
+    } finally {
+      setProcesandoLote(false);
+    }
+  }
+
+  async function handleActivarLote() {
+    const ids = Array.from(seleccionados);
+    if (ids.length === 0) return;
+
+    const publicables = ids.filter((id) => (
+      calidadCatalogo.byId.get(String(id))?.isReadyToPublish
+    ));
+    const bloqueados = ids.filter((id) => !publicables.includes(id));
+
+    if (publicables.length === 0) {
+      toast.warning(t('admin.catalog.bulkPublishBlocked', { count: bloqueados.length }));
+      return;
+    }
+
+    setProcesandoLote(true);
+    try {
+      const saved = await actualizarCamposProductos(publicables, { activo: true });
+      const publicableIds = new Set(publicables);
+      setProductos(prev => prev.map(item => (
+        publicableIds.has(item.id) ? { ...item, ...saved } : item
+      )));
+      setSeleccionados(new Set(bloqueados));
+      toast.success(t('admin.catalog.bulkActivated', { count: publicables.length }));
+      if (bloqueados.length > 0) {
+        toast.warning(t('admin.catalog.bulkPublishBlocked', { count: bloqueados.length }));
+      }
     } catch (err) {
       toast.error(err.message || t('admin.catalog.saveError'));
     } finally {
@@ -478,6 +601,16 @@ export default function AdminCatalogo() {
 
   async function handleToggleDisponibilidad(p) {
     const siguiente = !p.activo;
+    if (siguiente) {
+      const blockers = getPublishingBlockers(p);
+      if (blockers.length > 0) {
+        const fields = blockers
+          .map((issue) => t(`admin.catalog.qualityIssue.${issue}`))
+          .join(', ');
+        toast.warning(t('admin.catalog.publishBlocked', { fields }));
+        return;
+      }
+    }
     setProductos(prev => prev.map(x => (x.id === p.id ? { ...x, activo: siguiente } : x)));
     setToggleId(p.id);
     try {
@@ -952,12 +1085,14 @@ export default function AdminCatalogo() {
         <CatalogBulkActionsBar
           selectedCount={seleccionados.size}
           categories={todasCategorias}
+          brands={todasMarcas}
           processing={procesandoLote}
           canEdit={canEdit}
           canDelete={canDelete}
-          onActivate={() => handleActualizarLote({ activo: true }, 'admin.catalog.bulkActivated')}
+          onActivate={handleActivarLote}
           onHide={() => handleActualizarLote({ activo: false }, 'admin.catalog.bulkHidden')}
           onChangeCategory={category => handleActualizarLote({ categoria: category }, 'admin.catalog.bulkCategorized')}
+          onChangeBrand={brand => handleActualizarLote({ marca: brand }, 'admin.catalog.bulkBranded')}
           onDelete={handleEliminarLote}
           onClear={() => setSeleccionados(new Set())}
           t={t}
@@ -968,6 +1103,16 @@ export default function AdminCatalogo() {
         {renderFilterChips()}
         {renderCatalogMeta(false)}
       </div>
+      {!cargando && !errorLista && productos.length > 0 && (
+        <div className="mt-4">
+          <CatalogQualityPanel
+            analysis={calidadCatalogo}
+            activeFilter={filtroActivo}
+            onSelectFilter={setFiltroActivo}
+            t={t}
+          />
+        </div>
+      )}
       {/* Editor de anuncio inline */}
       {showAnuncioEditor && (
         <div className="mt-4 bg-admin-card border border-admin-border rounded-xl p-3 space-y-2">
@@ -1264,7 +1409,8 @@ export default function AdminCatalogo() {
                 <>
                   <div className="hidden sm:block">
                     <CatalogTable
-                      products={filtrados}
+                      products={productosVisibles}
+                      qualityById={calidadCatalogo.byId}
                       selectable={canEdit || canDelete}
                       selectedIds={seleccionados}
                       onToggleSelection={toggleSeleccion}
@@ -1286,7 +1432,8 @@ export default function AdminCatalogo() {
                   </div>
                   <div className="sm:hidden">
                     <CatalogCards
-                      products={filtrados}
+                      products={productosVisibles}
+                      qualityById={calidadCatalogo.byId}
                       selectable={canEdit || canDelete}
                       selectedIds={seleccionados}
                       onToggleSelection={toggleSeleccion}
@@ -1308,7 +1455,8 @@ export default function AdminCatalogo() {
                 </>
               ) : (
                 <CatalogCards
-                  products={filtrados}
+                  products={productosVisibles}
+                  qualityById={calidadCatalogo.byId}
                   selectable={canEdit || canDelete}
                   selectedIds={seleccionados}
                   onToggleSelection={toggleSeleccion}
@@ -1330,15 +1478,17 @@ export default function AdminCatalogo() {
             )}
 
             {/* Load more button */}
-            {!cargando && hayMas && (
+            {!cargando && hayMasVisibles && (
               <div className="flex justify-center pt-4 pb-8">
                 <button
                   type="button"
-                  onClick={() => fetchProductos(pagina + 1, true)}
+                  onClick={() => setLimiteVisible((current) => current + ADMIN_RENDER_BATCH_SIZE)}
                   className="px-6 py-2.5 rounded-xl text-sm font-body font-bold text-admin-text-secondary
                              bg-admin-elevated hover:bg-admin-input border border-admin-border transition-colors"
                 >
-                  {t('admin.catalog.loadMore')}
+                  {t('admin.catalog.loadMoreCount', {
+                    count: Math.min(ADMIN_RENDER_BATCH_SIZE, filtrados.length - productosVisibles.length),
+                  })}
                 </button>
               </div>
             )}

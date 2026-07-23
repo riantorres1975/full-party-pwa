@@ -462,7 +462,7 @@ export async function actualizarDisponibilidadProducto(id, activo) {
   return { id, activo: !!activo };
 }
 
-const QUICK_EDIT_FIELDS = new Set(['precio', 'stock_actual', 'categoria', 'activo']);
+const QUICK_EDIT_FIELDS = new Set(['precio', 'stock_actual', 'categoria', 'marca', 'activo']);
 
 /** Updates a safe subset of fields for one or more catalog products. */
 export async function actualizarCamposProductos(ids, changes) {
@@ -482,6 +482,7 @@ export async function actualizarCamposProductos(ids, changes) {
     if (!Number.isFinite(row.stock_actual) || row.stock_actual < 0) throw new Error('Indica un stock valido.');
   }
   if ('categoria' in row) row.categoria = row.categoria?.trim() || null;
+  if ('marca' in row) row.marca = row.marca?.trim() || null;
   if ('activo' in row) row.activo = !!row.activo;
   if (Object.keys(row).length === 0) throw new Error('No hay cambios para guardar.');
 
