@@ -32,24 +32,137 @@ const catalogCorsHeaders = {
   'access-control-expose-headers': 'content-range',
 };
 
+function parseInFilter(value) {
+  if (!value?.startsWith('in.(')) return [];
+  return value
+    .slice(4, -1)
+    .split(',')
+    .map((item) => item.trim().replace(/^"|"$/g, '').replace(/\\"/g, '"'));
+}
+
+function filterCatalogRequest(url, products) {
+  const params = url.searchParams;
+  let filtered = [...products];
+
+  [
+    ['id', 'id'],
+    ['categoria', 'categoria'],
+    ['marca', 'marca'],
+    ['tamano', 'tamano'],
+  ].forEach(([parameter, field]) => {
+    const allowed = parseInFilter(params.get(parameter));
+    if (allowed.length > 0) {
+      filtered = filtered.filter((product) => allowed.includes(String(product[field] ?? '')));
+    }
+  });
+
+  params.getAll('precio').forEach((filter) => {
+    const [operator, rawValue] = filter.split('.');
+    const value = Number(rawValue);
+    if (operator === 'gte') filtered = filtered.filter((product) => Number(product.precio) >= value);
+    if (operator === 'lte') filtered = filtered.filter((product) => Number(product.precio) <= value);
+  });
+
+  const searchExpression = params.get('or') || '';
+  const pattern = searchExpression.match(/nombre\.ilike\.\*([^,]*)\*/)?.[1];
+  if (pattern) {
+    const terms = pattern.toLocaleLowerCase('es').split('*').filter(Boolean);
+    filtered = filtered.filter((product) => {
+      const text = [
+        product.nombre,
+        product.descripcion,
+        product.categoria,
+        product.marca,
+        product.tamano,
+      ].join(' ').toLocaleLowerCase('es');
+      return terms.every((term) => text.includes(term));
+    });
+  }
+
+  const offset = Number(params.get('offset')) || 0;
+  const limit = Number(params.get('limit')) || filtered.length;
+  return {
+    page: filtered.slice(offset, offset + limit),
+    offset,
+    total: filtered.length,
+  };
+}
+
 async function fulfillCatalogRequest(route, products) {
   if (route.request().method() === 'OPTIONS') {
     await route.fulfill({ status: 204, headers: catalogCorsHeaders });
     return;
   }
 
+  const { page, offset, total } = filterCatalogRequest(
+    new URL(route.request().url()),
+    products,
+  );
   await route.fulfill({
     status: 200,
     contentType: 'application/json',
     headers: {
       ...catalogCorsHeaders,
-      'content-range': products.length > 0 ? `0-${products.length - 1}/${products.length}` : '*/0',
+      'content-range': page.length > 0 ? `${offset}-${offset + page.length - 1}/${total}` : `*/${total}`,
     },
-    body: JSON.stringify(products),
+    body: JSON.stringify(page),
+  });
+}
+
+function buildCatalogFacets(products) {
+  const rows = [];
+  ['categoria', 'marca', 'tamano'].forEach((dimension) => {
+    const values = new Map();
+    products.forEach((product) => {
+      const value = product[dimension];
+      if (!value) return;
+      const current = values.get(value) || { count: 0, image: null };
+      current.count += 1;
+      current.image ||= product.imagen_url || null;
+      values.set(value, current);
+    });
+    values.forEach(({ count, image }, value) => rows.push({
+      dimension,
+      valor: value,
+      cantidad: count,
+      precio_min: null,
+      precio_max: null,
+      imagen: dimension === 'categoria' ? image : null,
+    }));
+  });
+  const prices = products.map(({ precio }) => Number(precio)).filter(Number.isFinite);
+  rows.push({
+    dimension: 'resumen',
+    valor: 'catalogo',
+    cantidad: products.length,
+    precio_min: prices.length > 0 ? Math.min(...prices) : null,
+    precio_max: prices.length > 0 ? Math.max(...prices) : null,
+    imagen: null,
+  });
+  return rows;
+}
+
+async function fulfillFacetRequest(route, products) {
+  if (route.request().method() === 'OPTIONS') {
+    await route.fulfill({ status: 204, headers: catalogCorsHeaders });
+    return;
+  }
+  const rows = buildCatalogFacets(products);
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    headers: {
+      ...catalogCorsHeaders,
+      'content-range': rows.length > 0 ? `0-${rows.length - 1}/${rows.length}` : '*/0',
+    },
+    body: JSON.stringify(rows),
   });
 }
 
 test.beforeEach(async ({ page }) => {
+  await page.route('**/rest/v1/catalogo_facetas_publicas*', async (route) => {
+    await fulfillFacetRequest(route, catalogFixture);
+  });
   await page.route('**/rest/v1/productos*', async (route) => {
     await fulfillCatalogRequest(route, catalogFixture);
   });
@@ -162,6 +275,8 @@ test('the public catalog remains usable without horizontal overflow', async ({ p
 });
 
 test('a 1000-product catalog renders progressively without limiting search', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
   const maxProgressiveCards = 200;
   const largeCatalog = Array.from({ length: 1000 }, (_, index) => ({
     ...catalogFixture[0],
@@ -171,16 +286,12 @@ test('a 1000-product catalog renders progressively without limiting search', asy
     es_nuevo: false,
   }));
   await page.unroute('**/rest/v1/productos*');
+  await page.unroute('**/rest/v1/catalogo_facetas_publicas*');
+  await page.route('**/rest/v1/catalogo_facetas_publicas*', async (route) => {
+    await fulfillFacetRequest(route, largeCatalog);
+  });
   await page.route('**/rest/v1/productos*', async (route) => {
-    if (route.request().method() === 'OPTIONS') {
-      await fulfillCatalogRequest(route, []);
-      return;
-    }
-    const requestUrl = new URL(route.request().url());
-    const from = Number(requestUrl.searchParams.get('offset')) || 0;
-    const limit = Number(requestUrl.searchParams.get('limit')) || largeCatalog.length;
-    const to = from + limit - 1;
-    await fulfillCatalogRequest(route, largeCatalog.slice(from, to + 1));
+    await fulfillCatalogRequest(route, largeCatalog);
   });
 
   await page.goto('/catalogo');
@@ -207,13 +318,18 @@ test('a 1000-product catalog renders progressively without limiting search', asy
   await expect.poll(() => cards.count()).toBeGreaterThan(countBeforeMore);
   expect(await cards.count()).toBeLessThanOrEqual(maxProgressiveCards);
   await expect(page.getByRole('button', { name: /Mostrar \d+ productos m.s/ })).toHaveCount(0);
-  await expect.poll(() => page.evaluate(() => {
-    const cache = JSON.parse(localStorage.getItem('fp_productos_cache_v1') || '{}');
+  const cachedPage = await page.evaluate(() => {
+    const cache = JSON.parse(localStorage.getItem('fp_catalog_pages_v2') || '{}');
     return {
       complete: cache.complete,
       length: cache.data?.length || 0,
+      totalCount: cache.totalCount,
     };
-  })).toEqual({ complete: true, length: 1000 });
+  });
+  expect(cachedPage.totalCount).toBe(1000);
+  expect(cachedPage.complete).toBe(false);
+  expect(cachedPage.length).toBeGreaterThan(0);
+  expect(cachedPage.length).toBeLessThanOrEqual(200);
 
   if ((page.viewportSize()?.width || 0) >= 1024) {
     const scrollRoot = page.locator('[data-catalog-scroll-root]');
@@ -237,10 +353,15 @@ test('a 1000-product catalog renders progressively without limiting search', asy
     await backToTop.click();
     await expect.poll(() => scrollRoot.evaluate((node) => node.scrollTop)).toBeLessThan(10);
   }
+  expect(pageErrors).toEqual([]);
 });
 
 test('an empty catalog is distinguished from a search without results', async ({ page }) => {
   await page.unroute('**/rest/v1/productos*');
+  await page.unroute('**/rest/v1/catalogo_facetas_publicas*');
+  await page.route('**/rest/v1/catalogo_facetas_publicas*', async (route) => {
+    await fulfillFacetRequest(route, []);
+  });
   await page.route('**/rest/v1/productos*', async (route) => {
     await fulfillCatalogRequest(route, []);
   });
@@ -666,7 +787,7 @@ test('the installed catalog reloads from its app shell while offline', async ({ 
   ).toBe(true);
   await expect.poll(() => page.evaluate(() => {
     try {
-      return JSON.parse(localStorage.getItem('fp_productos_cache_v1'))?.data?.length || 0;
+      return JSON.parse(localStorage.getItem('fp_catalog_pages_v2'))?.data?.length || 0;
     } catch {
       return 0;
     }

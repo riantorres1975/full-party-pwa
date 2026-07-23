@@ -21,6 +21,10 @@ export default function ProductGrid({
   onToggleFavorite,
   onViewProduct,
   recentProducts = [],
+  remoteHasMore = false,
+  remoteLoading = false,
+  onLoadMore,
+  totalProducts = productos.length,
 }) {
   const productSetKey = useMemo(
     // Appending background pages must not collapse the visible grid back to its
@@ -33,7 +37,12 @@ export default function ProductGrid({
     sentinelRef,
     hayMas,
     cargando,
-  } = useInfiniteScroll(productos.length, { resetKey: productSetKey });
+  } = useInfiniteScroll(productos.length, {
+    resetKey: productSetKey,
+    hasMoreRemote: remoteHasMore,
+    remoteLoading,
+    onLoadMore,
+  });
   const [productoDetalle, setProductoDetalle] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const lastViewedProductRef = useRef(null);
@@ -190,11 +199,11 @@ export default function ProductGrid({
       <div className="px-4 pb-2">
         {hayMas && (
           <p className="py-2 text-center text-xs font-body font-bold text-ink-400" aria-live="polite">
-            {t('grid.ofProducts', { shown: visibles.length, total: productos.length })}
+            {t('grid.ofProducts', { shown: visibles.length, total: totalProducts })}
           </p>
         )}
 
-        {!cargando && !hayMas && productos.length > 12 && (
+        {!cargando && !hayMas && totalProducts > 12 && (
           <div className="flex flex-col items-center gap-1 py-5">
             <span className="text-lg">🎉</span>
             <p className="text-xs font-body font-bold text-ink-300">

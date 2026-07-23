@@ -27,6 +27,9 @@ function getScrollRoot(node, selector) {
 export function useInfiniteScroll(totalItems, {
   resetKey = totalItems,
   rootSelector = '[data-catalog-scroll-root]',
+  hasMoreRemote = false,
+  onLoadMore,
+  remoteLoading = false,
 } = {}) {
   const [visibleCount, setVisibleCount] = useState(() => (
     Math.min(getCurrentPagePlan().initial, totalItems)
@@ -42,10 +45,18 @@ export function useInfiniteScroll(totalItems, {
   const pendingRef = useRef(false);
   const totalRef = useRef(totalItems);
   const visibleCountRef = useRef(visibleCount);
+  const hasMoreRemoteRef = useRef(hasMoreRemote);
+  const onLoadMoreRef = useRef(onLoadMore);
+  const remoteLoadingRef = useRef(remoteLoading);
 
   totalRef.current = totalItems;
-  const hayMas = visibleCount < totalItems;
-  const nextCount = Math.min(getCurrentPagePlan().batch, Math.max(0, totalItems - visibleCount));
+  hasMoreRemoteRef.current = hasMoreRemote;
+  onLoadMoreRef.current = onLoadMore;
+  remoteLoadingRef.current = remoteLoading;
+  const hayMas = visibleCount < totalItems || hasMoreRemote;
+  const nextCount = visibleCount < totalItems
+    ? Math.min(getCurrentPagePlan().batch, Math.max(0, totalItems - visibleCount))
+    : getCurrentPagePlan().batch;
 
   const reset = useCallback(() => {
     if (animationFrameRef.current !== null) {
@@ -67,8 +78,31 @@ export function useInfiniteScroll(totalItems, {
     visibleCountRef.current = visibleCount;
   }, [visibleCount]);
 
+  const rearmProximityCheck = useCallback(() => {
+    rearmTimerRef.current = window.setTimeout(() => {
+      rearmTimerRef.current = null;
+      checkProximityRef.current?.();
+    }, OBSERVER_REARM_DELAY_MS);
+  }, []);
+
   const cargarMas = useCallback(() => {
-    if (pendingRef.current || visibleCountRef.current >= totalRef.current) return;
+    if (pendingRef.current || remoteLoadingRef.current) return;
+
+    if (visibleCountRef.current >= totalRef.current) {
+      if (!hasMoreRemoteRef.current || !onLoadMoreRef.current) return;
+      pendingRef.current = true;
+      setCargando(true);
+      Promise.resolve(onLoadMoreRef.current())
+        .catch(() => {
+          // The catalog keeps the loaded page and can retry on the next intersection.
+        })
+        .finally(() => {
+          pendingRef.current = false;
+          setCargando(false);
+          rearmProximityCheck();
+        });
+      return;
+    }
 
     pendingRef.current = true;
     if (rearmTimerRef.current !== null) window.clearTimeout(rearmTimerRef.current);
@@ -86,16 +120,17 @@ export function useInfiniteScroll(totalItems, {
 
       // If the appended row still leaves the sentinel near the viewport, keep
       // filling the catalog automatically instead of requiring another click.
-      rearmTimerRef.current = window.setTimeout(() => {
-        rearmTimerRef.current = null;
-        checkProximityRef.current?.();
-      }, OBSERVER_REARM_DELAY_MS);
+      rearmProximityCheck();
     });
-  }, []);
+  }, [rearmProximityCheck]);
 
   const checkProximity = useCallback(() => {
     const node = sentinelNodeRef.current;
-    if (!node || pendingRef.current || visibleCountRef.current >= totalRef.current) return;
+    const noLocalOrRemoteItems = (
+      visibleCountRef.current >= totalRef.current
+      && !hasMoreRemoteRef.current
+    );
+    if (!node || pendingRef.current || remoteLoadingRef.current || noLocalOrRemoteItems) return;
 
     const root = getScrollRoot(node, rootSelector);
     const rootBottom = root?.getBoundingClientRect().bottom ?? window.innerHeight;
@@ -162,7 +197,7 @@ export function useInfiniteScroll(totalItems, {
 
   useEffect(() => {
     checkProximityRef.current?.();
-  }, [totalItems]);
+  }, [hasMoreRemote, remoteLoading, totalItems]);
 
   useEffect(() => () => {
     observerRef.current?.disconnect();
@@ -179,7 +214,7 @@ export function useInfiniteScroll(totalItems, {
     visibleCount: Math.min(visibleCount, totalItems),
     sentinelRef,
     hayMas,
-    cargando,
+    cargando: cargando || remoteLoading,
     cargarMas,
     nextCount,
   };

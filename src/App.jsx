@@ -1,6 +1,8 @@
-import { lazy, Suspense, useState, useMemo, useEffect, useRef, useCallback, useDeferredValue } from 'react';
+import { lazy, Suspense, useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useProductos }      from './hooks/useProductos';
+import { useCatalogFacets } from './hooks/useCatalogFacets';
+import { useCatalogProducts } from './hooks/useCatalogProducts';
+import { useDebounce } from './hooks/useDebounce';
 import { useCarrito }        from './hooks/useCarrito';
 import { useToast }          from './components/ui/ToastProvider';
 import { categorias as CATEGORIAS_CONFIG, SIMBOLO_MONEDA } from './data/productos';
@@ -27,40 +29,6 @@ const ModalFiltros = lazy(() => import('./components/ModalFiltros'));
 const RastreoPedido = lazy(() => import('./components/RastreoPedido'));
 const SidebarFiltrosDesktop = lazy(() => import('./components/SidebarFiltrosDesktop'));
 
-const PRODUCT_SEARCH_KEYS = [
-  { name: 'nombre', weight: 0.5 },
-  { name: 'descripcion', weight: 0.2 },
-  { name: 'categoria', weight: 0.15 },
-  { name: 'marca', weight: 0.1 },
-  { name: 'tamano', weight: 0.05 },
-];
-
-const BASIC_SEARCH_FIELDS = ['nombre', 'descripcion', 'categoria', 'marca', 'tamano'];
-const basicSearchTextCache = new WeakMap();
-
-function normalizeSearchValue(value) {
-  return String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase('es');
-}
-
-function basicProductSearch(collection, query) {
-  const terms = normalizeSearchValue(query).trim().split(/\s+/).filter(Boolean);
-  if (terms.length === 0) return collection;
-
-  return collection.filter((product) => {
-    let searchableText = basicSearchTextCache.get(product);
-    if (!searchableText) {
-      searchableText = BASIC_SEARCH_FIELDS
-        .map((field) => normalizeSearchValue(product[field]))
-        .join(' ');
-      basicSearchTextCache.set(product, searchableText);
-    }
-    return terms.every((term) => searchableText.includes(term));
-  });
-}
-
 function useDesktopViewport() {
   const [isDesktop, setIsDesktop] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches,
@@ -81,17 +49,12 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   const navigate = useNavigate();
   const { categoria: categoryRouteSlug } = useParams();
 
-  // Data from Supabase
   const {
-    productos,
-    loading,
-    error,
-    usingCachedData,
-    isPartialData,
-    refreshing,
-    isInitialSyncing,
-    refetch,
-  } = useProductos();
+    categoryStats,
+    catalogIndex,
+    priceBounds,
+    loading: facetsLoading,
+  } = useCatalogFacets();
   const { mensaje: anuncioMsg, activo: anuncioActivo } = useAnuncio(true);
   const { pedidosHabilitados } = usePedidosHabilitados(true);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
@@ -108,9 +71,8 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   const [bottomNavActive, setBottomNavActive] = useState('inicio');
   const [sortOrder, setSortOrder] = useState('featured');
   const [showFavorites, setShowFavorites] = useState(false);
-  const [createSearchIndex, setCreateSearchIndex] = useState(null);
   const isDesktopViewport = useDesktopViewport();
-  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const deferredSearchQuery = useDebounce(searchQuery, 280);
   const searchRef = useRef(null);
   const searchMetricRef = useRef('');
   const catalogScrollRef = useRef(null);
@@ -139,11 +101,56 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   const { t } = useLanguage();
   const isOnline = useOnlineStatus();
   const {
+    favoriteIds,
     recentIds,
     isFavorite,
     toggleFavorite,
     recordViewedProduct,
   } = useProductPreferences();
+
+  const categoryRoute = useMemo(
+    () => resolveCategoryRoute(categoryRouteSlug, catalogIndex),
+    [categoryRouteSlug, catalogIndex],
+  );
+
+  const catalogQuery = useMemo(() => ({
+    search: deferredSearchQuery,
+    categories: categoryRoute?.categoryIds || activeFilters.categorias,
+    brands: activeFilters.marcas,
+    sizes: activeFilters.tamanios,
+    minPrice: activeFilters.precioMin,
+    maxPrice: activeFilters.precioMax,
+    ids: showFavorites ? favoriteIds : [],
+    sortOrder,
+  }), [
+    activeFilters,
+    categoryRoute,
+    deferredSearchQuery,
+    favoriteIds,
+    showFavorites,
+    sortOrder,
+  ]);
+  const requestedProductId = useMemo(
+    () => new URLSearchParams(location.search).get('producto'),
+    [location.search],
+  );
+  const {
+    productos,
+    totalCount,
+    hasMore,
+    loading,
+    loadingMore,
+    error,
+    usingCachedData,
+    isPartialData,
+    refreshing,
+    isInitialSyncing,
+    refetch,
+    loadMore,
+  } = useCatalogProducts(catalogQuery, {
+    enabled: !showFavorites || favoriteIds.length > 0,
+    requiredProductId: requestedProductId,
+  });
 
   const deferredPanelFallback = (
     <div
@@ -213,11 +220,6 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     if (productos.length > 0) sincronizarStock(productos);
   }, [productos, sincronizarStock]);
 
-  const categoryRoute = useMemo(
-    () => resolveCategoryRoute(categoryRouteSlug, productos),
-    [categoryRouteSlug, productos],
-  );
-
   useEffect(() => {
     if (!categoryRouteSlug) return;
 
@@ -229,11 +231,10 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
       return;
     }
 
-    const catalogIsComplete = !loading && !isInitialSyncing && !refreshing && !isPartialData;
-    if (catalogIsComplete && !categoryRoute) {
+    if (!facetsLoading && !categoryRoute) {
       navigate({ pathname: '/catalogo', search: location.search }, { replace: true });
     }
-  }, [categoryRoute, categoryRouteSlug, isInitialSyncing, isPartialData, loading, location.search, navigate, refreshing]);
+  }, [categoryRoute, categoryRouteSlug, facetsLoading, location.search, navigate]);
 
   // Filter logic
   const toggleFilter = (dimension, valor) => {
@@ -278,41 +279,11 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     scrollCatalogTop('auto');
   };
 
-  const priceBounds = useMemo(() => {
-    const prices = productos
-      .filter(p => p.activo !== false)
-      .map(p => Number(p.precio))
-      .filter(price => Number.isFinite(price) && price >= 0);
-
-    if (prices.length === 0) return { min: null, max: null };
-    return { min: Math.min(...prices), max: Math.max(...prices) };
-  }, [productos]);
-
   const activeFilterCount =
     (categoryRouteSlug ? 1 : activeFilters.categorias.length) +
     activeFilters.marcas.length +
     activeFilters.tamanios.length +
     (Number.isFinite(activeFilters.precioMin) || Number.isFinite(activeFilters.precioMax) ? 1 : 0);
-
-  const productsMatchingFilters = useMemo(() => (
-    productos.filter(p => {
-      if (showFavorites && !isFavorite(p.id)) return false;
-      const matchesCategory =
-        categoryRouteSlug
-          ? Boolean(categoryRoute?.matches(p))
-          : activeFilters.categorias.length === 0 || activeFilters.categorias.includes(p.categoria);
-      const matchesBrand =
-        activeFilters.marcas.length === 0 || (p.marca && activeFilters.marcas.includes(p.marca));
-      const matchesSize =
-        activeFilters.tamanios.length === 0 || (p.tamano && activeFilters.tamanios.includes(p.tamano));
-      const precio = Number(p.precio);
-      const matchesPrice =
-        (!Number.isFinite(activeFilters.precioMin) || precio >= activeFilters.precioMin) &&
-        (!Number.isFinite(activeFilters.precioMax) || precio <= activeFilters.precioMax);
-
-      return matchesCategory && matchesBrand && matchesSize && matchesPrice;
-    })
-  ), [productos, activeFilters, categoryRoute, categoryRouteSlug, showFavorites, isFavorite]);
 
   const displayedFilters = useMemo(() => (
     categoryRoute
@@ -320,65 +291,14 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
       : activeFilters
   ), [activeFilters, categoryRoute]);
 
-  useEffect(() => {
-    if (!deferredSearchQuery.trim() || createSearchIndex) return undefined;
-
-    let active = true;
-    import('./utils/fuzzySearch')
-      .then(({ createFuzzySearchIndex }) => {
-        if (active) setCreateSearchIndex(() => createFuzzySearchIndex);
-      })
-      .catch(() => {
-        // Basic search remains available if the optional fuzzy-search chunk fails.
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [createSearchIndex, deferredSearchQuery]);
-
-  const productSearchIndex = useMemo(() => {
-    if (!createSearchIndex) {
-      return {
-        search: (query) => basicProductSearch(productsMatchingFilters, query),
-      };
-    }
-
-    return createSearchIndex(
-      productsMatchingFilters,
-      PRODUCT_SEARCH_KEYS,
-      { threshold: 0.38 },
-    );
-  }, [createSearchIndex, productsMatchingFilters]);
-
-  const filteredProducts = useMemo(() => {
-    const matches = productSearchIndex.search(deferredSearchQuery);
-    if (deferredSearchQuery.trim() && sortOrder === 'featured') return [...matches];
-
-    return [...matches].sort((a, b) => {
-      if (sortOrder === 'name-asc') {
-        return String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base' });
-      }
-      if (sortOrder === 'price-asc') return (Number(a.precio) || 0) - (Number(b.precio) || 0);
-      if (sortOrder === 'price-desc') return (Number(b.precio) || 0) - (Number(a.precio) || 0);
-
-      const aNuevo = a.es_nuevo === true ? 1 : 0;
-      const bNuevo = b.es_nuevo === true ? 1 : 0;
-      if (aNuevo !== bNuevo) return bNuevo - aNuevo;
-      return String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base' });
-    });
-  }, [deferredSearchQuery, productSearchIndex, sortOrder]);
-
-  const favoriteCount = useMemo(
-    () => productos.filter((product) => isFavorite(product.id)).length,
-    [isFavorite, productos],
-  );
+  const filteredProducts = productos;
+  const favoriteCount = favoriteIds.length;
 
   const recentProducts = useMemo(() => {
     const productsById = new Map(productos.map((product) => [String(product.id), product]));
     return recentIds
       .map((id) => productsById.get(id))
-      .filter((product) => product?.activo !== false);
+      .filter((product) => product && product.activo !== false);
   }, [productos, recentIds]);
 
   useEffect(() => {
@@ -388,46 +308,27 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
       return undefined;
     }
 
-    const fingerprint = `${query.toLocaleLowerCase('es')}|${filteredProducts.length}|${activeFilterCount}`;
+    const fingerprint = `${query.toLocaleLowerCase('es')}|${totalCount}|${activeFilterCount}`;
     if (searchMetricRef.current === fingerprint) return undefined;
 
     const timer = setTimeout(() => {
       searchMetricRef.current = fingerprint;
       trackEvent('catalog_search', {
         query_length: query.length,
-        result_count: filteredProducts.length,
-        has_results: filteredProducts.length > 0,
+        result_count: totalCount,
+        has_results: totalCount > 0,
         filter_count: activeFilterCount,
       });
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [activeFilterCount, deferredSearchQuery, filteredProducts.length, isInitialSyncing, loading]);
+  }, [activeFilterCount, deferredSearchQuery, isInitialSyncing, loading, totalCount]);
 
   // Build ordered category pill list from known config (only show if products exist with that category)
   const categoryPills = useMemo(() => {
-    const usadas = new Set(productos.map(p => p.categoria).filter(Boolean));
+    const usadas = new Set(categoryStats.map(({ id }) => id));
     return CATEGORIAS_CONFIG.filter(c => usadas.has(c.id));
-  }, [productos]);
-
-  const categoryStats = useMemo(() => {
-    const counts = new Map();
-    const thumbs = new Map(); // representative product image per category
-    productos
-      .filter(p => p.activo !== false && p.categoria)
-      .forEach((p) => {
-        counts.set(p.categoria, (counts.get(p.categoria) || 0) + 1);
-        if (!thumbs.has(p.categoria) && p.imagen_url) thumbs.set(p.categoria, p.imagen_url);
-      });
-
-    const labels = Object.fromEntries(CATEGORIAS_CONFIG.map(c => [c.id, c.label]));
-    return [...counts.entries()]
-      .map(([id, count]) => ({ id, label: labels[id] || id, count, imagen: thumbs.get(id) || null }))
-      .sort((a, b) => {
-        if (b.count !== a.count) return b.count - a.count;
-        return String(a.label || '').localeCompare(String(b.label || ''), 'es', { sensitivity: 'base' });
-      });
-  }, [productos]);
+  }, [categoryStats]);
 
   const topHomeCategories = useMemo(() => categoryStats.slice(0, 9), [categoryStats]);
   const topBrowserCategories = useMemo(() => categoryStats.slice(0, 8), [categoryStats]);
@@ -544,7 +445,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   };
 
   const catalogIsFiltered = searchQuery.trim().length > 0 || activeFilterCount > 0 || showFavorites;
-  const catalogMetadataPending = loading || isInitialSyncing || (isPartialData && refreshing);
+  const catalogMetadataPending = facetsLoading;
 
   // Render
   // Full-screen tracking view
@@ -714,7 +615,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
                 {!catalogMetadataPending && !error && (
                   <CatalogToolbar
-                    total={filteredProducts.length}
+                    total={totalCount}
                     sortOrder={sortOrder}
                     onSortChange={changeSortOrder}
                     isFiltered={catalogIsFiltered}
@@ -770,6 +671,10 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                     <ProductGrid
                       productos={filteredProducts}
                       catalogProducts={productos}
+                      totalProducts={totalCount}
+                      remoteHasMore={hasMore}
+                      remoteLoading={loadingMore}
+                      onLoadMore={loadMore}
                       getCantidad={getCantidad}
                       onAgregar={addCatalogItem}
                       onReducir={reducirItem}
@@ -830,7 +735,8 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
             onPrecioChange={setPriceFilter}
             priceBounds={priceBounds}
             limpiarFiltros={clearFilters}
-            totalResultados={filteredProducts.length}
+            totalResultados={totalCount}
+            categoryStats={categoryStats}
           />
         </Suspense>
       )}

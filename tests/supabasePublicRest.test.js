@@ -2,10 +2,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createPublicRestClient } from '../src/lib/supabasePublicRest.js';
 
-function createResponse(body, { ok = true, status = 200 } = {}) {
+function createResponse(body, { ok = true, status = 200, headers = {} } = {}) {
   return {
     ok,
     status,
+    headers: {
+      get: (name) => headers[String(name).toLowerCase()] ?? null,
+    },
     json: async () => body,
   };
 }
@@ -64,6 +67,43 @@ test('supports filtered maybeSingle queries', async () => {
   assert.equal(requestUrl.searchParams.get('clave'), 'eq.anuncio');
   assert.equal(requestUrl.searchParams.get('offset'), '0');
   assert.equal(requestUrl.searchParams.get('limit'), '1');
+});
+
+test('supports catalog filters and exact result counts', async () => {
+  const requests = [];
+  const client = createPublicRestClient({
+    url: 'https://example.supabase.co',
+    key: 'public-key',
+    fetchImpl: async (url, options) => {
+      requests.push({ url, options });
+      return createResponse([{ id: 'p-1' }], {
+        headers: { 'content-range': '0-0/37' },
+      });
+    },
+  });
+
+  const result = await client
+    .from('productos')
+    .select('id,nombre', { count: 'exact' })
+    .in('categoria', ['Globo Latex', 'Confeti "Metalizado"'])
+    .gte('precio', 10)
+    .lte('precio', 100)
+    .or('nombre.ilike.*globo*,descripcion.ilike.*globo*')
+    .range(0, 47);
+
+  assert.deepEqual(result, { data: [{ id: 'p-1' }], error: null, count: 37 });
+  const requestUrl = new URL(requests[0].url);
+  assert.equal(
+    requestUrl.searchParams.get('categoria'),
+    'in.("Globo Latex","Confeti \\"Metalizado\\"")',
+  );
+  assert.equal(requestUrl.searchParams.get('precio'), 'gte.10');
+  assert.deepEqual(requestUrl.searchParams.getAll('precio'), ['gte.10', 'lte.100']);
+  assert.equal(
+    requestUrl.searchParams.get('or'),
+    '(nombre.ilike.*globo*,descripcion.ilike.*globo*)',
+  );
+  assert.equal(requests[0].options.headers.Prefer, 'count=exact');
 });
 
 test('normalizes PostgREST and network errors', async () => {

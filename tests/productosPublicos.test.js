@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   fetchAllPublicProducts,
+  fetchPublicProductPage,
   PUBLIC_PRODUCT_FIELDS,
 } from '../src/lib/productosPublicos.js';
 
@@ -168,4 +169,80 @@ test('stops safely if a proxy repeats the same full page', async () => {
   assert.deepEqual(result.data.map(({ id }) => id), [1, 2]);
   assert.equal(result.complete, false);
   assert.equal(client.calls.length, 2);
+});
+
+test('builds a filtered server-side product page with a stable sort', async () => {
+  const calls = [];
+  const client = {
+    from(table) {
+      const call = { table, filters: [], orders: [], select: null, range: null };
+      calls.push(call);
+      const query = {
+        select(fields, options) {
+          call.select = [fields, options];
+          return query;
+        },
+        in(field, values) {
+          call.filters.push(['in', field, values]);
+          return query;
+        },
+        gte(field, value) {
+          call.filters.push(['gte', field, value]);
+          return query;
+        },
+        lte(field, value) {
+          call.filters.push(['lte', field, value]);
+          return query;
+        },
+        or(value) {
+          call.filters.push(['or', value]);
+          return query;
+        },
+        order(field, options) {
+          call.orders.push([field, options]);
+          return query;
+        },
+        range(from, to) {
+          call.range = [from, to];
+          return Promise.resolve({
+            data: [{ id: 'p-1' }],
+            error: null,
+            count: 53,
+          });
+        },
+      };
+      return query;
+    },
+  };
+
+  const result = await fetchPublicProductPage(client, {
+    offset: 48,
+    limit: 24,
+    filters: {
+      search: ' globo, azul ',
+      categories: ['Globo Latex'],
+      brands: ['Glomex'],
+      sizes: ['12 Pulg'],
+      minPrice: 20,
+      maxPrice: 100,
+    },
+    sortOrder: 'price-desc',
+  });
+
+  assert.equal(result.count, 53);
+  assert.equal(result.hasMore, true);
+  assert.deepEqual(calls[0].select, [PUBLIC_PRODUCT_FIELDS, { count: 'exact' }]);
+  assert.deepEqual(calls[0].filters, [
+    ['in', 'categoria', ['Globo Latex']],
+    ['in', 'marca', ['Glomex']],
+    ['in', 'tamano', ['12 Pulg']],
+    ['gte', 'precio', 20],
+    ['lte', 'precio', 100],
+    ['or', 'nombre.ilike.*globo*azul*,descripcion.ilike.*globo*azul*,categoria.ilike.*globo*azul*,marca.ilike.*globo*azul*,tamano.ilike.*globo*azul*'],
+  ]);
+  assert.deepEqual(calls[0].orders, [
+    ['precio', { ascending: false }],
+    ['id', { ascending: true }],
+  ]);
+  assert.deepEqual(calls[0].range, [48, 71]);
 });

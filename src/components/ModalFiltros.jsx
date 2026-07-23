@@ -4,7 +4,7 @@ import { categorias, marcas, tamanios, SIMBOLO_MONEDA } from '../data/productos'
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useLanguage } from '../hooks/useLanguage';
 
-const PRODUCTOS_CACHE_KEY = 'fp_productos_cache_v1';
+const PRODUCTOS_CACHE_KEY = 'fp_catalog_pages_v2';
 const BRAND_PURPLE = '#7B2FBE';
 
 function readProductosCache() {
@@ -239,6 +239,7 @@ export default function ModalFiltros({
   onPrecioChange,
   priceBounds,
   totalResultados,
+  categoryStats = [],
 }) {
   const panelRef = useRef(null);
   useFocusTrap(panelRef, isOpen);
@@ -266,6 +267,9 @@ export default function ModalFiltros({
   const productosCache = useMemo(() => readProductosCache(), [isOpen]);
 
   const categoryCounts = useMemo(() => {
+    if (categoryStats.length > 0) {
+      return new Map(categoryStats.map(({ id, count }) => [id, count]));
+    }
     const counts = new Map();
     productosCache
       .filter(producto => producto?.activo !== false && producto?.categoria)
@@ -273,7 +277,7 @@ export default function ModalFiltros({
         counts.set(producto.categoria, (counts.get(producto.categoria) || 0) + 1);
       });
     return counts;
-  }, [productosCache]);
+  }, [categoryStats, productosCache]);
 
   const priceRange = useMemo(() => {
     if (Number.isFinite(priceBounds?.min) && Number.isFinite(priceBounds?.max)) {

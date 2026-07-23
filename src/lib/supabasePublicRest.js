@@ -19,6 +19,20 @@ function createRequestError(response, payload) {
   };
 }
 
+function quotePostgrestValue(value) {
+  const escaped = String(value)
+    .replaceAll('\\', '\\\\')
+    .replaceAll('"', '\\"');
+  return `"${escaped}"`;
+}
+
+function parseContentRange(response) {
+  const contentRange = response.headers?.get?.('content-range');
+  const match = contentRange?.match(/\/(\d+|\*)$/);
+  if (!match || match[1] === '*') return null;
+  return Number.parseInt(match[1], 10);
+}
+
 export function createPublicRestClient({
   url,
   key,
@@ -38,6 +52,7 @@ export function createPublicRestClient({
     from(table) {
       const queryState = {
         fields: '*',
+        count: null,
         filters: [],
         orders: [],
         signal: undefined,
@@ -46,8 +61,8 @@ export function createPublicRestClient({
       const execute = async ({ from = 0, to } = {}) => {
         const params = new URLSearchParams({ select: queryState.fields });
 
-        queryState.filters.forEach(([field, value]) => {
-          params.append(field, `eq.${String(value)}`);
+        queryState.filters.forEach(([field, operator, value]) => {
+          params.append(field, operator ? `${operator}.${String(value)}` : String(value));
         });
 
         if (queryState.orders.length > 0) {
@@ -60,13 +75,19 @@ export function createPublicRestClient({
         }
 
         try {
+          const headers = {
+            apikey: key,
+            Authorization: `Bearer ${key}`,
+          };
+
+          if (queryState.count) {
+            headers.Prefer = `count=${queryState.count}`;
+          }
+
           const response = await fetchImpl(
             `${restUrl}/${encodeURIComponent(table)}?${params.toString()}`,
             {
-              headers: {
-                apikey: key,
-                Authorization: `Bearer ${key}`,
-              },
+              headers,
               signal: queryState.signal,
             },
           );
@@ -76,7 +97,11 @@ export function createPublicRestClient({
             return { data: null, error: createRequestError(response, payload) };
           }
 
-          return { data: Array.isArray(payload) ? payload : [], error: null };
+          const result = { data: Array.isArray(payload) ? payload : [], error: null };
+          if (queryState.count) {
+            result.count = parseContentRange(response);
+          }
+          return result;
         } catch (error) {
           if (error?.name === 'AbortError') {
             return { data: null, error: { code: 'ABORT_ERR', message: 'Consulta cancelada.' } };
@@ -93,12 +118,38 @@ export function createPublicRestClient({
       };
 
       const query = {
-        select(fields) {
+        select(fields, { count } = {}) {
           queryState.fields = fields || '*';
+          queryState.count = count || null;
           return query;
         },
         eq(field, value) {
-          queryState.filters.push([field, value]);
+          queryState.filters.push([field, 'eq', value]);
+          return query;
+        },
+        in(field, values) {
+          const safeValues = Array.isArray(values) ? values : [];
+          queryState.filters.push([
+            field,
+            'in',
+            `(${safeValues.map(quotePostgrestValue).join(',')})`,
+          ]);
+          return query;
+        },
+        gte(field, value) {
+          queryState.filters.push([field, 'gte', value]);
+          return query;
+        },
+        lte(field, value) {
+          queryState.filters.push([field, 'lte', value]);
+          return query;
+        },
+        ilike(field, value) {
+          queryState.filters.push([field, 'ilike', value]);
+          return query;
+        },
+        or(expression) {
+          queryState.filters.push(['or', '', `(${expression})`]);
           return query;
         },
         order(field, { ascending = true, nullsFirst } = {}) {
