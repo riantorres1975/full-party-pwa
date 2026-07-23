@@ -140,6 +140,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
     hasMore,
     loading,
     loadingMore,
+    loadMoreError,
     error,
     usingCachedData,
     isPartialData,
@@ -713,6 +714,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                       totalProducts={totalCount}
                       remoteHasMore={hasMore}
                       remoteLoading={loadingMore}
+                      remoteError={loadMoreError}
                       onLoadMore={loadMore}
                       getCantidad={getCantidad}
                       onAgregar={addCatalogItem}

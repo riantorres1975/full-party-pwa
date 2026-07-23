@@ -447,6 +447,62 @@ test('a 1000-product catalog renders progressively without limiting search', asy
   expect(pageErrors).toEqual([]);
 });
 
+test('a failed catalog page can be retried without losing loaded products', async ({ page }) => {
+  const products = Array.from({ length: 120 }, (_, index) => ({
+    ...catalogFixture[index % catalogFixture.length],
+    id: `retry-${index + 1}`,
+    nombre: `Producto Recuperable ${String(index + 1).padStart(3, '0')}`,
+    es_nuevo: false,
+  }));
+  let failedSecondPage = false;
+
+  await page.unroute('**/rest/v1/productos*');
+  await page.unroute('**/rest/v1/catalogo_facetas_publicas*');
+  await page.route('**/rest/v1/catalogo_facetas_publicas*', async (route) => {
+    await fulfillFacetRequest(route, products);
+  });
+  await page.route('**/rest/v1/productos*', async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const offset = Number(requestUrl.searchParams.get('offset')) || 0;
+
+    if (
+      route.request().method() !== 'OPTIONS'
+      && offset >= 48
+      && !failedSecondPage
+    ) {
+      failedSecondPage = true;
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        headers: catalogCorsHeaders,
+        body: JSON.stringify({ code: 'TEMPORARY_UNAVAILABLE', message: 'Try again' }),
+      });
+      return;
+    }
+
+    await fulfillCatalogRequest(route, products);
+  });
+
+  await page.goto('/catalogo');
+
+  const cards = page.locator('article.product-card');
+  const sentinel = page.locator('[data-catalog-load-sentinel]');
+  await expect(page.getByText('120 productos', { exact: true })).toBeVisible();
+
+  const retryButton = page.getByRole('button', { name: 'Intentar de nuevo' });
+  await expect.poll(async () => {
+    await sentinel.evaluate((node) => node.scrollIntoView({ block: 'center' }));
+    return retryButton.isVisible();
+  }, { timeout: 10_000 }).toBe(true);
+  const cardsBeforeRetry = await cards.count();
+  expect(cardsBeforeRetry).toBeGreaterThan(0);
+
+  await retryButton.click();
+  await expect(retryButton).toBeHidden();
+  await expect.poll(() => cards.count()).toBeGreaterThan(cardsBeforeRetry);
+  expect(failedSecondPage).toBe(true);
+});
+
 test('an empty catalog is distinguished from a search without results', async ({ page }) => {
   await page.unroute('**/rest/v1/productos*');
   await page.unroute('**/rest/v1/catalogo_facetas_publicas*');

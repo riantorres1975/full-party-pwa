@@ -23,6 +23,7 @@ export default function ProductGrid({
   recentProducts = [],
   remoteHasMore = false,
   remoteLoading = false,
+  remoteError = null,
   onLoadMore,
   totalProducts = productos.length,
 }) {
@@ -37,10 +38,12 @@ export default function ProductGrid({
     sentinelRef,
     hayMas,
     cargando,
+    cargarMas,
   } = useInfiniteScroll(productos.length, {
     resetKey: productSetKey,
     hasMoreRemote: remoteHasMore,
     remoteLoading,
+    remoteError: Boolean(remoteError),
     onLoadMore,
   });
   const [productoDetalle, setProductoDetalle] = useState(null);
@@ -231,6 +234,22 @@ export default function ProductGrid({
                 <span className="text-sm font-body font-bold text-ink-400">
                   {t('grid.loadingMore')}
                 </span>
+              </div>
+            ) : remoteError ? (
+              <div
+                className="flex flex-col items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3 text-center"
+                role="alert"
+              >
+                <span className="text-xs font-body font-bold text-rose-700">
+                  {t('grid.loadMoreError')}
+                </span>
+                <button
+                  type="button"
+                  onClick={cargarMas}
+                  className="rounded-xl bg-white px-4 py-2 text-xs font-body font-black text-rose-600 shadow-sm transition-transform active:scale-95"
+                >
+                  {t('grid.retryLoadMore')}
+                </button>
               </div>
             ) : null}
           </div>

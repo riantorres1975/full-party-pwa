@@ -6,6 +6,10 @@ import {
 } from '../lib/productosPublicos';
 import { getPublicRestClient } from '../lib/supabasePublicRest';
 import { trackCatalogDataRequest } from '../utils/analytics';
+import {
+  readCatalogQueryCache,
+  writeCatalogQueryCache,
+} from '../utils/catalogQueryCache';
 import { deferSupabase } from '../utils/deferSupabase';
 
 const CATALOG_CACHE_KEY = 'fp_catalog_pages_v2';
@@ -90,6 +94,14 @@ function writeCatalogCache(data, totalCount) {
   }
 }
 
+function getQueryCacheStorage() {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
 function appendUnique(current, incoming) {
   const knownIds = new Set(current.map(({ id }) => String(id)));
   return [
@@ -109,24 +121,32 @@ export function useCatalogProducts(queryInput, {
 } = {}) {
   const query = useMemo(() => normalizeCatalogQuery(queryInput), [queryInput]);
   const queryKey = JSON.stringify(query);
-  const initialCacheRef = useRef(isDefaultQuery(query) ? readCatalogCache() : null);
+  const initialCacheRef = useRef(
+    readCatalogQueryCache(getQueryCacheStorage(), queryKey)
+    || (isDefaultQuery(query) ? readCatalogCache() : null),
+  );
   const [productos, setProductos] = useState(initialCacheRef.current?.data || []);
   const [totalCount, setTotalCount] = useState(initialCacheRef.current?.totalCount || 0);
   const [hasMore, setHasMore] = useState(
-    () => (initialCacheRef.current?.data.length || 0) < (initialCacheRef.current?.totalCount || 0),
+    () => initialCacheRef.current?.hasMore
+      ?? (initialCacheRef.current?.data.length || 0) < (initialCacheRef.current?.totalCount || 0),
   );
+  const [productsQueryKey, setProductsQueryKey] = useState(queryKey);
   const [loading, setLoading] = useState(() => !initialCacheRef.current);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [usingCachedData, setUsingCachedData] = useState(Boolean(initialCacheRef.current));
+  const [loadMoreError, setLoadMoreError] = useState(null);
   const [refreshTick, setRefreshTick] = useState(0);
   const requestVersionRef = useRef(0);
+  const activeQueryKeyRef = useRef(queryKey);
   const queryRef = useRef(query);
   const productsRef = useRef(productos);
   const totalCountRef = useRef(totalCount);
   const hasMoreRef = useRef(hasMore);
   const loadingMoreRef = useRef(false);
+  const loadMoreControllerRef = useRef(null);
   const requiredProductIdRef = useRef(requiredProductId);
   const extraProductIdRef = useRef(null);
 
@@ -166,7 +186,43 @@ export function useCatalogProducts(queryInput, {
     requestVersionRef.current = version;
     const controller = new AbortController();
     const currentQuery = queryRef.current;
-    const hasExistingProducts = productsRef.current.length > 0;
+    const currentQueryKey = queryKey;
+    const queryChanged = activeQueryKeyRef.current !== currentQueryKey;
+    let hasExistingProducts = productsRef.current.length > 0;
+
+    loadMoreControllerRef.current?.abort();
+    loadMoreControllerRef.current = null;
+    loadingMoreRef.current = false;
+    setLoadingMore(false);
+    setLoadMoreError(null);
+
+    if (queryChanged) {
+      activeQueryKeyRef.current = currentQueryKey;
+      extraProductIdRef.current = null;
+      setProductsQueryKey(currentQueryKey);
+      const cachedQuery = readCatalogQueryCache(getQueryCacheStorage(), currentQueryKey);
+
+      if (cachedQuery) {
+        productsRef.current = cachedQuery.data;
+        totalCountRef.current = cachedQuery.totalCount;
+        hasMoreRef.current = cachedQuery.hasMore;
+        hasExistingProducts = cachedQuery.data.length > 0;
+        setProductos(cachedQuery.data);
+        setTotalCount(cachedQuery.totalCount);
+        setHasMore(cachedQuery.hasMore);
+        setLoading(false);
+        setUsingCachedData(true);
+      } else {
+        productsRef.current = [];
+        totalCountRef.current = 0;
+        hasMoreRef.current = false;
+        hasExistingProducts = false;
+        setProductos([]);
+        setTotalCount(0);
+        setHasMore(false);
+        setUsingCachedData(false);
+      }
+    }
 
     if (!enabled) {
       setProductos([]);
@@ -218,6 +274,7 @@ export function useCatalogProducts(queryInput, {
       const nextProducts = await loadRequiredProduct(result.data, controller.signal);
       if (controller.signal.aborted || requestVersionRef.current !== version) return;
       const nextTotal = result.count ?? result.data.length;
+      const nextHasMore = result.hasMore;
       extraProductIdRef.current = nextProducts.length > result.data.length
         ? String(requiredProductIdRef.current || '')
         : null;
@@ -230,13 +287,22 @@ export function useCatalogProducts(queryInput, {
         usingCache: hasExistingProducts,
       });
 
+      productsRef.current = nextProducts;
+      totalCountRef.current = nextTotal;
+      hasMoreRef.current = nextHasMore;
       startTransition(() => {
+        setProductsQueryKey(currentQueryKey);
         setProductos(nextProducts);
         setTotalCount(nextTotal);
-        setHasMore(result.hasMore);
+        setHasMore(nextHasMore);
         setUsingCachedData(false);
         setLoading(false);
         setRefreshing(false);
+      });
+      writeCatalogQueryCache(getQueryCacheStorage(), currentQueryKey, {
+        data: result.data,
+        totalCount: nextTotal,
+        hasMore: nextHasMore,
       });
       if (isDefaultQuery(currentQuery)) writeCatalogCache(nextProducts, nextTotal);
     }
@@ -259,10 +325,15 @@ export function useCatalogProducts(queryInput, {
 
   const loadMore = useCallback(async () => {
     if (!enabled || loadingMoreRef.current || !hasMoreRef.current) return;
+    const controller = new AbortController();
+    loadMoreControllerRef.current?.abort();
+    loadMoreControllerRef.current = controller;
     loadingMoreRef.current = true;
     setLoadingMore(true);
+    setLoadMoreError(null);
     const version = requestVersionRef.current;
     const currentQuery = queryRef.current;
+    const currentQueryKey = JSON.stringify(currentQuery);
     const offset = productsRef.current.filter(
       (product) => String(product.id) !== extraProductIdRef.current,
     ).length;
@@ -275,8 +346,9 @@ export function useCatalogProducts(queryInput, {
         filters: currentQuery,
         sortOrder: currentQuery.sortOrder,
         includeCount: false,
+        signal: controller.signal,
       });
-      if (requestVersionRef.current !== version) return;
+      if (controller.signal.aborted || requestVersionRef.current !== version) return;
       trackCatalogDataRequest({
         requestType: 'load_more',
         status: result.error ? 'error' : 'success',
@@ -284,7 +356,10 @@ export function useCatalogProducts(queryInput, {
         resultCount: result.data.length,
         hasFilters: hasActiveFilters(currentQuery),
       });
-      if (result.error) return;
+      if (result.error) {
+        setLoadMoreError('No pudimos cargar más productos.');
+        return;
+      }
 
       const next = appendUnique(productsRef.current, result.data);
       productsRef.current = next;
@@ -296,15 +371,31 @@ export function useCatalogProducts(queryInput, {
       const nextHasMore = Number.isInteger(totalCountRef.current)
         ? offset + result.data.length < totalCountRef.current
         : result.hasMore;
+      hasMoreRef.current = nextHasMore;
       setHasMore(nextHasMore);
+      const cacheProducts = next.filter(
+        (product) => String(product.id) !== extraProductIdRef.current,
+      );
+      writeCatalogQueryCache(getQueryCacheStorage(), currentQueryKey, {
+        data: cacheProducts,
+        totalCount: totalCountRef.current || cacheProducts.length,
+        hasMore: nextHasMore,
+      });
       if (isDefaultQuery(currentQuery)) {
         writeCatalogCache(next, totalCountRef.current || next.length);
       }
     } finally {
-      loadingMoreRef.current = false;
-      setLoadingMore(false);
+      if (loadMoreControllerRef.current === controller) {
+        loadMoreControllerRef.current = null;
+        loadingMoreRef.current = false;
+        setLoadingMore(false);
+      }
     }
   }, [enabled]);
+
+  useEffect(() => () => {
+    loadMoreControllerRef.current?.abort();
+  }, []);
 
   useEffect(() => {
     let timer;
@@ -336,17 +427,20 @@ export function useCatalogProducts(queryInput, {
     setRefreshTick((tick) => tick + 1);
   }, [loading, refreshing]);
 
+  const productsMatchQuery = productsQueryKey === queryKey;
+
   return {
-    productos,
-    totalCount,
-    hasMore,
-    loading,
-    loadingMore,
-    refreshing,
-    error,
-    usingCachedData,
+    productos: productsMatchQuery ? productos : [],
+    totalCount: productsMatchQuery ? totalCount : 0,
+    hasMore: productsMatchQuery ? hasMore : false,
+    loading: loading || !productsMatchQuery,
+    loadingMore: productsMatchQuery && loadingMore,
+    loadMoreError: productsMatchQuery ? loadMoreError : null,
+    refreshing: productsMatchQuery && refreshing,
+    error: productsMatchQuery ? error : null,
+    usingCachedData: productsMatchQuery && usingCachedData,
     isPartialData: false,
-    isInitialSyncing: loading && productos.length === 0,
+    isInitialSyncing: !productsMatchQuery || (loading && productos.length === 0),
     refetch,
     loadMore,
   };

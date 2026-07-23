@@ -30,6 +30,7 @@ export function useInfiniteScroll(totalItems, {
   hasMoreRemote = false,
   onLoadMore,
   remoteLoading = false,
+  remoteError = false,
 } = {}) {
   const [visibleCount, setVisibleCount] = useState(() => (
     Math.min(getCurrentPagePlan().initial, totalItems)
@@ -48,11 +49,13 @@ export function useInfiniteScroll(totalItems, {
   const hasMoreRemoteRef = useRef(hasMoreRemote);
   const onLoadMoreRef = useRef(onLoadMore);
   const remoteLoadingRef = useRef(remoteLoading);
+  const remoteErrorRef = useRef(remoteError);
 
   totalRef.current = totalItems;
   hasMoreRemoteRef.current = hasMoreRemote;
   onLoadMoreRef.current = onLoadMore;
   remoteLoadingRef.current = remoteLoading;
+  remoteErrorRef.current = remoteError;
   const hayMas = visibleCount < totalItems || hasMoreRemote;
   const nextCount = visibleCount < totalItems
     ? Math.min(getCurrentPagePlan().batch, Math.max(0, totalItems - visibleCount))
@@ -130,7 +133,13 @@ export function useInfiniteScroll(totalItems, {
       visibleCountRef.current >= totalRef.current
       && !hasMoreRemoteRef.current
     );
-    if (!node || pendingRef.current || remoteLoadingRef.current || noLocalOrRemoteItems) return;
+    if (
+      !node
+      || pendingRef.current
+      || remoteLoadingRef.current
+      || remoteErrorRef.current
+      || noLocalOrRemoteItems
+    ) return;
 
     const root = getScrollRoot(node, rootSelector);
     const rootBottom = root?.getBoundingClientRect().bottom ?? window.innerHeight;
@@ -197,7 +206,7 @@ export function useInfiniteScroll(totalItems, {
 
   useEffect(() => {
     checkProximityRef.current?.();
-  }, [hasMoreRemote, remoteLoading, totalItems]);
+  }, [hasMoreRemote, remoteError, remoteLoading, totalItems]);
 
   useEffect(() => () => {
     observerRef.current?.disconnect();
