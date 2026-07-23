@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { startTransition, useCallback, useEffect, useRef, useState } from 'react';
 
 const OBSERVER_REARM_DELAY_MS = 400;
 
 export function getCatalogPagePlan(viewportWidth) {
   const width = Number.isFinite(viewportWidth) ? viewportWidth : 1024;
 
-  if (width < 640) return { initial: 6, batch: 8 };
-  if (width < 1024) return { initial: 12, batch: 12 };
-  if (width < 1536) return { initial: 12, batch: 20 };
-  return { initial: 16, batch: 28 };
+  if (width < 640) return { initial: 6, batch: 12 };
+  if (width < 1024) return { initial: 12, batch: 16 };
+  if (width < 1536) return { initial: 12, batch: 24 };
+  return { initial: 16, batch: 32 };
 }
 
 function getCurrentPagePlan() {
@@ -44,7 +44,6 @@ export function useInfiniteScroll(totalItems, {
   const visibleCountRef = useRef(visibleCount);
 
   totalRef.current = totalItems;
-  visibleCountRef.current = visibleCount;
   const hayMas = visibleCount < totalItems;
   const nextCount = Math.min(getCurrentPagePlan().batch, Math.max(0, totalItems - visibleCount));
 
@@ -59,8 +58,14 @@ export function useInfiniteScroll(totalItems, {
     }
     pendingRef.current = false;
     setCargando(false);
-    setVisibleCount(Math.min(getCurrentPagePlan().initial, totalRef.current));
+    const next = Math.min(getCurrentPagePlan().initial, totalRef.current);
+    visibleCountRef.current = next;
+    setVisibleCount(next);
   }, []);
+
+  useEffect(() => {
+    visibleCountRef.current = visibleCount;
+  }, [visibleCount]);
 
   const cargarMas = useCallback(() => {
     if (pendingRef.current || visibleCountRef.current >= totalRef.current) return;
@@ -70,10 +75,10 @@ export function useInfiniteScroll(totalItems, {
     setCargando(true);
     animationFrameRef.current = window.requestAnimationFrame(() => {
       const { batch } = getCurrentPagePlan();
-      setVisibleCount((current) => {
-        const next = Math.min(current + batch, totalRef.current);
-        visibleCountRef.current = next;
-        return next;
+      const next = Math.min(visibleCountRef.current + batch, totalRef.current);
+      visibleCountRef.current = next;
+      startTransition(() => {
+        setVisibleCount(next);
       });
       animationFrameRef.current = null;
       pendingRef.current = false;

@@ -36,6 +36,7 @@ const PRODUCT_SEARCH_KEYS = [
 ];
 
 const BASIC_SEARCH_FIELDS = ['nombre', 'descripcion', 'categoria', 'marca', 'tamano'];
+const basicSearchTextCache = new WeakMap();
 
 function normalizeSearchValue(value) {
   return String(value || '')
@@ -49,9 +50,13 @@ function basicProductSearch(collection, query) {
   if (terms.length === 0) return collection;
 
   return collection.filter((product) => {
-    const searchableText = BASIC_SEARCH_FIELDS
-      .map((field) => normalizeSearchValue(product[field]))
-      .join(' ');
+    let searchableText = basicSearchTextCache.get(product);
+    if (!searchableText) {
+      searchableText = BASIC_SEARCH_FIELDS
+        .map((field) => normalizeSearchValue(product[field]))
+        .join(' ');
+      basicSearchTextCache.set(product, searchableText);
+    }
     return terms.every((term) => searchableText.includes(term));
   });
 }

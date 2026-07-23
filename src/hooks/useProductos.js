@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { startTransition, useState, useEffect, useRef } from 'react';
 import { registrarCategoria, registrarMarca, registrarTamano } from '../data/productos';
 import { fetchAllPublicProducts } from '../lib/productosPublicos';
 import { getPublicRestClient } from '../lib/supabasePublicRest';
@@ -141,39 +141,63 @@ export function useProductos({ completeCatalog = true } = {}) {
 
       if (enPrimerArranqueSinCache) {
         let registeredCount = 0;
+        let publishedCount = 0;
         const { data: primerLote, error: primerError, complete: primerComplete } = await baseQuery({
           acceptPartial: true,
           onPage: (partialProducts, { pageIndex, isLastPage }) => {
             if (cancelado || partialProducts.length === 0) return;
 
-            registrarMetadatosProductos(partialProducts.slice(registeredCount));
+            const newProducts = partialProducts.slice(registeredCount);
+            registrarMetadatosProductos(newProducts);
             registeredCount = partialProducts.length;
+            publishedCount = partialProducts.length;
             cacheCompleteRef.current = isLastPage;
             writeProductosCache(partialProducts, isLastPage);
             if (pageIndex === 0) writeLcpImageHint(partialProducts);
             hasUsableProducts = true;
-            setProductos(partialProducts);
-            setUsingCachedData(false);
-            setIsPartialData(!isLastPage);
-            setIsInitialSyncing(false);
-            setLoading(false);
-            setRefreshing(completeCatalog && !isLastPage);
+
+            const publishPage = () => {
+              if (pageIndex === 0 || newProducts.length > 0) {
+                setProductos(partialProducts);
+              }
+              setUsingCachedData(false);
+              setIsPartialData(!isLastPage);
+              setIsInitialSyncing(false);
+              setLoading(false);
+              setRefreshing(completeCatalog && !isLastPage);
+            };
+
+            if (pageIndex === 0) {
+              publishPage();
+            } else {
+              startTransition(publishPage);
+            }
           },
         });
 
         if (cancelado) return;
 
         if (!primerError && Array.isArray(primerLote)) {
-          registrarMetadatosProductos(primerLote);
+          const needsFinalPublish = publishedCount !== primerLote.length;
+          if (needsFinalPublish) {
+            registrarMetadatosProductos(primerLote.slice(publishedCount));
+            setProductos(primerLote);
+          }
           cacheCompleteRef.current = primerComplete !== false;
-          writeProductosCache(primerLote, primerComplete !== false);
-          writeLcpImageHint(primerLote);
-          setProductos(primerLote);
-          setUsingCachedData(false);
-          setIsPartialData(primerComplete === false);
-          setIsInitialSyncing(false);
-          setLoading(false);
-          setRefreshing(false);
+          if (publishedCount === 0) {
+            writeProductosCache(primerLote, primerComplete !== false);
+            writeLcpImageHint(primerLote);
+          }
+          // When onPage published the terminal page, keep its product and
+          // metadata updates in the same transition to avoid an intermediate
+          // grid built from an incomplete catalog.
+          if (needsFinalPublish || publishedCount === 0) {
+            setUsingCachedData(false);
+            setIsPartialData(primerComplete === false);
+            setIsInitialSyncing(false);
+            setLoading(false);
+            setRefreshing(false);
+          }
           return;
         }
 

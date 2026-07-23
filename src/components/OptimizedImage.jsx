@@ -38,10 +38,11 @@ function OptimizedImageInner({
   const [error, setError] = useState(false);
   const imgRef = useRef(null);
 
-  const fallbackSrc = buildInlineFallback(fallbackText || alt || 'Producto');
   const srcLimpio = typeof src === 'string' ? src.trim() : '';
   const srcTransformado = srcLimpio ? getSupabaseImageUrl(srcLimpio, { width: imgWidth, quality }) : srcLimpio;
-  const srcFinal = error || !srcLimpio ? fallbackSrc : srcTransformado;
+  const srcFinal = error || !srcLimpio
+    ? buildInlineFallback(fallbackText || alt || 'Producto')
+    : srcTransformado;
 
   useEffect(() => {
     setError(false);
@@ -79,7 +80,7 @@ function OptimizedImageInner({
       cancelAnimationFrame(raf);
       clearTimeout(timeoutId);
     };
-  }, [srcFinal, srcLimpio, fallbackSrc]);
+  }, [srcFinal, srcLimpio, error]);
 
   return (
     <div

@@ -51,7 +51,9 @@ export function useFocusTrap(ref, active, initialFocus = 'first') {
     return () => {
       cancelAnimationFrame(focusFrame);
       el.removeEventListener('keydown', trap);
-      previouslyFocused?.focus?.();
+      if (previouslyFocused instanceof HTMLElement && previouslyFocused.isConnected) {
+        previouslyFocused.focus({ preventScroll: true });
+      }
     };
   }, [active, ref, initialFocus]);
 }

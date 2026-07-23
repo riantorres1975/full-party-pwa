@@ -161,8 +161,9 @@ test('the public catalog remains usable without horizontal overflow', async ({ p
   expect(pageErrors).toEqual([]);
 });
 
-test('a 500-product catalog renders progressively without limiting search', async ({ page }) => {
-  const largeCatalog = Array.from({ length: 500 }, (_, index) => ({
+test('a 1000-product catalog renders progressively without limiting search', async ({ page }) => {
+  const maxProgressiveCards = 200;
+  const largeCatalog = Array.from({ length: 1000 }, (_, index) => ({
     ...catalogFixture[0],
     id: `scale-${index + 1}`,
     nombre: `Producto Escalable ${String(index + 1).padStart(3, '0')}`,
@@ -185,26 +186,26 @@ test('a 500-product catalog renders progressively without limiting search', asyn
   await page.goto('/catalogo');
 
   const cards = page.locator('article.product-card');
-  await expect(page.getByText('500 productos', { exact: true })).toBeVisible();
+  await expect(page.getByText('1000 productos', { exact: true })).toBeVisible();
   await expect.poll(() => cards.count()).toBeGreaterThan(0);
-  expect(await cards.count()).toBeLessThan(500);
+  expect(await cards.count()).toBeLessThanOrEqual(maxProgressiveCards);
 
   const search = page.locator('input:visible').first();
-  await search.fill('Producto Escalable 500');
-  await expect(cards.getByRole('heading', { name: 'Producto Escalable 500' })).toBeVisible();
-  expect(await cards.count()).toBeLessThan(500);
+  await search.fill('Producto Escalable 1000');
+  await expect(cards.getByRole('heading', { name: 'Producto Escalable 1000' })).toBeVisible();
+  expect(await cards.count()).toBeLessThanOrEqual(maxProgressiveCards);
 
   await search.fill('');
   await expect.poll(() => cards.count()).toBeGreaterThan(0);
   await page.waitForTimeout(1_200);
   const countBeforeMore = await cards.count();
-  expect(countBeforeMore).toBeLessThan(500);
+  expect(countBeforeMore).toBeLessThanOrEqual(maxProgressiveCards);
 
   const sentinel = page.locator('[data-catalog-load-sentinel]');
   await expect(sentinel).toBeAttached();
   await sentinel.evaluate((node) => node.scrollIntoView({ block: 'center' }));
   await expect.poll(() => cards.count()).toBeGreaterThan(countBeforeMore);
-  expect(await cards.count()).toBeLessThan(500);
+  expect(await cards.count()).toBeLessThanOrEqual(maxProgressiveCards);
   await expect(page.getByRole('button', { name: /Mostrar \d+ productos m.s/ })).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => {
     const cache = JSON.parse(localStorage.getItem('fp_productos_cache_v1') || '{}');
@@ -212,7 +213,7 @@ test('a 500-product catalog renders progressively without limiting search', asyn
       complete: cache.complete,
       length: cache.data?.length || 0,
     };
-  })).toEqual({ complete: true, length: 500 });
+  })).toEqual({ complete: true, length: 1000 });
 
   if ((page.viewportSize()?.width || 0) >= 1024) {
     const scrollRoot = page.locator('[data-catalog-scroll-root]');
