@@ -61,7 +61,7 @@ function NovedadesLoadingState() {
 }
 
 export default function NovedadesSection() {
-  const { productos, loading } = useProductos();
+  const { productos, loading } = useProductos({ completeCatalog: false });
   const novedades = useMemo(
     () => productos.filter(p => p.es_nuevo === true && p.activo !== false).slice(0, 12),
     [productos],

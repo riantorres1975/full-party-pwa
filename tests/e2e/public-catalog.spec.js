@@ -138,6 +138,11 @@ test('the public catalog remains usable without horizontal overflow', async ({ p
 
   await search.fill('globo');
   await expect(search).toHaveValue('globo');
+  if ((page.viewportSize()?.width || 0) >= 1024) {
+    const activeFilters = page.getByLabel('Filtros activos');
+    await expect(activeFilters).toBeVisible();
+    await expect(activeFilters.getByRole('button', { name: 'Quitar filtro "globo"' })).toBeVisible();
+  }
   await expect.poll(async () => (
     (await readAnalyticsEvents(page)).some(({ name }) => name === 'catalog_search')
   )).toBe(true);
@@ -170,9 +175,10 @@ test('a 500-product catalog renders progressively without limiting search', asyn
       await fulfillCatalogRequest(route, []);
       return;
     }
-    const [from = 0, to = largeCatalog.length - 1] = String(
-      route.request().headers().range || `0-${largeCatalog.length - 1}`,
-    ).split('-').map(Number);
+    const requestUrl = new URL(route.request().url());
+    const from = Number(requestUrl.searchParams.get('offset')) || 0;
+    const limit = Number(requestUrl.searchParams.get('limit')) || largeCatalog.length;
+    const to = from + limit - 1;
     await fulfillCatalogRequest(route, largeCatalog.slice(from, to + 1));
   });
 
@@ -200,6 +206,36 @@ test('a 500-product catalog renders progressively without limiting search', asyn
   await expect.poll(() => cards.count()).toBeGreaterThan(countBeforeMore);
   expect(await cards.count()).toBeLessThan(500);
   await expect(page.getByRole('button', { name: /Mostrar \d+ productos m.s/ })).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => {
+    const cache = JSON.parse(localStorage.getItem('fp_productos_cache_v1') || '{}');
+    return {
+      complete: cache.complete,
+      length: cache.data?.length || 0,
+    };
+  })).toEqual({ complete: true, length: 500 });
+
+  if ((page.viewportSize()?.width || 0) >= 1024) {
+    const scrollRoot = page.locator('[data-catalog-scroll-root]');
+    await expect.poll(() => scrollRoot.evaluate((node) => node.scrollTop)).toBeGreaterThan(700);
+
+    const lastVisibleProduct = cards.last().locator('.product-card-detail-trigger');
+    await lastVisibleProduct.scrollIntoViewIfNeeded();
+    await lastVisibleProduct.click();
+    const productDetail = page.getByRole('dialog');
+    await expect(productDetail).toBeVisible();
+    const scrollWithDetail = await scrollRoot.evaluate((node) => node.scrollTop);
+    expect(scrollWithDetail).toBeGreaterThan(700);
+    await page.keyboard.press('Escape');
+    await expect(productDetail).toBeHidden();
+    await expect.poll(async () => Math.abs(
+      (await scrollRoot.evaluate((node) => node.scrollTop)) - scrollWithDetail,
+    )).toBeLessThanOrEqual(100);
+
+    const backToTop = page.getByRole('button', { name: 'Volver arriba' });
+    await expect(backToTop).toBeVisible();
+    await backToTop.click();
+    await expect.poll(() => scrollRoot.evaluate((node) => node.scrollTop)).toBeLessThan(10);
+  }
 });
 
 test('an empty catalog is distinguished from a search without results', async ({ page }) => {

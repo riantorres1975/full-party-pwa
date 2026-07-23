@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useProductos }      from './hooks/useProductos';
 import { useCarrito }        from './hooks/useCarrito';
 import { useToast }          from './components/ui/ToastProvider';
-import { categorias as CATEGORIAS_CONFIG } from './data/productos';
+import { categorias as CATEGORIAS_CONFIG, SIMBOLO_MONEDA } from './data/productos';
 import { useAnuncio }         from './hooks/useAnuncio';
 import { usePedidosHabilitados } from './hooks/usePedidosHabilitados';
 import { useLanguage }        from './hooks/useLanguage';
@@ -16,6 +16,8 @@ import SidebarFiltrosDesktop from './components/SidebarFiltrosDesktop';
 import CategoryGrid, { CategoryGridSkeleton } from './components/CategoryGrid';
 import BottomNav from './components/BottomNav';
 import CatalogToolbar, { CatalogToolbarSkeleton } from './components/CatalogToolbar';
+import ActiveCatalogFilters from './components/ActiveCatalogFilters';
+import CatalogBackToTop from './components/CatalogBackToTop';
 import { createFuzzySearchIndex } from './utils/fuzzySearch';
 import { buildProductAnalyticsParams, trackEvent } from './utils/analytics';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
@@ -70,6 +72,14 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const searchRef = useRef(null);
   const searchMetricRef = useRef('');
+  const catalogScrollRef = useRef(null);
+
+  const scrollCatalogTop = useCallback((behavior = 'smooth') => {
+    requestAnimationFrame(() => {
+      catalogScrollRef.current?.scrollTo({ top: 0, behavior });
+      window.scrollTo({ top: 0, behavior });
+    });
+  }, []);
 
   const [activeFilters, setActiveFilters] = useState({
     categorias: [],
@@ -197,6 +207,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
         filter_type: 'category',
         has_value: !isSelected,
       });
+      scrollCatalogTop('auto');
       return;
     }
     setActiveFilters(prev => {
@@ -208,11 +219,13 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
           : [...actual, valor],
       };
     });
+    scrollCatalogTop('auto');
   };
 
   const clearFilters = () => {
     setActiveFilters({ categorias: [], marcas: [], tamanios: [], precioMin: null, precioMax: null });
     if (categoryRouteSlug) navigate('/catalogo');
+    scrollCatalogTop('auto');
   };
 
   const setPriceFilter = ({ min, max }) => {
@@ -221,6 +234,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
       precioMin: min,
       precioMax: max,
     }));
+    scrollCatalogTop('auto');
   };
 
   const priceBounds = useMemo(() => {
@@ -355,10 +369,85 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
   const topHomeCategories = useMemo(() => categoryStats.slice(0, 9), [categoryStats]);
   const topBrowserCategories = useMemo(() => categoryStats.slice(0, 8), [categoryStats]);
 
-  const scrollCatalogTop = () => {
-    requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  const activeCatalogChips = useMemo(() => {
+    const chips = [];
+    const query = searchQuery.trim();
+    const categoryLabels = Object.fromEntries(CATEGORIAS_CONFIG.map((category) => (
+      [category.id, category.label]
+    )));
+
+    if (query) chips.push({ id: 'search', type: 'search', label: `"${query}"` });
+    if (categoryRoute) {
+      chips.push({ id: 'category-route', type: 'category', label: categoryRoute.label });
+    } else {
+      activeFilters.categorias.forEach((category) => {
+        chips.push({
+          id: `category-${category}`,
+          type: 'category',
+          value: category,
+          label: categoryLabels[category] || category,
+        });
+      });
+    }
+    activeFilters.marcas.forEach((brand) => {
+      chips.push({ id: `brand-${brand}`, type: 'brand', value: brand, label: brand });
     });
+    activeFilters.tamanios.forEach((size) => {
+      chips.push({ id: `size-${size}`, type: 'size', value: size, label: size });
+    });
+
+    const hasMin = Number.isFinite(activeFilters.precioMin);
+    const hasMax = Number.isFinite(activeFilters.precioMax);
+    if (hasMin || hasMax) {
+      let label = '';
+      if (hasMin && hasMax) {
+        label = `${SIMBOLO_MONEDA}${Math.round(activeFilters.precioMin)} - ${SIMBOLO_MONEDA}${Math.round(activeFilters.precioMax)}`;
+      } else if (hasMin) {
+        label = `${t('catalog.priceFrom')} ${SIMBOLO_MONEDA}${Math.round(activeFilters.precioMin)}`;
+      } else {
+        label = `${t('catalog.priceTo')} ${SIMBOLO_MONEDA}${Math.round(activeFilters.precioMax)}`;
+      }
+      chips.push({ id: 'price', type: 'price', label });
+    }
+    if (showFavorites) {
+      chips.push({ id: 'favorites', type: 'favorites', label: t('catalog.favorites') });
+    }
+    return chips;
+  }, [activeFilters, categoryRoute, searchQuery, showFavorites, t]);
+
+  const removeCatalogChip = (chip) => {
+    if (chip.type === 'search') setSearchQuery('');
+    if (chip.type === 'category') {
+      setActiveFilters((current) => ({ ...current, categorias: [] }));
+      navigate('/catalogo');
+    }
+    if (chip.type === 'brand') {
+      setActiveFilters((current) => ({
+        ...current,
+        marcas: current.marcas.filter((brand) => brand !== chip.value),
+      }));
+    }
+    if (chip.type === 'size') {
+      setActiveFilters((current) => ({
+        ...current,
+        tamanios: current.tamanios.filter((size) => size !== chip.value),
+      }));
+    }
+    if (chip.type === 'price') {
+      setActiveFilters((current) => ({ ...current, precioMin: null, precioMax: null }));
+    }
+    if (chip.type === 'favorites') setShowFavorites(false);
+    scrollCatalogTop('auto');
+  };
+
+  const changeSortOrder = (nextOrder) => {
+    setSortOrder(nextOrder);
+    scrollCatalogTop('auto');
+  };
+
+  const updateSearchQuery = (nextQuery) => {
+    setSearchQuery(nextQuery);
+    scrollCatalogTop('auto');
   };
 
   const selectCategory = (categoryOrId) => {
@@ -427,7 +516,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
             <BuscadorFiltros
               ref={searchRef}
               busqueda={searchQuery}
-              setBusqueda={setSearchQuery}
+              setBusqueda={updateSearchQuery}
               filtros={displayedFilters}
               toggleFiltro={toggleFilter}
               totalFiltrosActivos={activeFilterCount}
@@ -520,7 +609,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                 totalFiltrosActivos={activeFilterCount}
               />
 
-              <section className="lg:h-full lg:flex lg:flex-col min-h-0">
+              <section className="relative min-h-0 lg:flex lg:h-full lg:flex-col">
                 {catalogMetadataPending && !error && <CategoryGridSkeleton />}
 
                 {!catalogMetadataPending && !error && (
@@ -556,7 +645,7 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                   <CatalogToolbar
                     total={filteredProducts.length}
                     sortOrder={sortOrder}
-                    onSortChange={setSortOrder}
+                    onSortChange={changeSortOrder}
                     isFiltered={catalogIsFiltered}
                     onClear={resetCatalog}
                     filterLabel={categoryRoute?.label}
@@ -574,7 +663,15 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
                 {catalogMetadataPending && !error && <CatalogToolbarSkeleton />}
 
-                <div data-catalog-scroll-root className="hide-scrollbar lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pb-16">
+                <div
+                  ref={catalogScrollRef}
+                  data-catalog-scroll-root
+                  className="hide-scrollbar lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pb-16"
+                >
+                  <ActiveCatalogFilters
+                    chips={activeCatalogChips}
+                    onRemove={removeCatalogChip}
+                  />
                   {loading && <ProductosSkeleton cantidad={12} />}
 
                   {!loading && error && (
@@ -618,6 +715,8 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
 
                   <RedesSociales />
                 </div>
+
+                <CatalogBackToTop scrollRef={catalogScrollRef} />
               </section>
             </div>
           </div>

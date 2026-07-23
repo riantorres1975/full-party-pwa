@@ -77,6 +77,57 @@ test('loads a compact initial page before continuing with the full page size', a
   ]);
 });
 
+test('yields between background pages without delaying the completed result', async () => {
+  const client = createClient([
+    { data: [{ id: 1 }, { id: 2 }], error: null },
+    { data: [{ id: 3 }, { id: 4 }], error: null },
+    { data: [{ id: 5 }], error: null },
+  ]);
+  const waits = [];
+
+  const result = await fetchAllPublicProducts(client, {
+    initialPageSize: 2,
+    pageSize: 2,
+    waitBetweenPages: async (metadata) => waits.push(metadata),
+  });
+
+  assert.equal(result.complete, true);
+  assert.deepEqual(waits, [
+    { loadedCount: 2, nextPageIndex: 1 },
+    { loadedCount: 4, nextPageIndex: 2 },
+  ]);
+});
+
+test('can stop after the initial page for lightweight catalog previews', async () => {
+  const client = createClient([
+    { data: [{ id: 1 }, { id: 2 }], error: null },
+    { data: [{ id: 3 }], error: null },
+  ]);
+
+  const result = await fetchAllPublicProducts(client, {
+    initialPageSize: 2,
+    pageSize: 2,
+    maxPages: 1,
+  });
+
+  assert.deepEqual(result.data.map(({ id }) => id), [1, 2]);
+  assert.equal(result.complete, false);
+  assert.equal(client.calls.length, 1);
+});
+
+test('does not start a request when catalog loading was cancelled', async () => {
+  const client = createClient([{ data: [{ id: 1 }], error: null }]);
+  const controller = new AbortController();
+  controller.abort();
+
+  const result = await fetchAllPublicProducts(client, { signal: controller.signal });
+
+  assert.equal(result.cancelled, true);
+  assert.equal(result.complete, false);
+  assert.deepEqual(result.data, []);
+  assert.equal(client.calls.length, 0);
+});
+
 test('uses a stable order and requests only public catalog fields', async () => {
   const client = createClient([{ data: [], error: null }]);
 

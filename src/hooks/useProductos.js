@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { registrarCategoria, registrarMarca, registrarTamano } from '../data/productos';
 import { fetchAllPublicProducts } from '../lib/productosPublicos';
@@ -30,18 +30,25 @@ function writeLcpImageHint(lista) {
 function readProductosCache() {
   try {
     const raw = localStorage.getItem(PRODUCTOS_CACHE_KEY);
-    if (!raw) return [];
+    if (!raw) return { data: [], complete: false };
     const parsed = JSON.parse(raw);
-    if (!parsed || !Array.isArray(parsed.data)) return [];
-    return parsed.data;
+    if (!parsed || !Array.isArray(parsed.data)) return { data: [], complete: false };
+    return {
+      data: parsed.data,
+      complete: parsed.complete !== false,
+    };
   } catch {
-    return [];
+    return { data: [], complete: false };
   }
 }
 
-function writeProductosCache(lista) {
+function writeProductosCache(lista, complete = true) {
   try {
-    localStorage.setItem(PRODUCTOS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: lista }));
+    localStorage.setItem(PRODUCTOS_CACHE_KEY, JSON.stringify({
+      ts: Date.now(),
+      complete,
+      data: lista,
+    }));
   } catch {
     // Ignore quota/storage errors.
   }
@@ -52,6 +59,18 @@ function registrarMetadatosProductos(lista) {
     registrarCategoria(p.categoria);
     registrarMarca(p.marca);
     registrarTamano(p.tamano);
+  });
+}
+
+function waitForCatalogIdle() {
+  if (typeof window === 'undefined') return Promise.resolve();
+
+  return new Promise((resolve) => {
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(() => resolve(), { timeout: 180 });
+      return;
+    }
+    window.setTimeout(resolve, 0);
   });
 }
 
@@ -66,29 +85,38 @@ function registrarMetadatosProductos(lista) {
  * - error     : string con mensaje legible, o null si todo fue bien
  * - refetch   : función para reintentar manualmente
  */
-export function useProductos() {
+export function useProductos({ completeCatalog = true } = {}) {
   const [cacheSeed] = useState(() => readProductosCache());
-  const [productos, setProductos] = useState(cacheSeed);
-  const [loading,   setLoading]   = useState(() => cacheSeed.length === 0);
+  const [productos, setProductos] = useState(cacheSeed.data);
+  const [loading,   setLoading]   = useState(() => cacheSeed.data.length === 0);
   const [error,     setError]     = useState(null);
   const [usingCachedData, setUsingCachedData] = useState(false);
-  const [isPartialData, setIsPartialData] = useState(false);
+  const [isPartialData, setIsPartialData] = useState(
+    () => cacheSeed.data.length > 0 && !cacheSeed.complete,
+  );
   const [refreshing, setRefreshing] = useState(false);
-  const [isInitialSyncing, setIsInitialSyncing] = useState(() => cacheSeed.length === 0);
+  const [isInitialSyncing, setIsInitialSyncing] = useState(() => cacheSeed.data.length === 0);
   const [tick,      setTick]      = useState(0); // dispara refetch
+  const cacheCompleteRef = useRef(cacheSeed.complete);
 
   useEffect(() => {
-    if (cacheSeed.length > 0) {
-      registrarMetadatosProductos(cacheSeed);
+    if (cacheSeed.data.length > 0) {
+      registrarMetadatosProductos(cacheSeed.data);
     }
   }, [cacheSeed]);
 
   useEffect(() => {
     let cancelado = false; // evita setState en componente desmontado
+    const abortController = new AbortController();
     let hasUsableProducts = productos.length > 0;
 
     const baseQuery = async ({ acceptPartial = false, ...options } = {}) => {
-      const result = await fetchAllPublicProducts(supabase, options);
+      const result = await fetchAllPublicProducts(supabase, {
+        maxPages: completeCatalog ? Number.POSITIVE_INFINITY : 1,
+        signal: abortController.signal,
+        waitBetweenPages: completeCatalog ? waitForCatalogIdle : undefined,
+        ...options,
+      });
 
       if (acceptPartial && result.error && result.data.length > 0) {
         console.warn('[useProductos] Carga parcial del catálogo', result.error.code);
@@ -111,21 +139,24 @@ export function useProductos() {
       const enPrimerArranqueSinCache = productos.length === 0 && tick === 0;
 
       if (enPrimerArranqueSinCache) {
+        let registeredCount = 0;
         const { data: primerLote, error: primerError, complete: primerComplete } = await baseQuery({
           acceptPartial: true,
           onPage: (partialProducts, { pageIndex, isLastPage }) => {
-            if (cancelado || pageIndex !== 0 || partialProducts.length === 0) return;
+            if (cancelado || partialProducts.length === 0) return;
 
-            registrarMetadatosProductos(partialProducts);
-            writeProductosCache(partialProducts);
-            writeLcpImageHint(partialProducts);
+            registrarMetadatosProductos(partialProducts.slice(registeredCount));
+            registeredCount = partialProducts.length;
+            cacheCompleteRef.current = isLastPage;
+            writeProductosCache(partialProducts, isLastPage);
+            if (pageIndex === 0) writeLcpImageHint(partialProducts);
             hasUsableProducts = true;
             setProductos(partialProducts);
             setUsingCachedData(false);
             setIsPartialData(!isLastPage);
             setIsInitialSyncing(false);
             setLoading(false);
-            setRefreshing(!isLastPage);
+            setRefreshing(completeCatalog && !isLastPage);
           },
         });
 
@@ -133,7 +164,8 @@ export function useProductos() {
 
         if (!primerError && Array.isArray(primerLote)) {
           registrarMetadatosProductos(primerLote);
-          writeProductosCache(primerLote);
+          cacheCompleteRef.current = primerComplete !== false;
+          writeProductosCache(primerLote, primerComplete !== false);
           writeLcpImageHint(primerLote);
           setProductos(primerLote);
           setUsingCachedData(false);
@@ -163,7 +195,8 @@ export function useProductos() {
         } else {
           const lista = data ?? [];
           registrarMetadatosProductos(lista);
-          writeProductosCache(lista);
+          cacheCompleteRef.current = complete !== false;
+          writeProductosCache(lista, complete !== false);
           writeLcpImageHint(lista);
           setProductos(lista);
           setUsingCachedData(false);
@@ -195,7 +228,8 @@ export function useProductos() {
       } else {
         const lista = data ?? [];
         registrarMetadatosProductos(lista);
-        writeProductosCache(lista);
+        cacheCompleteRef.current = complete !== false;
+        writeProductosCache(lista, complete !== false);
         writeLcpImageHint(lista);
         setProductos(lista);
         setUsingCachedData(false);
@@ -221,8 +255,11 @@ export function useProductos() {
       setLoading(false);
       setRefreshing(false);
     });
-    return () => { cancelado = true; };
-  }, [tick]);
+    return () => {
+      cancelado = true;
+      abortController.abort();
+    };
+  }, [completeCatalog, tick]);
 
   useEffect(() => {
     let wasOffline = !navigator.onLine;
@@ -249,7 +286,7 @@ export function useProductos() {
           registrarMetadatosProductos([nuevo]);
           setProductos((prev) => {
             const next = [nuevo, ...prev];
-            writeProductosCache(next);
+            writeProductosCache(next, cacheCompleteRef.current);
             return next;
           });
         })
@@ -258,7 +295,7 @@ export function useProductos() {
           registrarMetadatosProductos([actualizado]);
           setProductos((prev) => {
             const next = prev.map((p) => (p.id === actualizado.id ? actualizado : p));
-            writeProductosCache(next);
+            writeProductosCache(next, cacheCompleteRef.current);
             return next;
           });
         })
@@ -266,7 +303,7 @@ export function useProductos() {
         ({ old: eliminado }) => {
           setProductos((prev) => {
             const next = prev.filter((p) => p.id !== eliminado.id);
-            writeProductosCache(next);
+            writeProductosCache(next, cacheCompleteRef.current);
             return next;
           });
         })

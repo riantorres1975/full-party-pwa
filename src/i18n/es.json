@@ -70,6 +70,11 @@
   "catalog.openRecentProduct": "Abrir {name} visto recientemente",
   "catalog.clearView": "Quitar filtros",
   "catalog.viewingCategory": "Viendo: {category}",
+  "catalog.activeFilters": "Filtros activos",
+  "catalog.removeFilter": "Quitar filtro {label}",
+  "catalog.backToTop": "Volver arriba",
+  "catalog.priceFrom": "Desde",
+  "catalog.priceTo": "Hasta",
 
   "search.placeholder": "Buscar productos...",
   "search.searchingIn": "Buscando en:",

@@ -37,6 +37,7 @@ export default function ProductGrid({
   const [productoDetalle, setProductoDetalle] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const lastViewedProductRef = useRef(null);
+  const scrollPositionRef = useRef(null);
   const { t } = useLanguage();
   const productId = searchParams.get('producto');
 
@@ -65,6 +66,13 @@ export default function ProductGrid({
   }, [onViewProduct, productoDetalle]);
 
   const openProductDetail = (producto) => {
+    if (!productoDetalle) {
+      const scrollRoot = document.querySelector('[data-catalog-scroll-root]');
+      scrollPositionRef.current = {
+        catalog: scrollRoot?.scrollTop || 0,
+        window: window.scrollY,
+      };
+    }
     setProductoDetalle(producto);
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set('producto', String(producto.id));
@@ -76,6 +84,13 @@ export default function ProductGrid({
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete('producto');
     setSearchParams(nextParams, { replace: true });
+    requestAnimationFrame(() => {
+      const scrollRoot = document.querySelector('[data-catalog-scroll-root]');
+      const position = scrollPositionRef.current;
+      if (!position) return;
+      if (scrollRoot) scrollRoot.scrollTop = position.catalog;
+      window.scrollTo({ top: position.window, behavior: 'auto' });
+    });
   };
 
   const relatedProducts = useMemo(
