@@ -3,7 +3,7 @@ import '../catalog.css';
 import App from '../App';
 import { ToastProvider } from '../components/ui/ToastProvider';
 import { useTheme } from '../hooks/useTheme';
-import { supabase } from '../lib/supabase';
+import { deferSupabase } from '../utils/deferSupabase';
 
 export default function PublicCatalogRoute() {
   const { isDarkMode, toggleTheme } = useTheme();
@@ -11,18 +11,23 @@ export default function PublicCatalogRoute() {
 
   useEffect(() => {
     let active = true;
+    let authSubscription;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (active) setHasSession(Boolean(data.session));
-    });
+    const cancelDeferredLoad = deferSupabase((supabase) => {
+      supabase.auth.getSession().then(({ data }) => {
+        if (active) setHasSession(Boolean(data.session));
+      });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (active) setHasSession(Boolean(session));
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (active) setHasSession(Boolean(session));
+      });
+      authSubscription = subscription;
     });
 
     return () => {
       active = false;
-      subscription.unsubscribe();
+      cancelDeferredLoad();
+      authSubscription?.unsubscribe();
     };
   }, []);
 

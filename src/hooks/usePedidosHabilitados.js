@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { fetchPublicConfigValue } from '../lib/supabasePublicRest';
+import { deferSupabase } from '../utils/deferSupabase';
 
 function normalizarValorPedidos(valor) {
   if (typeof valor === 'boolean') return valor;
@@ -20,12 +21,9 @@ export function usePedidosHabilitados(enabled = true) {
     setLoading(true);
 
     let cancelled = false;
+    const abortController = new AbortController();
 
-    supabase
-      .from('configuracion')
-      .select('valor')
-      .eq('clave', 'pedidos_habilitados')
-      .maybeSingle()
+    fetchPublicConfigValue('pedidos_habilitados', { signal: abortController.signal })
       .then(({ data }) => {
         if (cancelled) return;
         setPedidosHabilitados(normalizarValorPedidos(data?.valor));
@@ -39,25 +37,32 @@ export function usePedidosHabilitados(enabled = true) {
 
     return () => {
       cancelled = true;
+      abortController.abort();
     };
   }, [enabled]);
 
   useEffect(() => {
     if (!enabled) return;
 
-    const channel = supabase
-      .channel('pedidos-habilitados-rt')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'configuracion', filter: 'clave=eq.pedidos_habilitados' },
-        ({ new: row }) => {
-          setPedidosHabilitados(normalizarValorPedidos(row?.valor));
-        }
-      )
-      .subscribe();
+    let realtimeClient;
+    let channel;
+    const cancelDeferredLoad = deferSupabase((supabase) => {
+      realtimeClient = supabase;
+      channel = supabase
+        .channel('pedidos-habilitados-rt')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'configuracion', filter: 'clave=eq.pedidos_habilitados' },
+          ({ new: row }) => {
+            setPedidosHabilitados(normalizarValorPedidos(row?.valor));
+          }
+        )
+        .subscribe();
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelDeferredLoad();
+      if (realtimeClient && channel) realtimeClient.removeChannel(channel);
     };
   }, [enabled]);
 

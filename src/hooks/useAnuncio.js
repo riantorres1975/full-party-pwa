@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { fetchPublicConfigValue } from '../lib/supabasePublicRest';
+import { deferSupabase } from '../utils/deferSupabase';
 
 /**
  * useAnuncio — Fetches the public announcement from `configuracion` table
@@ -20,12 +21,9 @@ export function useAnuncio(enabled = true) {
     setLoading(true);
 
     let cancelled = false;
+    const abortController = new AbortController();
 
-    supabase
-      .from('configuracion')
-      .select('valor')
-      .eq('clave', 'anuncio')
-      .maybeSingle()
+    fetchPublicConfigValue('anuncio', { signal: abortController.signal })
       .then(({ data }) => {
         if (cancelled) return;
         if (data?.valor) {
@@ -33,30 +31,44 @@ export function useAnuncio(enabled = true) {
           setAnuncio({ mensaje: v.mensaje || '', activo: !!v.activo });
         }
         setLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
       });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      abortController.abort();
+    };
   }, [enabled]);
 
   // ── Realtime: actualizar anuncio cuando el admin lo modifique ──
   useEffect(() => {
     if (!enabled) return;
 
-    const channel = supabase
-      .channel('anuncio-rt')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'configuracion', filter: 'clave=eq.anuncio' },
-        ({ new: row }) => {
-          if (row?.valor) {
-            const v = row.valor;
-            setAnuncio({ mensaje: v.mensaje || '', activo: !!v.activo });
-          } else {
-            setAnuncio({ mensaje: '', activo: false });
-          }
-        })
-      .subscribe();
+    let realtimeClient;
+    let channel;
+    const cancelDeferredLoad = deferSupabase((supabase) => {
+      realtimeClient = supabase;
+      channel = supabase
+        .channel('anuncio-rt')
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'configuracion', filter: 'clave=eq.anuncio' },
+          ({ new: row }) => {
+            if (row?.valor) {
+              const v = row.valor;
+              setAnuncio({ mensaje: v.mensaje || '', activo: !!v.activo });
+            } else {
+              setAnuncio({ mensaje: '', activo: false });
+            }
+          })
+        .subscribe();
+    });
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+      cancelDeferredLoad();
+      if (realtimeClient && channel) realtimeClient.removeChannel(channel);
+    };
   }, [enabled]);
 
   return { ...anuncio, loading };

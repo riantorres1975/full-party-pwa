@@ -7,6 +7,13 @@ import OptimizedImage from './OptimizedImage';
 import Badge from './ui/Badge';
 import Button from './ui/Button';
 
+function getPriorityImageCount() {
+  if (typeof window === 'undefined') return 2;
+  if (window.innerWidth >= 1280) return 6;
+  if (window.innerWidth >= 768) return 4;
+  return 2;
+}
+
 function ProductCardInner({
   producto,
   cantidad,
@@ -36,7 +43,7 @@ function ProductCardInner({
     ? obtenerSiguienteEscalaMayoreo(producto, cantidad)
     : null;
 
-  const isPriority = index < 2;
+  const isPriority = index < getPriorityImageCount();
   const esNuevo = producto.es_nuevo === true && !agotado;
 
   return (

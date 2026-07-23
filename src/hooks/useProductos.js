@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase';
 import { registrarCategoria, registrarMarca, registrarTamano } from '../data/productos';
 import { fetchAllPublicProducts } from '../lib/productosPublicos';
+import { getPublicRestClient } from '../lib/supabasePublicRest';
+import { deferSupabase } from '../utils/deferSupabase';
 
 const PRODUCTOS_CACHE_KEY = 'fp_productos_cache_v1';
 const LCP_IMAGE_KEY = 'fp_lcp_image_v1';
@@ -111,7 +112,7 @@ export function useProductos({ completeCatalog = true } = {}) {
     let hasUsableProducts = productos.length > 0;
 
     const baseQuery = async ({ acceptPartial = false, ...options } = {}) => {
-      const result = await fetchAllPublicProducts(supabase, {
+      const result = await fetchAllPublicProducts(getPublicRestClient(), {
         maxPages: completeCatalog ? Number.POSITIVE_INFINITY : 1,
         signal: abortController.signal,
         waitBetweenPages: completeCatalog ? waitForCatalogIdle : undefined,
@@ -279,41 +280,50 @@ export function useProductos({ completeCatalog = true } = {}) {
 
   // Realtime subscription for product INSERT / UPDATE / DELETE
   useEffect(() => {
-    const channel = supabase
-      .channel('productos-rt')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'productos' },
-        ({ new: nuevo }) => {
-          registrarMetadatosProductos([nuevo]);
-          setProductos((prev) => {
-            const next = [nuevo, ...prev];
-            writeProductosCache(next, cacheCompleteRef.current);
-            return next;
-          });
-        })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'productos' },
-        ({ new: actualizado }) => {
-          registrarMetadatosProductos([actualizado]);
-          setProductos((prev) => {
-            const next = prev.map((p) => (p.id === actualizado.id ? actualizado : p));
-            writeProductosCache(next, cacheCompleteRef.current);
-            return next;
-          });
-        })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'productos' },
-        ({ old: eliminado }) => {
-          setProductos((prev) => {
-            const next = prev.filter((p) => p.id !== eliminado.id);
-            writeProductosCache(next, cacheCompleteRef.current);
-            return next;
-          });
-        })
-      .subscribe((status) => {
-        if (status === 'CHANNEL_ERROR') {
-          console.warn('[Realtime] Error en canal de productos — verifica que Replication esté activo en Supabase');
-        }
-      });
+    let realtimeClient;
+    let channel;
 
-    return () => supabase.removeChannel(channel);
+    const cancelDeferredLoad = deferSupabase((supabase) => {
+      realtimeClient = supabase;
+      channel = supabase
+        .channel('productos-rt')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'productos' },
+          ({ new: nuevo }) => {
+            registrarMetadatosProductos([nuevo]);
+            setProductos((prev) => {
+              const next = [nuevo, ...prev];
+              writeProductosCache(next, cacheCompleteRef.current);
+              return next;
+            });
+          })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'productos' },
+          ({ new: actualizado }) => {
+            registrarMetadatosProductos([actualizado]);
+            setProductos((prev) => {
+              const next = prev.map((p) => (p.id === actualizado.id ? actualizado : p));
+              writeProductosCache(next, cacheCompleteRef.current);
+              return next;
+            });
+          })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'productos' },
+          ({ old: eliminado }) => {
+            setProductos((prev) => {
+              const next = prev.filter((p) => p.id !== eliminado.id);
+              writeProductosCache(next, cacheCompleteRef.current);
+              return next;
+            });
+          })
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR') {
+            console.warn('[Realtime] Error en canal de productos — verifica que Replication esté activo en Supabase');
+          }
+        });
+    });
+
+    return () => {
+      cancelDeferredLoad();
+      if (realtimeClient && channel) realtimeClient.removeChannel(channel);
+    };
   }, []);
 
   const refetch = () => {
