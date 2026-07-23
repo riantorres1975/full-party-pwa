@@ -145,6 +145,8 @@
   "product.availabilityHint": "General availability; we confirm the branch when preparing your order.",
   "product.currentTier": "Your price",
   "product.related": "You may also like",
+  "product.showMore": "Show more",
+  "product.showLess": "Show less",
   "product.viewRelated": "View details for {name}",
   "product.nextWholesaleTier": "Add {count} more and pay {price} each",
   "product.quantityInCartOne": "1 item in your order",

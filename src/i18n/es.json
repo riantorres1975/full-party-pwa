@@ -145,6 +145,8 @@
   "product.availabilityHint": "Existencia general; confirmamos la sucursal al preparar tu pedido.",
   "product.currentTier": "Tu precio",
   "product.related": "También te puede gustar",
+  "product.showMore": "Ver más",
+  "product.showLess": "Ver menos",
   "product.viewRelated": "Ver detalle de {name}",
   "product.nextWholesaleTier": "Agrega {count} más y paga {price} c/u",
   "product.quantityInCartOne": "1 pieza en tu pedido",

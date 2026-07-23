@@ -2,7 +2,17 @@ import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 const catalogFixture = [
-  { id: 'e2e-1', nombre: 'Globo Rosa 12 Pulg', precio: 85, categoria: 'Globo Latex', marca: 'Glomex', tamano: '12 Pulg', stock_actual: 20, es_nuevo: true },
+  {
+    id: 'e2e-1',
+    nombre: 'Globo Rosa 12 Pulg',
+    descripcion: 'Globo rosa de alta calidad, resistente y versátil para arcos, columnas y decoraciones de cualquier celebración.',
+    precio: 85,
+    categoria: 'Globo Latex',
+    marca: 'Glomex',
+    tamano: '12 Pulg',
+    stock_actual: 20,
+    es_nuevo: true,
+  },
   { id: 'e2e-2', nombre: 'Globo Azul 12 Pulg', precio: 85, categoria: 'Globo Latex', marca: 'Glomex', tamano: '12 Pulg', stock_actual: 18, es_nuevo: true },
   { id: 'e2e-3', nombre: 'Globo Verde 12 Pulg', precio: 85, categoria: 'Globo Latex', marca: 'Glomex', tamano: '12 Pulg', stock_actual: 15, es_nuevo: false },
   { id: 'e2e-4', nombre: 'Globo Amarillo 12 Pulg', precio: 85, categoria: 'Globo Latex', marca: 'Glomex', tamano: '12 Pulg', stock_actual: 12, es_nuevo: false },
@@ -651,7 +661,7 @@ test('favorites and recently viewed products persist across reloads', async ({ p
   expect((await readAnalyticsEvents(page)).filter(({ name }) => name === 'favorite_toggle')).toHaveLength(0);
 });
 
-test('a product detail is shareable and supports shopping without closing', async ({ page }) => {
+test('a product detail is shareable and supports shopping without closing', async ({ page }, testInfo) => {
   await page.goto('/catalogo');
   await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
   const catalogTitle = await page.title();
@@ -681,6 +691,17 @@ test('a product detail is shareable and supports shopping without closing', asyn
   await expect(detail.getByRole('button', { name: 'Compartir' })).toBeVisible();
   await expect(detail.getByText('Precios por mayoreo', { exact: true })).toHaveCount(0);
   await expect(detail.locator('section[aria-labelledby="related-products-title"] button').first()).toBeVisible();
+  const description = detail.locator('[id^="product-description-"]');
+  await expect(description).toBeVisible();
+  const showMoreButton = detail.getByRole('button', { name: 'Ver más' });
+  if (testInfo.project.name === 'mobile-chromium') {
+    await expect(showMoreButton).toBeVisible();
+    await expect(showMoreButton).toHaveAttribute('aria-expanded', 'false');
+    await showMoreButton.click();
+    await expect(detail.getByRole('button', { name: 'Ver menos' })).toHaveAttribute('aria-expanded', 'true');
+  } else {
+    await expect(showMoreButton).toBeHidden();
+  }
   const statusLayout = await detail.evaluate((dialog) => {
     const actions = dialog.querySelector('[data-testid="product-detail-actions"]')?.getBoundingClientRect();
     const badges = dialog.querySelector('[data-testid="product-status-badges"]')?.getBoundingClientRect();

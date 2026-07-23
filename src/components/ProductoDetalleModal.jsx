@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Check,
+  ChevronDown,
+  ChevronUp,
   Heart,
   Minus,
   PackageCheck,
@@ -32,6 +34,7 @@ export default function ProductoDetalleModal({
 }) {
   const [cerrando, setCerrando] = useState(false);
   const [shareStatus, setShareStatus] = useState('idle');
+  const [descripcionExpandida, setDescripcionExpandida] = useState(false);
   const closeTimerRef = useRef(null);
   const shareTimerRef = useRef(null);
   const dialogRef = useRef(null);
@@ -81,6 +84,7 @@ export default function ProductoDetalleModal({
     if (!producto) return undefined;
 
     setShareStatus('idle');
+    setDescripcionExpandida(false);
     const productImage = getSupabaseImageUrl(
       getSafeProductImageUrl(producto.imagen_url, producto.nombre, '900x900'),
       { width: 900, quality: 85 },
@@ -101,6 +105,8 @@ export default function ProductoDetalleModal({
   const marca = typeof producto.marca === 'string' ? producto.marca.trim() : '';
   const tamano = typeof producto.tamano === 'string' ? producto.tamano.trim() : '';
   const categoria = typeof producto.categoria === 'string' ? producto.categoria.trim() : '';
+  const descripcion = typeof producto.descripcion === 'string' ? producto.descripcion.trim() : '';
+  const descripcionLarga = descripcion.length > 90;
   const precioBase = Number(producto.precio) || 0;
   const enCarrito = cantidad > 0;
   const precioAplicable = obtenerPrecioAplicable(producto, cantidad || 1);
@@ -404,11 +410,32 @@ export default function ProductoDetalleModal({
                   </div>
                 </div>
 
-                {producto.descripcion && (
-                  <p className="text-[13px] sm:text-sm font-body leading-relaxed mt-3 line-clamp-4"
-                     style={{ color: 'var(--text-secondary)' }}>
-                    {producto.descripcion}
-                  </p>
+                {descripcion && (
+                  <div className="mt-3">
+                    <p
+                      id={`product-description-${producto.id}`}
+                      className={`text-[13px] sm:text-sm font-body leading-relaxed ${
+                        descripcionExpandida ? '' : 'line-clamp-2 sm:line-clamp-4'
+                      }`}
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      {descripcion}
+                    </p>
+                    {descripcionLarga && (
+                      <button
+                        type="button"
+                        onClick={() => setDescripcionExpandida((current) => !current)}
+                        className="mt-1 inline-flex items-center gap-1 text-[11px] font-body font-black text-fiesta-purple sm:hidden"
+                        aria-expanded={descripcionExpandida}
+                        aria-controls={`product-description-${producto.id}`}
+                      >
+                        {descripcionExpandida ? t('product.showLess') : t('product.showMore')}
+                        {descripcionExpandida
+                          ? <ChevronUp size={13} aria-hidden="true" />
+                          : <ChevronDown size={13} aria-hidden="true" />}
+                      </button>
+                    )}
+                  </div>
                 )}
 
                 {(marca || tamano) && (
