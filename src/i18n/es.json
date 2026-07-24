@@ -57,6 +57,7 @@
   "catalog.refresh": "Actualizar",
   "catalog.refreshing": "Actualizando...",
   "catalog.waitingConnection": "Esperando conexión",
+  "catalog.loadError": "Error al cargar productos. Intenta de nuevo mas tarde.",
   "catalog.toolbarLabel": "Resultados y orden del catalogo",
   "catalog.sortLabel": "Ordenar productos",
   "catalog.sortFeatured": "Destacados",
@@ -225,6 +226,7 @@
   "cart.orderSavedSub": "Guarda tu folio y confirma tu pedido en la ventana de WhatsApp",
   "cart.trackOrderCta": "🔍 Rastrear mi pedido",
   "cart.closeConfirmation": "Cerrar",
+  "cart.validating": "Verificando catálogo…",
 
   "delivery.title": "¿Cómo lo recibimos? 🎀",
   "delivery.pickupLabel": "Recoger\nen tienda",

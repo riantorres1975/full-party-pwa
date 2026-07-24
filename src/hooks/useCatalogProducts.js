@@ -11,6 +11,7 @@ import {
   writeCatalogQueryCache,
 } from '../utils/catalogQueryCache';
 import { deferSupabase } from '../utils/deferSupabase';
+import { useLanguage } from './useLanguage';
 
 const CATALOG_CACHE_KEY = 'fp_catalog_pages_v2';
 const CATALOG_CACHE_LIMIT = 200;
@@ -119,6 +120,7 @@ export function useCatalogProducts(queryInput, {
   enabled = true,
   requiredProductId = null,
 } = {}) {
+  const { t } = useLanguage();
   const query = useMemo(() => normalizeCatalogQuery(queryInput), [queryInput]);
   const queryKey = JSON.stringify(query);
   const initialCacheRef = useRef(
@@ -267,7 +269,7 @@ export function useCatalogProducts(queryInput, {
           usingCache: hasExistingProducts,
         });
         if (!hasExistingProducts) {
-          setError('Error al cargar productos. Intenta de nuevo mas tarde.');
+          setError(t('catalog.loadError'));
         } else {
           setUsingCachedData(true);
         }
@@ -320,13 +322,13 @@ export function useCatalogProducts(queryInput, {
         hasFilters: hasActiveFilters(currentQuery),
         usingCache: hasExistingProducts,
       });
-      setError('Error al cargar productos. Intenta de nuevo mas tarde.');
+      setError(t('catalog.loadError'));
       setLoading(false);
       setRefreshing(false);
     });
 
     return () => controller.abort();
-  }, [enabled, loadRequiredProduct, queryKey, refreshTick]);
+  }, [enabled, loadRequiredProduct, queryKey, refreshTick, t]);
 
   const loadMore = useCallback(async () => {
     if (!enabled || loadingMoreRef.current || !hasMoreRef.current) return;
@@ -400,6 +402,23 @@ export function useCatalogProducts(queryInput, {
 
   useEffect(() => () => {
     loadMoreControllerRef.current?.abort();
+  }, []);
+
+  // Reintento automático al recuperar la conexión (paridad con useProductos).
+  useEffect(() => {
+    let wasOffline = !navigator.onLine;
+    const markOffline = () => { wasOffline = true; };
+    const refreshWhenOnline = () => {
+      if (!wasOffline) return;
+      wasOffline = false;
+      setRefreshTick((tick) => tick + 1);
+    };
+    window.addEventListener('offline', markOffline);
+    window.addEventListener('online', refreshWhenOnline);
+    return () => {
+      window.removeEventListener('offline', markOffline);
+      window.removeEventListener('online', refreshWhenOnline);
+    };
   }, []);
 
   useEffect(() => {

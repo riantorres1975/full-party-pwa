@@ -57,6 +57,7 @@
   "catalog.refresh": "Refresh",
   "catalog.refreshing": "Refreshing...",
   "catalog.waitingConnection": "Waiting for connection",
+  "catalog.loadError": "We could not load the products. Please try again later.",
   "catalog.toolbarLabel": "Catalog results and sorting",
   "catalog.sortLabel": "Sort products",
   "catalog.sortFeatured": "Featured",
@@ -225,6 +226,7 @@
   "cart.orderSavedSub": "Save your order number and confirm your order in the WhatsApp window",
   "cart.trackOrderCta": "🔍 Track my order",
   "cart.closeConfirmation": "Close",
+  "cart.validating": "Checking the catalog…",
 
   "delivery.title": "How do you want it? 🎀",
   "delivery.pickupLabel": "Pick up\nat store",

@@ -2142,3 +2142,52 @@ El hook `useInvitarUsuario` llama RPC `check_email_exists` antes de crear la inv
 - Sin idempotency key en el RPC (requeriría migración SQL; el trigger anti-duplicado cubre la ventana práctica).
 - Sin cambios en paginación por cursor (offset sigue; el refresh por límite resuelve el síntoma visible).
 - `pedidos_habilitados` sigue siendo gate solo-cliente (pendiente backend).
+
+---
+
+# Fase (continuación): validación pre-checkout + resiliencia del catálogo
+
+## 1. Validación del carrito contra el servidor antes de revisar
+**Archivos:** `src/lib/validacionCarrito.js` (nuevo), `src/components/CarritoDrawer.jsx`
+
+**Problema:** un producto eliminado/desactivado en el admin permanecía en el carrito del cliente
+(por diseño, hasta que lo quitara). El cliente pasaba revisión, enviaba, y el trigger
+`canonicalize_public_pedido` rechazaba con error genérico → callejón sin salida.
+Además, la sincronización de stock/precios solo cubre los productos cargados en la página
+actual del catálogo (paginado/filtrado).
+
+**Solución:** al pulsar "Revisar pedido" se consulta el estado fresco de los ids del carrito
+(`fetchEstadoCarrito` → `fetchPublicProductPage` con filtro `ids`, 1 petición) y se fusiona
+con `mergeEstadoCarrito`:
+- Producto presente → precio/stock/activo/nombre actualizados (cantidad intacta). La revisión
+  cotiza con datos del servidor, reduciendo diferencias con el total canonical.
+- Producto ausente → `activo: false` + `__noDisponible: true` → se marca "Agotado" en la lista
+  y el CTA se deshabilita con el aviso existente `cart.stockIssueWarning`.
+- Error de red en la verificación → continúa con datos locales (el RPC re-valida en servidor).
+- Telemetría: `checkout_validation` con `result: ok|blocked|error` + contadores.
+
+Estado nuevo en el drawer: `serverItems` (caduca al cambiar el carrito o cerrar el drawer) y
+`validandoServidor` (CTA muestra `cart.validating` "Verificando catálogo…").
+
+## 2. Catálogo: reintento automático al volver la conexión
+**Archivo:** `src/hooks/useCatalogProducts.js`
+- Listener `offline`/`online` (mismo patrón que `useProductos`): al recuperar conexión hace
+  refresh automático (antes solo había reintento manual).
+
+## 3. i18n del error de carga inicial
+**Archivos:** `src/hooks/useCatalogProducts.js`, `src/i18n/es.json`, `src/i18n/en.json`
+- Nueva key `catalog.loadError` (el string estaba hardcodeado en el hook).
+- Nueva key `cart.validating`.
+
+## Nota técnica
+`validacionCarrito.js` usa imports con extensión `.js` explícita porque también lo consumen
+las pruebas con `node --test` (ESM estricto).
+
+## Pruebas
+- **Unitarias:** `tests/validacionCarrito.test.js` (6 casos del merge) → 107/107 OK.
+- **E2E:**
+  - Producto eliminado mid-session → queda marcado "Agotado", CTA deshabilitado, sin pantalla
+    de revisión, evento `checkout_validation:blocked`; al quitarlo el carrito queda usable.
+  - Precio cambiado en servidor → la revisión muestra el total con precio fresco y
+    `checkout_review.value` actualizado.
+  - 56/56 OK (desktop + mobile).

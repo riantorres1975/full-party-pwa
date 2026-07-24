@@ -865,6 +865,79 @@ test('a failed order save shows an actionable error and retries without duplicat
   expect(rpcPayloads[1].p_detalles_json).toEqual(rpcPayloads[0].p_detalles_json);
 });
 
+test('a product removed from the catalog is flagged before the checkout review', async ({ page }) => {
+  await page.goto('/catalogo');
+  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
+
+  await page
+    .locator('article.product-card button[aria-label^="Agregar "][aria-label$=" al carrito"]:not([disabled])')
+    .first()
+    .click();
+
+  // El admin elimina el producto mientras el cliente tiene el carrito armado.
+  const remaining = catalogFixture.filter((producto) => producto.id !== 'e2e-1');
+  await page.unroute('**/rest/v1/productos*');
+  await page.route('**/rest/v1/productos*', async (route) => {
+    await fulfillCatalogRequest(route, remaining);
+  });
+
+  await page.locator('button[aria-label^="Carrito con "]').click();
+  const cart = page.getByRole('dialog');
+  await cart.getByLabel('Nombre completo').fill('Maria Borrado');
+  await cart.getByLabel(/N.mero de tel.fono/i).fill('4521234567');
+
+  const reviewButton = cart.getByRole('button', { name: 'Revisar pedido' });
+  await expect(reviewButton).toBeEnabled();
+  await reviewButton.click();
+
+  // La verificación previa marca el artículo eliminado y bloquea la revisión.
+  await expect(cart.getByText('Agotado', { exact: true })).toBeVisible();
+  await expect(cart.getByText(/Ajusta los productos marcados/)).toBeVisible();
+  await expect(reviewButton).toBeDisabled();
+  await expect(cart.getByText('¡Pedido listo!')).toHaveCount(0);
+  await expect.poll(async () => (
+    (await readAnalyticsEvents(page)).find(({ name }) => name === 'checkout_validation')?.params?.result
+  )).toBe('blocked');
+
+  // Al quitar el artículo el formulario vuelve a ser usable.
+  await cart.getByRole('button', { name: /^Quitar uno de/ }).click();
+  await expect(cart.getByText('Tu carrito está vacío')).toBeVisible();
+});
+
+test('the checkout review reflects server-side price changes', async ({ page }) => {
+  await page.goto('/catalogo');
+  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
+
+  await page
+    .locator('article.product-card button[aria-label^="Agregar "][aria-label$=" al carrito"]:not([disabled])')
+    .first()
+    .click();
+
+  // El precio cambia en el servidor antes de que el cliente revise su pedido.
+  const updated = catalogFixture.map((producto) => (
+    producto.id === 'e2e-1'
+      ? { ...producto, precio: 70, precios_mayoreo: [{ cantidad_minima: 12, precio: 65 }] }
+      : producto
+  ));
+  await page.unroute('**/rest/v1/productos*');
+  await page.route('**/rest/v1/productos*', async (route) => {
+    await fulfillCatalogRequest(route, updated);
+  });
+
+  await page.locator('button[aria-label^="Carrito con "]').click();
+  const cart = page.getByRole('dialog');
+  await cart.getByLabel('Nombre completo').fill('Maria Precio');
+  await cart.getByLabel(/N.mero de tel.fono/i).fill('4521234567');
+  await cart.getByRole('button', { name: 'Revisar pedido' }).click();
+
+  // La revisión usa el precio fresco del servidor, no el del carrito guardado.
+  await expect(cart.getByText('¡Pedido listo!')).toBeVisible();
+  await expect(cart.getByText('$70.00').first()).toBeVisible();
+  await expect.poll(async () => (
+    (await readAnalyticsEvents(page)).find(({ name }) => name === 'checkout_review')?.params?.value
+  )).toBe(70);
+});
+
 test('catalog dialogs close with the Escape key', async ({ page }, testInfo) => {
   await page.goto('/catalogo');
   await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
