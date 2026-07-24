@@ -43,6 +43,9 @@ jobs:
         env:
           VITE_SUPABASE_URL: https://placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: placeholder
+          # Número ficticio con formato válido: los E2E interceptan la
+          # navegación a api.whatsapp.com, nunca sale tráfico real.
+          VITE_WHATSAPP_NUMBER: "521234567890"
 
       - name: Upload E2E failure artifacts
         if: failure()
