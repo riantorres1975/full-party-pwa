@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 const FOCUSABLE = 'button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
@@ -7,8 +7,14 @@ const FOCUSABLE = 'button:not([disabled]),a[href],input:not([disabled]),select:n
  * @param {React.RefObject} ref   — ref to the modal/dialog container
  * @param {boolean}         active — whether the trap is active
  * @param {'first'|'container'} initialFocus — where focus starts when opened
+ * @param {(e: KeyboardEvent) => void} [onEscape] — optional Escape-to-close handler
  */
-export function useFocusTrap(ref, active, initialFocus = 'first') {
+export function useFocusTrap(ref, active, initialFocus = 'first', onEscape) {
+  // Se guarda en ref para no reactivar el efecto si el caller pasa una
+  // función con identidad nueva en cada render.
+  const onEscapeRef = useRef(onEscape);
+  onEscapeRef.current = onEscape;
+
   useEffect(() => {
     if (!active || !ref.current) return;
 
@@ -26,6 +32,11 @@ export function useFocusTrap(ref, active, initialFocus = 'first') {
     });
 
     function trap(e) {
+      if (e.key === 'Escape' && typeof onEscapeRef.current === 'function') {
+        e.stopPropagation();
+        onEscapeRef.current(e);
+        return;
+      }
       if (e.key !== 'Tab') return;
       const nodes = el.querySelectorAll(FOCUSABLE);
       if (nodes.length === 0) return;

@@ -669,6 +669,7 @@ test('an offline checkout stays intact until the connection returns', async ({ p
 test('a completed order includes its folio and tracking URL in WhatsApp', async ({ page, context }) => {
   const folio = 'FP-E2E1234';
   let createPayload = null;
+  let lookupPayload = null;
 
   await page.route('**/rest/v1/rpc/crear_pedido_publico', async (route) => {
     if (route.request().method() === 'OPTIONS') {
@@ -685,6 +686,32 @@ test('a completed order includes its folio and tracking URL in WhatsApp', async 
       contentType: 'application/json',
       headers: catalogCorsHeaders,
       body: JSON.stringify(folio),
+    });
+  });
+  await page.route('**/rest/v1/rpc/buscar_pedido_por_folio', async (route) => {
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({
+        status: 204,
+        headers: { ...catalogCorsHeaders, 'access-control-allow-methods': 'POST, OPTIONS' },
+      });
+      return;
+    }
+
+    lookupPayload = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: catalogCorsHeaders,
+      body: JSON.stringify([{
+        folio,
+        cliente_nombre: 'Maria E2E',
+        estado: 'Por Surtir',
+        total: 85,
+        tipo_entrega: 'tienda',
+        created_at: '2026-07-22T15:00:00.000Z',
+        updated_at: '2026-07-22T15:00:00.000Z',
+        detalles_json: [{ nombre: 'Globo Rosa 12 Pulg', cantidad: 1, precio: 85 }],
+      }]),
     });
   });
   await context.route('https://api.whatsapp.com/send**', async (route) => {
@@ -732,6 +759,136 @@ test('a completed order includes its folio and tracking URL in WhatsApp', async 
   expect(message).toContain(`Folio:* ${folio}`);
   expect(message).toContain(`https://www.fullpartyuruapan.com.mx/rastrear/${folio}`);
   await expect(page.locator('button[aria-label^="Carrito con 0"]')).toBeVisible();
+
+  // El folio queda visible en la app (no solo en WhatsApp): si el cliente
+  // cierra la ventana de WhatsApp sin enviar, aún puede rastrear su pedido.
+  await expect(cart.getByText('¡Pedido registrado!')).toBeVisible();
+  await expect(cart.getByText(folio, { exact: true })).toBeVisible();
+  const trackLinks = cart.getByRole('link', { name: /Rastrear mi pedido/ });
+  await expect(trackLinks.first()).toHaveAttribute('href', `/rastrear/${folio}`);
+
+  // El botón de enviar se reemplaza tras el guardado: no se puede duplicar el pedido.
+  await expect(cart.getByRole('button', { name: 'Enviar pedido a Full Party' })).toHaveCount(0);
+  await expect(cart.getByRole('button', { name: '← Editar pedido' })).toHaveCount(0);
+
+  // El folio creado coincide con el pedido consultado en rastreo.
+  await trackLinks.last().click();
+  await expect(page).toHaveURL(new RegExp(`/rastrear/${folio}$`));
+  await expect.poll(() => lookupPayload).toEqual({ p_folio: folio });
+  await expect(page.getByText(folio, { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Por Surtir', { exact: true })).toBeVisible();
+});
+
+test('a failed order save shows an actionable error and retries without duplicating', async ({ page, context }) => {
+  const folio = 'FP-RETRY01';
+  const rpcPayloads = [];
+
+  await page.route('**/rest/v1/rpc/crear_pedido_publico', async (route) => {
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({
+        status: 204,
+        headers: { ...catalogCorsHeaders, 'access-control-allow-methods': 'POST, OPTIONS' },
+      });
+      return;
+    }
+
+    rpcPayloads.push(route.request().postDataJSON());
+    if (rpcPayloads.length === 1) {
+      // Primer intento: el servidor rechaza por inventario (trigger de integridad).
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        headers: catalogCorsHeaders,
+        body: JSON.stringify({ message: 'Product is unavailable', code: 'P0001' }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: catalogCorsHeaders,
+      body: JSON.stringify(folio),
+    });
+  });
+  await context.route('https://api.whatsapp.com/send**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/html',
+      body: '<!doctype html><title>WhatsApp</title>',
+    });
+  });
+
+  await page.goto('/catalogo');
+  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
+  await page
+    .locator('article.product-card button[aria-label^="Agregar "][aria-label$=" al carrito"]:not([disabled])')
+    .first()
+    .click();
+  await page.locator('button[aria-label^="Carrito con "]').click();
+
+  const cart = page.getByRole('dialog');
+  await cart.getByLabel('Nombre completo').fill('Maria Retry');
+  await cart.getByLabel(/N.mero de tel.fono/i).fill('4521234567');
+  await cart.getByRole('button', { name: 'Revisar pedido' }).click();
+  await expect(cart.getByText('¡Pedido listo!')).toBeVisible();
+
+  const sendButton = cart.getByRole('button', { name: 'Enviar pedido a Full Party' });
+  const firstPopup = page.waitForEvent('popup');
+  await sendButton.click();
+  await firstPopup;
+
+  // Error específico (no genérico), la revisión sigue abierta y el carrito intacto.
+  await expect(cart.getByRole('alert')).toContainText(/ya no está disponible/);
+  await expect(cart.getByText('¡Pedido listo!')).toBeVisible();
+  await expect(page.locator('button[aria-label^="Carrito con 1"]')).toBeVisible();
+  await expect.poll(async () => (
+    (await readAnalyticsEvents(page)).find(({ name }) => name === 'order_save_failed')?.params?.error_type
+  )).toBe('inventario');
+
+  // Reintento manual: el mismo pedido se envía una sola vez más (sin duplicados).
+  const secondPopup = page.waitForEvent('popup');
+  const whatsappRequestPromise = context.waitForEvent('request', {
+    predicate: (request) => (
+      request.isNavigationRequest()
+      && request.url().startsWith('https://api.whatsapp.com/send')
+    ),
+    timeout: 10_000,
+  });
+  await sendButton.click();
+  await secondPopup;
+  await whatsappRequestPromise;
+
+  await expect(cart.getByText('¡Pedido registrado!')).toBeVisible();
+  await expect(cart.getByText(folio, { exact: true })).toBeVisible();
+  expect(rpcPayloads).toHaveLength(2);
+  expect(rpcPayloads[0].p_cliente_nombre).toBe('Maria Retry');
+  expect(rpcPayloads[1].p_detalles_json).toEqual(rpcPayloads[0].p_detalles_json);
+});
+
+test('catalog dialogs close with the Escape key', async ({ page }, testInfo) => {
+  await page.goto('/catalogo');
+  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
+
+  await page
+    .locator('article.product-card button[aria-label^="Agregar "][aria-label$=" al carrito"]:not([disabled])')
+    .first()
+    .click();
+  await page.locator('button[aria-label^="Carrito con "]').click();
+
+  const cartPanel = page.locator('[role="dialog"][aria-label="🎁 Mi Pedido"]');
+  await expect(cartPanel).toHaveAttribute('aria-hidden', 'false');
+  await expect.poll(() => cartPanel.evaluate((el) => el.contains(document.activeElement))).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(cartPanel).toHaveAttribute('aria-hidden', 'true');
+
+  if (testInfo.project.name === 'mobile-chromium') {
+    await page.getByRole('button', { name: 'Abrir filtros' }).click();
+    const filters = page.getByRole('dialog', { name: 'Filtros' });
+    await expect(filters).toBeVisible();
+    await expect.poll(() => filters.evaluate((el) => el.contains(document.activeElement))).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(filters).toBeHidden();
+  }
 });
 
 test('a direct tracking URL loads the saved order status', async ({ page }) => {

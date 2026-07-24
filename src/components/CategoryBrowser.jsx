@@ -33,7 +33,7 @@ export default function CategoryBrowser({
   const panelRef = useRef(null);
   const inputRef = useRef(null);
   const { t } = useLanguage();
-  useFocusTrap(panelRef, isOpen);
+  useFocusTrap(panelRef, isOpen, 'first', onClose);
 
   useEffect(() => {
     if (!isOpen) return undefined;

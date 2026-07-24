@@ -18,7 +18,7 @@ import { SIMBOLO_MONEDA } from '../data/productos';
 import { obtenerPrecioAplicable, obtenerSiguienteEscalaMayoreo } from '../utils/precios';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useLanguage } from '../hooks/useLanguage';
-import { getProductPlaceholderUrl, getSafeProductImageUrl, getSupabaseImageUrl } from '../utils/imagenes';
+import { getInlineProductPlaceholder, getProductPlaceholderUrl, getSafeProductImageUrl, getSupabaseImageUrl } from '../utils/imagenes';
 import { applyProductSeo, buildProductSeo, buildProductShareUrl } from '../utils/productSeo';
 
 export default function ProductoDetalleModal({
@@ -114,9 +114,10 @@ export default function ProductoDetalleModal({
   const subtotal = precioAplicable * cantidad;
   const maxStockAlcanzado = stockLimitado && cantidad >= stockActual;
   const esNuevo = producto.es_nuevo === true && !agotado;
-  const fallbackImage = getProductPlaceholderUrl(producto.nombre, '900x900');
+  const fallbackImage = getInlineProductPlaceholder(producto.nombre);
+  const cleanImageUrl = typeof producto.imagen_url === 'string' ? producto.imagen_url.trim() : '';
   const imageSrc = getSupabaseImageUrl(
-    getSafeProductImageUrl(producto.imagen_url, producto.nombre, '900x900'),
+    cleanImageUrl || fallbackImage,
     { width: 900, quality: 85 }
   );
   const siguienteEscala = enCarrito
@@ -183,6 +184,7 @@ export default function ProductoDetalleModal({
     <div className="fixed inset-0 z-[70]">
       <button
         type="button"
+        tabIndex={-1}
         className={`absolute inset-0 w-full h-full transition-opacity duration-200 ${
           cerrando ? 'opacity-0' : 'opacity-100'
         }`}
@@ -477,8 +479,9 @@ export default function ProductoDetalleModal({
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       {relacionados.map((relacionado) => {
+                        const relatedCleanUrl = typeof relacionado.imagen_url === 'string' ? relacionado.imagen_url.trim() : '';
                         const relatedImage = getSupabaseImageUrl(
-                          getSafeProductImageUrl(relacionado.imagen_url, relacionado.nombre, '240x240'),
+                          relatedCleanUrl || getInlineProductPlaceholder(relacionado.nombre),
                           { width: 240, quality: 75 },
                         );
                         return (
@@ -498,10 +501,10 @@ export default function ProductoDetalleModal({
                               className="aspect-square w-full rounded-lg object-contain"
                               loading="lazy"
                               decoding="async"
-                              onError={(event) => {
-                                event.currentTarget.onerror = null;
-                                event.currentTarget.src = getProductPlaceholderUrl(relacionado.nombre, '240x240');
-                              }}
+                               onError={(event) => {
+                                 event.currentTarget.onerror = null;
+                                 event.currentTarget.src = getInlineProductPlaceholder(relacionado.nombre);
+                               }}
                             />
                             <span className="mt-1.5 line-clamp-2 block text-[9px] font-body font-black leading-tight text-ink-800">
                               {relacionado.nombre}

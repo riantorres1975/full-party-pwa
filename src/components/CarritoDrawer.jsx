@@ -6,7 +6,7 @@ import { SIMBOLO_MONEDA, DIRECCION_TIENDA, HORARIO_TIENDA, MAPS_URL_TIENDA } fro
 import { usePedido } from '../hooks/usePedido';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useLanguage } from '../hooks/useLanguage';
-import { getProductPlaceholderUrl, getSafeProductImageUrl } from '../utils/imagenes';
+import { getInlineProductPlaceholder } from '../utils/imagenes';
 import { trackEvent } from '../utils/analytics';
 
 // Session rate limit (max orders per time window)
@@ -69,6 +69,16 @@ function recordOrderSubmission() {
   }
 }
 
+// Mensaje de error de guardado según la causa clasificada (ver utils/erroresPedido.js).
+const SAVE_ERROR_KEYS = {
+  duplicado: 'cart.saveOrderDuplicate',
+  limite: 'cart.saveOrderRateLimit',
+  inventario: 'cart.saveOrderInventory',
+  validacion: 'cart.saveOrderError',
+  red: 'cart.saveOrderNetwork',
+  desconocido: 'cart.saveOrderError',
+};
+
 const INPUT_CLASS = `
   w-full rounded-xl px-3 py-2.5 text-sm font-body font-semibold
   placeholder:text-ink-300 outline-none transition-all duration-200
@@ -107,7 +117,7 @@ export default function CarritoDrawer({
   const [reviewUpdated, setReviewUpdated] = useState(false);
   const [orderSaveError, setOrderSaveError] = useState('');
   const panelRef = useRef(null);
-  useFocusTrap(panelRef, isOpen);
+  useFocusTrap(panelRef, isOpen, 'first', onCerrar);
 
   useEffect(() => {
     if (isOpen) {
@@ -226,7 +236,9 @@ export default function CarritoDrawer({
   };
 
   const handleOpenWhatsApp = async () => {
-    if (!pendingOrder) return;
+    // Guardas anti-reentrada: no re-enviar si ya hay un guardado en curso
+    // o si el pedido ya fue registrado (folio asignado).
+    if (!pendingOrder || guardando || pendingOrder.folio) return;
     if (!isOnline) {
       setErrors({ nombre: t('cart.offlineOrderError') });
       return;
@@ -286,28 +298,38 @@ export default function CarritoDrawer({
     const normalizedAddress = type === 'envio' ? customerAddress?.trim() || '' : '';
 
     // 1) Persist order in Supabase
-    const { folio, error } = await guardarPedido({
+    const { folio, error, tipo } = await guardarPedido({
       nombre: name, telefono: phoneNumber, tipoEntrega: type, direccion: normalizedAddress, total, items: itemsSnapshot,
     });
 
     if (error || !folio) {
       console.warn('[Pedido] No se pudo guardar en Supabase:', error);
       trackEvent('order_save_failed', {
-        error_type: 'backend',
+        error_type: tipo || 'backend',
         delivery_type: type,
         item_count: itemsSnapshot.reduce((count, item) => count + item.cantidad, 0),
       });
       if (whatsappWindow && !whatsappWindow.closed) whatsappWindow.close();
-      setOrderSaveError(t('cart.saveOrderError'));
+      // El pendingOrder se conserva para permitir el reintento; el trigger
+      // anti-duplicado del servidor evita pedidos repetidos si el primero sí
+      // se registró pero la respuesta se perdió.
+      setOrderSaveError(t(SAVE_ERROR_KEYS[tipo] || 'cart.saveOrderError'));
       return;
     }
 
     recordOrderSubmission();
 
-    // 2) Build WhatsApp URL with order reference
-    const url = generarMensajeWhatsApp(itemsSnapshot, total, {
-      tipo: type, nombre: name, telefono: phoneNumber, direccion: normalizedAddress, folio,
-    });
+    // 2) Build WhatsApp URL with order reference. Si la configuración de
+    // WhatsApp falla, el pedido YA está guardado: el folio se muestra en
+    // pantalla y el flujo continúa sin romperse.
+    let url = null;
+    try {
+      url = generarMensajeWhatsApp(itemsSnapshot, total, {
+        tipo: type, nombre: name, telefono: phoneNumber, direccion: normalizedAddress, folio,
+      });
+    } catch (whatsappError) {
+      console.error('[Pedido] No se pudo generar el mensaje de WhatsApp:', whatsappError);
+    }
 
     trackEvent('order_whatsapp_click', {
       delivery_type: type,
@@ -319,19 +341,26 @@ export default function CarritoDrawer({
     });
 
     // 3) Reuse the synchronously opened tab so popup blockers do not lose the order.
-    if (whatsappWindow && !whatsappWindow.closed) {
-      whatsappWindow.location.replace(url);
-    } else {
-      window.location.assign(url);
+    if (url) {
+      if (whatsappWindow && !whatsappWindow.closed) {
+        whatsappWindow.location.replace(url);
+      } else {
+        window.location.assign(url);
+      }
+    } else if (whatsappWindow && !whatsappWindow.closed) {
+      whatsappWindow.close();
     }
 
-    // 4) Reset local state
+    // 4) Reset cart state pero conservar la confirmación con el folio a la
+    // vista: es el mismo folio devuelto por el RPC y el que funciona en
+    // /rastrear/:folio. El botón de enviar se reemplaza para no duplicar.
     onLimpiar();
     setCustomerName(''); setPhone(''); setAddress('');
     setDeliveryType('tienda');
     clearCheckoutDraft();
-    setPendingOrder(null);
+    setOrderSaveError('');
     setReviewUpdated(false);
+    setPendingOrder((current) => (current ? { ...current, folio } : current));
   };
 
   return (
@@ -419,8 +448,12 @@ export default function CarritoDrawer({
                 ✓
               </div>
               <div className="text-center">
-                <p className="font-display text-xl text-ink-900">{t('cart.orderReady')}</p>
-                <p className="text-sm text-ink-400 font-body mt-1">{t('cart.orderReadySub')}</p>
+                <p className="font-display text-xl text-ink-900">
+                  {t(pendingOrder.folio ? 'cart.orderSavedTitle' : 'cart.orderReady')}
+                </p>
+                <p className="text-sm text-ink-400 font-body mt-1">
+                  {t(pendingOrder.folio ? 'cart.orderSavedSub' : 'cart.orderReadySub')}
+                </p>
               </div>
               {pendingOrder.folio && (
                 <div className="w-full rounded-2xl p-4 text-center"
@@ -428,13 +461,22 @@ export default function CarritoDrawer({
                   <p className="text-xs font-body text-ink-400 font-semibold mb-1">{t('cart.orderNumber')}</p>
                   <p className="font-display text-2xl text-ink-900 tracking-wider">{pendingOrder.folio}</p>
                   <p className="text-xs text-ink-400 font-body mt-1 mb-2">{t('cart.saveToTrack')}</p>
-                  <button
-                    onClick={() => navigator.clipboard?.writeText(pendingOrder.folio).catch(() => {})}
-                    className="text-xs font-body font-black px-3 py-1 rounded-full border transition-all hover:opacity-80"
-                    style={{ color: 'var(--accent-primary)', borderColor: 'var(--color-brand-soft)', background: 'var(--surface-elevated, var(--surface-card))' }}
-                  >
-                    {t('cart.copyFolio')}
-                  </button>
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                    <button
+                      onClick={() => navigator.clipboard?.writeText(pendingOrder.folio).catch(() => {})}
+                      className="text-xs font-body font-black px-3 py-1 rounded-full border transition-all hover:opacity-80"
+                      style={{ color: 'var(--accent-primary)', borderColor: 'var(--color-brand-soft)', background: 'var(--surface-elevated, var(--surface-card))' }}
+                    >
+                      {t('cart.copyFolio')}
+                    </button>
+                    <a
+                      href={`/rastrear/${encodeURIComponent(pendingOrder.folio)}`}
+                      className="text-xs font-body font-black px-3 py-1 rounded-full border transition-all hover:opacity-80"
+                      style={{ color: 'var(--accent-primary)', borderColor: 'var(--color-brand-soft)', background: 'var(--surface-elevated, var(--surface-card))' }}
+                    >
+                      {t('cart.trackOrderCta')}
+                    </a>
+                  </div>
                 </div>
               )}
               <div className="w-full rounded-2xl p-4 space-y-2"
@@ -496,10 +538,12 @@ export default function CarritoDrawer({
                   </p>
                 )}
               </div>
-              <p className="text-center text-[10px] font-body font-bold text-green-700">
-                {t('cart.catalogVerified')}
-              </p>
-              {reviewUpdated && (
+              {!pendingOrder.folio && (
+                <p className="text-center text-[10px] font-body font-bold text-green-700">
+                  {t('cart.catalogVerified')}
+                </p>
+              )}
+              {reviewUpdated && !pendingOrder.folio && (
                 <p className="w-full rounded-xl bg-amber-50 px-3 py-2 text-center text-[11px] font-body font-black text-amber-700"
                    role="status">
                   {t('cart.reviewUpdated')}
@@ -533,8 +577,10 @@ export default function CarritoDrawer({
                   const precioAplicable = obtenerPrecioAplicable(item, item.cantidad);
                   const hayDescuento = precioAplicable < precioBase;
                   const subtotal = precioAplicable * item.cantidad;
-                  const fallbackImage = getProductPlaceholderUrl(item.nombre, '56x56');
-                  const imageSrc = getSafeProductImageUrl(item.imagen_url, item.nombre, '56x56');
+                  const fallbackImage = getInlineProductPlaceholder(item.nombre);
+                  const imageSrc = (typeof item.imagen_url === 'string' && item.imagen_url.trim())
+                    ? item.imagen_url.trim()
+                    : fallbackImage;
 
                   const stockActualRT = Number(item.stock_actual) || 0;
                   const agotadoRT = item.activo === false || (
@@ -774,6 +820,26 @@ export default function CarritoDrawer({
         {(items.length > 0 || pendingOrder) && (
           <div className="px-5 pt-3 pb-4 border-t-2 border-ink-100 flex-shrink-0 space-y-3">
             {pendingOrder ? (
+              pendingOrder.folio ? (
+                <>
+                  <a
+                    href={`/rastrear/${encodeURIComponent(pendingOrder.folio)}`}
+                    className="w-full flex items-center justify-center gap-2.5 text-white
+                               font-body font-black text-base py-4 rounded-2xl
+                               transition-all duration-300 active:scale-[0.98]"
+                    style={{ background: 'var(--gradient-success)', boxShadow: 'var(--shadow-success-soft)' }}
+                  >
+                    {t('cart.trackOrderCta')}
+                  </a>
+                  <button
+                    onClick={onCerrar}
+                    className="w-full text-center text-xs font-body font-semibold py-1"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    {t('cart.closeConfirmation')}
+                  </button>
+                </>
+              ) : (
               <>
                 {!isOnline && (
                   <p className="text-center text-xs font-body font-bold text-orange-700" role="status">
@@ -813,6 +879,7 @@ export default function CarritoDrawer({
                   {t('cart.editOrder')}
                 </button>
               </>
+              )
             ) : (
               <>
                 <div className="flex justify-between items-center">

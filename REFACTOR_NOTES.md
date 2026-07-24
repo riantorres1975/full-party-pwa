@@ -2074,3 +2074,71 @@ El hook `useInvitarUsuario` llama RPC `check_email_exists` antes de crear la inv
 ### Pendientes
 - Rate limiting en `get_invite_by_token` para prevenir enumeración masiva.
 - Email transaccional real con Resend/SendGrid desde Edge Function (hoy el link se copia manualmente).
+
+---
+
+# Fase: Robustez y observabilidad del flujo de compra (público)
+
+## Problemas Resueltos
+
+### 1. El folio nunca se mostraba en la app (crítico)
+**Archivo:** `src/components/CarritoDrawer.jsx`
+- `pendingOrder` se creaba con `folio: null` y tras el guardado exitoso se reseteaba a `null`: la UI "Copiar folio" era código muerto.
+- Si el usuario cerraba WhatsApp sin enviar, el pedido existía en BD pero el cliente no tenía forma de conocer su folio.
+- **Ahora:** tras el guardado, `setPendingOrder({...current, folio})` mantiene la pantalla de confirmación con:
+  - Título "¡Pedido registrado!" (nuevas keys `cart.orderSavedTitle/Sub`)
+  - Folio visible + botón copiar + link `/rastrear/:folio`
+  - Footer reemplazado: "Rastrear mi pedido" + "Cerrar" (el botón Enviar desaparece → imposible duplicar el pedido por re-click)
+
+### 2. Errores de guardado genéricos y sin reintento seguro
+**Archivos:** `src/utils/erroresPedido.js` (nuevo), `src/hooks/usePedido.js`, `CarritoDrawer.jsx`
+- Nuevo clasificador `clasificarErrorPedido(err)` → `duplicado | limite | inventario | validacion | red | desconocido`
+  - Mapea los mensajes reales de los triggers SQL (`supabase_rate_limit.sql`, `supabase_order_integrity.sql`, `supabase_public_order_rpc.sql`)
+- `guardarPedido()` ahora devuelve `{ folio, error, tipo }`; el drawer muestra mensaje específico por causa:
+  - `cart.saveOrderDuplicate` — "Ya registramos un pedido idéntico..."
+  - `cart.saveOrderRateLimit` — "Demasiados pedidos seguidos..."
+  - `cart.saveOrderInventory` — "Un producto de tu carrito cambió o ya no está disponible..."
+  - `cart.saveOrderNetwork` — "Falló la conexión..."
+- El `pendingOrder` se conserva tras el error → reintento manual con el mismo botón. El trigger anti-duplicado del servidor (mismo teléfono+nombre+total en 5 min) evita pedidos repetidos si la respuesta se perdió.
+- `trackEvent('order_save_failed')` ahora incluye `error_type` real (antes siempre `'backend'`).
+
+### 3. `generarMensajeWhatsApp` podía lanzar DESPUÉS de un insert exitoso
+- Si `VITE_WHATSAPP_NUMBER` falta/es inválido, la excepción dejaba el popup atascado y el carrito sin limpiar.
+- **Ahora:** try/catch alrededor; si falla, se cierra el popup y el flujo continúa mostrando el folio (el pedido ya está guardado).
+
+### 4. Refresh del catálogo colapsaba las páginas cargadas
+**Archivos:** `src/lib/productosPublicos.js`, `src/hooks/useCatalogProducts.js`
+- Cualquier evento Realtime o `refetch()` volvía la lista a los primeros 48 productos y el usuario debía re-scrollear.
+- Nuevo helper `resolveCatalogRefreshLimit(loadedCount)` (tope `PUBLIC_PRODUCTS_REFRESH_MAX_LIMIT = 1000`): el refresh pide desde offset 0 con límite = productos ya cargados → datos frescos sin colapso, una sola petición, orden y borrados consistentes.
+
+### 5. Placeholders dependientes de red (placehold.co)
+**Archivos:** `src/utils/imagenes.js`, `OptimizedImage.jsx`, `ProductoDetalleModal.jsx`, `CarritoDrawer.jsx`
+- Nueva `getInlineProductPlaceholder(nombre)`: data URI SVG inline (offline-safe, sin terceros, escapa HTML).
+- Aplicado en: grid (`OptimizedImage`), modal de detalle (imagen principal + relacionados), items del carrito.
+- `getProductPlaceholderUrl` (placehold.co) se conserva SOLO para metadatos SEO/JSON-LD (los data URI no son válidos en `og:image`) y para el alta de productos en admin.
+- Imagen de encabezado de categoría (`App.jsx`): `onError` oculta el contenedor en vez de mostrar ícono roto.
+
+### 6. Escape no cerraba los modales del catálogo
+**Archivos:** `src/hooks/useFocusTrap.js`, `CarritoDrawer.jsx`, `ModalFiltros.jsx`, `CategoryBrowser.jsx`
+- `useFocusTrap` acepta 4to parámetro opcional `onEscape` (guardado en ref para no re-disparar el efecto).
+- Escape cierra: carrito, modal de filtros y explorador de categorías (el modal de detalle ya lo tenía).
+- Backdrop del modal de detalle: `tabIndex={-1}` (ya existe botón de cierre accesible).
+
+## Guardas anti-reentrada en checkout
+- `handleOpenWhatsApp` sale temprano si `guardando` o `pendingOrder.folio` ya existe (antes dependía solo del atributo `disabled`).
+
+## Nuevas keys i18n (es/en)
+`cart.orderSavedTitle`, `cart.orderSavedSub`, `cart.trackOrderCta`, `cart.closeConfirmation`, `cart.saveOrderNetwork`, `cart.saveOrderDuplicate`, `cart.saveOrderRateLimit`, `cart.saveOrderInventory`
+
+## Pruebas
+- **Unitarias (nuevas):** `tests/erroresPedido.test.js` (clasificador), `tests/imagenes.test.js` (placeholder inline), `resolveCatalogRefreshLimit` en `tests/productosPublicos.test.js` → 101/101 OK.
+- **E2E (`tests/e2e/public-catalog.spec.js`):**
+  - Test de pedido completado extendido: folio visible en app, link de rastreo correcto, botón Enviar ausente tras guardar, y navegación folio→rastreo consulta el mismo folio.
+  - Nuevo: guardado fallido (400 "Product is unavailable") → error específico + carrito intacto + reintento exitoso con exactamente 2 llamadas RPC (sin duplicados).
+  - Nuevo: Escape cierra carrito (ambos proyectos) y modal de filtros (móvil).
+  - 52/52 OK (desktop + mobile).
+
+## Fuera de alcance (decisiones)
+- Sin idempotency key en el RPC (requeriría migración SQL; el trigger anti-duplicado cubre la ventana práctica).
+- Sin cambios en paginación por cursor (offset sigue; el refresh por límite resuelve el síntoma visible).
+- `pedidos_habilitados` sigue siendo gate solo-cliente (pendiente backend).

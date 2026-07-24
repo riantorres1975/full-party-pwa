@@ -1,8 +1,8 @@
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   fetchPublicProductPage,
-  PUBLIC_PRODUCTS_INITIAL_PAGE_SIZE,
   PUBLIC_PRODUCTS_PAGE_SIZE,
+  resolveCatalogRefreshLimit,
 } from '../lib/productosPublicos';
 import { getPublicRestClient } from '../lib/supabasePublicRest';
 import { trackCatalogDataRequest } from '../utils/analytics';
@@ -245,8 +245,13 @@ export function useCatalogProducts(queryInput, {
 
     async function loadInitialPage() {
       const startedAt = Date.now();
+      // Refrescar sin colapsar: cubrir los productos ya cargados de esta
+      // misma consulta (el producto requerido compartido se re-anexa aparte).
+      const loadedCount = productsRef.current.filter(
+        (product) => String(product.id) !== extraProductIdRef.current,
+      ).length;
       const result = await fetchPublicProductPage(getPublicRestClient(), {
-        limit: PUBLIC_PRODUCTS_INITIAL_PAGE_SIZE,
+        limit: resolveCatalogRefreshLimit(loadedCount),
         filters: currentQuery,
         sortOrder: currentQuery.sortOrder,
         signal: controller.signal,

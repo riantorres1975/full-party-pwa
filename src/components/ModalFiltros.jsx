@@ -242,7 +242,7 @@ export default function ModalFiltros({
   categoryStats = [],
 }) {
   const panelRef = useRef(null);
-  useFocusTrap(panelRef, isOpen);
+  useFocusTrap(panelRef, isOpen, 'first', onCerrar);
   const { t } = useLanguage();
 
   useEffect(() => {

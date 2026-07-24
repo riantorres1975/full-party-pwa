@@ -633,6 +633,14 @@ export default function App({ temaOscuro, onToggleTema, isAdmin = false }) {
                             width="96"
                             height="96"
                             className="h-full w-full object-contain p-1"
+                            loading="lazy"
+                            decoding="async"
+                            onError={(e) => {
+                              // Oculta el contenedor si la imagen falta (404/red) en
+                              // lugar de mostrar el ícono de imagen rota.
+                              const wrapper = e.currentTarget.parentElement;
+                              if (wrapper) wrapper.style.display = 'none';
+                            }}
                           />
                         </span>
                       )}

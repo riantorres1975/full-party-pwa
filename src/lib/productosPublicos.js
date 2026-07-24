@@ -16,7 +16,31 @@ export const PUBLIC_PRODUCT_FIELDS = [
 
 export const PUBLIC_PRODUCTS_PAGE_SIZE = 200;
 export const PUBLIC_PRODUCTS_INITIAL_PAGE_SIZE = 48;
+export const PUBLIC_PRODUCTS_REFRESH_MAX_LIMIT = 1000;
 export const PUBLIC_CATALOG_FACET_FIELDS = 'dimension,valor,cantidad,precio_min,precio_max,imagen';
+
+/**
+ * Límite para refrescar la consulta activa del catálogo (evento Realtime o
+ * reintento manual). Si el usuario ya cargó N productos se vuelven a pedir
+ * esos N desde offset 0 en una sola petición: los datos se actualizan sin
+ * colapsar la lista a la primera página ni obligar a hacer scroll de nuevo.
+ */
+export function resolveCatalogRefreshLimit(
+  loadedCount,
+  {
+    initialPageSize = PUBLIC_PRODUCTS_INITIAL_PAGE_SIZE,
+    maxLimit = PUBLIC_PRODUCTS_REFRESH_MAX_LIMIT,
+  } = {},
+) {
+  const safeInitial = Number.isInteger(initialPageSize) && initialPageSize > 0
+    ? initialPageSize
+    : PUBLIC_PRODUCTS_INITIAL_PAGE_SIZE;
+  const safeMax = Number.isInteger(maxLimit) && maxLimit >= safeInitial
+    ? maxLimit
+    : safeInitial;
+  const safeLoaded = Number.isInteger(loadedCount) && loadedCount > 0 ? loadedCount : 0;
+  return Math.min(Math.max(safeInitial, safeLoaded), safeMax);
+}
 
 const PRODUCT_SORTS = {
   featured: [

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { buscarPedidoPublico, crearPedidoPublico } from '../lib/pedidosPublicos';
 import { obtenerPrecioAplicable } from '../utils/precios';
+import { clasificarErrorPedido } from '../utils/erroresPedido';
 
 /**
  * usePedido
@@ -46,10 +47,14 @@ export function usePedido() {
         detalles,
       });
 
-      return { folio, error: null };
+      return { folio, error: null, tipo: null };
     } catch (err) {
       console.error('[usePedido] guardarPedido:', err.message);
-      return { folio: null, error: 'No se pudo registrar el pedido ni generar el folio.' };
+      return {
+        folio: null,
+        error: 'No se pudo registrar el pedido ni generar el folio.',
+        tipo: clasificarErrorPedido(err),
+      };
     } finally {
       setGuardando(false);
     }

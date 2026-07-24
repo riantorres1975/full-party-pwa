@@ -4,6 +4,9 @@ import {
   fetchAllPublicProducts,
   fetchPublicProductPage,
   PUBLIC_PRODUCT_FIELDS,
+  PUBLIC_PRODUCTS_INITIAL_PAGE_SIZE,
+  PUBLIC_PRODUCTS_REFRESH_MAX_LIMIT,
+  resolveCatalogRefreshLimit,
 } from '../src/lib/productosPublicos.js';
 
 function createClient(pages) {
@@ -245,4 +248,27 @@ test('builds a filtered server-side product page with a stable sort', async () =
     ['id', { ascending: true }],
   ]);
   assert.deepEqual(calls[0].range, [48, 71]);
+});
+
+test('refresh limit keeps already loaded products instead of collapsing to the first page', () => {
+  // Sin productos cargados: página inicial compacta.
+  assert.equal(resolveCatalogRefreshLimit(0), PUBLIC_PRODUCTS_INITIAL_PAGE_SIZE);
+  assert.equal(resolveCatalogRefreshLimit(undefined), PUBLIC_PRODUCTS_INITIAL_PAGE_SIZE);
+  assert.equal(resolveCatalogRefreshLimit(-5), PUBLIC_PRODUCTS_INITIAL_PAGE_SIZE);
+
+  // Menos de una página cargada: sigue siendo la página inicial.
+  assert.equal(resolveCatalogRefreshLimit(10), PUBLIC_PRODUCTS_INITIAL_PAGE_SIZE);
+
+  // Con scroll infinito activo: el refresh cubre todo lo cargado (una sola petición).
+  assert.equal(resolveCatalogRefreshLimit(48), 48);
+  assert.equal(resolveCatalogRefreshLimit(248), 248);
+  assert.equal(resolveCatalogRefreshLimit(448), 448);
+
+  // Tope de seguridad para no pedir de más.
+  assert.equal(resolveCatalogRefreshLimit(5000), PUBLIC_PRODUCTS_REFRESH_MAX_LIMIT);
+
+  // Opciones defensivas.
+  assert.equal(resolveCatalogRefreshLimit(100, { initialPageSize: 24 }), 100);
+  assert.equal(resolveCatalogRefreshLimit(100, { maxLimit: 80 }), 80);
+  assert.equal(resolveCatalogRefreshLimit(0, { initialPageSize: -1 }), PUBLIC_PRODUCTS_INITIAL_PAGE_SIZE);
 });
