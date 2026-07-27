@@ -20,6 +20,10 @@ test('clasifica producto no disponible como inventario', () => {
   assert.equal(clasificarErrorPedido(new Error('Order must contain between 1 and 50 products')), 'inventario');
 });
 
+test('clasifica el interruptor de pedidos desactivado como deshabilitado', () => {
+  assert.equal(clasificarErrorPedido(new Error('Orders are temporarily disabled')), 'deshabilitado');
+});
+
 test('clasifica validaciones del RPC como validacion', () => {
   assert.equal(clasificarErrorPedido(new Error('Invalid customer name')), 'validacion');
   assert.equal(clasificarErrorPedido(new Error('Invalid customer phone')), 'validacion');

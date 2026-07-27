@@ -19,7 +19,7 @@ export function usePedido() {
    * Inserta el pedido en Supabase y devuelve el folio generado.
    * payload: { nombre, telefono, tipoEntrega, direccion, total, items }
    */
-  async function guardarPedido({ nombre, telefono, tipoEntrega, direccion, total, items }) {
+  async function guardarPedido({ nombre, telefono, tipoEntrega, direccion, total, items, idempotencyKey }) {
     setGuardando(true);
     try {
       const detalles = items.map(i => {
@@ -38,16 +38,18 @@ export function usePedido() {
         };
       });
 
-      const folio = await crearPedidoPublico(supabase, {
+      const pedido = await crearPedidoPublico(supabase, {
         nombre,
         telefono,
         tipoEntrega,
         direccion,
         total,
         detalles,
+        idempotencyKey,
       });
 
-      return { folio, error: null, tipo: null };
+      // total: monto canónico del servidor (null si el RPC es la versión legacy).
+      return { folio: pedido.folio, total: pedido.total, replay: pedido.replay, error: null, tipo: null };
     } catch (err) {
       console.error('[usePedido] guardarPedido:', err.message);
       return {

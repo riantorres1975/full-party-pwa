@@ -4,6 +4,7 @@ import {
   buscarPedidoPublico,
   crearPedidoPublico,
   extraerFolioCreado,
+  extraerPedidoCreado,
 } from '../src/lib/pedidosPublicos.js';
 
 test('extracts and validates the folio returned by the RPC', () => {
@@ -14,16 +15,40 @@ test('extracts and validates the folio returned by the RPC', () => {
   assert.equal(extraerFolioCreado('invalid'), null);
 });
 
+test('extracts folio, canonical total and replay flag from the new RPC shape', () => {
+  assert.deepEqual(
+    extraerPedidoCreado({ folio: 'fp-abc123', total: 80.5 }),
+    { folio: 'FP-ABC123', total: 80.5, replay: false },
+  );
+  assert.deepEqual(
+    extraerPedidoCreado({ folio: 'FP-ABC123', total: '97.25', replay: true }),
+    { folio: 'FP-ABC123', total: 97.25, replay: true },
+  );
+  // Forma legacy (string): folio válido, total desconocido.
+  assert.deepEqual(
+    extraerPedidoCreado('FP-ABC123'),
+    { folio: 'FP-ABC123', total: null, replay: false },
+  );
+  assert.deepEqual(
+    extraerPedidoCreado(null),
+    { folio: null, total: null, replay: false },
+  );
+  assert.deepEqual(
+    extraerPedidoCreado({ folio: 'invalid', total: 10 }),
+    { folio: null, total: null, replay: false },
+  );
+});
+
 test('creates a public order through the secure RPC', async () => {
   const calls = [];
   const client = {
     async rpc(name, params) {
       calls.push({ name, params });
-      return { data: 'FP-ABC1234567', error: null };
+      return { data: { folio: 'FP-ABC1234567', total: 85 }, error: null };
     },
   };
 
-  const folio = await crearPedidoPublico(client, {
+  const pedido = await crearPedidoPublico(client, {
     nombre: 'Cliente Prueba',
     telefono: '4521234567',
     tipoEntrega: 'tienda',
@@ -32,7 +57,7 @@ test('creates a public order through the secure RPC', async () => {
     detalles: [{ id: 'product-id', cantidad: 1 }],
   });
 
-  assert.equal(folio, 'FP-ABC1234567');
+  assert.deepEqual(pedido, { folio: 'FP-ABC1234567', total: 85, replay: false });
   assert.deepEqual(calls, [{
     name: 'crear_pedido_publico',
     params: {
@@ -44,6 +69,35 @@ test('creates a public order through the secure RPC', async () => {
       p_detalles_json: [{ id: 'product-id', cantidad: 1 }],
     },
   }]);
+});
+
+test('sends the idempotency key only when provided', async () => {
+  const calls = [];
+  const client = {
+    async rpc(name, params) {
+      calls.push({ name, params });
+      return { data: { folio: 'FP-IDEM1', total: 50, replay: true }, error: null };
+    },
+  };
+  const payload = {
+    nombre: 'Cliente Prueba',
+    telefono: '4521234567',
+    tipoEntrega: 'tienda',
+    direccion: '',
+    total: 50,
+    detalles: [{ id: 'product-id', cantidad: 1 }],
+  };
+
+  const pedido = await crearPedidoPublico(client, {
+    ...payload,
+    idempotencyKey: '11111111-2222-3333-4444-555555555555',
+  });
+
+  assert.equal(calls[0].params.p_idempotency_key, '11111111-2222-3333-4444-555555555555');
+  assert.deepEqual(pedido, { folio: 'FP-IDEM1', total: 50, replay: true });
+
+  await crearPedidoPublico(client, payload);
+  assert.equal(calls[1].params.p_idempotency_key, undefined);
 });
 
 test('rejects missing or malformed folios', async () => {

@@ -8,7 +8,7 @@
  *  - supabase_rate_limit.sql        ('Pedido duplicado detectado...', 'Demasiados pedidos...')
  *
  * @param {unknown} err — Error de PostgREST, de red o genérico.
- * @returns {'duplicado'|'limite'|'inventario'|'validacion'|'red'|'desconocido'}
+ * @returns {'duplicado'|'limite'|'inventario'|'validacion'|'deshabilitado'|'red'|'desconocido'}
  */
 export function clasificarErrorPedido(err) {
   const message = String(err?.message || err?.error_description || err?.details || err || '')
@@ -24,6 +24,11 @@ export function clasificarErrorPedido(err) {
     || /failed to fetch|network\s?error|network request failed|load failed|aborterror|timeout|timed out/.test(message)
   ) {
     return 'red';
+  }
+
+  // Interruptor de pedidos desactivado (validación server-side del RPC).
+  if (/temporarily disabled|orders are disabled/.test(message)) {
+    return 'deshabilitado';
   }
 
   // Pedido idéntico reciente (mismo teléfono + nombre + total en 5 min).

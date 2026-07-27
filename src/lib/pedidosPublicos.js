@@ -9,6 +9,25 @@ export function extraerFolioCreado(data) {
   return FOLIO_PATTERN.test(folio) ? folio : null;
 }
 
+/**
+ * Normaliza la respuesta del RPC crear_pedido_publico.
+ * Forma nueva: { folio, total, replay? } — total es el monto canónico del
+ * servidor. Forma legacy: 'FP-XXXX' (string) — total queda en null.
+ */
+export function extraerPedidoCreado(data) {
+  const folio = extraerFolioCreado(data);
+  if (!folio) return { folio: null, total: null, replay: false };
+
+  const value = Array.isArray(data) ? data[0] : data;
+  const rawTotal = value && typeof value === 'object' ? Number(value.total) : NaN;
+
+  return {
+    folio,
+    total: Number.isFinite(rawTotal) ? rawTotal : null,
+    replay: Boolean(value && typeof value === 'object' && value.replay),
+  };
+}
+
 export async function crearPedidoPublico(client, {
   nombre,
   telefono,
@@ -16,22 +35,26 @@ export async function crearPedidoPublico(client, {
   direccion,
   total,
   detalles,
+  idempotencyKey,
 }) {
-  const { data, error } = await client.rpc('crear_pedido_publico', {
+  const params = {
     p_cliente_nombre: nombre,
     p_cliente_telefono: telefono,
     p_tipo_entrega: tipoEntrega,
     p_direccion: direccion || null,
     p_total: total,
     p_detalles_json: detalles,
-  });
+  };
+  if (idempotencyKey) params.p_idempotency_key = idempotencyKey;
+
+  const { data, error } = await client.rpc('crear_pedido_publico', params);
 
   if (error) throw error;
 
-  const folio = extraerFolioCreado(data);
-  if (!folio) throw new Error('Supabase no devolvio un folio valido.');
+  const pedido = extraerPedidoCreado(data);
+  if (!pedido.folio) throw new Error('Supabase no devolvio un folio valido.');
 
-  return folio;
+  return pedido;
 }
 
 export async function buscarPedidoPublico(client, folioInput) {

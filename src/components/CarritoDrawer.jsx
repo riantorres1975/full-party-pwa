@@ -76,6 +76,7 @@ const SAVE_ERROR_KEYS = {
   limite: 'cart.saveOrderRateLimit',
   inventario: 'cart.saveOrderInventory',
   validacion: 'cart.saveOrderError',
+  deshabilitado: 'cart.ordersPausedError',
   red: 'cart.saveOrderNetwork',
   desconocido: 'cart.saveOrderError',
 };
@@ -85,6 +86,18 @@ function tieneProblemaStock(item) {
   if (item.activo === false) return true;
   if (item.stock_ilimitado !== false) return false;
   return item.cantidad > (Number(item.stock_actual) || 0);
+}
+
+// UUID v4 para la llave de idempotencia del pedido (con fallback para
+// navegadores sin crypto.randomUUID).
+function generarIdempotencyKey() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.floor(Math.random() * 16);
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
 }
 
 const INPUT_CLASS = `
@@ -267,6 +280,9 @@ export default function CarritoDrawer({
 
     setPendingOrder({
       folio: null,
+      // Llave estable por intento de pedido: reintentos con la misma llave
+      // devuelven el mismo folio en el servidor en lugar de duplicar.
+      idempotencyKey: generarIdempotencyKey(),
       itemsSnapshot: itemsWithAppliedPrice,
       total,
       tipoEntrega: deliveryType,
@@ -344,12 +360,12 @@ export default function CarritoDrawer({
       whatsappWindow.document.body.style.padding = '24px';
     }
 
-    const { itemsSnapshot, total, tipoEntrega: type, nombre: name, telefono: phoneNumber, direccion: customerAddress } = pendingOrder;
+    const { itemsSnapshot, total, tipoEntrega: type, nombre: name, telefono: phoneNumber, direccion: customerAddress, idempotencyKey } = pendingOrder;
     const normalizedAddress = type === 'envio' ? customerAddress?.trim() || '' : '';
 
     // 1) Persist order in Supabase
-    const { folio, error, tipo } = await guardarPedido({
-      nombre: name, telefono: phoneNumber, tipoEntrega: type, direccion: normalizedAddress, total, items: itemsSnapshot,
+    const { folio, total: totalCanonico, error, tipo } = await guardarPedido({
+      nombre: name, telefono: phoneNumber, tipoEntrega: type, direccion: normalizedAddress, total, items: itemsSnapshot, idempotencyKey,
     });
 
     if (error || !folio) {
@@ -369,12 +385,18 @@ export default function CarritoDrawer({
 
     recordOrderSubmission();
 
+    // Total final: el canónico del servidor (precios re-verificados) si el RPC
+    // lo devolvió; si no, el calculado en cliente.
+    const totalFinal = typeof totalCanonico === 'number' && totalCanonico > 0
+      ? totalCanonico
+      : total;
+
     // 2) Build WhatsApp URL with order reference. Si la configuración de
     // WhatsApp falla, el pedido YA está guardado: el folio se muestra en
     // pantalla y el flujo continúa sin romperse.
     let url = null;
     try {
-      url = generarMensajeWhatsApp(itemsSnapshot, total, {
+      url = generarMensajeWhatsApp(itemsSnapshot, totalFinal, {
         tipo: type, nombre: name, telefono: phoneNumber, direccion: normalizedAddress, folio,
       });
     } catch (whatsappError) {
@@ -385,9 +407,10 @@ export default function CarritoDrawer({
       delivery_type: type,
       item_types: itemsSnapshot.length,
       item_count: itemsSnapshot.reduce((count, item) => count + item.cantidad, 0),
-      value: total,
+      value: totalFinal,
       currency: 'MXN',
       order_saved: Boolean(folio),
+      total_adjusted: totalFinal !== total,
     });
 
     // 3) Reuse the synchronously opened tab so popup blockers do not lose the order.
@@ -410,7 +433,7 @@ export default function CarritoDrawer({
     clearCheckoutDraft();
     setOrderSaveError('');
     setReviewUpdated(false);
-    setPendingOrder((current) => (current ? { ...current, folio } : current));
+    setPendingOrder((current) => (current ? { ...current, folio, total: totalFinal } : current));
   };
 
   return (
