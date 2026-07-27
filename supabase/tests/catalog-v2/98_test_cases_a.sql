@@ -120,6 +120,8 @@ DO $$
 DECLARE
   v_n INT;
   v_nulls INT;
+  v_cards JSONB;
+  v_card JSONB;
 BEGIN
   SELECT count(*) INTO v_n
   FROM public.catalog_variants v
@@ -133,6 +135,15 @@ BEGIN
   WHERE p.slug = 'bomba-manual-globos'
     AND v.line_id IS NULL AND v.color_id IS NULL AND v.size_id IS NULL;
   IF v_nulls <> 1 THEN RAISE EXCEPTION 'FAIL E2: la variante de bomba no debe tener gama/color/medida'; END IF;
+
+  SELECT public.catalog_list_cards(p_category_slug := 'inflado-y-helio') INTO v_cards;
+  SELECT card INTO v_card
+  FROM jsonb_array_elements(v_cards->'cards') card
+  WHERE card->>'product_slug' = 'bomba-manual-globos';
+  IF (v_card->>'variant_count')::INT <> 1
+     OR (v_card->>'presentation_count')::INT <> 1 THEN
+    RAISE EXCEPTION 'FAIL E3: la tarjeta simple debe informar 1 variante y 1 presentacion';
+  END IF;
 
   RAISE NOTICE 'PASS E: producto simple sin gama/color/medida';
 END $$;

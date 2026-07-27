@@ -308,6 +308,7 @@ BEGIN
       count(DISTINCT color_id) FILTER (WHERE color_id IS NOT NULL) AS color_count,
       count(DISTINCT line_id)   FILTER (WHERE line_id IS NOT NULL)  AS line_count,
       count(DISTINCT variant_id)                     AS variant_count,
+      count(DISTINCT sale_presentation_id)           AS presentation_count,
       bool_or(sp_in_stock)                           AS in_stock
     FROM keyed
     GROUP BY
@@ -349,6 +350,7 @@ BEGIN
           'color_count',        color_count,
           'line_count',         line_count,
           'variant_count',      variant_count,
+          'presentation_count', presentation_count,
           'sizes',              sizes,
           'colors',             colors,
           'presentation_types', presentation_types,

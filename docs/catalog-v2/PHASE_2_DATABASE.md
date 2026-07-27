@@ -132,3 +132,7 @@ aplicar todo sin intervención manual.
 **Fase 3 — Capa de datos:** `src/services/catalog/*.js` (repositories),
 `src/hooks/catalog/*.js`, adaptadores de respuesta y manejo de errores,
 consumiendo las RPCs creadas aquí.
+
+> Actualización 2026-07-27: la implementación local de Fase 3 está documentada
+> en `docs/catalog-v2/PHASE_3_DATA_LAYER.md`. La aplicación remota de `001…006`
+> continúa pendiente; la RPC pública devuelve `404` en el proyecto configurado.
