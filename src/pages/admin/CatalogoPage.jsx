@@ -1,9 +1,8 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useBreadcrumb } from '../../contexts/BreadcrumbContext';
 import { useLanguage } from '../../hooks/useLanguage';
 import PageHeader from '../../components/admin/PageHeader';
-
-const AdminCatalogo = lazy(() => import('../../components/AdminCatalogo'));
+import AdminCatalogWorkspace from '../../components/admin/catalog-v2/AdminCatalogWorkspace';
 
 export default function CatalogoPage() {
   const { t } = useLanguage();
@@ -16,17 +15,10 @@ export default function CatalogoPage() {
   return (
     <>
       <PageHeader
-        title={t('admin.catalog.title')}
-        subtitle={t('admin.catalog.subtitle')}
+        title="Catalogo V2"
+        subtitle="Administra la estructura normalizada que alimentara la nueva experiencia de compra."
       />
-      <Suspense fallback={
-        <div className="flex items-center justify-center py-16 gap-3">
-          <div className="w-6 h-6 rounded-full border-[3px] border-admin-border border-t-fiesta-magenta animate-spin" />
-          <span className="text-sm font-body font-bold text-admin-muted">{t('admin.catalog.loading')}</span>
-        </div>
-      }>
-        <AdminCatalogo />
-      </Suspense>
+      <AdminCatalogWorkspace />
     </>
   );
 }
