@@ -113,7 +113,7 @@ Se agregaron 22 casos V2 para:
 
 ### SQL
 
-Entorno: PostgreSQL 15 en Docker.
+Entorno: PostgreSQL 15 y 17 en Docker; validación remota en PostgreSQL 17.6.
 
 Resultado: todos los casos A-L y RLS pasan, incluyendo:
 
@@ -136,32 +136,27 @@ Resultado: todos los casos A-L y RLS pasan, incluyendo:
 La compilacion individual es necesaria porque la aplicacion publica V1 aun no
 importa la capa V2.
 
-## 6. Bloqueo remoto confirmado
+## 6. Despliegue remoto completado
 
-La llamada de solo lectura al proyecto Supabase configurado:
+El bloqueo remoto quedó resuelto el 2026-07-27 mediante el MCP oficial de
+Supabase:
 
-```text
-POST /rest/v1/rpc/catalog_list_cards
-```
-
-respondio `404`.
-
-Conclusion: las migraciones `001` a `006` aun no estan aplicadas al Supabase de
-desarrollo, o su schema cache todavia no conoce las funciones. Solo existe la
-clave publica en el entorno local; esa clave no puede ejecutar DDL.
-
-No se inicio la Fase 4 contra el remoto para evitar construir y declarar valido
-un panel que no puede probarse con la base real.
+- `001` a `006` y `009` aplicadas.
+- Respaldo V1: 105/105 productos y 23 definiciones SQL.
+- RPC pública `catalog_list_cards`: 4 tarjetas para Globos de látex.
+- Cada tarjeta incluye `presentation_count`.
+- Precio, detalle, facetas, búsqueda y carrito canónico validados.
+- Pedido V2 validado con rollback: snapshot, inventario, idempotencia y
+  sobreventa.
+- RLS validada con los roles `anon` y `authenticated`.
 
 ## 7. Siguiente accion exacta
 
-1. Aplicar en Supabase SQL Editor, en orden:
-   `001_catalog_backup_and_cleanup.sql` a `006_catalog_seed.sql`.
-2. Volver a ejecutar la llamada anonima a `catalog_list_cards`.
-3. Confirmar que una tarjeta incluye `presentation_count`.
-4. Ejecutar pruebas de lectura con usuario anon y pruebas de escritura con los
-   roles del panel.
-5. Continuar con la Fase 4.
+1. Continuar con la Fase 4 usando los repositorios V2.
+2. Implementar primero catálogos auxiliares y navegación del panel.
+3. Después implementar productos, variantes, presentaciones, precios e
+   inventario.
+4. Mantener `007` sin ejecutar mientras el frontend V1 siga activo.
 
 No ejecutar `007_catalog_remove_legacy.sql`.
 `008_catalog_rollback.sql` se conserva solo para emergencia.

@@ -4,9 +4,9 @@ Fecha: 2026-07-27 · Rama: `refactor/catalog-v2`
 
 ## 1. Resumen de cambios
 
-Se creó el esquema completo del catálogo V2 como 8 archivos SQL ordenados e
-idempotentes, validados contra un PostgreSQL 15 real (Docker) con todo el
-estado V1 aplicado previamente. **31 casos de prueba automáticos pasan**
+Se creó el esquema completo del catálogo V2 como migraciones SQL ordenadas e
+idempotentes, validadas contra PostgreSQL 15 y 17 (Docker) con todo el
+estado V1 aplicado previamente. **Todos los casos de prueba automáticos pasan**
 (22 funcionales §33 + 9 de seguridad RLS).
 
 ## 2. Archivos creados
@@ -21,6 +21,7 @@ estado V1 aplicado previamente. **31 casos de prueba automáticos pasan**
 | `006_catalog_seed.sql` | 3 sucursales, 15 categorías jerárquicas, 14 colecciones, 8 marcas, 11 gamas Glomex, 13 familias de color, 41 colores, 18 medidas, 8 atributos, 17 alias de búsqueda y 4 productos demo que implementan los casos §33 |
 | `007_catalog_remove_legacy.sql` | Eliminación del V1 con guardas (solo al final de la refactorización) |
 | `008_catalog_rollback.sql` | Reversa de emergencia: restaura `productos` desde el respaldo y elimina el esquema V2 |
+| `009_catalog_rls_policy_optimization.sql` | Separa lectura pública (`anon`) de lectura del panel (`authenticated`) para eliminar políticas permisivas duplicadas |
 | `supabase_productos_mayoreo_migration.sql` | **Drift documentado**: columnas `es_nuevo`/`precios_mayoreo`/`familia_mayoreo` que existían en la BD real sin migración en el repo |
 | `supabase/tests/catalog-v2/` | Harness Docker: bootstrap + runner + 31 aserciones + README |
 
@@ -64,8 +65,9 @@ catalog_products ──► catalog_variants ◄── catalog_sizes             
 
 ## 5. Pruebas ejecutadas
 
-Harness: `supabase/tests/catalog-v2/` (Docker `postgres:15-alpine`).
-Secuencia: bootstrap → 14 SQL de estado V1 → `001…006` → aserciones.
+Harness: `supabase/tests/catalog-v2/` (Docker `postgres:15-alpine` y
+`postgres:17-alpine`).
+Secuencia: bootstrap → 14 SQL de estado V1 → `001…006` + `009` → aserciones.
 
 **Resultado: 31/31 PASS**
 
@@ -98,9 +100,12 @@ Además: `npm test` 110/110 ✓ y `npm run build` ✓ (sin cambios de JS en esta
 
 - [x] Esquema, constraints, índices, RLS, RPCs, seeds — escritos y validados localmente.
 - [x] Script de rollback listo.
-- [ ] **Aplicar `001…006` al Supabase de desarrollo** (ver §9 — requiere SQL Editor).
+- [x] `001…006` y `009` aplicadas al Supabase de desarrollo mediante MCP.
+- [x] Respaldo remoto verificado: 105/105 productos y 23 objetos SQL.
+- [x] Drift de `pedidos.idempotency_key` corregido con `supabase_order_idempotency.sql`.
+- [x] Fase 3: capa de datos en `src/services/catalog/` y `src/hooks/catalog/`.
 - [ ] Importación controlada de productos reales V1 → V2 (paso 7 del plan, siguiente).
-- [ ] Fase 3: capa de datos en la app (`src/services/catalog/`).
+- [ ] Fase 4: panel administrativo V2.
 
 ## 8. Riesgos abiertos
 
@@ -109,30 +114,22 @@ Además: `npm test` 110/110 ✓ y `npm run build` ✓ (sin cambios de JS en esta
   se medirá en Fase 8 con volumen real).
 - `catalog_search` usa coincidencia por tokens normalizados; Fuse.js queda
   como refinamiento local en el cliente (Fase 3/5).
+- `public.admins` tiene RLS desactivado. Es un riesgo previo y ajeno a las
+  tablas `catalog_*`; no se habilitó automáticamente porque requiere políticas
+  compatibles con el panel actual.
 
-## 9. Instrucciones para aplicar al Supabase de desarrollo
+## 9. Despliegue en Supabase de desarrollo
 
-**Bloqueo de credenciales (reportado en Fase 1):** el entorno solo tiene la
-publishable/anon key (`sb_publishable_…`); no hay service role key, connection
-string ni Supabase CLI. La anon key no puede ejecutar DDL. Por tanto la
-aplicación se hace manual:
+El despliegue remoto se completó el 2026-07-27 mediante el MCP oficial de
+Supabase sobre PostgreSQL 17.6.
 
-1. Supabase Dashboard → SQL Editor → New query.
-2. Ejecutar **en orden** (cada uno es transaccional e idempotente):
-   `001`, `002`, `003`, `004`, `005`, `006`.
-3. Verificar al final de cada archivo el bloque de verificación comentado.
-4. `007` **no ejecutar** hasta cerrar la Fase 7. `008` solo en emergencia.
-
-Alternativa para automatizar: aportar `SUPABASE_SERVICE_ROLE_KEY` o la
-connection string de Postgres (Settings → Database) — con ella se puede
-aplicar todo sin intervención manual.
+El reporte completo está en
+`docs/catalog-v2/PHASE_2_REMOTE_DEPLOYMENT.md`.
 
 ## 10. Siguiente fase
 
-**Fase 3 — Capa de datos:** `src/services/catalog/*.js` (repositories),
-`src/hooks/catalog/*.js`, adaptadores de respuesta y manejo de errores,
-consumiendo las RPCs creadas aquí.
+**Fase 4 — Panel administrativo:** catálogos auxiliares, productos, variantes,
+presentaciones, precios, inventario, generación masiva e importación CSV.
 
-> Actualización 2026-07-27: la implementación local de Fase 3 está documentada
-> en `docs/catalog-v2/PHASE_3_DATA_LAYER.md`. La aplicación remota de `001…006`
-> continúa pendiente; la RPC pública devuelve `404` en el proyecto configurado.
+No ejecutar `007_catalog_remove_legacy.sql` hasta cerrar la Fase 7.
+`008_catalog_rollback.sql` se conserva solo para emergencia.

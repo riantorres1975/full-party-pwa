@@ -31,7 +31,7 @@ IMMUTABLE
 PARALLEL SAFE
 SET search_path = public, pg_temp
 AS $$
-  SELECT lower(unaccent(coalesce(input, '')));
+  SELECT lower(extensions.unaccent(coalesce(input, '')));
 $$;
 
 REVOKE ALL ON FUNCTION public.catalog_normalize_text(TEXT) FROM PUBLIC;

@@ -4,10 +4,11 @@
 -- Ejecutar DESPUÉS de 003_catalog_constraints_indexes.sql. Idempotente.
 --
 -- Modelo (espejo de la matriz de permisos del panel):
---   Público (anon + authenticated): SELECT solo de filas activas en tablas
+--   Público (anon): SELECT solo de filas activas en tablas
 --     de dominio. catalog_inventory NO es legible públicamente: la
 --     disponibilidad se expone mediante RPCs SECURITY DEFINER (005).
---   Panel (viewer/empleado/manager/admin): SELECT de todo el catálogo.
+--   Panel autenticado (viewer/empleado/manager/admin): SELECT de todo el
+--     catálogo. Se separa de anon para evitar políticas permisivas duplicadas.
 --   Escritura (INSERT/UPDATE): admin y manager.
 --   Eliminación (DELETE): solo admin.
 --
@@ -46,7 +47,7 @@ BEGIN
 
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', t || '_public_select', t);
     EXECUTE format(
-      'CREATE POLICY %I ON public.%I FOR SELECT TO anon, authenticated USING (active = true)',
+      'CREATE POLICY %I ON public.%I FOR SELECT TO anon USING (active = true)',
       t || '_public_select', t
     );
 
@@ -98,8 +99,14 @@ BEGIN
 
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', t || '_public_select', t);
     EXECUTE format(
-      'CREATE POLICY %I ON public.%I FOR SELECT TO anon, authenticated USING (true)',
+      'CREATE POLICY %I ON public.%I FOR SELECT TO anon USING (true)',
       t || '_public_select', t
+    );
+
+    EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', t || '_panel_select', t);
+    EXECUTE format(
+      'CREATE POLICY %I ON public.%I FOR SELECT TO authenticated USING (public.has_role(ARRAY[''admin'',''manager'',''empleado'',''viewer'']))',
+      t || '_panel_select', t
     );
 
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', t || '_manager_insert', t);

@@ -84,6 +84,13 @@ WHERE n.nspname = 'public'
 COMMENT ON TABLE public.catalog_v1_object_backup IS
   'Definiciones de objetos SQL del catálogo V1 (vista, políticas, índices, triggers, funciones) respaldadas antes de la migración V2.';
 
+-- Los respaldos son internos: defensa en profundidad contra los grants
+-- automáticos del Data API y contra futuros cambios de privilegios por defecto.
+ALTER TABLE public.productos_backup_v1 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.catalog_v1_object_backup ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.productos_backup_v1 FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.catalog_v1_object_backup FROM PUBLIC, anon, authenticated;
+
 -- ── 3. Verificación ─────────────────────────────────────────────────────────
 DO $$
 DECLARE

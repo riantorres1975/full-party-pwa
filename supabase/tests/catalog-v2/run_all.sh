@@ -34,7 +34,8 @@ for f in \
   003_catalog_constraints_indexes.sql \
   004_catalog_rls.sql \
   005_catalog_functions.sql \
-  006_catalog_seed.sql
+  006_catalog_seed.sql \
+  009_catalog_rls_policy_optimization.sql
 do
   echo "== $f"
   psql -U postgres -d catalog_test -v ON_ERROR_STOP=1 -q -f "/repo/$f"

@@ -14,7 +14,9 @@
 
 BEGIN;
 
-CREATE EXTENSION IF NOT EXISTS btree_gist;
+CREATE SCHEMA IF NOT EXISTS extensions;
+CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA extensions;
+SET LOCAL search_path = public, extensions, pg_catalog;
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 1. ESCALONES DE PRECIO SIN TRASLAPES

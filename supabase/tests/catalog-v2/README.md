@@ -1,9 +1,9 @@
 # Harness de pruebas SQL — Catálogo V2
 
-Valida las migraciones `001…006` del catálogo V2 contra un PostgreSQL 15 real
-(el mismo major que usa Supabase), aplicando primero TODO el estado V1 del
-repositorio y luego ejecutando los casos de prueba obligatorios del §33 del
-plan maestro más las verificaciones RLS.
+Valida las migraciones `001…006` y `009` del catálogo V2 contra PostgreSQL 15
+y 17, aplicando primero TODO el estado V1 del repositorio y luego ejecutando
+los casos de prueba obligatorios del §33 del plan maestro más las
+verificaciones RLS.
 
 ## Contenido
 
@@ -17,7 +17,7 @@ plan maestro más las verificaciones RLS.
 ## Ejecutar (Docker)
 
 ```bash
-docker run -d --name pg-catalog-test -e POSTGRES_PASSWORD=postgres postgres:15-alpine
+docker run -d --name pg-catalog-test -e POSTGRES_PASSWORD=postgres postgres:17-alpine
 # esperar unos segundos a que inicie
 docker exec pg-catalog-test psql -U postgres -c "CREATE DATABASE catalog_test;"
 docker exec pg-catalog-test mkdir -p /harness /repo

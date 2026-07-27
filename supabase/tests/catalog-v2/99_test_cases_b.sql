@@ -230,11 +230,34 @@ INSERT INTO auth.users (id, email) VALUES
 -- handle_new_user auto-crea ambos perfiles como viewer; se promueve al primero.
 UPDATE public.profiles SET role = 'admin' WHERE id = '11111111-1111-1111-1111-111111111111';
 
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public'
+      AND c.relname IN ('productos_backup_v1', 'catalog_v1_object_backup')
+      AND NOT c.relrowsecurity
+  ) THEN
+    RAISE EXCEPTION 'FAIL L0: una tabla de respaldo no tiene RLS';
+  END IF;
+  RAISE NOTICE 'PASS L0: respaldos internos protegidos con RLS';
+END $$;
+
 SET ROLE anon;
 
 DO $$
 DECLARE n INT;
 BEGIN
+  -- L0b: anon no puede leer los respaldos internos.
+  BEGIN
+    PERFORM count(*) FROM public.productos_backup_v1;
+    RAISE EXCEPTION 'FAIL L0b: anon leyó productos_backup_v1';
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE NOTICE 'PASS L0b: anon no lee respaldos internos';
+  END;
+
   -- L1: anon no puede leer inventario
   BEGIN
     PERFORM count(*) FROM public.catalog_inventory;
@@ -304,7 +327,8 @@ SET ROLE authenticated;
 DO $$
 BEGIN
   PERFORM count(*) FROM public.catalog_inventory;
-  RAISE NOTICE 'PASS L8: viewer lee inventario (panel)';
+  PERFORM count(*) FROM public.catalog_collection_products;
+  RAISE NOTICE 'PASS L8: viewer lee inventario y tablas puente (panel)';
   BEGIN
     INSERT INTO public.catalog_products (category_id, name, slug)
     SELECT id, 'hack', 'hack-2' FROM public.catalog_categories LIMIT 1;
