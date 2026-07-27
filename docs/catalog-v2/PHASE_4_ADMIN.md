@@ -61,9 +61,22 @@ workspace V2.
 
 ## Siguiente bloque
 
-1. Listado y editor por pasos de `catalog_products`.
-2. Variantes y presentaciones.
-3. Escalones de precio.
-4. Inventario por sucursal.
-5. Generador masivo de combinaciones.
-6. Importacion CSV y edicion masiva.
+La segunda entrega incorpora:
+
+- Listado de familias en `catalog_products`.
+- Busqueda por nombre o slug.
+- Paginacion y busqueda en servidor para no cargar miles de arboles comerciales
+  en una sola consulta.
+- Indicadores de variantes, presentaciones, precio minimo e inventario.
+- Editor por secciones para informacion, variantes, precios e inventario.
+- Vista previa de la tarjeta publica.
+- Lectura de escalones de mayoreo y existencias por sucursal.
+- Creacion, edicion y eliminacion de la familia principal.
+
+Siguiente bloque:
+
+1. CRUD de variantes y presentaciones dentro del editor.
+2. Edicion de escalones de precio.
+3. Captura de inventario por sucursal.
+4. Generador masivo de combinaciones.
+5. Importacion CSV y edicion masiva.

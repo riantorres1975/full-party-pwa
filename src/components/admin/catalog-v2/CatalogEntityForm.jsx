@@ -212,7 +212,7 @@ export default function CatalogEntityForm({
               Catalogo V2
             </p>
             <h2 id="catalog-entity-form-title" className="mt-1 text-xl font-black text-admin-text">
-              {entity ? `Editar ${resource.singular}` : `Nueva ${resource.singular}`}
+              {entity ? `Editar ${resource.singular}` : `${resource.article} ${resource.singular}`}
             </h2>
             <p className="mt-1 text-xs text-admin-muted">{resource.description}</p>
           </div>

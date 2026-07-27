@@ -28,9 +28,19 @@ test.describe('authenticated admin V2 regressions', () => {
     await openAuthenticatedCatalog(page);
 
     const main = page.locator('#admin-main');
-    await expect(main.getByRole('heading', { name: 'Base del catalogo V2' })).toBeVisible();
-    await expect(main.getByRole('heading', { name: 'Categorias', exact: true })).toBeVisible();
+    await expect(main.getByRole('heading', { name: 'Productos V2' })).toBeVisible();
     await expect(main).toBeVisible();
+
+    const firstEditorButton = main.getByRole('button', { name: 'Abrir editor' }).first();
+    await expect(firstEditorButton).toBeVisible();
+    await firstEditorButton.click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByRole('button', { name: 'Cerrar editor' }).click();
+    await expect(page.getByRole('dialog')).toBeHidden();
+
+    await main.getByRole('button', { name: 'Datos base' }).click();
+    await expect(page).toHaveURL(/vista=base/);
+    await expect(main.getByRole('heading', { name: 'Categorias', exact: true })).toBeVisible();
 
     const brandsButton = main.getByRole('button', { name: /Marcas/ });
     await expect(brandsButton).toBeVisible();

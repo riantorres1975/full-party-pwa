@@ -51,7 +51,7 @@ export default function AdminCatalogWorkspace() {
     setFormOpen(false);
     setEditingEntity(null);
     workspace.setResourceKey(nextResource);
-    setSearchParams({ seccion: nextResource }, { replace: true });
+    setSearchParams({ vista: 'base', seccion: nextResource }, { replace: true });
   };
 
   const openCreate = () => {
@@ -141,7 +141,7 @@ export default function AdminCatalogWorkspace() {
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-violet-600 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-pink-500/20 transition-transform active:scale-95"
               >
                 <Plus size={17} />
-                Nueva {resource.singular}
+                {resource.article} {resource.singular}
               </button>
             )}
           </header>

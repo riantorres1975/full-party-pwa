@@ -3,6 +3,7 @@ export { useCatalogCategories } from './useCatalogCategories.js';
 export { useCatalogFilters } from './useCatalogFilters.js';
 export { useCatalogInventory } from './useCatalogInventory.js';
 export { useAdminCatalogWorkspace } from './useAdminCatalogWorkspace.js';
+export { useAdminProductsWorkspace } from './useAdminProductsWorkspace.js';
 export { useCatalogSearch } from './useCatalogSearch.js';
 export { usePresentationPricing } from './usePresentationPricing.js';
 export { useProductDetail } from './useProductDetail.js';
