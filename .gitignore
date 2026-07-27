@@ -20,3 +20,6 @@ lighthouse-report.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Respaldos locales del catálogo V1 (datos, no código)
+backups/
