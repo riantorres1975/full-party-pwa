@@ -103,7 +103,11 @@ export function createPresentationDraft(presentation = null) {
 }
 
 export function normalizePresentationPayload(input, variantId) {
-  const composed = input?.content_mode === 'composed';
+  const composed = input?.content_mode === 'composed'
+    || (
+      input?.content_mode == null
+      && Boolean(nullableText(input?.contains_presentation_id))
+    );
   return {
     variant_id: variantId,
     name: text(input?.name),

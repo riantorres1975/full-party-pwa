@@ -60,6 +60,26 @@ test('valida una caja compuesta por otra presentacion', () => {
   assert.equal(result.payload.contains_quantity, 12);
 });
 
+test('conserva una presentacion compuesta al normalizarla de nuevo', () => {
+  const validated = validatePresentationPayload({
+    ...createPresentationDraft(),
+    name: 'Caja de 100 bolsas',
+    presentation_type: 'caja',
+    content_mode: 'composed',
+    contains_presentation_id: 'bag-1',
+    contains_quantity: 100,
+    base_units_total: 10000,
+    base_price: 7200,
+  }, 'variant-1');
+
+  const savedPayload = normalizePresentationPayload(validated.payload, 'variant-1');
+
+  assert.equal(savedPayload.contained_quantity, null);
+  assert.equal(savedPayload.contained_unit, null);
+  assert.equal(savedPayload.contains_presentation_id, 'bag-1');
+  assert.equal(savedPayload.contains_quantity, 100);
+});
+
 test('rechaza presentaciones con contenido o limites invalidos', () => {
   const result = validatePresentationPayload({
     name: 'Caja',
