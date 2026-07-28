@@ -327,12 +327,25 @@ export default function CatalogV2Page() {
       <main className="catalog-v2-main">
         {!resolvedCategory && !catalogFilters.hasActive && (
           <section className="catalog-v2-discovery" aria-labelledby="catalog-discovery-title">
+            {collections.length > 0 && (
+              <div className="catalog-v2-quick-pills" aria-label="Accesos rápidos">
+                {collections.slice(0, 4).map((collection) => (
+                  <button
+                    type="button"
+                    key={collection.id}
+                    onClick={() => selectCollection(collection.slug)}
+                  >
+                    {collection.name}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="catalog-v2-section-heading">
               <div>
                 <p>Encuentra todo para celebrar</p>
                 <h1 id="catalog-discovery-title">Categorías principales</h1>
               </div>
-              <span>{categories.length} familias para explorar</span>
+              <a href="#catalog-results-title">Ver todas</a>
             </div>
             <div className="catalog-v2-category-circles">
               {categories.map((category) => (
@@ -362,6 +375,30 @@ export default function CatalogV2Page() {
                 </div>
               </div>
             )}
+
+            {facets.colors.length > 0 && (
+              <div className="catalog-v2-colors">
+                <div className="catalog-v2-section-heading">
+                  <div>
+                    <p>Combina tu celebración</p>
+                    <h2>Comprar por color</h2>
+                  </div>
+                  <a href="#catalog-results-title">Ver todos</a>
+                </div>
+                <div>
+                  {facets.colors.slice(0, 7).map((color) => (
+                    <button
+                      type="button"
+                      key={color.slug}
+                      onClick={() => catalogFilters.toggleFilter('colors', color.slug)}
+                    >
+                      <span style={{ background: color.hex || '#e5e7eb' }} />
+                      <strong>{color.name}</strong>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
         )}
 
@@ -375,7 +412,10 @@ export default function CatalogV2Page() {
             onClear={catalogFilters.clearAll}
           />
 
-          <section className="catalog-v2-results" aria-labelledby="catalog-results-title">
+          <section
+            className={`catalog-v2-results ${!resolvedCategory && !catalogFilters.hasActive ? 'catalog-v2-results--home' : ''}`}
+            aria-labelledby="catalog-results-title"
+          >
             <div className="catalog-v2-breadcrumbs">
               <a href="/catalogo">Inicio</a>
               {resolvedCategory?.path?.map((slug) => {

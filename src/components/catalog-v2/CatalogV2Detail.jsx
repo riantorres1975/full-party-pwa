@@ -1,4 +1,4 @@
-import { Check, ChevronLeft, Heart, Minus, Plus, X } from 'lucide-react';
+import { Check, ChevronLeft, Heart, Minus, Plus, Share2, X } from 'lucide-react';
 
 import { usePresentationPricing } from '../../hooks/catalog/usePresentationPricing.js';
 import { useProductDetail } from '../../hooks/catalog/useProductDetail.js';
@@ -89,6 +89,18 @@ export default function CatalogV2Detail({
     });
   };
 
+  const shareProduct = async () => {
+    const shareData = {
+      title: product?.name || 'Producto Full Party',
+      url: window.location.href,
+    };
+    if (navigator.share) {
+      await navigator.share(shareData).catch(() => {});
+      return;
+    }
+    await navigator.clipboard?.writeText(shareData.url);
+  };
+
   return (
     <div className="catalog-v2-detail" role="dialog" aria-modal="true" aria-label={product?.name || 'Detalle del producto'}>
       <button type="button" className="catalog-v2-detail__backdrop" onClick={onClose} aria-label="Cerrar detalle" />
@@ -99,6 +111,16 @@ export default function CatalogV2Detail({
           </button>
           <span>Detalle del producto</span>
           <div>
+            {product && (
+              <button
+                type="button"
+                className="catalog-v2-icon-button"
+                onClick={shareProduct}
+                aria-label="Compartir producto"
+              >
+                <Share2 size={18} />
+              </button>
+            )}
             {product && (
               <button
                 type="button"
@@ -157,6 +179,13 @@ export default function CatalogV2Detail({
               <div className="catalog-v2-detail__crumbs">
                 {detail.breadcrumb.map((item) => item.name).filter(Boolean).join(' / ')}
               </div>
+              {variant && (
+                <div className="catalog-v2-detail__selection-tags" aria-label="Selección actual">
+                  {[variant.line_name, variant.color_name, variant.size_name]
+                    .filter(Boolean)
+                    .map((label) => <span key={label}>{label}</span>)}
+                </div>
+              )}
               {product.brand?.name && <p className="catalog-v2-card__eyebrow">{product.brand.name}</p>}
               <h2>{product.name}</h2>
               {product.shortDescription && <p className="catalog-v2-detail__description">{product.shortDescription}</p>}

@@ -1,4 +1,4 @@
-import { Heart, Layers3, Palette, Ruler } from 'lucide-react';
+import { Heart, Layers3, Palette, Plus, Ruler } from 'lucide-react';
 
 import { getInlineProductPlaceholder } from '../../utils/imagenes.js';
 import {
@@ -41,20 +41,20 @@ export default function CatalogV2Card({
             event.currentTarget.src = getInlineProductPlaceholder(title);
           }}
         />
-        <button
-          type="button"
-          className="catalog-v2-icon-button catalog-v2-card__favorite"
-          onClick={() => onToggleFavorite(card.productId)}
-          aria-pressed={favorite}
-          aria-label={favorite ? `Quitar ${title} de favoritos` : `Agregar ${title} a favoritos`}
-        >
-          <Heart size={18} fill={favorite ? 'currentColor' : 'none'} />
-        </button>
         <div className="catalog-v2-card__badges">
           {card.isNew && <span className="catalog-v2-badge catalog-v2-badge--pink">Nuevo</span>}
           {card.featured && <span className="catalog-v2-badge">Destacado</span>}
         </div>
       </div>
+      <button
+        type="button"
+        className="catalog-v2-icon-button catalog-v2-card__favorite"
+        onClick={() => onToggleFavorite(card.productId)}
+        aria-pressed={favorite}
+        aria-label={favorite ? `Quitar ${title} de favoritos` : `Agregar ${title} a favoritos`}
+      >
+        <Heart size={18} fill={favorite ? 'currentColor' : 'none'} />
+      </button>
 
       <div className="catalog-v2-card__body">
         {(card.brandName || card.lineName) && (
@@ -82,11 +82,12 @@ export default function CatalogV2Card({
 
         <button
           type="button"
-          className="catalog-v2-primary-button"
+          className={`catalog-v2-primary-button catalog-v2-card__action ${action.disabled ? 'is-disabled' : ''}`}
           disabled={action.disabled}
           onClick={() => onOpen(card)}
         >
-          {action.label}
+          <span>{action.label}</span>
+          {!action.disabled && <Plus size={19} aria-hidden="true" />}
         </button>
       </div>
     </article>
