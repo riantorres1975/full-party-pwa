@@ -7,6 +7,7 @@ import {
   PackageOpen,
   Save,
   Store,
+  WandSparkles,
   X,
 } from 'lucide-react';
 import {
@@ -21,12 +22,14 @@ import {
   PricingStep,
   VariantsStep,
 } from './ProductCommercialSections.jsx';
+import ProductBulkTools from './ProductBulkTools.jsx';
 
 const STEPS = [
   { id: 'general', label: 'Informacion', icon: PackageOpen },
   { id: 'variants', label: 'Variantes', icon: Boxes },
   { id: 'commercial', label: 'Precios', icon: CircleDollarSign },
   { id: 'inventory', label: 'Inventario', icon: Store },
+  { id: 'bulk', label: 'Masivo', icon: WandSparkles },
 ];
 
 function buildDraft(product) {
@@ -67,6 +70,7 @@ export default function ProductEditorDrawer({
   canDelete,
   onSave,
   commercialActions,
+  onBulkApply,
   onClose,
 }) {
   const [step, setStep] = useState('general');
@@ -132,7 +136,7 @@ export default function ProductEditorDrawer({
               const Icon = item.icon;
               const active = step === item.id;
               return (
-                <button key={item.id} type="button" onClick={() => setStep(item.id)} disabled={!product && item.id !== 'general'} className={`inline-flex min-w-max items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black ${active ? 'border-fiesta-magenta/40 bg-fiesta-magenta/10 text-fiesta-magenta' : 'border-admin-border text-admin-muted hover:bg-admin-elevated'} disabled:opacity-35`}>
+                <button key={item.id} type="button" onClick={() => setStep(item.id)} disabled={(!product && item.id !== 'general') || (!canEdit && item.id === 'bulk')} className={`inline-flex min-w-max items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black ${active ? 'border-fiesta-magenta/40 bg-fiesta-magenta/10 text-fiesta-magenta' : 'border-admin-border text-admin-muted hover:bg-admin-elevated'} disabled:opacity-35`}>
                   <Icon size={14} /> {item.label}
                 </button>
               );
@@ -219,6 +223,14 @@ export default function ProductEditorDrawer({
           )}
           {step === 'inventory' && (
             <InventoryStep product={product} lookups={lookups} saving={saving} canEdit={canEdit} canDelete={canDelete} actions={commercialActions} />
+          )}
+          {step === 'bulk' && (
+            <ProductBulkTools
+              product={product}
+              lookups={lookups}
+              saving={saving}
+              onApply={onBulkApply}
+            />
           )}
         </div>
 

@@ -1,0 +1,2 @@
+producto,slug,categoria,subcategoria,marca,gama,color_exacto,familia_color,codigo_color,medida,acabado,sku_variante,codigo_barras_variante,presentacion,tipo_presentacion,cantidad_contenida,unidad_contenida,presentacion_contenida,cantidad_presentaciones,unidades_base_totales,precio_normal,mayoreo_desde,mayoreo_hasta,precio_mayoreo,politica_inventario,sucursal,existencia,reservado,imagen,activo
+Bomba manual para globos,bomba-manual-globos,Inflado y helio,,Glomex,,,,,,,BOMBA-MANUAL-01,,Pieza,pieza,1,pieza,,,1,120,,,,shared_base_units,sol-naciente,25,0,,si

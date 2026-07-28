@@ -286,6 +286,15 @@ BEGIN
   PERFORM public.catalog_get_facets('globos-latex');
   PERFORM public.catalog_search('globo');
   RAISE NOTICE 'PASS L4: RPCs públicas ejecutables por anon';
+  BEGIN
+    PERFORM public.catalog_admin_apply_commercial_rows(
+      '00000000-0000-0000-0000-000000000000',
+      '[]'::JSONB
+    );
+    RAISE EXCEPTION 'FAIL L4b: anon ejecuto la RPC masiva';
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE NOTICE 'PASS L4b: anon no ejecuta la RPC masiva';
+  END;
 
   -- L5: el producto inactivo no aparece en tarjetas
   IF (SELECT (public.catalog_list_cards(p_category_slug := 'inflado-y-helio'))->>'total')::INT <> 0 THEN
@@ -311,11 +320,63 @@ SET test.uid = '11111111-1111-1111-1111-111111111111';
 SET ROLE authenticated;
 
 DO $$
+DECLARE
+  v_product UUID;
+  v_location UUID;
+  v_report JSONB;
+  v_variant UUID;
 BEGIN
   INSERT INTO public.catalog_products (category_id, name, slug)
   SELECT id, 'Producto RLS admin', 'producto-rls-admin' FROM public.catalog_categories LIMIT 1;
   DELETE FROM public.catalog_products WHERE slug = 'producto-rls-admin';
   RAISE NOTICE 'PASS L7: admin escribe y borra en el catálogo';
+
+  SELECT id INTO v_product
+  FROM public.catalog_products WHERE slug = 'bomba-manual-globos';
+  SELECT id INTO v_location
+  FROM public.catalog_locations ORDER BY name LIMIT 1;
+
+  v_report := public.catalog_admin_apply_commercial_rows(
+    v_product,
+    jsonb_build_array(jsonb_build_object(
+      'row_key', 'sql-harness',
+      'variant', jsonb_build_object(
+        'finish', 'sql-harness', 'sku', 'SQL-HARNESS-BULK',
+        'inventory_policy', 'shared_base_units', 'active', true
+      ),
+      'presentation', jsonb_build_object(
+        'name', 'Bolsa prueba', 'presentation_type', 'bolsa',
+        'base_unit', 'pieza', 'contained_quantity', 10,
+        'contained_unit', 'pieza', 'base_units_total', 10,
+        'base_price', 10, 'minimum_order_quantity', 1,
+        'quantity_step', 1, 'active', true
+      ),
+      'tier', jsonb_build_object(
+        'minimum_quantity', 2, 'price_per_presentation', 9, 'active', true
+      ),
+      'box', jsonb_build_object(
+        'name', 'Caja prueba', 'base_unit', 'pieza',
+        'contains_quantity', 2, 'base_units_total', 20,
+        'base_price', 18, 'minimum_order_quantity', 1,
+        'quantity_step', 1, 'active', true
+      ),
+      'inventory', jsonb_build_object(
+        'location_id', v_location, 'quantity', 20, 'reserved_quantity', 0
+      )
+    ))
+  );
+
+  IF v_report #>> '{results,0,status}' <> 'created'
+     OR v_report #>> '{results,0,tier_id}' IS NULL
+     OR v_report #>> '{results,0,box_id}' IS NULL
+     OR v_report #>> '{results,0,inventory_id}' IS NULL THEN
+    RAISE EXCEPTION 'FAIL L7b: RPC masiva incompleta: %', v_report;
+  END IF;
+
+  SELECT id INTO v_variant
+  FROM public.catalog_variants WHERE sku = 'SQL-HARNESS-BULK';
+  DELETE FROM public.catalog_variants WHERE id = v_variant;
+  RAISE NOTICE 'PASS L7b: RPC masiva crea el arbol completo de forma atomica';
 END $$;
 
 RESET ROLE;
@@ -335,6 +396,15 @@ BEGIN
     RAISE EXCEPTION 'FAIL L9: viewer insertó en el catálogo';
   EXCEPTION WHEN insufficient_privilege THEN
     RAISE NOTICE 'PASS L9: viewer no puede escribir en el catálogo';
+  END;
+  BEGIN
+    PERFORM public.catalog_admin_apply_commercial_rows(
+      (SELECT id FROM public.catalog_products LIMIT 1),
+      jsonb_build_array(jsonb_build_object('row_key', 'viewer'))
+    );
+    RAISE EXCEPTION 'FAIL L10: viewer ejecuto escritura masiva';
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE NOTICE 'PASS L10: viewer no ejecuta escritura masiva';
   END;
 END $$;
 

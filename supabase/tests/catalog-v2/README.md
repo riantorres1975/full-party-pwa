@@ -1,6 +1,6 @@
 # Harness de pruebas SQL — Catálogo V2
 
-Valida las migraciones `001…006` y `009` del catálogo V2 contra PostgreSQL 15
+Valida las migraciones `001…006`, `009` y `010` del catálogo V2 contra PostgreSQL 15
 y 17, aplicando primero TODO el estado V1 del repositorio y luego ejecutando
 los casos de prueba obligatorios del §33 del plan maestro más las
 verificaciones RLS.
@@ -23,7 +23,7 @@ docker exec pg-catalog-test psql -U postgres -c "CREATE DATABASE catalog_test;"
 docker exec pg-catalog-test mkdir -p /harness /repo
 
 # copiar SQL del repo (estado V1 + migraciones V2)
-for f in supabase_*.sql 00*_catalog_*.sql; do docker cp "$f" pg-catalog-test:/repo/; done
+for f in supabase_*.sql 0??_catalog_*.sql; do docker cp "$f" pg-catalog-test:/repo/; done
 for f in supabase/tests/catalog-v2/*; do docker cp "$f" pg-catalog-test:/harness/; done
 
 docker exec pg-catalog-test sh /harness/run_all.sh
@@ -53,3 +53,5 @@ docker exec pg-catalog-test sh /harness/run_all.sh
 - [x] Carrito canónico (precio de servidor, nivel, contenido total)
 - [x] Pedido con snapshot completo + idempotencia + bloqueo de sobreventa
 - [x] RLS: público solo lee activos / no lee inventario / no escribe; panel por rol
+- [x] Operación masiva atómica: variante + presentación + mayoreo + caja + inventario
+- [x] RPC masiva bloqueada para `anon` y `viewer`

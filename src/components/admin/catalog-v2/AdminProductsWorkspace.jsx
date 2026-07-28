@@ -74,6 +74,23 @@ export default function AdminProductsWorkspace() {
     }
   };
 
+  const applyBulkRows = async (rows) => {
+    try {
+      const { report, product } = await workspace.commercial.applyBulkRows(
+        selectedProduct.id,
+        rows,
+      );
+      setSelectedProduct(product);
+      toast.success(
+        `Proceso masivo: ${report.created} creadas, ${report.updated} actualizadas, ${report.rejected} rechazadas.`,
+      );
+      return report;
+    } catch (error) {
+      toast.error(error.message || 'No se pudo ejecutar el proceso masivo.');
+      throw error;
+    }
+  };
+
   const removeProduct = async (product) => {
     if (!window.confirm(`Eliminar "${product.name}" y todos sus datos comerciales?`)) return;
     try {
@@ -231,6 +248,7 @@ export default function AdminProductsWorkspace() {
               'Inventario eliminado.',
             ),
           }}
+          onBulkApply={applyBulkRows}
           onClose={() => { setEditorOpen(false); setSelectedProduct(null); }}
         />
       )}

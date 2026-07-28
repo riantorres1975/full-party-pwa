@@ -16,6 +16,7 @@ import {
   saveAdminPriceTier,
   saveAdminVariant,
 } from '../../services/catalog/adminCommercialRepository.js';
+import { applyAdminCommercialRows } from '../../services/catalog/adminBulkRepository.js';
 
 const PAGE_SIZE = 18;
 
@@ -167,6 +168,19 @@ export function useAdminProductsWorkspace(search = '') {
       productId,
       () => deleteAdminInventory(id),
     ),
+    applyBulkRows: async (productId, rows) => {
+      setSaving(true);
+      try {
+        const report = await applyAdminCommercialRows(productId, rows);
+        const refreshed = await getAdminProductById(productId);
+        setProducts((current) => current.map(
+          (product) => (product.id === productId ? refreshed : product),
+        ));
+        return { report, product: refreshed };
+      } finally {
+        setSaving(false);
+      }
+    },
   };
 
   return {

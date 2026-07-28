@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import path from 'node:path';
 
 const adminEmail = process.env.E2E_ADMIN_EMAIL;
 const adminPassword = process.env.E2E_ADMIN_PASSWORD;
@@ -50,6 +51,18 @@ test.describe('authenticated admin V2 regressions', () => {
 
     await productEditor.getByRole('button', { name: 'Inventario' }).click();
     await expect(productEditor.getByRole('button', { name: 'Agregar existencia' })).toBeVisible();
+
+    await productEditor.getByRole('button', { name: 'Masivo' }).click();
+    await expect(productEditor.getByRole('heading', { name: 'Generador de combinaciones' })).toBeVisible();
+    await productEditor.getByRole('button', { name: 'Generar vista previa' }).click();
+    await expect(productEditor.getByText('Ya existe')).toBeVisible();
+
+    await productEditor.getByRole('button', { name: 'Importar / exportar CSV' }).click();
+    await productEditor.locator('input[type="file"]').setInputFiles(
+      path.resolve('tests/fixtures/catalog-v2-bomba-idempotent.csv'),
+    );
+    await expect(productEditor.getByText('1 validas, 0 con errores')).toBeVisible();
+    await expect(productEditor.getByRole('button', { name: 'Importar 1' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Cerrar editor' }).click();
     await expect(productEditor).toBeHidden();

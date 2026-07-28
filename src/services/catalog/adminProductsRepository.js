@@ -18,7 +18,10 @@ const ADMIN_PRODUCT_SELECT = `
     id, product_id, line_id, color_id, size_id, finish, sku, barcode,
     image_url, inventory_policy, active, created_at, updated_at,
     line:catalog_product_lines(id, name, slug),
-    color:catalog_colors(id, exact_name, slug, hex_value),
+    color:catalog_colors(
+      id, exact_name, slug, hex_value, internal_code,
+      family:catalog_color_families(id, name, slug)
+    ),
     size:catalog_sizes(id, name, numeric_value, unit),
     presentations:catalog_sale_presentations(
       id, variant_id, name, presentation_type, base_unit,

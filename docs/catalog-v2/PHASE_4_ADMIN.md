@@ -94,3 +94,40 @@ Siguiente bloque:
 2. Copia y edicion de configuracion por lotes.
 3. Importacion y exportacion CSV.
 4. Edicion masiva.
+
+## Cuarta entrega
+
+La cuarta entrega cierra las herramientas masivas del panel:
+
+- Pestaña `Masivo` dentro del editor de cada familia.
+- Matriz cartesiana de gama, colores y medidas con combinaciones existentes
+  bloqueadas de forma explicita.
+- Activacion individual, SKU, codigo de barras, imagen, contenido, precio,
+  mayoreo e inventario editables por fila.
+- Copia de configuracion desde la primera fila activa al resto del lote.
+- Creacion opcional de una caja compuesta para cada variante.
+- Exportacion CSV UTF-8 del arbol comercial actual.
+- Plantilla CSV e importacion acotada al producto seleccionado.
+- Resolucion de gama, color, medida y sucursal contra catalogos existentes.
+- Vista previa obligatoria con errores por linea y accion crear/actualizar.
+- Procesamiento en lotes de hasta 50 filas.
+- Resumen de registros creados, actualizados y rechazados.
+
+La migracion `010_catalog_bulk_operations.sql` agrega
+`catalog_admin_apply_commercial_rows(uuid, jsonb)`. La funcion usa
+`SECURITY INVOKER`, conserva RLS y procesa cada fila en una subtransaccion:
+un error en precio, caja o inventario revierte toda esa fila sin dejar una
+variante incompleta.
+
+La importacion no crea categorias, marcas, gamas, colores, medidas ni
+sucursales silenciosamente. Esos valores deben existir en `Datos base`.
+
+## Siguiente fase
+
+La Fase 5 implementara el catalogo publico del mockup aprobado:
+
+1. Tarjetas agrupadas por producto o gama.
+2. Navegacion jerarquica y colecciones.
+3. Detalle con seleccion progresiva de variante y presentacion.
+4. Filtros y busqueda server-side.
+5. URLs compartibles con restauracion de filtros y scroll.
