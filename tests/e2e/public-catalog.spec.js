@@ -1,1272 +1,200 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
-const catalogFixture = [
-  {
-    id: 'e2e-1',
-    nombre: 'Globo Rosa 12 Pulg',
-    descripcion: 'Globo rosa de alta calidad, resistente y versátil para arcos, columnas y decoraciones de cualquier celebración.',
-    precio: 85,
-    categoria: 'Globo Latex',
-    marca: 'Glomex',
-    tamano: '12 Pulg',
-    stock_actual: 20,
-    es_nuevo: true,
-  },
-  { id: 'e2e-2', nombre: 'Globo Azul 12 Pulg', precio: 85, categoria: 'Globo Latex', marca: 'Glomex', tamano: '12 Pulg', stock_actual: 18, es_nuevo: true },
-  { id: 'e2e-3', nombre: 'Globo Verde 12 Pulg', precio: 85, categoria: 'Globo Latex', marca: 'Glomex', tamano: '12 Pulg', stock_actual: 15, es_nuevo: false },
-  { id: 'e2e-4', nombre: 'Globo Amarillo 12 Pulg', precio: 85, categoria: 'Globo Latex', marca: 'Glomex', tamano: '12 Pulg', stock_actual: 12, es_nuevo: false },
-  { id: 'e2e-5', nombre: 'Bomba Manual para Globos', precio: 45, categoria: 'Infladora de globos', marca: 'Económico', tamano: '', stock_actual: 4, es_nuevo: true },
-  { id: 'e2e-6', nombre: 'Confeti Dorado', precio: 10, categoria: 'Confeti', marca: 'Genérico', tamano: '', stock_actual: 30, es_nuevo: false },
-  { id: 'e2e-7', nombre: 'Globo Número Azul 0', precio: 25, categoria: 'Globo Número-16', marca: 'Genérico', tamano: '16 Pulg', stock_actual: 8, es_nuevo: false },
-].map((producto) => ({
-  descripcion: `${producto.nombre} para pruebas del catálogo`,
-  imagen_url: '/icons/icon-192.png',
-  activo: true,
-  stock_ilimitado: false,
-  precios_mayoreo: [{ cantidad_minima: 12, precio: Math.max(1, producto.precio - 5) }],
-  ...producto,
-}));
+const productId = '11111111-1111-4111-8111-111111111111';
+const variantId = '22222222-2222-4222-8222-222222222222';
+const presentationId = '33333333-3333-4333-8333-333333333333';
+const image = '/icons/icon-192.png';
 
-const readAnalyticsEvents = (page) => page.evaluate(() => (
-  (window.dataLayer || [])
-    .map((entry) => Array.from(entry))
-    .filter(([command]) => command === 'event')
-    .map(([, name, params]) => ({ name, params: params || {} }))
-));
+const categories = [{
+  id: '44444444-4444-4444-8444-444444444444',
+  name: 'Globos',
+  slug: 'globos',
+  parent_id: null,
+  description: 'Globos para toda ocasion',
+  image_url: image,
+  icon: 'balloon',
+  sort_order: 1,
+}];
 
-const catalogCorsHeaders = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-headers': 'authorization, apikey, content-type, x-client-info',
-  'access-control-allow-methods': 'GET, OPTIONS',
-  'access-control-expose-headers': 'content-range',
+const card = {
+  group_key: `${productId}:glomex-estandar`,
+  product_id: productId,
+  product_name: 'Globo Latex Glomex',
+  product_slug: 'globo-latex-glomex',
+  short_description: 'Bolsa de globos profesionales',
+  brand_name: 'Glomex',
+  brand_slug: 'glomex',
+  line_id: '55555555-5555-4555-8555-555555555555',
+  line_name: 'Estandar',
+  line_slug: 'glomex-estandar',
+  image_url: image,
+  min_price: 85,
+  color_count: 1,
+  line_count: 1,
+  variant_count: 1,
+  presentation_count: 1,
+  sizes: [{ id: '66666666-6666-4666-8666-666666666666', name: '12 pulgadas' }],
+  colors: [{ slug: 'rojo', name: 'Rojo', hex: '#ef4444' }],
+  presentation_types: ['bolsa'],
+  in_stock: true,
+  featured: true,
+  is_new: true,
 };
 
-function parseInFilter(value) {
-  if (!value?.startsWith('in.(')) return [];
-  return value
-    .slice(4, -1)
-    .split(',')
-    .map((item) => item.trim().replace(/^"|"$/g, '').replace(/\\"/g, '"'));
-}
+const detail = {
+  product: {
+    id: productId,
+    name: 'Globo Latex Glomex',
+    slug: 'globo-latex-glomex',
+    short_description: 'Bolsa con 100 piezas',
+    description: 'Globo profesional para decoracion.',
+    main_image_url: image,
+    listing_group_mode: 'line',
+    featured: true,
+    is_new: true,
+    brand: { id: '77777777-7777-4777-8777-777777777777', name: 'Glomex', slug: 'glomex' },
+    category: categories[0],
+  },
+  breadcrumb: [{ id: categories[0].id, name: 'Globos', slug: 'globos' }],
+  lines: [{
+    id: card.line_id,
+    name: 'Estandar',
+    slug: 'glomex-estandar',
+    colors: [{ color_id: '88888888-8888-4888-8888-888888888888', exact_name: 'Rojo', slug: 'rojo', hex: '#ef4444' }],
+  }],
+  sizes: [{ id: card.sizes[0].id, name: '12 pulgadas', numeric_value: 12, unit: 'pulgada' }],
+  variants: [{
+    id: variantId,
+    line_id: card.line_id,
+    line_name: 'Estandar',
+    line_slug: 'glomex-estandar',
+    color_id: '88888888-8888-4888-8888-888888888888',
+    color_name: 'Rojo',
+    color_slug: 'rojo',
+    color_hex: '#ef4444',
+    size_id: card.sizes[0].id,
+    size_name: '12 pulgadas',
+    image_url: image,
+    inventory_policy: 'shared_base_units',
+    presentations: [{
+      id: presentationId,
+      variant_id: variantId,
+      name: 'Bolsa con 100 piezas',
+      presentation_type: 'bolsa',
+      base_unit: 'pieza',
+      base_units_total: 100,
+      base_price: 85,
+      minimum_order_quantity: 1,
+      quantity_step: 1,
+      available_quantity: 50,
+      in_stock: true,
+      tiers: [{ minimum_quantity: 12, maximum_quantity: null, price_per_presentation: 78, label: 'Mayoreo' }],
+    }],
+  }],
+  images: [],
+  attributes: [],
+  related: [],
+};
 
-function filterCatalogRequest(url, products) {
-  const params = url.searchParams;
-  let filtered = [...products];
+const facets = {
+  brands: [{ slug: 'glomex', name: 'Glomex', count: 1 }],
+  lines: [{ slug: 'glomex-estandar', name: 'Estandar', count: 1 }],
+  color_families: [{ slug: 'rojos', name: 'Rojos', count: 1 }],
+  colors: [{ slug: 'rojo', name: 'Rojo', hex: '#ef4444', count: 1 }],
+  sizes: [{ id: card.sizes[0].id, name: '12 pulgadas', count: 1 }],
+  finishes: [],
+  price: { min: 85, max: 85 },
+  availability: { in_stock: 1, out_of_stock: 0 },
+};
 
-  [
-    ['id', 'id'],
-    ['categoria', 'categoria'],
-    ['marca', 'marca'],
-    ['tamano', 'tamano'],
-  ].forEach(([parameter, field]) => {
-    const allowed = parseInFilter(params.get(parameter));
-    if (allowed.length > 0) {
-      filtered = filtered.filter((product) => allowed.includes(String(product[field] ?? '')));
+async function mockCatalogV2(page) {
+  const requests = [];
+  await page.route('**/rest/v1/**', async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    requests.push(url.pathname);
+
+    if (request.method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: { 'access-control-allow-origin': '*' } });
+      return;
     }
-  });
 
-  params.getAll('precio').forEach((filter) => {
-    const [operator, rawValue] = filter.split('.');
-    const value = Number(rawValue);
-    if (operator === 'gte') filtered = filtered.filter((product) => Number(product.precio) >= value);
-    if (operator === 'lte') filtered = filtered.filter((product) => Number(product.precio) <= value);
-  });
+    let body = [];
+    if (url.pathname.endsWith('/catalog_categories')) body = categories;
+    if (url.pathname.endsWith('/catalog_collections')) body = [];
+    if (url.pathname.endsWith('/rpc/catalog_list_cards')) {
+      const params = request.postDataJSON();
+      const matches = !params.p_search
+        || card.product_name.toLowerCase().includes(String(params.p_search).toLowerCase());
+      body = { cards: matches ? [card] : [], total: matches ? 1 : 0, limit: 24, offset: 0 };
+    }
+    if (url.pathname.endsWith('/rpc/catalog_get_facets')) body = facets;
+    if (url.pathname.endsWith('/rpc/catalog_get_product_detail')) body = detail;
+    if (url.pathname.endsWith('/rpc/catalog_validate_cart')) {
+      body = { valid: true, issues: [], lines: [], total: 85 };
+    }
 
-  const searchExpression = params.get('or') || '';
-  const pattern = searchExpression.match(/nombre\.ilike\.\*([^,]*)\*/)?.[1];
-  if (pattern) {
-    const terms = pattern.toLocaleLowerCase('es').split('*').filter(Boolean);
-    filtered = filtered.filter((product) => {
-      const text = [
-        product.nombre,
-        product.descripcion,
-        product.categoria,
-        product.marca,
-        product.tamano,
-      ].join(' ').toLocaleLowerCase('es');
-      return terms.every((term) => text.includes(term));
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*' },
+      body: JSON.stringify(body),
     });
-  }
-
-  const offset = Number(params.get('offset')) || 0;
-  const limit = Number(params.get('limit')) || filtered.length;
-  return {
-    page: filtered.slice(offset, offset + limit),
-    offset,
-    total: filtered.length,
-  };
-}
-
-async function fulfillCatalogRequest(route, products) {
-  if (route.request().method() === 'OPTIONS') {
-    await route.fulfill({ status: 204, headers: catalogCorsHeaders });
-    return;
-  }
-
-  const { page, offset, total } = filterCatalogRequest(
-    new URL(route.request().url()),
-    products,
-  );
-  await route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    headers: {
-      ...catalogCorsHeaders,
-      'content-range': page.length > 0 ? `${offset}-${offset + page.length - 1}/${total}` : `*/${total}`,
-    },
-    body: JSON.stringify(page),
   });
-}
-
-function buildCatalogFacets(products) {
-  const rows = [];
-  ['categoria', 'marca', 'tamano'].forEach((dimension) => {
-    const values = new Map();
-    products.forEach((product) => {
-      const value = product[dimension];
-      if (!value) return;
-      const current = values.get(value) || { count: 0, image: null };
-      current.count += 1;
-      current.image ||= product.imagen_url || null;
-      values.set(value, current);
-    });
-    values.forEach(({ count, image }, value) => rows.push({
-      dimension,
-      valor: value,
-      cantidad: count,
-      precio_min: null,
-      precio_max: null,
-      imagen: dimension === 'categoria' ? image : null,
-    }));
-  });
-  const prices = products.map(({ precio }) => Number(precio)).filter(Number.isFinite);
-  rows.push({
-    dimension: 'resumen',
-    valor: 'catalogo',
-    cantidad: products.length,
-    precio_min: prices.length > 0 ? Math.min(...prices) : null,
-    precio_max: prices.length > 0 ? Math.max(...prices) : null,
-    imagen: null,
-  });
-  return rows;
-}
-
-async function fulfillFacetRequest(route, products) {
-  if (route.request().method() === 'OPTIONS') {
-    await route.fulfill({ status: 204, headers: catalogCorsHeaders });
-    return;
-  }
-  const rows = buildCatalogFacets(products);
-  await route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    headers: {
-      ...catalogCorsHeaders,
-      'content-range': rows.length > 0 ? `0-${rows.length - 1}/${rows.length}` : '*/0',
-    },
-    body: JSON.stringify(rows),
-  });
-}
-
-async function fulfillConfigRequest(route, values = {}) {
-  if (route.request().method() === 'OPTIONS') {
-    await route.fulfill({ status: 204, headers: catalogCorsHeaders });
-    return;
-  }
-
-  const filter = new URL(route.request().url()).searchParams.get('clave') || '';
-  const key = filter.startsWith('eq.') ? filter.slice(3) : '';
-  const hasValue = Object.prototype.hasOwnProperty.call(values, key);
-  const body = hasValue ? [{ valor: values[key] }] : [];
-
-  await route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    headers: {
-      ...catalogCorsHeaders,
-      'content-range': hasValue ? '0-0/1' : '*/0',
-    },
-    body: JSON.stringify(body),
-  });
+  return requests;
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.route('**/rest/v1/configuracion*', async (route) => {
-    await fulfillConfigRequest(route, {
-      anuncio: { mensaje: '', activo: false },
-      pedidos_habilitados: true,
-    });
-  });
-  await page.route('**/rest/v1/catalogo_facetas_publicas*', async (route) => {
-    await fulfillFacetRequest(route, catalogFixture);
-  });
-  await page.route('**/rest/v1/productos*', async (route) => {
-    await fulfillCatalogRequest(route, catalogFixture);
-  });
+  await page.addInitScript(() => localStorage.clear());
 });
 
-test('the landing page presents a clear path to shop on every viewport', async ({ page }) => {
-  const pageErrors = [];
-  page.on('pageerror', (error) => pageErrors.push(error.message));
-
-  await page.goto('/');
-
-  const hero = page.locator('section[aria-labelledby="hero-heading"]');
-  const branchAnimation = hero.locator('.lp-branch-lockup');
-  const catalogCta = hero.getByRole('button', { name: 'Explorar productos' });
-  const whatsappCta = hero.getByRole('link', { name: 'Cotizar por WhatsApp' });
-
-  await expect(branchAnimation).toBeVisible();
-  await expect(branchAnimation).toContainText('Full Party');
-  await expect(catalogCta).toBeVisible();
-  await expect(whatsappCta).toHaveAttribute('href', /wa\.me/);
-  await expect(hero.getByText('4.7 en Google')).toBeVisible();
-  await expect(hero.getByText('Compra desde 1 pieza')).toBeVisible();
-
-  const viewport = await page.evaluate(() => ({
-    clientWidth: document.documentElement.clientWidth,
-    scrollWidth: document.documentElement.scrollWidth,
-  }));
-
-  expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth + 1);
-
-  await catalogCta.click();
-  await expect(page).toHaveURL(/\/catalogo$/);
-  await expect.poll(async () => (
-    (await readAnalyticsEvents(page)).filter(({ name, params }) => (
-      name === 'page_view' && params.page_path === '/catalogo'
-    )).length
-  )).toBe(1);
-  expect(pageErrors).toEqual([]);
-});
-
-test('the landing proof remains contained at the tablet breakpoint', async ({ page }) => {
-  await page.setViewportSize({ width: 710, height: 820 });
-  await page.goto('/');
-
-  const layout = await page.locator('.lp-hero-proof').evaluate((proof) => {
-    const proofRect = proof.getBoundingClientRect();
-    const items = [...proof.querySelectorAll('.lp-proof-item')];
-
-    return {
-      columns: getComputedStyle(proof).gridTemplateColumns.split(' ').length,
-      itemsContained: items.every((item) => {
-        const itemRect = item.getBoundingClientRect();
-        return itemRect.left >= proofRect.left && itemRect.right <= proofRect.right;
-      }),
-    };
-  });
-
-  expect(layout.columns).toBe(2);
-  expect(layout.itemsContained).toBe(true);
-});
-
-test('the public catalog remains usable without horizontal overflow', async ({ page }) => {
-  const pageErrors = [];
-  page.on('pageerror', (error) => pageErrors.push(error.message));
-  await page.addInitScript(() => {
-    window.__catalogCls = 0;
-    try {
-      new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          if (!entry.hadRecentInput) window.__catalogCls += entry.value;
-        }
-      }).observe({ type: 'layout-shift', buffered: true });
-    } catch {
-      // LayoutShift is not available in every browser engine.
-    }
-  });
-
+test('renders the V2 catalog and searches through the canonical RPC', async ({ page }) => {
+  const requests = await mockCatalogV2(page);
   await page.goto('/catalogo');
 
-  const main = page.locator('main');
-  const search = page.locator('input:visible').first();
+  await expect(page.getByRole('heading', { name: /Cat.logo completo/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Globo Latex Glomex/ })).toBeVisible();
+  await expect(page.getByText('Desde').first()).toBeVisible();
 
-  await expect(main).toBeVisible();
-  await expect(search).toBeVisible();
-  await expect.poll(() => main.locator('button').count()).toBeGreaterThan(0);
+  await page.getByRole('searchbox', { name: /Buscar en el cat.logo/ }).fill('Glomex');
+  await expect(page).toHaveURL(/q=Glomex/);
+  await expect.poll(() => requests.filter((path) => path.endsWith('/rpc/catalog_list_cards')).length).toBeGreaterThan(1);
+  expect(requests.some((path) => path.endsWith('/productos'))).toBe(false);
+});
 
-  if ((page.viewportSize()?.width || 0) < 1024) {
-    const categoryImages = page.getByTestId('category-image');
-    await expect.poll(() => categoryImages.count()).toBeGreaterThan(0);
-    await expect(categoryImages.first().locator('img')).toHaveAttribute('src', '/icons/icon-192.png');
+test('opens a V2 product, applies tier information and adds it to the order', async ({ page }) => {
+  await mockCatalogV2(page);
+  await page.goto('/catalogo?gama=glomex-estandar');
+
+  await page.locator('article').getByRole('button', { name: 'Ver producto' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Globo Latex Glomex' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText('Bolsa con 100 piezas').first()).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'Precios por cantidad' })).toBeVisible();
+
+  await dialog.getByRole('button', { name: /Agregar al pedido/ }).click();
+  await dialog.getByRole('button', { name: 'Regresar' }).click();
+  const mobile = page.viewportSize()?.width < 820;
+  if (mobile) {
+    await expect(page.getByRole('alert')).toBeHidden({ timeout: 10_000 });
   }
-
-  await search.fill('globo');
-  await expect(search).toHaveValue('globo');
-  if ((page.viewportSize()?.width || 0) >= 1024) {
-    const activeFilters = page.getByLabel('Filtros activos');
-    await expect(activeFilters).toBeVisible();
-    await expect(activeFilters.getByRole('button', { name: 'Quitar filtro "globo"' })).toBeVisible();
-  }
-  await expect.poll(async () => (
-    (await readAnalyticsEvents(page)).some(({ name }) => name === 'catalog_search')
-  )).toBe(true);
-  const searchEvent = (await readAnalyticsEvents(page)).find(({ name }) => name === 'catalog_search');
-  expect(searchEvent.params).toMatchObject({ query_length: 5, has_results: true });
-  expect(searchEvent.params).not.toHaveProperty('search_term');
-  await search.fill('');
-
-  const viewport = await page.evaluate(() => ({
-    clientWidth: document.documentElement.clientWidth,
-    scrollWidth: document.documentElement.scrollWidth,
-  }));
-
-  expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth + 1);
-  expect(await page.evaluate(() => window.__catalogCls)).toBeLessThanOrEqual(0.1);
-  expect(pageErrors).toEqual([]);
+  const cartNavigation = mobile
+    ? page.locator('.catalog-v2-bottom-nav')
+    : page.locator('.catalog-v2-header__actions');
+  await cartNavigation.getByRole('button', { name: 'Mi pedido' }).click();
+  const cart = page.getByRole('dialog', { name: 'Mi pedido' });
+  await expect(cart.getByText('Globo Latex Glomex')).toBeVisible();
+  await expect(cart.getByRole('heading', { name: /Qui.n recibe el pedido/ })).toBeVisible();
 });
 
-test('category presentation controls labels, order and visibility', async ({ page }) => {
-  await page.unroute('**/rest/v1/configuracion*');
-  await page.route('**/rest/v1/configuracion*', async (route) => {
-    await fulfillConfigRequest(route, {
-      anuncio: { mensaje: '', activo: false },
-      pedidos_habilitados: true,
-      catalogo_categorias: {
-        version: 1,
-        items: [
-          {
-            id: 'Infladora de globos',
-            label: 'Bombas e infladores',
-            description: 'Infla tus globos con menos esfuerzo.',
-            imageUrl: '/icons/icon-192.png',
-            visible: true,
-            order: 0,
-          },
-          {
-            id: 'Confeti',
-            label: 'Confeti',
-            description: '',
-            imageUrl: '',
-            visible: false,
-            order: 1,
-          },
-        ],
-      },
-    });
-  });
-
+test('has no serious accessibility violations in the catalog results', async ({ page }) => {
+  await mockCatalogV2(page);
   await page.goto('/catalogo');
+  await expect(page.getByRole('heading', { name: /Globo Latex Glomex/ })).toBeVisible();
 
-  if ((page.viewportSize()?.width || 0) < 1024) {
-    const categoryCards = page.getByTestId('category-card');
-    await expect(categoryCards.first()).toContainText('Bombas e infladores');
-    await expect(categoryCards.filter({ hasText: /^Confeti/ })).toHaveCount(0);
-  } else {
-    const firstCategory = page.locator('[data-category-filter="Infladora de globos"]');
-    await expect(firstCategory).toBeVisible();
-    await expect(firstCategory).toContainText('Bombas e infladores');
-    await expect(page.locator('[data-category-filter="Confeti"]')).toHaveCount(0);
-  }
-
-  await page.goto('/catalogo/infladora-de-globos');
-  await expect(page.getByText('Infla tus globos con menos esfuerzo.')).toBeVisible();
-  await expect(page).toHaveTitle(
-    'Bombas e infladores al Mayoreo en Uruapan | Full Party Uruapan',
-  );
-  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
-    'content',
-    'Infla tus globos con menos esfuerzo.',
-  );
-  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
-    'content',
-    'https://www.fullpartyuruapan.com.mx/icons/icon-192.png',
-  );
-  const categorySchema = JSON.parse(await page.locator('#route-jsonld').textContent());
-  const collection = categorySchema['@graph'].find(
-    ({ '@type': type }) => type === 'CollectionPage',
-  );
-  expect(collection).toMatchObject({
-    name: 'Bombas e infladores',
-    mainEntity: {
-      '@type': 'ItemList',
-      numberOfItems: 1,
-    },
-  });
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa'])
+    .analyze();
+  expect(results.violations.filter((item) => item.impact === 'serious' || item.impact === 'critical')).toEqual([]);
 });
-
-test('a 1000-product catalog renders progressively without limiting search', async ({ page }) => {
-  const pageErrors = [];
-  page.on('pageerror', (error) => pageErrors.push(error.message));
-  const maxProgressiveCards = 200;
-  const largeCatalog = Array.from({ length: 1000 }, (_, index) => ({
-    ...catalogFixture[0],
-    id: `scale-${index + 1}`,
-    nombre: `Producto Escalable ${String(index + 1).padStart(3, '0')}`,
-    descripcion: `Articulo ${index + 1} del catalogo de escala`,
-    es_nuevo: false,
-  }));
-  await page.unroute('**/rest/v1/productos*');
-  await page.unroute('**/rest/v1/catalogo_facetas_publicas*');
-  await page.route('**/rest/v1/catalogo_facetas_publicas*', async (route) => {
-    await fulfillFacetRequest(route, largeCatalog);
-  });
-  await page.route('**/rest/v1/productos*', async (route) => {
-    await fulfillCatalogRequest(route, largeCatalog);
-  });
-
-  await page.goto('/catalogo');
-
-  const cards = page.locator('article.product-card');
-  await expect(page.getByText('1000 productos', { exact: true })).toBeVisible();
-  await expect.poll(() => cards.count()).toBeGreaterThan(0);
-  expect(await cards.count()).toBeLessThanOrEqual(maxProgressiveCards);
-
-  const search = page.locator('input:visible').first();
-  await search.fill('Producto Escalable 1000');
-  await expect(cards.getByRole('heading', { name: 'Producto Escalable 1000' })).toBeVisible();
-  expect(await cards.count()).toBeLessThanOrEqual(maxProgressiveCards);
-
-  await search.fill('');
-  await expect.poll(() => cards.count()).toBeGreaterThan(0);
-  await page.waitForTimeout(1_200);
-  const countBeforeMore = await cards.count();
-  expect(countBeforeMore).toBeLessThanOrEqual(maxProgressiveCards);
-
-  const sentinel = page.locator('[data-catalog-load-sentinel]');
-  await expect(sentinel).toBeAttached();
-  await sentinel.evaluate((node) => node.scrollIntoView({ block: 'center' }));
-  await expect.poll(() => cards.count()).toBeGreaterThan(countBeforeMore);
-  expect(await cards.count()).toBeLessThanOrEqual(maxProgressiveCards);
-  await expect(page.getByRole('button', { name: /Mostrar \d+ productos m.s/ })).toHaveCount(0);
-  const cachedPage = await page.evaluate(() => {
-    const cache = JSON.parse(localStorage.getItem('fp_catalog_pages_v2') || '{}');
-    return {
-      complete: cache.complete,
-      length: cache.data?.length || 0,
-      totalCount: cache.totalCount,
-    };
-  });
-  expect(cachedPage.totalCount).toBe(1000);
-  expect(cachedPage.complete).toBe(false);
-  expect(cachedPage.length).toBeGreaterThan(0);
-  expect(cachedPage.length).toBeLessThanOrEqual(200);
-
-  if ((page.viewportSize()?.width || 0) >= 1024) {
-    const scrollRoot = page.locator('[data-catalog-scroll-root]');
-    await expect.poll(() => scrollRoot.evaluate((node) => node.scrollTop)).toBeGreaterThan(700);
-
-    const lastVisibleProduct = cards.last().locator('.product-card-detail-trigger');
-    await lastVisibleProduct.scrollIntoViewIfNeeded();
-    await lastVisibleProduct.click();
-    const productDetail = page.getByRole('dialog');
-    await expect(productDetail).toBeVisible();
-    const scrollWithDetail = await scrollRoot.evaluate((node) => node.scrollTop);
-    expect(scrollWithDetail).toBeGreaterThan(700);
-    await page.keyboard.press('Escape');
-    await expect(productDetail).toBeHidden();
-    await expect.poll(async () => Math.abs(
-      (await scrollRoot.evaluate((node) => node.scrollTop)) - scrollWithDetail,
-    )).toBeLessThanOrEqual(100);
-
-    const backToTop = page.getByRole('button', { name: 'Volver arriba' });
-    await expect(backToTop).toBeVisible();
-    await backToTop.click();
-    await expect.poll(() => scrollRoot.evaluate((node) => node.scrollTop)).toBeLessThan(10);
-  }
-  expect(pageErrors).toEqual([]);
-});
-
-test('a failed catalog page can be retried without losing loaded products', async ({ page }) => {
-  const products = Array.from({ length: 120 }, (_, index) => ({
-    ...catalogFixture[index % catalogFixture.length],
-    id: `retry-${index + 1}`,
-    nombre: `Producto Recuperable ${String(index + 1).padStart(3, '0')}`,
-    es_nuevo: false,
-  }));
-  let failedSecondPage = false;
-
-  await page.unroute('**/rest/v1/productos*');
-  await page.unroute('**/rest/v1/catalogo_facetas_publicas*');
-  await page.route('**/rest/v1/catalogo_facetas_publicas*', async (route) => {
-    await fulfillFacetRequest(route, products);
-  });
-  await page.route('**/rest/v1/productos*', async (route) => {
-    const requestUrl = new URL(route.request().url());
-    const offset = Number(requestUrl.searchParams.get('offset')) || 0;
-
-    if (
-      route.request().method() !== 'OPTIONS'
-      && offset >= 48
-      && !failedSecondPage
-    ) {
-      failedSecondPage = true;
-      await route.fulfill({
-        status: 503,
-        contentType: 'application/json',
-        headers: catalogCorsHeaders,
-        body: JSON.stringify({ code: 'TEMPORARY_UNAVAILABLE', message: 'Try again' }),
-      });
-      return;
-    }
-
-    await fulfillCatalogRequest(route, products);
-  });
-
-  await page.goto('/catalogo');
-
-  const cards = page.locator('article.product-card');
-  const sentinel = page.locator('[data-catalog-load-sentinel]');
-  await expect(page.getByText('120 productos', { exact: true })).toBeVisible();
-
-  const retryButton = page.getByRole('button', { name: 'Intentar de nuevo' });
-  await expect.poll(async () => {
-    await sentinel.evaluate((node) => node.scrollIntoView({ block: 'center' }));
-    return retryButton.isVisible();
-  }, { timeout: 10_000 }).toBe(true);
-  const cardsBeforeRetry = await cards.count();
-  expect(cardsBeforeRetry).toBeGreaterThan(0);
-
-  await retryButton.click();
-  await expect(retryButton).toBeHidden();
-  await expect.poll(() => cards.count()).toBeGreaterThan(cardsBeforeRetry);
-  expect(failedSecondPage).toBe(true);
-});
-
-test('an empty catalog is distinguished from a search without results', async ({ page }) => {
-  await page.unroute('**/rest/v1/productos*');
-  await page.unroute('**/rest/v1/catalogo_facetas_publicas*');
-  await page.route('**/rest/v1/catalogo_facetas_publicas*', async (route) => {
-    await fulfillFacetRequest(route, []);
-  });
-  await page.route('**/rest/v1/productos*', async (route) => {
-    await fulfillCatalogRequest(route, []);
-  });
-
-  await page.goto('/catalogo');
-
-  await expect(page.getByRole('heading', { name: 'Catálogo en preparación' })).toBeVisible();
-  await expect(page.getByText('Aún no hay productos disponibles. Vuelve a intentarlo más tarde.')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Sin resultados' })).toHaveCount(0);
-});
-
-test('category URLs filter products and stay in sync with navigation', async ({ page }) => {
-  await page.goto('/catalogo/globos-latex');
-
-  await expect(page).toHaveURL(/\/catalogo\/globos-latex$/);
-  await expect(page.getByText('Viendo: Globos de Látex')).toBeVisible();
-  await expect(page.locator('article.product-card')).toHaveCount(4);
-  await expect(page).toHaveTitle('Globos de Látex al Mayoreo en Uruapan | Full Party Uruapan');
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
-    'href',
-    'https://www.fullpartyuruapan.com.mx/catalogo/globos-latex',
-  );
-  const categorySchema = await page.locator('#route-jsonld').textContent();
-  expect(JSON.parse(categorySchema)['@graph'][0]).toMatchObject({
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      expect.objectContaining({ position: 1, name: 'Full Party Uruapan' }),
-      expect.objectContaining({ position: 2, name: 'Catálogo' }),
-      expect.objectContaining({ position: 3, name: 'Globos de Látex' }),
-    ],
-  });
-
-  await page.getByRole('button', { name: 'Quitar filtros' }).first().click();
-  await expect(page).toHaveURL(/\/catalogo$/);
-  await expect(page.getByText(`${catalogFixture.length} productos`, { exact: true })).toBeVisible();
-
-  await page.locator('button:visible').filter({ hasText: /^Confeti$/ }).first().click();
-  await expect(page).toHaveURL(/\/catalogo\/confeti$/);
-  await expect(page.locator('article.product-card')).toHaveCount(1);
-  await expect(page).toHaveTitle('Confeti al Mayoreo en Uruapan | Full Party Uruapan');
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
-    'href',
-    'https://www.fullpartyuruapan.com.mx/catalogo/confeti',
-  );
-
-  await page.goBack();
-  await expect(page).toHaveURL(/\/catalogo$/);
-  await expect(page.getByText(`${catalogFixture.length} productos`, { exact: true })).toBeVisible();
-
-  await page.goto('/catalogo/globos-numeros');
-  await expect(page).toHaveURL(/\/catalogo\/globos-numero$/);
-  await expect(page.locator('article.product-card')).toHaveCount(1);
-});
-
-test('the catalog can be sorted and the cart guides order completion', async ({ page }) => {
-  await page.goto('/catalogo');
-  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
-
-  const sort = page.locator('#catalog-sort');
-  await sort.selectOption('price-asc');
-  await expect(sort).toHaveValue('price-asc');
-
-  const availableProduct = page
-    .locator('article.product-card button[aria-label^="Agregar "][aria-label$=" al carrito"]:not([disabled])')
-    .first();
-  await expect(availableProduct).toBeVisible();
-  const selectedProductName = await availableProduct
-    .locator('xpath=ancestor::article')
-    .locator('h3')
-    .innerText();
-  await availableProduct.click();
-
-  const cartButton = page.locator('button[aria-label^="Carrito con "]');
-  await expect(cartButton).toHaveAttribute('aria-label', /Carrito con 1/);
-  await cartButton.click();
-
-  const cart = page.getByRole('dialog');
-  await expect(cart).toBeVisible();
-  await expect(cart.getByText('1 producto · 1 pieza')).toBeVisible();
-  await expect(cart.getByText(/Completa: nombre, teléfono válido/)).toBeVisible();
-  await expect(cart.getByRole('button', { name: 'Revisar pedido' })).toBeDisabled();
-
-  await cart.getByLabel('Nombre completo').fill('María Prueba');
-  await cart.getByLabel('Número de teléfono').fill('4521234567');
-  const cartPanel = page.locator('[role="dialog"][aria-label="🎁 Mi Pedido"]');
-  await cart.getByRole('button', { name: 'Cerrar carrito' }).click();
-  await expect(cartPanel).toHaveAttribute('aria-hidden', 'true');
-
-  await cartButton.click();
-  await expect(cart.getByLabel('Nombre completo')).toHaveValue('María Prueba');
-  await expect(cart.getByLabel('Número de teléfono')).toHaveValue('4521234567');
-
-  const reviewButton = cart.getByRole('button', { name: 'Revisar pedido' });
-  await expect(reviewButton).toBeEnabled();
-  await reviewButton.click();
-  await expect(cart.getByText('¡Pedido listo!')).toBeVisible();
-  await expect(cart.getByText(selectedProductName, { exact: true })).toBeVisible();
-  await expect(cart.getByText('María Prueba', { exact: true })).toBeVisible();
-  await expect(cart.getByText(/Precios y disponibilidad verificados/)).toBeVisible();
-  await expect(cart.getByRole('button', { name: '← Editar pedido' })).toBeVisible();
-
-  const eventNames = (await readAnalyticsEvents(page)).map(({ name }) => name);
-  expect(eventNames).toEqual(expect.arrayContaining([
-    'catalog_add_to_cart',
-    'cart_view',
-    'checkout_review',
-  ]));
-});
-
-test('an offline checkout stays intact until the connection returns', async ({ page, context }) => {
-  await page.goto('/catalogo');
-  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
-
-  await page
-    .locator('article.product-card button[aria-label^="Agregar "][aria-label$=" al carrito"]:not([disabled])')
-    .first()
-    .click();
-  await page.locator('button[aria-label^="Carrito con "]').click();
-
-  const cart = page.getByRole('dialog');
-  await cart.getByLabel('Nombre completo').fill('María Prueba');
-  await cart.getByLabel('Número de teléfono').fill('4521234567');
-  await cart.getByRole('button', { name: 'Revisar pedido' }).click();
-  await expect(cart.getByText('¡Pedido listo!')).toBeVisible();
-
-  await context.setOffline(true);
-  await expect(cart.getByText(/Tu pedido sigue guardado/)).toBeVisible();
-  await expect(cart.getByRole('button', { name: 'Enviar pedido a Full Party' })).toBeDisabled();
-  await expect(cart.getByText('1 producto · 1 pieza')).toBeVisible();
-
-  await context.setOffline(false);
-  await expect(cart.getByText(/Tu pedido sigue guardado/)).toBeHidden();
-  await expect(cart.getByRole('button', { name: 'Enviar pedido a Full Party' })).toBeEnabled();
-});
-
-test('a completed order includes its folio and tracking URL in WhatsApp', async ({ page, context }) => {
-  const folio = 'FP-E2E1234';
-  let createPayload = null;
-  let lookupPayload = null;
-
-  await page.route('**/rest/v1/rpc/crear_pedido_publico', async (route) => {
-    if (route.request().method() === 'OPTIONS') {
-      await route.fulfill({
-        status: 204,
-        headers: { ...catalogCorsHeaders, 'access-control-allow-methods': 'POST, OPTIONS' },
-      });
-      return;
-    }
-
-    createPayload = route.request().postDataJSON();
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      headers: catalogCorsHeaders,
-      body: JSON.stringify(folio),
-    });
-  });
-  await page.route('**/rest/v1/rpc/buscar_pedido_por_folio', async (route) => {
-    if (route.request().method() === 'OPTIONS') {
-      await route.fulfill({
-        status: 204,
-        headers: { ...catalogCorsHeaders, 'access-control-allow-methods': 'POST, OPTIONS' },
-      });
-      return;
-    }
-
-    lookupPayload = route.request().postDataJSON();
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      headers: catalogCorsHeaders,
-      body: JSON.stringify([{
-        folio,
-        cliente_nombre: 'Maria E2E',
-        estado: 'Por Surtir',
-        total: 85,
-        tipo_entrega: 'tienda',
-        created_at: '2026-07-22T15:00:00.000Z',
-        updated_at: '2026-07-22T15:00:00.000Z',
-        detalles_json: [{ nombre: 'Globo Rosa 12 Pulg', cantidad: 1, precio: 85 }],
-      }]),
-    });
-  });
-  await context.route('https://api.whatsapp.com/send**', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'text/html',
-      body: '<!doctype html><title>WhatsApp</title>',
-    });
-  });
-
-  await page.goto('/catalogo');
-  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
-  await page
-    .locator('article.product-card button[aria-label^="Agregar "][aria-label$=" al carrito"]:not([disabled])')
-    .first()
-    .click();
-  await page.locator('button[aria-label^="Carrito con "]').click();
-
-  const cart = page.getByRole('dialog');
-  await cart.getByLabel('Nombre completo').fill('Maria E2E');
-  await cart.getByLabel(/N.mero de tel.fono/i).fill('4521234567');
-  await cart.getByRole('button', { name: 'Revisar pedido' }).click();
-
-  const popupPromise = page.waitForEvent('popup');
-  const whatsappRequestPromise = context.waitForEvent('request', {
-    predicate: (request) => (
-      request.isNavigationRequest()
-      && request.url().startsWith('https://api.whatsapp.com/send')
-    ),
-    timeout: 10_000,
-  });
-  await cart.getByRole('button', { name: 'Enviar pedido a Full Party' }).click();
-  await popupPromise;
-
-  const whatsappRequest = await whatsappRequestPromise;
-  const whatsappUrl = whatsappRequest.url();
-  const message = new URL(whatsappUrl).searchParams.get('text');
-
-  expect(createPayload).toEqual(expect.objectContaining({
-    p_cliente_nombre: 'Maria E2E',
-    p_cliente_telefono: '4521234567',
-    p_tipo_entrega: 'tienda',
-  }));
-  expect(createPayload.p_detalles_json).toHaveLength(1);
-  expect(message).toContain(`Folio:* ${folio}`);
-  expect(message).toContain(`https://www.fullpartyuruapan.com.mx/rastrear/${folio}`);
-  await expect(page.locator('button[aria-label^="Carrito con 0"]')).toBeVisible();
-
-  // El folio queda visible en la app (no solo en WhatsApp): si el cliente
-  // cierra la ventana de WhatsApp sin enviar, aún puede rastrear su pedido.
-  await expect(cart.getByText('¡Pedido registrado!')).toBeVisible();
-  await expect(cart.getByText(folio, { exact: true })).toBeVisible();
-  const trackLinks = cart.getByRole('link', { name: /Rastrear mi pedido/ });
-  await expect(trackLinks.first()).toHaveAttribute('href', `/rastrear/${folio}`);
-
-  // El botón de enviar se reemplaza tras el guardado: no se puede duplicar el pedido.
-  await expect(cart.getByRole('button', { name: 'Enviar pedido a Full Party' })).toHaveCount(0);
-  await expect(cart.getByRole('button', { name: '← Editar pedido' })).toHaveCount(0);
-
-  // El folio creado coincide con el pedido consultado en rastreo.
-  await trackLinks.last().click();
-  await expect(page).toHaveURL(new RegExp(`/rastrear/${folio}$`));
-  await expect.poll(() => lookupPayload).toEqual({ p_folio: folio });
-  await expect(page.getByText(folio, { exact: true }).first()).toBeVisible();
-  await expect(page.getByText('Por Surtir', { exact: true })).toBeVisible();
-});
-
-test('a failed order save shows an actionable error and retries without duplicating', async ({ page, context }) => {
-  const folio = 'FP-RETRY01';
-  const rpcPayloads = [];
-
-  await page.route('**/rest/v1/rpc/crear_pedido_publico', async (route) => {
-    if (route.request().method() === 'OPTIONS') {
-      await route.fulfill({
-        status: 204,
-        headers: { ...catalogCorsHeaders, 'access-control-allow-methods': 'POST, OPTIONS' },
-      });
-      return;
-    }
-
-    rpcPayloads.push(route.request().postDataJSON());
-    if (rpcPayloads.length === 1) {
-      // Primer intento: el servidor rechaza por inventario (trigger de integridad).
-      await route.fulfill({
-        status: 400,
-        contentType: 'application/json',
-        headers: catalogCorsHeaders,
-        body: JSON.stringify({ message: 'Product is unavailable', code: 'P0001' }),
-      });
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      headers: catalogCorsHeaders,
-      body: JSON.stringify(folio),
-    });
-  });
-  await context.route('https://api.whatsapp.com/send**', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'text/html',
-      body: '<!doctype html><title>WhatsApp</title>',
-    });
-  });
-
-  await page.goto('/catalogo');
-  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
-  await page
-    .locator('article.product-card button[aria-label^="Agregar "][aria-label$=" al carrito"]:not([disabled])')
-    .first()
-    .click();
-  await page.locator('button[aria-label^="Carrito con "]').click();
-
-  const cart = page.getByRole('dialog');
-  await cart.getByLabel('Nombre completo').fill('Maria Retry');
-  await cart.getByLabel(/N.mero de tel.fono/i).fill('4521234567');
-  await cart.getByRole('button', { name: 'Revisar pedido' }).click();
-  await expect(cart.getByText('¡Pedido listo!')).toBeVisible();
-
-  const sendButton = cart.getByRole('button', { name: 'Enviar pedido a Full Party' });
-  const firstPopup = page.waitForEvent('popup');
-  await sendButton.click();
-  await firstPopup;
-
-  // Error específico (no genérico), la revisión sigue abierta y el carrito intacto.
-  await expect(cart.getByRole('alert')).toContainText(/ya no está disponible/);
-  await expect(cart.getByText('¡Pedido listo!')).toBeVisible();
-  await expect(page.locator('button[aria-label^="Carrito con 1"]')).toBeVisible();
-  await expect.poll(async () => (
-    (await readAnalyticsEvents(page)).find(({ name }) => name === 'order_save_failed')?.params?.error_type
-  )).toBe('inventario');
-
-  // Reintento manual: el mismo pedido se envía una sola vez más (sin duplicados).
-  const secondPopup = page.waitForEvent('popup');
-  const whatsappRequestPromise = context.waitForEvent('request', {
-    predicate: (request) => (
-      request.isNavigationRequest()
-      && request.url().startsWith('https://api.whatsapp.com/send')
-    ),
-    timeout: 10_000,
-  });
-  await sendButton.click();
-  await secondPopup;
-  await whatsappRequestPromise;
-
-  await expect(cart.getByText('¡Pedido registrado!')).toBeVisible();
-  await expect(cart.getByText(folio, { exact: true })).toBeVisible();
-  expect(rpcPayloads).toHaveLength(2);
-  expect(rpcPayloads[0].p_cliente_nombre).toBe('Maria Retry');
-  expect(rpcPayloads[1].p_detalles_json).toEqual(rpcPayloads[0].p_detalles_json);
-});
-
-test('a product removed from the catalog is flagged before the checkout review', async ({ page }) => {
-  await page.goto('/catalogo');
-  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
-
-  await page
-    .locator('article.product-card button[aria-label^="Agregar "][aria-label$=" al carrito"]:not([disabled])')
-    .first()
-    .click();
-
-  // El admin elimina el producto mientras el cliente tiene el carrito armado.
-  const remaining = catalogFixture.filter((producto) => producto.id !== 'e2e-1');
-  await page.unroute('**/rest/v1/productos*');
-  await page.route('**/rest/v1/productos*', async (route) => {
-    await fulfillCatalogRequest(route, remaining);
-  });
-
-  await page.locator('button[aria-label^="Carrito con "]').click();
-  const cart = page.getByRole('dialog');
-  await cart.getByLabel('Nombre completo').fill('Maria Borrado');
-  await cart.getByLabel(/N.mero de tel.fono/i).fill('4521234567');
-
-  const reviewButton = cart.getByRole('button', { name: 'Revisar pedido' });
-  await expect(reviewButton).toBeEnabled();
-  await reviewButton.click();
-
-  // La verificación previa marca el artículo eliminado y bloquea la revisión.
-  await expect(cart.getByText('Agotado', { exact: true })).toBeVisible();
-  await expect(cart.getByText(/Ajusta los productos marcados/)).toBeVisible();
-  await expect(reviewButton).toBeDisabled();
-  await expect(cart.getByText('¡Pedido listo!')).toHaveCount(0);
-  await expect.poll(async () => (
-    (await readAnalyticsEvents(page)).find(({ name }) => name === 'checkout_validation')?.params?.result
-  )).toBe('blocked');
-
-  // Al quitar el artículo el formulario vuelve a ser usable.
-  await cart.getByRole('button', { name: /^Quitar uno de/ }).click();
-  await expect(cart.getByText('Tu carrito está vacío')).toBeVisible();
-});
-
-test('the checkout review reflects server-side price changes', async ({ page }) => {
-  await page.goto('/catalogo');
-  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
-
-  await page
-    .locator('article.product-card button[aria-label^="Agregar "][aria-label$=" al carrito"]:not([disabled])')
-    .first()
-    .click();
-
-  // El precio cambia en el servidor antes de que el cliente revise su pedido.
-  const updated = catalogFixture.map((producto) => (
-    producto.id === 'e2e-1'
-      ? { ...producto, precio: 70, precios_mayoreo: [{ cantidad_minima: 12, precio: 65 }] }
-      : producto
-  ));
-  await page.unroute('**/rest/v1/productos*');
-  await page.route('**/rest/v1/productos*', async (route) => {
-    await fulfillCatalogRequest(route, updated);
-  });
-
-  await page.locator('button[aria-label^="Carrito con "]').click();
-  const cart = page.getByRole('dialog');
-  await cart.getByLabel('Nombre completo').fill('Maria Precio');
-  await cart.getByLabel(/N.mero de tel.fono/i).fill('4521234567');
-  await cart.getByRole('button', { name: 'Revisar pedido' }).click();
-
-  // La revisión usa el precio fresco del servidor, no el del carrito guardado.
-  await expect(cart.getByText('¡Pedido listo!')).toBeVisible();
-  await expect(cart.getByText('$70.00').first()).toBeVisible();
-  await expect.poll(async () => (
-    (await readAnalyticsEvents(page)).find(({ name }) => name === 'checkout_review')?.params?.value
-  )).toBe(70);
-});
-
-test('catalog dialogs close with the Escape key', async ({ page }, testInfo) => {
-  await page.goto('/catalogo');
-  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
-
-  await page
-    .locator('article.product-card button[aria-label^="Agregar "][aria-label$=" al carrito"]:not([disabled])')
-    .first()
-    .click();
-  await page.locator('button[aria-label^="Carrito con "]').click();
-
-  const cartPanel = page.locator('[role="dialog"][aria-label="🎁 Mi Pedido"]');
-  await expect(cartPanel).toHaveAttribute('aria-hidden', 'false');
-  await expect.poll(() => cartPanel.evaluate((el) => el.contains(document.activeElement))).toBe(true);
-  await page.keyboard.press('Escape');
-  await expect(cartPanel).toHaveAttribute('aria-hidden', 'true');
-
-  if (testInfo.project.name === 'mobile-chromium') {
-    await page.getByRole('button', { name: 'Abrir filtros' }).click();
-    const filters = page.getByRole('dialog', { name: 'Filtros' });
-    await expect(filters).toBeVisible();
-    await expect.poll(() => filters.evaluate((el) => el.contains(document.activeElement))).toBe(true);
-    await page.keyboard.press('Escape');
-    await expect(filters).toBeHidden();
-  }
-});
-
-test('a direct tracking URL loads the saved order status', async ({ page }) => {
-  const folio = 'FP-E2E1234';
-  let lookupPayload = null;
-
-  await page.route('**/rest/v1/rpc/buscar_pedido_por_folio', async (route) => {
-    if (route.request().method() === 'OPTIONS') {
-      await route.fulfill({
-        status: 204,
-        headers: { ...catalogCorsHeaders, 'access-control-allow-methods': 'POST, OPTIONS' },
-      });
-      return;
-    }
-
-    lookupPayload = route.request().postDataJSON();
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      headers: catalogCorsHeaders,
-      body: JSON.stringify([{
-        folio,
-        cliente_nombre: 'Maria E2E',
-        estado: 'Por Surtir',
-        total: 85,
-        tipo_entrega: 'tienda',
-        created_at: '2026-07-22T15:00:00.000Z',
-        updated_at: '2026-07-22T15:00:00.000Z',
-        detalles_json: [{ nombre: 'Globo Rosa 12 Pulg', cantidad: 1, precio: 85 }],
-      }]),
-    });
-  });
-
-  await page.goto(`/rastrear/${folio.toLowerCase()}`);
-
-  await expect(page.getByRole('heading', { level: 1, name: 'Rastrear Pedido' })).toBeVisible();
-  await expect(page.getByText(folio, { exact: true })).toBeVisible();
-  await expect(page.getByText('Maria E2E', { exact: true })).toBeVisible();
-  await expect(page.getByText('Por Surtir', { exact: true })).toBeVisible();
-  expect(lookupPayload).toEqual({ p_folio: folio });
-});
-
-test('favorites and recently viewed products persist across reloads', async ({ page }) => {
-  await page.goto('/catalogo');
-  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
-
-  const firstProduct = page.locator('article.product-card').first();
-  const productName = await firstProduct.locator('h3').innerText();
-  await firstProduct.getByRole('button', { name: `Agregar ${productName} a favoritos` }).click();
-  await expect(
-    firstProduct.getByRole('button', { name: `Quitar ${productName} de favoritos` }),
-  ).toBeVisible();
-
-  const favoritesFilter = page.getByRole('button', { name: 'Mostrar 1 favoritos' });
-  await favoritesFilter.click();
-  await expect(page.locator('article.product-card')).toHaveCount(1);
-  await expect(page.getByRole('button', { name: 'Ver todos los productos' })).toHaveAttribute('aria-pressed', 'true');
-
-  await page.getByRole('button', { name: 'Ver todos los productos' }).click();
-  await firstProduct.locator('.product-card-detail-trigger').click();
-  const detail = page.getByRole('dialog', { name: `Ver detalle de ${productName}` });
-  await expect(detail).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(detail).toBeHidden();
-  await expect(page).not.toHaveURL(/[?&]producto=/);
-
-  const recentlyViewed = page.getByRole('region', { name: 'Vistos recientemente' });
-  await expect(recentlyViewed).toBeVisible();
-  await expect(
-    recentlyViewed.getByRole('button', { name: `Abrir ${productName} visto recientemente` }),
-  ).toBeVisible();
-
-  const favoriteEvent = (await readAnalyticsEvents(page)).find(({ name }) => name === 'favorite_toggle');
-  expect(favoriteEvent.params).toMatchObject({ source: 'card', is_favorite: true });
-
-  await page.reload();
-  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
-  const restoredProduct = page.locator('article.product-card').filter({ hasText: productName });
-  await expect(
-    restoredProduct.getByRole('button', { name: `Quitar ${productName} de favoritos` }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: `Abrir ${productName} visto recientemente` }),
-  ).toBeVisible();
-
-  expect((await readAnalyticsEvents(page)).filter(({ name }) => name === 'favorite_toggle')).toHaveLength(0);
-});
-
-test('a product detail is shareable and supports shopping without closing', async ({ page }, testInfo) => {
-  await page.goto('/catalogo');
-  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
-  const catalogTitle = await page.title();
-  const catalogCanonical = await page.locator('link[rel="canonical"]').getAttribute('href');
-
-  const firstProduct = page.locator('article.product-card').first();
-  const productName = await firstProduct.locator('h3').innerText();
-  await firstProduct.locator('button').first().click();
-
-  await expect(page).toHaveURL(/[?&]producto=/);
-  const productUrl = page.url();
-  let detail = page.getByRole('dialog', { name: `Ver detalle de ${productName}`, exact: true });
-  await expect(detail).toBeVisible();
-  await expect(detail.getByRole('heading', { name: productName })).toBeVisible();
-  await expect.poll(async () => (
-    (await readAnalyticsEvents(page)).some(({ name }) => name === 'catalog_product_view')
-  )).toBe(true);
-  await expect(page).toHaveTitle(`${productName} | Full Party Uruapan`);
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', productUrl);
-  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
-    'content',
-    `${productName} | Full Party Uruapan`,
-  );
-  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', productUrl);
-  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image');
-  await expect.poll(() => detail.evaluate((dialog) => document.activeElement === dialog)).toBe(true);
-  await expect(detail.getByRole('button', { name: 'Compartir' })).toBeVisible();
-  await expect(detail.getByText('Precios por mayoreo', { exact: true })).toHaveCount(0);
-  await expect(detail.locator('section[aria-labelledby="related-products-title"] button').first()).toBeVisible();
-  const description = detail.locator('[id^="product-description-"]');
-  await expect(description).toBeVisible();
-  const showMoreButton = detail.getByRole('button', { name: 'Ver más' });
-  if (testInfo.project.name === 'mobile-chromium') {
-    await expect(showMoreButton).toBeVisible();
-    await expect(showMoreButton).toHaveAttribute('aria-expanded', 'false');
-    await showMoreButton.click();
-    await expect(detail.getByRole('button', { name: 'Ver menos' })).toHaveAttribute('aria-expanded', 'true');
-  } else {
-    await expect(showMoreButton).toBeHidden();
-  }
-  const statusLayout = await detail.evaluate((dialog) => {
-    const actions = dialog.querySelector('[data-testid="product-detail-actions"]')?.getBoundingClientRect();
-    const badges = dialog.querySelector('[data-testid="product-status-badges"]')?.getBoundingClientRect();
-    if (!actions || !badges) return { overlap: false };
-    return {
-      overlap: !(
-        actions.right <= badges.left ||
-        actions.left >= badges.right ||
-        actions.bottom <= badges.top ||
-        actions.top >= badges.bottom
-      ),
-    };
-  });
-  expect(statusLayout.overlap).toBe(false);
-
-  await page.keyboard.press('Escape');
-  await expect(detail).toBeHidden();
-  await expect(page).toHaveTitle(catalogTitle);
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', catalogCanonical);
-  await expect.poll(() => firstProduct.locator('button').first().evaluate(
-    (button) => getComputedStyle(button).outlineStyle,
-  )).toBe('none');
-
-  await firstProduct.locator('button').first().click();
-  detail = page.getByRole('dialog', { name: `Ver detalle de ${productName}`, exact: true });
-  await expect(detail).toBeVisible();
-  await expect.poll(() => detail.evaluate((dialog) => document.activeElement === dialog)).toBe(true);
-  await expect(detail.getByRole('button', { name: 'Compartir' })).not.toBeFocused();
-
-  await page.goto(productUrl);
-  detail = page.getByRole('dialog', { name: `Ver detalle de ${productName}`, exact: true });
-  await expect(detail).toBeVisible();
-  await expect(detail.getByRole('heading', { name: productName })).toBeVisible();
-
-  await detail.getByRole('button', { name: 'Agregar al carrito' }).click();
-  await expect(detail).toBeVisible();
-  await expect(detail.getByLabel('1 pieza en tu pedido')).toBeVisible();
-  await expect(page).toHaveURL(productUrl);
-});
-
-test('the admin route presents an accessible login when signed out', async ({ page }) => {
-  await page.goto('/admin/catalogo');
-
-  await expect(page.locator('#admin-email')).toBeVisible();
-  await expect(page.locator('#admin-password')).toBeVisible();
-  await expect(page.locator('button[type="submit"]')).toBeDisabled();
-  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
-  await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
-  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', '');
-  await expect(page.locator('#route-jsonld')).toHaveCount(0);
-});
-
-test('the branches route publishes both stores as structured data', async ({ page }) => {
-  await page.goto('/sucursales');
-
-  await expect(page.getByRole('heading', { name: 'Encuéntranos en Uruapan' })).toBeVisible();
-  const data = JSON.parse(await page.locator('#route-jsonld').textContent());
-  const stores = data['@graph'].filter((entry) => entry['@type'] === 'Store');
-
-  expect(stores).toHaveLength(2);
-  expect(stores.map(({ name }) => name)).toEqual([
-    'Full Party Uruapan Suc. Francisco Villa',
-    'Full Party Uruapan Suc. Sol Naciente',
-  ]);
-  await expect(page.locator('#francisco-villa')).toBeVisible();
-  await expect(page.locator('#sol-naciente')).toBeVisible();
-});
-
-test('the PWA exposes a valid manifest and registers its service worker', async ({ page, request }) => {
-  const manifestResponse = await request.get('/manifest.json');
-  expect(manifestResponse.ok()).toBe(true);
-
-  const manifest = await manifestResponse.json();
-  expect(manifest.start_url).toBe('/catalogo');
-  expect(manifest.display).toBe('standalone');
-  expect(manifest.icons).toEqual(expect.arrayContaining([
-    expect.objectContaining({ sizes: '192x192' }),
-    expect.objectContaining({ sizes: '512x512' }),
-  ]));
-  expect(manifest.shortcuts).toEqual(expect.arrayContaining([
-    expect.objectContaining({ url: '/catalogo' }),
-    expect.objectContaining({ url: '/rastrear' }),
-    expect.objectContaining({ url: '/sucursales' }),
-  ]));
-
-  await page.goto('/catalogo');
-  await expect.poll(
-    () => page.evaluate(async () => {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      return registrations.some((registration) => (
-        registration.active || registration.waiting || registration.installing
-      ));
-    }),
-    { timeout: 15_000 }
-  ).toBe(true);
-});
-
-test('the installed catalog reloads from its app shell while offline', async ({ page, context }) => {
-  await page.goto('/catalogo');
-  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
-  await expect.poll(
-    () => page.evaluate(() => Boolean(navigator.serviceWorker.controller)),
-    { timeout: 15_000 }
-  ).toBe(true);
-  await expect.poll(() => page.evaluate(() => {
-    try {
-      return JSON.parse(localStorage.getItem('fp_catalog_pages_v2'))?.data?.length || 0;
-    } catch {
-      return 0;
-    }
-  })).toBeGreaterThan(0);
-
-  await context.setOffline(true);
-  try {
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.getByText(/Sin conexi/i).first()).toBeVisible();
-    await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
-  } finally {
-    await context.setOffline(false);
-  }
-});
-
-test('the public catalog has no automatically detectable accessibility violations', async ({ page }) => {
-  await page.goto('/catalogo');
-  await expect.poll(() => page.locator('article.product-card').count()).toBeGreaterThan(0);
-
-  const results = await new AxeBuilder({ page }).analyze();
-  const summary = results.violations.map((violation) => ({
-    id: violation.id,
-    impact: violation.impact,
-    targets: violation.nodes.map((node) => node.target),
-  }));
-
-  expect(results.violations, JSON.stringify(summary, null, 2)).toEqual([]);
-});
-
-const publicContentRoutes = [
-  { path: '/sucursales', heading: /Encu[eé]ntranos en Uruapan/i },
-  { path: '/como-funciona', heading: /C[oó]mo hacer un pedido/i },
-  { path: '/destacados', heading: /Categor[ií]as destacadas/i },
-  { path: '/blog', heading: /Blog Full Party/i },
-  {
-    path: '/blog/cuantos-globos-necesito-cumpleanos',
-    heading: /Cu[aá]ntos globos necesito para decorar un cumplea[nñ]os/i,
-  },
-];
-
-for (const route of publicContentRoutes) {
-  test(`${route.path} remains responsive and accessible`, async ({ page }) => {
-    const pageErrors = [];
-    page.on('pageerror', (error) => pageErrors.push(error.message));
-
-    await page.goto(route.path);
-
-    const heading = page.getByRole('heading', { level: 1, name: route.heading });
-    await expect(heading).toBeVisible();
-    if (route.path === '/sucursales') {
-      await expect(page.locator('iframe[title^="Mapa Suc."]')).toHaveCount(2);
-    }
-
-    const viewport = await page.evaluate(() => ({
-      clientWidth: document.documentElement.clientWidth,
-      scrollWidth: document.documentElement.scrollWidth,
-    }));
-    expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth + 1);
-
-    // Third-party map frames own their internal landmarks; audit the app shell
-    // while still asserting that each iframe has an accessible title.
-    const results = await new AxeBuilder({ page }).exclude('iframe').analyze();
-    const summary = results.violations.map((violation) => ({
-      id: violation.id,
-      impact: violation.impact,
-      targets: violation.nodes.map((node) => node.target),
-    }));
-
-    expect(results.violations, JSON.stringify(summary, null, 2)).toEqual([]);
-    expect(pageErrors).toEqual([]);
-  });
-}

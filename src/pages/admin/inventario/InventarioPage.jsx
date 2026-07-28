@@ -19,13 +19,12 @@ const INVENTARIO_SEARCH_KEYS = [
 ];
 
 const STOCK_STATUS = {
-  ilimitado: { label: 'inventario.estado.ilimitado', cls: 'bg-admin-elevated text-admin-muted' },
   sinStock:  { label: 'inventario.estado.sinStock',  cls: 'bg-red-500/15 text-red-500' },
   bajo:      { label: 'inventario.estado.bajo',      cls: 'bg-amber-500/15 text-amber-500' },
   ok:        { label: 'inventario.estado.ok',        cls: 'bg-emerald-500/15 text-emerald-500' },
 };
 
-const STOCK_FILTERS = new Set(['todos', 'sinStock', 'bajo', 'ok', 'ilimitado']);
+const STOCK_FILTERS = new Set(['todos', 'sinStock', 'bajo', 'ok']);
 
 function getInitialStockFilter() {
   const value = new URLSearchParams(window.location.search).get('filtro');
@@ -33,9 +32,8 @@ function getInitialStockFilter() {
 }
 
 function getStatus(p) {
-  if (p.stock_ilimitado) return 'ilimitado';
-  if (p.stock_actual <= 0) return 'sinStock';
-  if (p.stock_actual <= p.stock_minimo) return 'bajo';
+  if (p.stock_disponible <= 0) return 'sinStock';
+  if (p.stock_disponible <= p.stock_minimo) return 'bajo';
   return 'ok';
 }
 
@@ -209,25 +207,17 @@ export default function InventarioPage() {
                   </div>
 
                   {/* Controles */}
-                  <div className="flex items-center gap-3 shrink-0">
-                    <StockCell
-                      value={p.stock_actual}
-                      field="stock_actual"
-                      disabled={p.stock_ilimitado || !canEdit}
-                      onCommit={(v) => updateStock(p.id, { stock_actual: v })}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => canEdit && updateStock(p.id, { activo: !p.activo })}
-                      disabled={!canEdit}
-                      className={`relative w-10 h-5 rounded-full transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed shrink-0
-                        ${p.activo ? 'bg-emerald-500' : 'bg-admin-border'}`}
-                      aria-label={t('inventario.col.activo')}
-                      aria-pressed={p.activo}
-                    >
-                      <span className={`block w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform
-                        ${p.activo ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                    </button>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <StockCell
+                        value={p.stock_actual}
+                        field="stock_actual"
+                        disabled={!canEdit}
+                        onCommit={(v) => updateStock(p.id, { stock_actual: v })}
+                      />
+                      <div className="min-w-14 text-right text-[11px] text-admin-muted">
+                        <span className="block">{p.stock_disponible} disp.</span>
+                        {p.stock_reservado > 0 && <span className="block">{p.stock_reservado} res.</span>}
+                      </div>
                   </div>
                 </div>
               );
@@ -242,10 +232,10 @@ export default function InventarioPage() {
                   <tr className="border-b border-admin-border bg-admin-elevated">
                     <th className="text-left px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">{t('inventario.col.producto')}</th>
                     <th className="text-left px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">{t('inventario.col.estado')}</th>
-                    <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">{t('inventario.col.ilimitado')}</th>
                     <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">{t('inventario.col.stockActual')}</th>
+                    <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">Reservado</th>
+                    <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">Disponible</th>
                     <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">{t('inventario.col.stockMinimo')}</th>
-                    <th className="text-center px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">{t('inventario.col.activo')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -264,46 +254,24 @@ export default function InventarioPage() {
                             )}
                             <div className="min-w-0">
                               <p className="font-bold text-admin-text truncate text-sm">{p.nombre}</p>
-                              {p.categoria && <p className="text-xs text-admin-muted truncate">{p.categoria}</p>}
+                              <p className="text-xs text-admin-muted truncate">
+                                {[p.presentacion, p.ubicacion].filter(Boolean).join(' · ')}
+                              </p>
                             </div>
                           </div>
                         </td>
                         <td className="px-4 py-3"><StockBadge status={status} t={t} /></td>
-                        <td className="px-4 py-3 text-center">
-                          <button
-                            type="button"
-                            onClick={() => canEdit && updateStock(p.id, { stock_ilimitado: !p.stock_ilimitado })}
-                            disabled={!canEdit}
-                            className={`relative w-10 h-5 rounded-full transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed
-                              ${p.stock_ilimitado ? 'bg-fiesta-magenta' : 'bg-admin-border'}`}
-                            aria-label={t('inventario.col.ilimitado')}
-                            aria-pressed={p.stock_ilimitado}
-                          >
-                            <span className={`block w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform ${p.stock_ilimitado ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                          </button>
-                        </td>
                         <td className="px-4 py-3">
                           <div className="flex justify-center">
-                            <StockCell value={p.stock_actual} field="stock_actual" disabled={p.stock_ilimitado || !canEdit} onCommit={(v) => updateStock(p.id, { stock_actual: v })} />
+                            <StockCell value={p.stock_actual} field="stock_actual" disabled={!canEdit} onCommit={(v) => updateStock(p.id, { stock_actual: v })} />
                           </div>
                         </td>
+                        <td className="px-4 py-3 text-center font-bold text-admin-muted">{p.stock_reservado}</td>
+                        <td className="px-4 py-3 text-center font-black text-admin-text">{p.stock_disponible}</td>
                         <td className="px-4 py-3">
                           <div className="flex justify-center">
-                            <StockCell value={p.stock_minimo} field="stock_minimo" disabled={p.stock_ilimitado || !canEdit} min={1} onCommit={(v) => updateStock(p.id, { stock_minimo: v })} />
+                            <StockCell value={p.stock_minimo} field="stock_minimo" disabled={!canEdit} onCommit={(v) => updateStock(p.id, { stock_minimo: v })} />
                           </div>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <button
-                            type="button"
-                            onClick={() => canEdit && updateStock(p.id, { activo: !p.activo })}
-                            disabled={!canEdit}
-                            className={`relative w-10 h-5 rounded-full transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed
-                              ${p.activo ? 'bg-emerald-500' : 'bg-admin-border'}`}
-                            aria-label={t('inventario.col.activo')}
-                            aria-pressed={p.activo}
-                          >
-                            <span className={`block w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform ${p.activo ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                          </button>
                         </td>
                       </tr>
                     );

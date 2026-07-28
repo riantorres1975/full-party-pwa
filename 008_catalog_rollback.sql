@@ -46,7 +46,10 @@ END;
 $$;
 
 -- ── 2. Eliminar funciones del catálogo V2 ───────────────────────────────────
+DROP FUNCTION IF EXISTS public.catalog_cancel_order_inventory(UUID);
+DROP FUNCTION IF EXISTS public.catalog_fulfill_order(UUID, JSONB);
 DROP FUNCTION IF EXISTS public.catalog_create_order(TEXT, TEXT, TEXT, TEXT, JSONB, UUID, TEXT);
+DROP FUNCTION IF EXISTS public.catalog_create_order_core(TEXT, TEXT, TEXT, TEXT, JSONB, UUID, TEXT);
 DROP FUNCTION IF EXISTS public.catalog_validate_cart(JSONB);
 DROP FUNCTION IF EXISTS public.catalog_search(TEXT, INTEGER);
 DROP FUNCTION IF EXISTS public.catalog_get_facets(TEXT, TEXT, TEXT);

@@ -792,6 +792,7 @@
   "inventario.filtro.todos": "All",
   "inventario.filtro.sinStock": "Out of stock",
   "inventario.filtro.bajo": "Low stock",
+  "inventario.filtro.ok": "Healthy stock",
   "inventario.filtro.ilimitado": "Unlimited",
   "inventario.col.producto": "Product",
   "inventario.col.stockActual": "Current stock",

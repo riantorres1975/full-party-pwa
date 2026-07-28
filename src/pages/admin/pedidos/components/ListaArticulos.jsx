@@ -9,6 +9,7 @@ import { useLanguage } from '../../../../hooks/useLanguage';
 import Can from '../../../../components/auth/Can';
 import ItemArticulo from './ItemArticulo';
 import { normalizarArticulos } from '../../../../lib/estadoMeta';
+import { fulfillOrder } from '../../../../services/catalog/ordersRepository';
 
 export default function ListaArticulos({ items, meta, estadoPedido, pedido, onPickingListo, onTotalChange, esDesktop }) {
   const { t } = useLanguage();
@@ -106,51 +107,57 @@ export default function ListaArticulos({ items, meta, estadoPedido, pedido, onPi
   async function pasarAListo() {
     setGuardando(true);
     try {
-      const conSurtido = articulosSurtidos.filter(a => (a.cantidad_surtida || 0) > 0 && a.id);
-      await Promise.all(conSurtido.map(async (art) => {
-        const { data: prodData } = await supabase.from('productos').select('stock_actual, stock_ilimitado').eq('id', art.id).single();
-        if (!prodData || prodData.stock_ilimitado !== false) return;
-        const stockActual = Number(prodData.stock_actual) || 0;
-        const nuevoStock = stockActual - Number(art.cantidad_surtida);
-        await supabase.from('productos').update({
-          stock_actual: nuevoStock > 0 ? nuevoStock : 0,
-          ...(nuevoStock <= 0 && { activo: false }),
-        }).eq('id', art.id);
-      }));
-      const sinSurtir = articulosSurtidos.filter(a => (a.cantidad_surtida || 0) === 0 && a.id);
-      await Promise.all(sinSurtir.map(async (art) => {
-        await supabase.from('productos').update({ activo: false }).eq('id', art.id);
-      }));
-    } catch (err) {
-      console.warn('[Picking] Error actualizar inventario', err);
-    }
+      const esPedidoV2 = articulosSurtidos.length > 0
+        && articulosSurtidos.every((item) => item.schema === 2 || item.variant_id);
+      let totalFinal = nuevoTotal;
+      let detallesFinales;
 
-    const articulosFinales = articulosSurtidos.map(a => ({
-      ...a,
-      precio: Number(a.precio_surtido ?? a.precio) || 0,
-    }));
-    const { error } = await supabase.from('pedidos').update({
-      estado: 'Listo para Entrega',
-      total: nuevoTotal,
-      detalles_json: articulosFinales,
-      notificado_estado: 'Listo para Entrega',
-    }).eq('id', pedido.id);
+      if (esPedidoV2) {
+        const result = await fulfillOrder(
+          pedido.id,
+          articulosSurtidos.map((item) => ({
+            variant_id: item.variant_id,
+            sale_presentation_id: item.sale_presentation_id,
+            quantity: Number(item.cantidad_surtida) || 0,
+          })),
+        );
+        totalFinal = result.total;
+        detallesFinales = result.details;
+      } else {
+        detallesFinales = articulosSurtidos.map((item) => ({
+          ...item,
+          precio: Number(item.precio_surtido ?? item.precio) || 0,
+        }));
+        const { error } = await supabase.from('pedidos').update({
+          estado: 'Listo para Entrega',
+          total: totalFinal,
+          detalles_json: detallesFinales,
+          notificado_estado: null,
+        }).eq('id', pedido.id);
+        if (error) throw error;
+      }
 
-    if (error) {
+      const pedidoListo = {
+        ...pedido,
+        estado: 'Listo para Entrega',
+        total: totalFinal,
+        detalles_json: detallesFinales,
+      };
+      notificarCliente(pedidoListo, detallesFinales);
+      await supabase
+        .from('pedidos')
+        .update({ notificado_estado: 'Listo para Entrega' })
+        .eq('id', pedido.id);
+
+      onPickingListo?.({
+        ...pedidoListo,
+        notificado_estado: 'Listo para Entrega',
+      });
+    } catch (error) {
       toast.error(`Error: ${error.message}`);
+    } finally {
       setGuardando(false);
-      return;
     }
-
-    notificarCliente({ ...pedido, estado: 'Listo para Entrega', total: nuevoTotal }, articulosSurtidos);
-    onPickingListo?.({
-      ...pedido,
-      estado: 'Listo para Entrega',
-      total: nuevoTotal,
-      detalles_json: articulosSurtidos,
-      notificado_estado: 'Listo para Entrega',
-    });
-    setGuardando(false);
   }
 
   // Métricas de progreso

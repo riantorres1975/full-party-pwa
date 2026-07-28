@@ -121,20 +121,20 @@ export default function NovedadesCarrusel({ novedades }) {
         >
           {items.map((p, i) => (
             <Link
-              key={`${p.id}-${i}`}
-              to="/catalogo"
+              key={`${p.groupKey}-${i}`}
+              to={`/catalogo?producto=${encodeURIComponent(p.slug ?? '')}${p.lineSlug ? `&gama=${encodeURIComponent(p.lineSlug)}` : ''}`}
               className="lp-novedad-card group flex flex-col flex-shrink-0"
               style={{
                 width: cardW || `calc(${100 / cols}% - ${CARD_GAP}px)`,
                 animationDelay: `${(i % cols) * 70}ms`,
               }}
-              aria-label={`Ver ${p.nombre} en el catalogo`}
+              aria-label={`Ver ${p.name} en el catalogo`}
             >
               <div className="lp-novedad-media relative flex items-center justify-center overflow-hidden">
                 <div className="lp-novedad-glow" aria-hidden="true" />
                 <OptimizedImage
-                  src={p.imagen_url}
-                  alt={p.nombre}
+                  src={p.imageUrl}
+                  alt={p.name}
                   aspectClass="w-full h-full aspect-auto"
                   className="lp-novedad-img w-full h-full"
                   style={{ objectFit: 'contain', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.10))' }}
@@ -153,15 +153,15 @@ export default function NovedadesCarrusel({ novedades }) {
 
               <div className="lp-novedad-info p-4 flex flex-col flex-1">
                 <p className="text-[10px] font-black uppercase tracking-wider mb-1" style={{ color: C.purple }}>
-                  {p.categoria || 'Articulo'}
+                  {p.lineName || p.brandName || 'Articulo'}
                 </p>
                 <h3 className="font-display text-sm leading-snug flex-1 line-clamp-2" style={{ color: C.textHead }}>
-                  {p.nombre}
+                  {p.name}
                 </h3>
                 <div className="mt-3 flex items-center justify-between gap-3">
-                  {Number.isFinite(Number(p.precio)) && Number(p.precio) > 0 ? (
+                  {Number.isFinite(Number(p.minPrice)) && Number(p.minPrice) > 0 ? (
                     <span className="lp-novedad-price">
-                      Desde {MXN_COMPACT.format(Number(p.precio))}
+                      Desde {MXN_COMPACT.format(Number(p.minPrice))}
                     </span>
                   ) : (
                     <span />

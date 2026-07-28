@@ -49,10 +49,8 @@ export function useDashboardData({ desde, hasta }) {
         ),
         guardedQuery((client) =>
           client
-            .from('productos')
-            .select('id,stock_actual,stock_minimo')
-            .eq('stock_ilimitado', false)
-            .eq('activo', true)
+            .from('catalog_inventory')
+            .select('id,quantity,reserved_quantity,low_stock_threshold')
         ),
       ]);
 
@@ -141,10 +139,13 @@ export function useDashboardData({ desde, hasta }) {
         }));
 
       const stockAlerts = productosInventario.reduce((acc, producto) => {
-        const actual = Number(producto.stock_actual) || 0;
-        const minimo = Number(producto.stock_minimo) || 0;
-        if (actual <= 0) acc.sinStock += 1;
-        else if (actual <= minimo) acc.bajo += 1;
+        const disponible = Math.max(
+          0,
+          (Number(producto.quantity) || 0) - (Number(producto.reserved_quantity) || 0),
+        );
+        const minimo = Number(producto.low_stock_threshold) || 0;
+        if (disponible <= 0) acc.sinStock += 1;
+        else if (disponible <= minimo) acc.bajo += 1;
         return acc;
       }, { bajo: 0, sinStock: 0 });
 

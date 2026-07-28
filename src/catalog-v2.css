@@ -1,5 +1,5 @@
 .catalog-v2-shell {
-  --catalog-pink: #f22994;
+  --catalog-pink: #c21872;
   --catalog-violet: #7c3aed;
   --catalog-ink: #10102d;
   --catalog-muted: #6f7088;
@@ -481,7 +481,7 @@
   display: flex;
   gap: 0.35rem;
   margin-bottom: 0.8rem;
-  color: #8b8b9b;
+  color: #656579;
   font-size: 0.65rem;
   font-weight: 800;
 }
@@ -1958,7 +1958,7 @@
     justify-content: center;
     gap: 0.12rem;
     border: 0;
-    color: #77778c;
+    color: #5f6074;
     background: transparent;
     flex-direction: column;
   }

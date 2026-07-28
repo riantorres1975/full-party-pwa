@@ -289,6 +289,7 @@ export default function CatalogV2Page() {
               className={favoritesOnly ? 'is-active' : ''}
               onClick={() => setFavoritesOnly((current) => !current)}
               aria-pressed={favoritesOnly}
+              aria-label="Mis favoritos"
             >
               <Heart size={18} fill={favoritesOnly ? 'currentColor' : 'none'} />
               <span>Mis favoritos</span>
@@ -298,6 +299,7 @@ export default function CatalogV2Page() {
               type="button"
               className={cartOpen ? 'is-active' : ''}
               onClick={() => setCartOpen(true)}
+              aria-label="Mi pedido"
             >
               <ShoppingBag size={18} />
               <span>Mi pedido</span>

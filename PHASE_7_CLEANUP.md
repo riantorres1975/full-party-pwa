@@ -1,0 +1,66 @@
+# Fase 7 - Cierre del catalogo V2
+
+Fecha: 2026-07-28
+
+## Resultado
+
+- `/catalogo` usa exclusivamente el catalogo V2.
+- Landing, dashboard e inventario administrativo dejaron de consultar
+  `public.productos`.
+- Picking y cancelacion usan RPC transaccionales para reservar, confirmar o
+  liberar inventario.
+- El rastreo publico conserva solo la consulta por folio.
+- Se retiro el arbol React, hooks, repositorios y pruebas del catalogo V1.
+- `public.productos` y `crear_pedido_publico` fueron eliminados en Supabase.
+- `public.productos_backup_v1` y `public.catalog_v1_object_backup` se conservan
+  como respaldo de emergencia.
+
+## Migraciones aplicadas
+
+### `catalog_inventory_lifecycle`
+
+- Agrega `catalog_inventory.low_stock_threshold`.
+- Mantiene `catalog_create_order` como interfaz publica segura.
+- Registra ubicacion y estado de inventario en cada snapshot V2.
+- Agrega `catalog_fulfill_order(uuid, jsonb)`.
+- Agrega `catalog_cancel_order_inventory(uuid)`.
+- Revoca acceso directo al nucleo privado de creacion.
+- Fija `search_path` y permisos de las funciones `SECURITY DEFINER`.
+
+### `remove_legacy_catalog_v1`
+
+- Elimina el canonicalizador y checkout V1.
+- Elimina la vista de facetas V1.
+- Retira `productos` de Realtime.
+- Elimina `public.productos`.
+
+## Datos de prueba
+
+Con autorizacion del propietario se eliminaron todos los pedidos de prueba.
+Antes de borrarlos se liberaron todas las reservas. Estado final:
+
+- Pedidos persistentes: `0`
+- Inventario reservado: `0`
+- Productos V2: `4`
+- Filas de inventario V2: `28`
+
+## Verificacion
+
+- `npm test`: 142 pruebas aprobadas.
+- `npm run build`: compilacion de produccion aprobada.
+- `npm run test:e2e:public`: 6 pruebas aprobadas en escritorio y movil.
+- Axe WCAG A/AA: sin violaciones serias o criticas en el catalogo probado.
+- Prueba SQL reversible:
+  `reservar -> surtir -> cancelar -> ROLLBACK`, sin alterar existencias.
+- Navegador real:
+  catalogo, detalle, inventario y dashboard cargan sin errores de consola.
+
+## Pendiente de seguridad independiente
+
+El asesor de Supabase reporta RLS deshabilitado en `public.admins`. No se
+habilito automaticamente porque hacerlo sin politicas bloquearia accesos. La
+remediacion debe definir primero las politicas necesarias y despues ejecutar:
+
+```sql
+ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
+```

@@ -6,6 +6,8 @@
 --   2. El checkout V2 (catalog_create_order) está en producción.
 --   3. Los productos útiles del V1 ya fueron importados al modelo V2.
 --   4. Existe respaldo: public.productos_backup_v1 (creado por 001).
+--   5. No quedan pedidos V1 en estados operativos.
+--   6. La migración de ciclo de inventario V2 ya fue aplicada.
 --
 -- Esta migración:
 --   - Elimina el trigger + función canonicalizadora V1 de pedidos
@@ -35,12 +37,38 @@ BEGIN
   IF to_regclass('public.catalog_products') IS NULL THEN
     RAISE EXCEPTION 'No existe el esquema V2 (catalog_products). Ejecuta primero 002-006';
   END IF;
+
+  IF to_regprocedure('public.catalog_fulfill_order(uuid,jsonb)') IS NULL
+     OR to_regprocedure('public.catalog_cancel_order_inventory(uuid)') IS NULL THEN
+    RAISE EXCEPTION 'Falta la migración de ciclo de inventario V2';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM public.pedidos p
+    WHERE p.estado NOT IN ('Enviado', 'Cancelado')
+      AND NOT EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(p.detalles_json) item
+        WHERE item ? 'variant_id'
+      )
+  ) THEN
+    RAISE EXCEPTION 'Existen pedidos V1 en estados operativos; finalízalos o cancélalos antes de eliminar productos';
+  END IF;
 END;
 $$;
 
 -- ── 1. Trigger y función canonicalizadora V1 ────────────────────────────────
 DROP TRIGGER IF EXISTS zzz_canonicalize_public_pedido_before_insert ON public.pedidos;
 DROP FUNCTION IF EXISTS public.canonicalize_public_pedido();
+
+-- El checkout V1 no debe quedar expuesto sin su canonicalizador.
+DROP FUNCTION IF EXISTS public.crear_pedido_publico(
+  TEXT, TEXT, TEXT, TEXT, NUMERIC, JSONB, UUID
+);
+DROP FUNCTION IF EXISTS public.crear_pedido_publico(
+  TEXT, TEXT, TEXT, TEXT, NUMERIC, JSONB
+);
 
 -- ── 2. Vista de facetas V1 ──────────────────────────────────────────────────
 DROP VIEW IF EXISTS public.catalogo_facetas_publicas;

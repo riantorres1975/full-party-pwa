@@ -7,6 +7,11 @@
 import { supabase as defaultClient } from '../../lib/supabase.js';
 import { adaptCartItemsForRpc } from './adapters.js';
 import { CATALOG_ERROR_TYPES, CatalogError, classifyCatalogError } from './errors.js';
+import {
+  adaptCancellationResult,
+  adaptFulfillmentItems,
+  adaptFulfillmentResult,
+} from './orderLifecycleModel.js';
 
 /**
  * Crea el pedido V2 en el servidor.
@@ -52,4 +57,40 @@ export async function createOrder(
     total: Number(data?.total) || 0,
     replay: data?.replay === true,
   };
+}
+
+export async function fulfillOrder(
+  orderId,
+  items,
+  { client = defaultClient, signal } = {},
+) {
+  let request = client.rpc('catalog_fulfill_order', {
+    p_order_id: orderId,
+    p_items: adaptFulfillmentItems(items),
+  });
+  if (signal && typeof request.abortSignal === 'function') {
+    request = request.abortSignal(signal);
+  }
+
+  const { data, error } = await request;
+  if (error) throw classifyCatalogError(error, 'No se pudo finalizar el surtido.');
+
+  return adaptFulfillmentResult(data);
+}
+
+export async function cancelOrderInventory(
+  orderId,
+  { client = defaultClient, signal } = {},
+) {
+  let request = client.rpc('catalog_cancel_order_inventory', {
+    p_order_id: orderId,
+  });
+  if (signal && typeof request.abortSignal === 'function') {
+    request = request.abortSignal(signal);
+  }
+
+  const { data, error } = await request;
+  if (error) throw classifyCatalogError(error, 'No se pudo cancelar el pedido.');
+
+  return adaptCancellationResult(data);
 }

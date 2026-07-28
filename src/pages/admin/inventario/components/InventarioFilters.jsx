@@ -1,6 +1,6 @@
 import { useLanguage } from '../../../../hooks/useLanguage';
 
-const FILTROS = ['todos', 'sinStock', 'bajo', 'ilimitado'];
+const FILTROS = ['todos', 'sinStock', 'bajo', 'ok'];
 
 export default function InventarioFilters({ active, onChange }) {
   const { t } = useLanguage();

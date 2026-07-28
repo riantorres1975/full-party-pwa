@@ -1,66 +1,13 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { buscarPedidoPublico, crearPedidoPublico } from '../lib/pedidosPublicos';
-import { obtenerPrecioAplicable } from '../utils/precios';
-import { clasificarErrorPedido } from '../utils/erroresPedido';
+import { buscarPedidoPublico } from '../lib/pedidosPublicos';
 
 /**
  * usePedido
- * Expone:
- *  - guardarPedido(payload) → Promise<{ folio, error }>
- *  - buscarPedido(query)    → Promise<{ pedidos[], error }>
- *  - guardando / buscando  → boolean para UI
+ * Busca pedidos por folio para la vista pública de rastreo.
  */
 export function usePedido() {
-  const [guardando, setGuardando] = useState(false);
   const [buscando,  setBuscando]  = useState(false);
-
-  /**
-   * Inserta el pedido en Supabase y devuelve el folio generado.
-   * payload: { nombre, telefono, tipoEntrega, direccion, total, items }
-   */
-  async function guardarPedido({ nombre, telefono, tipoEntrega, direccion, total, items, idempotencyKey }) {
-    setGuardando(true);
-    try {
-      const detalles = items.map(i => {
-        const precioBase = Number(i.precio_base ?? i.precio) || 0;
-        const precioAplicado = Number(i.precio) || obtenerPrecioAplicable({ ...i, precio: precioBase }, i.cantidad);
-        return {
-          id: i.id,
-          nombre: i.nombre,
-          precio: precioAplicado,
-          precio_base: precioBase,
-          cantidad: i.cantidad,
-          imagen_url: i.imagen_url ?? null,
-          tamano: i.tamano ?? null,
-          precios_mayoreo: i.precios_mayoreo ?? null,
-          familia_mayoreo: i.familia_mayoreo ?? null,
-        };
-      });
-
-      const pedido = await crearPedidoPublico(supabase, {
-        nombre,
-        telefono,
-        tipoEntrega,
-        direccion,
-        total,
-        detalles,
-        idempotencyKey,
-      });
-
-      // total: monto canónico del servidor (null si el RPC es la versión legacy).
-      return { folio: pedido.folio, total: pedido.total, replay: pedido.replay, error: null, tipo: null };
-    } catch (err) {
-      console.error('[usePedido] guardarPedido:', err.message);
-      return {
-        folio: null,
-        error: 'No se pudo registrar el pedido ni generar el folio.',
-        tipo: clasificarErrorPedido(err),
-      };
-    } finally {
-      setGuardando(false);
-    }
-  }
 
   /**
    * Busca pedidos por folio exacto.
@@ -84,5 +31,5 @@ export function usePedido() {
     }
   }
 
-  return { guardarPedido, buscarPedido, guardando, buscando };
+  return { buscarPedido, buscando };
 }

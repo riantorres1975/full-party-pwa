@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { guardedQuery } from '../lib/supabaseGuard';
 import { notificarCliente } from '../utils/whatsapp';
 import { fuzzySearch } from '../utils/fuzzySearch';
+import { cancelOrderInventory } from '../services/catalog/ordersRepository';
 
 const ESTADOS = ['Por Surtir', 'Armando Pedido', 'Listo para Entrega', 'Enviado'];
 const ESTADOS_CON_CANCELADO = [...ESTADOS, 'Cancelado'];
@@ -281,45 +282,46 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
     if (!ok) return;
 
     setActualizando(pedido.id);
+    try {
+      const esPedidoV2 = Array.isArray(pedido.detalles_json)
+        && pedido.detalles_json.length > 0
+        && pedido.detalles_json.every((item) => item.schema === 2 || item.variant_id);
+      let fechaCancelado = new Date().toISOString();
+      let detalles = pedido.detalles_json;
 
-    // Restaurar stock si ya descontó inventario
-    if (pedido.estado === 'Listo para Entrega') {
-      try {
-        const articulos = (pedido.detalles_json || []).filter(a => a.encontrado !== false && a.id);
-        await Promise.all(articulos.map(async (art) => {
-          const { data: prodData, error: errFetch } = await supabase
-            .from('productos').select('stock_actual, stock_ilimitado').eq('id', art.id).single();
-          if (errFetch || !prodData || prodData.stock_ilimitado !== false) return;
-          const nuevoStock = (Number(prodData.stock_actual) || 0) + Number(art.cantidad);
-          await supabase.from('productos').update({ stock_actual: nuevoStock, activo: true }).eq('id', art.id);
-        }));
-      } catch (err) {
-        console.warn('[Cancelar] Falla parcial al restaurar inventario', err);
+      if (esPedidoV2) {
+        const result = await cancelOrderInventory(pedido.id);
+        fechaCancelado = result.cancelledAt ?? fechaCancelado;
+        detalles = result.details;
+      } else {
+        const payloadBase = { estado: 'Cancelado', notificado_estado: null };
+        const payloadConFechas = { ...payloadBase, fecha_cancelado: fechaCancelado };
+        const { error } = await actualizarPedidoConFallbackHistorial(
+          pedido.id,
+          payloadConFechas,
+          payloadBase,
+        );
+        if (error) throw error;
       }
-    }
 
-    const fechaCancelado = new Date().toISOString();
-    const payloadBase = { estado: 'Cancelado', notificado_estado: null };
-    const payloadConFechas = { ...payloadBase, fecha_cancelado: fechaCancelado };
-
-    const { error: err } = await actualizarPedidoConFallbackHistorial(
-      pedido.id,
-      payloadConFechas,
-      payloadBase
-    );
-
-    if (err) {
-      toast.error('Error al cancelar: ' + err.message);
-    } else {
       setPedidos(prev => prev.map(p => p.id === pedido.id
-        ? { ...p, estado: 'Cancelado', notificado_estado: null, fecha_cancelado: fechaCancelado }
+        ? {
+            ...p,
+            estado: 'Cancelado',
+            detalles_json: detalles,
+            notificado_estado: null,
+            fecha_cancelado: fechaCancelado,
+          }
         : p));
       toast.success(`Pedido ${pedido.folio} cancelado`);
       notificarCliente({ ...pedido, estado: 'Cancelado' });
       await supabase.from('pedidos').update({ notificado_estado: 'Cancelado' }).eq('id', pedido.id);
       setPedidos(prev => prev.map(p => p.id === pedido.id ? { ...p, notificado_estado: 'Cancelado' } : p));
+    } catch (error) {
+      toast.error('Error al cancelar: ' + error.message);
+    } finally {
+      setActualizando(null);
     }
-    setActualizando(null);
   }, [toast, confirmCancelar]);
 
   // ── Notificar ──────────────────────────────────────────────────

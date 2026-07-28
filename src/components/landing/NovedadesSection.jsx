@@ -1,7 +1,6 @@
-import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, PackageCheck, Sparkles } from 'lucide-react';
-import { useProductos } from '../../hooks/useProductos';
+import { useCatalogCards } from '../../hooks/catalog/useCatalogCards';
 import { C } from '../../styles/tokens';
 import Reveal from './Reveal';
 import NovedadesCarrusel from './NovedadesCarrusel';
@@ -61,13 +60,10 @@ function NovedadesLoadingState() {
 }
 
 export default function NovedadesSection() {
-  const { productos, loading } = useProductos({ completeCatalog: false });
-  const novedades = useMemo(
-    () => productos.filter(p => p.es_nuevo === true && p.activo !== false).slice(0, 12),
-    [productos],
-  );
+  const { cards, loading } = useCatalogCards({ sort: 'featured' });
+  const novedades = cards.filter((card) => card.isNew).slice(0, 12);
 
-  if (loading && productos.length === 0) return <NovedadesLoadingState />;
+  if (loading && cards.length === 0) return <NovedadesLoadingState />;
   if (novedades.length === 0) return null;
 
   return (

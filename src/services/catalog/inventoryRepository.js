@@ -11,6 +11,7 @@
 
 import { supabase as defaultClient } from '../../lib/supabase.js';
 import { classifyCatalogError } from './errors.js';
+import { adaptAdminInventoryRow } from './inventoryModel.js';
 
 const subscriptionsByClient = new WeakMap();
 
@@ -77,7 +78,7 @@ export function subscribeToCatalogChanges(
 
 const INVENTORY_SELECT = `
   id, variant_id, sale_presentation_id, location_id,
-  quantity, reserved_quantity, updated_at,
+  quantity, reserved_quantity, low_stock_threshold, updated_at,
   location:catalog_locations(id, name, slug)
 `;
 
@@ -105,8 +106,63 @@ export async function listInventoryForVariant(variantId, { client = defaultClien
     quantity: Number(row.quantity) || 0,
     reservedQuantity: Number(row.reserved_quantity) || 0,
     availableQuantity: (Number(row.quantity) || 0) - (Number(row.reserved_quantity) || 0),
+    lowStockThreshold: Number(row.low_stock_threshold) || 0,
     updatedAt: row.updated_at ?? null,
   }));
+}
+
+const ADMIN_INVENTORY_SELECT = `
+  id, variant_id, sale_presentation_id, location_id,
+  quantity, reserved_quantity, low_stock_threshold, updated_at,
+  location:catalog_locations!catalog_inventory_location_id_fkey(id, name, slug),
+  presentation:catalog_sale_presentations!catalog_inventory_sale_presentation_id_fkey(
+    id, name, presentation_type, base_unit, base_units_total
+  ),
+  variant:catalog_variants!catalog_inventory_variant_id_fkey(
+    id, sku, image_url,
+    product:catalog_products!catalog_variants_product_id_fkey(
+      id, name, slug, main_image_url,
+      category:catalog_categories!catalog_products_category_id_fkey(id, name, slug),
+      brand:catalog_brands!catalog_products_brand_id_fkey(id, name, slug)
+    ),
+    line:catalog_product_lines!catalog_variants_line_id_fkey(id, name, slug),
+    color:catalog_colors!catalog_variants_color_id_fkey(id, exact_name, slug),
+    size:catalog_sizes!catalog_variants_size_id_fkey(id, name, unit)
+  )
+`;
+
+export async function listAdminInventory({ client = defaultClient, signal } = {}) {
+  let query = client
+    .from('catalog_inventory')
+    .select(ADMIN_INVENTORY_SELECT)
+    .order('updated_at', { ascending: false });
+
+  if (signal && typeof query.abortSignal === 'function') {
+    query = query.abortSignal(signal);
+  }
+
+  const { data, error } = await query;
+  if (error) throw classifyCatalogError(error, 'No se pudo cargar el inventario.');
+  return (Array.isArray(data) ? data : []).map(adaptAdminInventoryRow);
+}
+
+export async function updateAdminInventory(
+  inventoryId,
+  fields,
+  { client = defaultClient } = {},
+) {
+  const updates = {};
+  if (fields.quantity != null) updates.quantity = Math.max(0, Number(fields.quantity) || 0);
+  if (fields.lowStockThreshold != null) {
+    updates.low_stock_threshold = Math.max(0, Number(fields.lowStockThreshold) || 0);
+  }
+  if (Object.keys(updates).length === 0) return;
+
+  const { error } = await client
+    .from('catalog_inventory')
+    .update(updates)
+    .eq('id', inventoryId);
+  if (error) throw classifyCatalogError(error, 'No se pudo actualizar el inventario.');
 }
 
 /** Sucursales activas. Solo panel (el público no las necesita). */

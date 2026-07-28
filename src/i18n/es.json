@@ -792,6 +792,7 @@
   "inventario.filtro.todos": "Todos",
   "inventario.filtro.sinStock": "Sin stock",
   "inventario.filtro.bajo": "Stock bajo",
+  "inventario.filtro.ok": "Existencia correcta",
   "inventario.filtro.ilimitado": "Ilimitado",
   "inventario.col.producto": "Producto",
   "inventario.col.stockActual": "Stock actual",
