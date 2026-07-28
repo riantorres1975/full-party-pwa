@@ -65,3 +65,4 @@ La migracion `secure_admins_rls` cerro el pendiente independiente:
 - Revoca la ejecucion anonima de helpers internos de autenticacion y roles.
 - Restringe la consulta de correos existentes al rol `admin`.
 - Fija el `search_path` de las funciones incluidas en la migracion.
+- Cierra la ejecucion RPC de los helpers internos de folio y timestamps.
