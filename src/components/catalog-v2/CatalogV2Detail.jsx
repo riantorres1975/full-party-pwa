@@ -1,4 +1,13 @@
-import { Check, ChevronLeft, Heart, Minus, Plus, Share2, X } from 'lucide-react';
+import {
+  Check,
+  ChevronLeft,
+  Heart,
+  Minus,
+  PackageX,
+  Plus,
+  Share2,
+  X,
+} from 'lucide-react';
 
 import { usePresentationPricing } from '../../hooks/catalog/usePresentationPricing.js';
 import { useProductDetail } from '../../hooks/catalog/useProductDetail.js';
@@ -8,6 +17,7 @@ import {
   getPresentationDescription,
   resolveInitialLineId,
 } from '../../services/catalog/publicCatalogModel.js';
+import { getMaximumPurchasableQuantity } from '../../services/catalog/variantSelection.js';
 
 function money(value) {
   return new Intl.NumberFormat('es-MX', {
@@ -51,6 +61,7 @@ function OptionGroup({ label, state, onSelect, color = false }) {
 export default function CatalogV2Detail({
   slug,
   initialLineSlug,
+  cartItems = [],
   favorite,
   onToggleFavorite,
   onAddToCart,
@@ -62,22 +73,66 @@ export default function CatalogV2Detail({
     detail?.variants,
     initialLineId ? { lineId: initialLineId } : {},
   );
-  const price = usePresentationPricing(selection.presentation, selection.selection.quantity);
-
-  if (!slug) return null;
 
   const product = detail?.product;
   const variant = selection.variant;
   const presentation = selection.presentation;
+  const cartQuantity = Math.max(
+    0,
+    Number(cartItems.find(
+      (item) => item.variantId === variant?.id
+        && item.salePresentationId === presentation?.id,
+    )?.quantity) || 0,
+  );
+  const availableQuantity = presentation?.availableQuantity == null
+    ? null
+    : Math.max(0, Math.floor(Number(presentation.availableQuantity) || 0));
+  const remainingQuantity = availableQuantity == null
+    ? null
+    : Math.max(0, availableQuantity - cartQuantity);
+  const maximumQuantity = getMaximumPurchasableQuantity(
+    presentation,
+    remainingQuantity,
+  );
+  const pricingQuantity = maximumQuantity == null || maximumQuantity === 0
+    ? selection.selection.quantity
+    : Math.min(selection.selection.quantity, maximumQuantity);
+  const price = usePresentationPricing(presentation, pricingQuantity);
+
+  if (!slug) return null;
+
   const quantity = price.quantity;
   const quantityStep = Math.max(1, Number(presentation?.quantityStep) || 1);
+  const minimumQuantity = Math.max(
+    1,
+    Number(presentation?.minimumOrderQuantity) || 1,
+  );
   const image = variant?.image_url
     || product?.mainImageUrl
     || getInlineProductPlaceholder(product?.name || 'Producto');
+  const sourceOutOfStock = presentation?.inStock === false || availableQuantity === 0;
+  const cartUsesAllStock = availableQuantity != null
+    && availableQuantity > 0
+    && remainingQuantity === 0;
+  const stockBelowMinimum = maximumQuantity === 0
+    && !sourceOutOfStock
+    && !cartUsesAllStock;
+  const stockUnavailable = selection.complete
+    && (sourceOutOfStock || cartUsesAllStock || stockBelowMinimum);
+  const canIncreaseQuantity = !stockUnavailable
+    && (maximumQuantity == null || quantity + quantityStep <= maximumQuantity);
+  const canDecreaseQuantity = !stockUnavailable && quantity > minimumQuantity;
   const canAddToCart = selection.complete
     && Boolean(price.pricing)
     && !price.quantityError
-    && presentation?.inStock !== false;
+    && !stockUnavailable
+    && (remainingQuantity == null || quantity <= remainingQuantity);
+  const selectedOptionName = [
+    variant?.finish,
+    variant?.color_name,
+    variant?.size_name,
+    variant?.line_name,
+  ].find(Boolean);
   const finishValues = new Set(detail?.variants.map((item) => item.finish).filter(Boolean) ?? []);
   const matchingAttributeNames = detail?.attributes
     .filter((attribute) => finishValues.has(attribute.value))
@@ -212,12 +267,16 @@ export default function CatalogV2Detail({
                       <button
                         type="button"
                         key={item.id}
-                        className={item.id === selection.selection.presentationId ? 'is-selected' : ''}
+                        className={[
+                          item.id === selection.selection.presentationId ? 'is-selected' : '',
+                          item.inStock === false ? 'is-out-of-stock' : '',
+                        ].filter(Boolean).join(' ')}
                         onClick={() => selection.selectPresentation(item.id)}
                       >
                         <span>{item.name}</span>
                         <small>{getPresentationDescription(item)}</small>
                         <strong>{money(item.basePrice)}</strong>
+                        {item.inStock === false && <em>Sin existencia</em>}
                       </button>
                     ))}
                   </div>
@@ -231,6 +290,7 @@ export default function CatalogV2Detail({
                     <div className="catalog-v2-quantity">
                       <button
                         type="button"
+                        disabled={!canDecreaseQuantity}
                         onClick={() => selection.setQuantity(quantity - quantityStep)}
                         aria-label="Reducir cantidad"
                       >
@@ -239,12 +299,19 @@ export default function CatalogV2Detail({
                       <strong>{quantity}</strong>
                       <button
                         type="button"
+                        disabled={!canIncreaseQuantity}
                         onClick={() => selection.setQuantity(quantity + quantityStep)}
                         aria-label="Aumentar cantidad"
                       >
                         <Plus size={16} />
                       </button>
                     </div>
+                    {remainingQuantity != null && (
+                      <small className="catalog-v2-detail__stock-limit">
+                        Puedes agregar hasta {maximumQuantity ?? remainingQuantity}
+                        {cartQuantity > 0 && ` · ${cartQuantity} en tu pedido`}
+                      </small>
+                    )}
                   </div>
                   <div className="catalog-v2-detail__price-summary">
                     <span>Precio aplicado</span>
@@ -259,21 +326,55 @@ export default function CatalogV2Detail({
                 </div>
               )}
 
+              {stockUnavailable && (
+                <div
+                  id="catalog-v2-stock-message"
+                  className="catalog-v2-detail__stock-message"
+                  role="status"
+                >
+                  <PackageX size={21} aria-hidden="true" />
+                  <div>
+                    <strong>
+                      {sourceOutOfStock
+                        ? 'Esta opción está agotada'
+                        : cartUsesAllStock
+                          ? 'Ya agregaste toda la existencia'
+                          : 'No alcanza para la compra mínima'}
+                    </strong>
+                    <span>
+                      {cartUsesAllStock
+                        ? `Ya tienes ${cartQuantity} en tu pedido. Reduce esa cantidad para agregar más aquí.`
+                        : stockBelowMinimum
+                          ? `Quedan ${remainingQuantity} y la compra mínima es de ${minimumQuantity}.`
+                          : selectedOptionName
+                            ? `${selectedOptionName} no tiene existencia por el momento. Elige otra opción disponible.`
+                            : 'No hay existencia disponible por el momento. Elige otra opción disponible.'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <button
                 type="button"
-                className="catalog-v2-primary-button catalog-v2-detail__cart-button"
+                className={[
+                  'catalog-v2-primary-button',
+                  'catalog-v2-detail__cart-button',
+                  stockUnavailable ? 'is-out-of-stock' : '',
+                ].filter(Boolean).join(' ')}
                 disabled={!canAddToCart}
+                aria-describedby={stockUnavailable ? 'catalog-v2-stock-message' : undefined}
                 onClick={addToCart}
               >
                 {canAddToCart
                   ? `Agregar al pedido · ${money(price.pricing.subtotal)}`
-                  : 'Completa tus opciones'}
+                  : sourceOutOfStock
+                    ? 'Agotado'
+                    : cartUsesAllStock
+                      ? 'Máximo agregado'
+                      : stockBelowMinimum
+                        ? 'Existencia insuficiente'
+                    : 'Completa tus opciones'}
               </button>
-              {presentation?.inStock === false && (
-                <p className="catalog-v2-detail__phase-note">
-                  Esta presentación no tiene existencia disponible.
-                </p>
-              )}
 
               {presentation?.tiers?.length > 0 && (
                 <section className="catalog-v2-detail__tiers">

@@ -243,6 +243,36 @@ export function normalizeQuantity(presentation, quantity) {
   return Math.max(min, qty);
 }
 
+/** Mayor cantidad comprable respetando existencia, máximo comercial y paso. */
+export function getMaximumPurchasableQuantity(presentation, availableQuantity = null) {
+  if (!presentation) return 0;
+  const min = Math.max(
+    1,
+    Number(presentation.minimumOrderQuantity ?? presentation.minimum_order_quantity) || 1,
+  );
+  const step = Math.max(
+    1,
+    Number(presentation.quantityStep ?? presentation.quantity_step) || 1,
+  );
+  const rawMaximum = presentation.maximumOrderQuantity
+    ?? presentation.maximum_order_quantity;
+  const commercialMaximum = rawMaximum != null && Number.isFinite(Number(rawMaximum))
+    ? Math.max(0, Math.floor(Number(rawMaximum)))
+    : null;
+  const stockMaximum = availableQuantity != null && Number.isFinite(Number(availableQuantity))
+    ? Math.max(0, Math.floor(Number(availableQuantity)))
+    : null;
+  const limit = commercialMaximum == null
+    ? stockMaximum
+    : stockMaximum == null
+      ? commercialMaximum
+      : Math.min(commercialMaximum, stockMaximum);
+
+  if (limit == null) return null;
+  if (limit < min) return 0;
+  return min + Math.floor((limit - min) / step) * step;
+}
+
 /** Error de cantidad para mostrar en UI (mismo criterio que el servidor). */
 export function getQuantityError(presentation, quantity) {
   if (!presentation) return null;

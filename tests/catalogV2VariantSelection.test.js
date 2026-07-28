@@ -6,6 +6,7 @@ import {
   createInitialSelection,
   getCandidateVariants,
   getDimensionStates,
+  getMaximumPurchasableQuantity,
   getQuantityError,
   normalizeQuantity,
 } from '../src/services/catalog/variantSelection.js';
@@ -169,4 +170,20 @@ test('normaliza minimo, paso y maximo con presentaciones adaptadas o crudas', ()
   };
   assert.equal(normalizeQuantity(raw, 9), 9);
   assert.equal(getQuantityError(raw, 999), null);
+});
+
+test('limita la compra por existencia, maximo comercial e incremento', () => {
+  const presentation = {
+    minimumOrderQuantity: 2,
+    quantityStep: 3,
+    maximumOrderQuantity: null,
+  };
+
+  assert.equal(getMaximumPurchasableQuantity(presentation, 15), 14);
+  assert.equal(getMaximumPurchasableQuantity(presentation, 1), 0);
+  assert.equal(getMaximumPurchasableQuantity({
+    ...presentation,
+    maximumOrderQuantity: 8,
+  }, 15), 8);
+  assert.equal(getMaximumPurchasableQuantity(presentation, null), null);
 });

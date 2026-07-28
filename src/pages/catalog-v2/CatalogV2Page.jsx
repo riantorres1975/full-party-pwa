@@ -600,6 +600,7 @@ export default function CatalogV2Page() {
       <CatalogV2Detail
         slug={selectedProductSlug}
         initialLineSlug={selectedLineSlug}
+        cartItems={cart.items}
         favorite={selectedProductId ? isFavorite(selectedProductId) : false}
         onToggleFavorite={toggleFavorite}
         onAddToCart={addToCart}
