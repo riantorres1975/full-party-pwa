@@ -76,12 +76,25 @@ function asNumber(value, fallback = 0) {
   return Number.isFinite(number) ? number : fallback;
 }
 
+function asNullableNumber(value) {
+  return value == null || value === '' ? null : asNumber(value, null);
+}
+
+function compareLabels(left, right) {
+  return String(left ?? '').localeCompare(String(right ?? ''), 'es', { numeric: true });
+}
+
 export function adaptAdminProduct(raw) {
   const variants = asArray(raw?.variants).map((variant) => {
     const presentations = asArray(variant?.presentations).map((presentation) => ({
       ...presentation,
       base_price: asNumber(presentation?.base_price),
       base_units_total: asNumber(presentation?.base_units_total),
+      contained_quantity: asNullableNumber(presentation?.contained_quantity),
+      contains_quantity: asNullableNumber(presentation?.contains_quantity),
+      compare_at_price: asNullableNumber(presentation?.compare_at_price),
+      maximum_order_quantity: asNullableNumber(presentation?.maximum_order_quantity),
+      sort_order: asNumber(presentation?.sort_order),
       tiers: asArray(presentation?.tiers)
         .map((tier) => ({
           ...tier,
@@ -92,14 +105,23 @@ export function adaptAdminProduct(raw) {
           price_per_presentation: asNumber(tier?.price_per_presentation),
         }))
         .sort((a, b) => a.minimum_quantity - b.minimum_quantity),
-    }));
+    })).sort((a, b) =>
+      a.sort_order - b.sort_order || compareLabels(a.name, b.name));
     const inventory = asArray(variant?.inventory).map((row) => ({
       ...row,
       quantity: asNumber(row?.quantity),
       reserved_quantity: asNumber(row?.reserved_quantity),
       available_quantity: asNumber(row?.quantity) - asNumber(row?.reserved_quantity),
-    }));
+    })).sort((a, b) => compareLabels(a.location?.name, b.location?.name));
     return { ...variant, presentations, inventory };
+  }).sort((a, b) => {
+    const left = [a.line?.name, a.color?.exact_name, a.size?.name, a.finish]
+      .filter(Boolean)
+      .join(' ');
+    const right = [b.line?.name, b.color?.exact_name, b.size?.name, b.finish]
+      .filter(Boolean)
+      .join(' ');
+    return compareLabels(left || a.sku, right || b.sku);
   });
 
   const presentations = variants.flatMap((variant) => variant.presentations);

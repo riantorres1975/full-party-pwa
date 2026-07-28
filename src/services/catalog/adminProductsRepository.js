@@ -32,7 +32,7 @@ const ADMIN_PRODUCT_SELECT = `
       )
     ),
     inventory:catalog_inventory(
-      id, sale_presentation_id, location_id, quantity,
+      id, variant_id, sale_presentation_id, location_id, quantity,
       reserved_quantity, updated_at,
       location:catalog_locations(id, name, slug)
     )

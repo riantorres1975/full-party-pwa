@@ -34,9 +34,25 @@ test.describe('authenticated admin V2 regressions', () => {
     const firstEditorButton = main.getByRole('button', { name: 'Abrir editor' }).first();
     await expect(firstEditorButton).toBeVisible();
     await firstEditorButton.click();
-    await expect(page.getByRole('dialog')).toBeVisible();
+    const productEditor = page.getByRole('dialog').filter({ has: page.getByRole('button', { name: 'Cerrar editor' }) });
+    await expect(productEditor).toBeVisible();
+
+    await productEditor.getByRole('button', { name: 'Variantes' }).click();
+    await expect(productEditor.getByRole('button', { name: 'Agregar variante' })).toBeVisible();
+    await productEditor.getByRole('button', { name: 'Agregar variante' }).click();
+    const variantForm = page.getByRole('dialog', { name: 'Nueva variante' });
+    await expect(variantForm).toBeVisible();
+    await variantForm.getByRole('button', { name: 'Cerrar formulario' }).click();
+    await expect(variantForm).toBeHidden();
+
+    await productEditor.getByRole('button', { name: 'Precios' }).click();
+    await expect(productEditor.getByText('Precios por cantidad').first()).toBeVisible();
+
+    await productEditor.getByRole('button', { name: 'Inventario' }).click();
+    await expect(productEditor.getByRole('button', { name: 'Agregar existencia' })).toBeVisible();
+
     await page.getByRole('button', { name: 'Cerrar editor' }).click();
-    await expect(page.getByRole('dialog')).toBeHidden();
+    await expect(productEditor).toBeHidden();
 
     await main.getByRole('button', { name: 'Datos base' }).click();
     await expect(page).toHaveURL(/vista=base/);

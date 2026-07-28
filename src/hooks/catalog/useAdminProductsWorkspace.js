@@ -1,17 +1,35 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   deleteAdminProduct,
+  getAdminProductById,
   listAdminProducts,
   saveAdminProduct,
 } from '../../services/catalog/adminProductsRepository.js';
 import { listAdminCatalogResource } from '../../services/catalog/adminCatalogRepository.js';
+import {
+  deleteAdminInventory,
+  deleteAdminPresentation,
+  deleteAdminPriceTier,
+  deleteAdminVariant,
+  saveAdminInventory,
+  saveAdminPresentation,
+  saveAdminPriceTier,
+  saveAdminVariant,
+} from '../../services/catalog/adminCommercialRepository.js';
 
 const PAGE_SIZE = 18;
 
 export function useAdminProductsWorkspace(search = '') {
   const [products, setProducts] = useState([]);
   const [total, setTotal] = useState(0);
-  const [lookups, setLookups] = useState({ categories: [], brands: [] });
+  const [lookups, setLookups] = useState({
+    categories: [],
+    brands: [],
+    lines: [],
+    colors: [],
+    sizes: [],
+    locations: [],
+  });
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -28,18 +46,22 @@ export function useAdminProductsWorkspace(search = '') {
       setLoading(true);
       setError(null);
       try {
-        const [page, categories, brands] = await Promise.all([
+        const [page, categories, brands, lines, colors, sizes, locations] = await Promise.all([
           listAdminProducts(
             { offset: 0, limit: PAGE_SIZE, search },
             { signal: controller.signal },
           ),
           listAdminCatalogResource('categories', { signal: controller.signal }),
           listAdminCatalogResource('brands', { signal: controller.signal }),
+          listAdminCatalogResource('lines', { signal: controller.signal }),
+          listAdminCatalogResource('colors', { signal: controller.signal }),
+          listAdminCatalogResource('sizes', { signal: controller.signal }),
+          listAdminCatalogResource('locations', { signal: controller.signal }),
         ]);
         if (cancelled) return;
         setProducts(page.products);
         setTotal(page.total);
-        setLookups({ categories, brands });
+        setLookups({ categories, brands, lines, colors, sizes, locations });
       } catch (loadError) {
         if (!cancelled && loadError?.name !== 'AbortError') setError(loadError);
       } finally {
@@ -98,6 +120,55 @@ export function useAdminProductsWorkspace(search = '') {
     }
   }, []);
 
+  const mutateCommercial = useCallback(async (productId, operation) => {
+    setSaving(true);
+    try {
+      await operation();
+      const refreshed = await getAdminProductById(productId);
+      setProducts((current) => current.map(
+        (product) => (product.id === productId ? refreshed : product),
+      ));
+      return refreshed;
+    } finally {
+      setSaving(false);
+    }
+  }, []);
+
+  const commercial = {
+    saveVariant: (productId, input, id = null) => mutateCommercial(
+      productId,
+      () => saveAdminVariant(productId, input, { id }),
+    ),
+    deleteVariant: (productId, id) => mutateCommercial(
+      productId,
+      () => deleteAdminVariant(id),
+    ),
+    savePresentation: (productId, variantId, input, id = null) => mutateCommercial(
+      productId,
+      () => saveAdminPresentation(variantId, input, { id }),
+    ),
+    deletePresentation: (productId, id) => mutateCommercial(
+      productId,
+      () => deleteAdminPresentation(id),
+    ),
+    savePriceTier: (productId, presentationId, input, id = null) => mutateCommercial(
+      productId,
+      () => saveAdminPriceTier(presentationId, input, { id }),
+    ),
+    deletePriceTier: (productId, id) => mutateCommercial(
+      productId,
+      () => deleteAdminPriceTier(id),
+    ),
+    saveInventory: (productId, input, id = null) => mutateCommercial(
+      productId,
+      () => saveAdminInventory(input, { id }),
+    ),
+    deleteInventory: (productId, id) => mutateCommercial(
+      productId,
+      () => deleteAdminInventory(id),
+    ),
+  };
+
   return {
     products,
     total,
@@ -110,5 +181,6 @@ export function useAdminProductsWorkspace(search = '') {
     saveProduct,
     removeProduct,
     loadMore,
+    commercial,
   };
 }

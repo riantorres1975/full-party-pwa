@@ -16,6 +16,11 @@ import {
   validateAdminProductPayload,
 } from '../../../services/catalog/adminProductModel.js';
 import { slugifyCatalogValue } from '../../../services/catalog/adminCatalogModel.js';
+import {
+  InventoryStep,
+  PricingStep,
+  VariantsStep,
+} from './ProductCommercialSections.jsx';
 
 const STEPS = [
   { id: 'general', label: 'Informacion', icon: PackageOpen },
@@ -54,142 +59,14 @@ function RelationSelect({ label, value, options, error, required, onChange }) {
   );
 }
 
-function VariantLabel({ variant }) {
-  return (
-    <div className="min-w-0">
-      <p className="truncate text-sm font-black text-admin-text">
-        {[variant.line?.name, variant.color?.exact_name, variant.size?.name]
-          .filter(Boolean)
-          .join(' · ') || 'Variante simple'}
-      </p>
-      <p className="mt-0.5 truncate text-[10px] text-admin-muted">
-        {variant.sku || 'Sin SKU'} · {variant.inventory_policy === 'separate_by_presentation'
-          ? 'Inventario por presentacion'
-          : 'Unidades base compartidas'}
-      </p>
-    </div>
-  );
-}
-
-function VariantsStep({ product }) {
-  if (!product?.variants?.length) {
-    return <EmptyStep text="Guarda el producto y agrega sus combinaciones reales en el siguiente bloque." />;
-  }
-  return (
-    <div className="space-y-3">
-      {product.variants.map((variant) => (
-        <article key={variant.id} className="rounded-2xl border border-admin-border bg-admin-bg/55 p-4">
-          <div className="flex items-center justify-between gap-3">
-            <VariantLabel variant={variant} />
-            <span className={`rounded-full px-2 py-1 text-[10px] font-black ${
-              variant.active === false
-                ? 'bg-admin-elevated text-admin-inactive'
-                : 'bg-emerald-500/10 text-emerald-600'
-            }`}>
-              {variant.active === false ? 'Oculta' : 'Activa'}
-            </span>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <div className="rounded-xl bg-admin-card p-3">
-              <p className="text-[10px] uppercase tracking-wide text-admin-muted">Presentaciones</p>
-              <p className="mt-1 text-lg font-black text-admin-text">{variant.presentations.length}</p>
-            </div>
-            <div className="rounded-xl bg-admin-card p-3">
-              <p className="text-[10px] uppercase tracking-wide text-admin-muted">Disponible</p>
-              <p className="mt-1 text-lg font-black text-admin-text">
-                {variant.inventory.reduce((sum, row) => sum + row.available_quantity, 0)}
-              </p>
-            </div>
-          </div>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function CommercialStep({ product }) {
-  const presentations = product?.variants?.flatMap((variant) =>
-    variant.presentations.map((presentation) => ({ variant, presentation }))) ?? [];
-  if (!presentations.length) return <EmptyStep text="Este producto aun no tiene presentaciones de venta." />;
-
-  return (
-    <div className="space-y-3">
-      {presentations.map(({ variant, presentation }) => (
-        <article key={presentation.id} className="rounded-2xl border border-admin-border bg-admin-bg/55 p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-black text-admin-text">{presentation.name}</p>
-              <p className="mt-0.5 text-[10px] text-admin-muted">
-                {presentation.base_units_total} {presentation.base_unit} · {variant.sku || 'Sin SKU'}
-              </p>
-            </div>
-            <p className="text-lg font-black text-fiesta-magenta">
-              ${presentation.base_price.toFixed(2)}
-            </p>
-          </div>
-          {presentation.tiers.length > 0 && (
-            <div className="mt-3 overflow-hidden rounded-xl border border-admin-border bg-admin-card">
-              {presentation.tiers.map((tier) => (
-                <div key={tier.id} className="flex items-center justify-between border-b border-admin-border px-3 py-2 text-xs last:border-0">
-                  <span className="text-admin-muted">
-                    Desde {tier.minimum_quantity}{tier.maximum_quantity ? ` hasta ${tier.maximum_quantity}` : ''}
-                  </span>
-                  <span className="font-black text-admin-text">${tier.price_per_presentation.toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function InventoryStep({ product }) {
-  const rows = product?.variants?.flatMap((variant) =>
-    variant.inventory.map((inventory) => ({ variant, inventory }))) ?? [];
-  if (!rows.length) return <EmptyStep text="No hay existencias capturadas para este producto." />;
-  return (
-    <div className="space-y-2">
-      {rows.map(({ variant, inventory }) => (
-        <article key={inventory.id} className="grid grid-cols-[minmax(0,1fr)_70px_70px] items-center gap-3 rounded-xl border border-admin-border bg-admin-bg/55 p-3">
-          <div className="min-w-0">
-            <p className="truncate text-xs font-black text-admin-text">
-              {inventory.location?.name || 'Sucursal'}
-            </p>
-            <p className="truncate text-[10px] text-admin-muted">
-              {variant.sku || variant.color?.exact_name || 'Variante'}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-[9px] uppercase text-admin-muted">Total</p>
-            <p className="text-sm font-black text-admin-text">{inventory.quantity}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[9px] uppercase text-admin-muted">Disponible</p>
-            <p className="text-sm font-black text-emerald-600">{inventory.available_quantity}</p>
-          </div>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function EmptyStep({ text }) {
-  return (
-    <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-admin-border bg-admin-bg/40 px-6 text-center">
-      <PackageOpen size={28} className="text-admin-inactive" />
-      <p className="mt-3 max-w-sm text-sm font-bold text-admin-muted">{text}</p>
-    </div>
-  );
-}
-
 export default function ProductEditorDrawer({
   product,
   lookups,
   saving,
   canEdit,
+  canDelete,
   onSave,
+  commercialActions,
   onClose,
 }) {
   const [step, setStep] = useState('general');
@@ -203,7 +80,7 @@ export default function ProductEditorDrawer({
     setErrors({});
     setStep('general');
     setSlugTouched(Boolean(product?.slug));
-  }, [product]);
+  }, [product?.id]);
 
   const update = (name, value) => {
     setDraft((current) => {
@@ -215,8 +92,7 @@ export default function ProductEditorDrawer({
     setErrors((current) => ({ ...current, [name]: undefined }));
   };
 
-  const submit = async (event) => {
-    event.preventDefault();
+  const submit = async () => {
     const result = validateAdminProductPayload(draft);
     if (!result.valid) {
       setErrors(result.errors);
@@ -230,7 +106,7 @@ export default function ProductEditorDrawer({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-[#120720]/55 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-labelledby="product-editor-title">
-      <form onSubmit={submit} className="flex h-full w-full max-w-4xl flex-col border-l border-admin-border bg-admin-card shadow-2xl">
+      <div className="flex h-full w-full max-w-4xl flex-col border-l border-admin-border bg-admin-card shadow-2xl">
         <header className="border-b border-admin-border px-5 py-4 sm:px-7">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
@@ -335,18 +211,24 @@ export default function ProductEditorDrawer({
               </aside>
             </div>
           )}
-          {step === 'variants' && <VariantsStep product={product} />}
-          {step === 'commercial' && <CommercialStep product={product} />}
-          {step === 'inventory' && <InventoryStep product={product} />}
+          {step === 'variants' && (
+            <VariantsStep product={product} lookups={lookups} saving={saving} canEdit={canEdit} canDelete={canDelete} actions={commercialActions} />
+          )}
+          {step === 'commercial' && (
+            <PricingStep product={product} saving={saving} canEdit={canEdit} canDelete={canDelete} actions={commercialActions} />
+          )}
+          {step === 'inventory' && (
+            <InventoryStep product={product} lookups={lookups} saving={saving} canEdit={canEdit} canDelete={canDelete} actions={commercialActions} />
+          )}
         </div>
 
         <footer className="flex items-center justify-between gap-3 border-t border-admin-border bg-admin-bg/70 px-5 py-4 sm:px-7">
           <p className="hidden text-[11px] text-admin-muted sm:block">Los precios e inventario se administran por variante y presentacion.</p>
-          <button type="submit" disabled={!canEdit || saving || step !== 'general'} className="ml-auto inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-violet-600 px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-pink-500/20 disabled:cursor-not-allowed disabled:opacity-40">
+          <button type="button" onClick={submit} disabled={!canEdit || saving || step !== 'general'} className="ml-auto inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-violet-600 px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-pink-500/20 disabled:cursor-not-allowed disabled:opacity-40">
             <Save size={16} /> {saving ? 'Guardando...' : 'Guardar producto'}
           </button>
         </footer>
-      </form>
+      </div>
     </div>
   );
 }

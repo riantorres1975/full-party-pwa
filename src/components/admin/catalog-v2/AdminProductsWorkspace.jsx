@@ -62,6 +62,18 @@ export default function AdminProductsWorkspace() {
     }
   };
 
+  const mutateCommercial = async (operation, successMessage) => {
+    try {
+      const refreshed = await operation();
+      setSelectedProduct(refreshed);
+      toast.success(successMessage);
+      return refreshed;
+    } catch (error) {
+      toast.error(error.message || 'No se pudo guardar el cambio comercial.');
+      throw error;
+    }
+  };
+
   const removeProduct = async (product) => {
     if (!window.confirm(`Eliminar "${product.name}" y todos sus datos comerciales?`)) return;
     try {
@@ -168,7 +180,59 @@ export default function AdminProductsWorkspace() {
       )}
 
       {editorOpen && (
-        <ProductEditorDrawer product={selectedProduct} lookups={workspace.lookups} saving={workspace.saving} canEdit={canEdit} onSave={saveProduct} onClose={() => { setEditorOpen(false); setSelectedProduct(null); }} />
+        <ProductEditorDrawer
+          product={selectedProduct}
+          lookups={workspace.lookups}
+          saving={workspace.saving}
+          canEdit={canEdit}
+          canDelete={canDelete}
+          onSave={saveProduct}
+          commercialActions={{
+            saveVariant: (input, id) => mutateCommercial(
+              () => workspace.commercial.saveVariant(selectedProduct.id, input, id),
+              'Variante guardada.',
+            ),
+            deleteVariant: (id) => mutateCommercial(
+              () => workspace.commercial.deleteVariant(selectedProduct.id, id),
+              'Variante eliminada.',
+            ),
+            savePresentation: (variantId, input, id) => mutateCommercial(
+              () => workspace.commercial.savePresentation(
+                selectedProduct.id,
+                variantId,
+                input,
+                id,
+              ),
+              'Presentacion guardada.',
+            ),
+            deletePresentation: (id) => mutateCommercial(
+              () => workspace.commercial.deletePresentation(selectedProduct.id, id),
+              'Presentacion eliminada.',
+            ),
+            savePriceTier: (presentationId, input, id) => mutateCommercial(
+              () => workspace.commercial.savePriceTier(
+                selectedProduct.id,
+                presentationId,
+                input,
+                id,
+              ),
+              'Escalon de precio guardado.',
+            ),
+            deletePriceTier: (id) => mutateCommercial(
+              () => workspace.commercial.deletePriceTier(selectedProduct.id, id),
+              'Escalon de precio eliminado.',
+            ),
+            saveInventory: (input, id) => mutateCommercial(
+              () => workspace.commercial.saveInventory(selectedProduct.id, input, id),
+              'Inventario guardado.',
+            ),
+            deleteInventory: (id) => mutateCommercial(
+              () => workspace.commercial.deleteInventory(selectedProduct.id, id),
+              'Inventario eliminado.',
+            ),
+          }}
+          onClose={() => { setEditorOpen(false); setSelectedProduct(null); }}
+        />
       )}
     </div>
   );

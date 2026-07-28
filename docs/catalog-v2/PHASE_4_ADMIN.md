@@ -75,8 +75,22 @@ La segunda entrega incorpora:
 
 Siguiente bloque:
 
-1. CRUD de variantes y presentaciones dentro del editor.
-2. Edicion de escalones de precio.
-3. Captura de inventario por sucursal.
-4. Generador masivo de combinaciones.
-5. Importacion CSV y edicion masiva.
+La tercera entrega incorpora:
+
+- CRUD de variantes con gama, color, medida, acabado, SKU e imagen.
+- Politica de inventario compartido o separado por presentacion.
+- CRUD de presentaciones directas y compuestas.
+- Calculo asistido de unidades base para cajas y paquetes.
+- Edicion de precio normal, limites de compra y orden comercial.
+- CRUD de escalones de mayoreo con deteccion local de rangos superpuestos.
+- Captura de existencia y reserva por sucursal.
+- Permisos alineados con RLS: `admin` y `manager` escriben; solo `admin`
+  elimina.
+- Recarga puntual del producto editado despues de cada mutacion.
+
+Siguiente bloque:
+
+1. Generador masivo de combinaciones.
+2. Copia y edicion de configuracion por lotes.
+3. Importacion y exportacion CSV.
+4. Edicion masiva.
