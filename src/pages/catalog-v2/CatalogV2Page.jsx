@@ -248,7 +248,11 @@ export default function CatalogV2Page() {
       toast.warning(result.message);
       return;
     }
-    toast.success(`${result.item.productName} se agregó a tu pedido.`);
+    toast.success(result.item.productName, {
+      title: 'Agregado a tu pedido',
+      actionLabel: 'Ver mi pedido',
+      onAction: () => setCartOpen(true),
+    });
   };
 
   return (

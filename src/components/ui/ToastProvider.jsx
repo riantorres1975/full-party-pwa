@@ -11,42 +11,93 @@ const ICONS = {
 };
 
 const COLORS = {
-  success: { bg: 'bg-green-100 dark:bg-green-900/80', border: 'border-green-300 dark:border-green-700', icon: 'text-green-700 dark:text-green-300', text: 'text-green-900 dark:text-green-100', close: 'text-green-800/70 hover:text-green-900 dark:text-green-100/70 dark:hover:text-green-100', bar: 'bg-green-600' },
-  error:   { bg: 'bg-red-100 dark:bg-red-900/80', border: 'border-red-300 dark:border-red-700', icon: 'text-red-700 dark:text-red-300', text: 'text-red-900 dark:text-red-100', close: 'text-red-800/70 hover:text-red-900 dark:text-red-100/70 dark:hover:text-red-100', bar: 'bg-red-600' },
-  info:    { bg: 'bg-blue-100 dark:bg-blue-900/80', border: 'border-blue-300 dark:border-blue-700', icon: 'text-blue-700 dark:text-blue-300', text: 'text-blue-900 dark:text-blue-100', close: 'text-blue-800/70 hover:text-blue-900 dark:text-blue-100/70 dark:hover:text-blue-100', bar: 'bg-blue-600' },
-  warning: { bg: 'bg-amber-100 dark:bg-amber-900/80', border: 'border-amber-300 dark:border-amber-700', icon: 'text-amber-700 dark:text-amber-300', text: 'text-amber-900 dark:text-amber-100', close: 'text-amber-800/70 hover:text-amber-900 dark:text-amber-100/70 dark:hover:text-amber-100', bar: 'bg-amber-600' },
+  success: {
+    border: 'border-emerald-200',
+    icon: 'bg-emerald-50 text-emerald-600',
+    action: 'text-emerald-700 hover:bg-emerald-50',
+    bar: 'bg-emerald-500',
+  },
+  error: {
+    border: 'border-red-200',
+    icon: 'bg-red-50 text-red-600',
+    action: 'text-red-700 hover:bg-red-50',
+    bar: 'bg-red-500',
+  },
+  info: {
+    border: 'border-blue-200',
+    icon: 'bg-blue-50 text-blue-600',
+    action: 'text-blue-700 hover:bg-blue-50',
+    bar: 'bg-blue-500',
+  },
+  warning: {
+    border: 'border-amber-200',
+    icon: 'bg-amber-50 text-amber-600',
+    action: 'text-amber-700 hover:bg-amber-50',
+    bar: 'bg-amber-500',
+  },
 };
 
 const MAX_TOASTS = 3;
 const AUTO_DISMISS_MS = 4000;
+const ACTION_TOAST_DISMISS_MS = 6000;
 
 function Toast({ toast, onDismiss }) {
-  const { type = 'info', message } = toast;
+  const {
+    type = 'info',
+    title,
+    message,
+    actionLabel,
+    onAction,
+    duration = AUTO_DISMISS_MS,
+  } = toast;
   const c = COLORS[type] || COLORS.info;
   const Icon = ICONS[type] || Info;
+
+  const handleAction = () => {
+    onAction?.();
+    onDismiss(toast.id);
+  };
 
   return (
     <div
       role="alert"
-      className={`relative pointer-events-auto flex items-start gap-3 w-full max-w-sm border rounded-xl p-4 shadow-lg
-                  ${c.bg} ${c.border}
+      className={`relative pointer-events-auto flex items-start gap-3 w-full max-w-sm overflow-hidden border rounded-2xl bg-white/95 p-3.5 pr-10
+                  shadow-[0_18px_55px_rgba(20,16,45,0.18)] backdrop-blur-xl ${c.border}
                   animate-[slideUpToast_300ms_ease-out] data-[removing=true]:animate-[toastOut_200ms_ease-in_forwards]`}
       data-removing={toast._removing || undefined}
     >
-      <Icon className={`w-5 h-5 flex-shrink-0 mt-0.5 ${c.icon}`} />
-      <p className={`flex-1 text-sm font-semibold leading-snug ${c.text}`}>{message}</p>
+      <span className={`grid h-9 w-9 flex-shrink-0 place-items-center rounded-xl ${c.icon}`}>
+        <Icon className="h-5 w-5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        {title && (
+          <p className="text-sm font-black leading-tight text-slate-900">{title}</p>
+        )}
+        <p className={`${title ? 'mt-0.5 text-xs text-slate-600' : 'text-sm font-semibold text-slate-800'} line-clamp-2 leading-snug`}>
+          {message}
+        </p>
+        {actionLabel && onAction && (
+          <button
+            type="button"
+            onClick={handleAction}
+            className={`mt-2 rounded-lg px-2.5 py-1.5 text-xs font-black transition-colors ${c.action}`}
+          >
+            {actionLabel}
+          </button>
+        )}
+      </div>
       <button
+        type="button"
         onClick={() => onDismiss(toast.id)}
-        className={`flex-shrink-0 p-0.5 rounded-lg hover:bg-black/10 transition-colors ${c.close}`}
+        className="absolute right-3 top-3 rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
         aria-label="Cerrar"
       >
         <X className="w-4 h-4" />
       </button>
-      {/* Progress bar */}
-      <div className="absolute bottom-0 left-4 right-4 h-0.5 rounded-full overflow-hidden bg-black/5">
+      <div className="absolute bottom-0 left-0 right-0 h-0.5 overflow-hidden bg-slate-100">
         <div
           className={`h-full ${c.bar} rounded-full`}
-          style={{ animation: `linear ${AUTO_DISMISS_MS}ms forwards`, animationName: 'shrinkWidth' }}
+          style={{ animation: `linear ${duration}ms forwards`, animationName: 'shrinkWidth' }}
         />
       </div>
     </div>
@@ -66,20 +117,22 @@ export function ToastProvider({ children }) {
     delete timersRef.current[id];
   }, []);
 
-  const toast = useCallback(({ type = 'info', message }) => {
+  const toast = useCallback(({ type = 'info', message, ...options }) => {
     const id = ++toastId;
+    const duration = options.duration
+      ?? (options.actionLabel ? ACTION_TOAST_DISMISS_MS : AUTO_DISMISS_MS);
     setToasts(prev => {
-      const next = [...prev, { id, type, message }];
+      const next = [...prev, { id, type, message, ...options, duration }];
       return next.length > MAX_TOASTS ? next.slice(-MAX_TOASTS) : next;
     });
-    timersRef.current[id] = setTimeout(() => dismiss(id), AUTO_DISMISS_MS);
+    timersRef.current[id] = setTimeout(() => dismiss(id), duration);
     return id;
   }, [dismiss]);
 
-  const success = useCallback((message) => toast({ type: 'success', message }), [toast]);
-  const error = useCallback((message) => toast({ type: 'error', message }), [toast]);
-  const info = useCallback((message) => toast({ type: 'info', message }), [toast]);
-  const warning = useCallback((message) => toast({ type: 'warning', message }), [toast]);
+  const success = useCallback((message, options = {}) => toast({ type: 'success', message, ...options }), [toast]);
+  const error = useCallback((message, options = {}) => toast({ type: 'error', message, ...options }), [toast]);
+  const info = useCallback((message, options = {}) => toast({ type: 'info', message, ...options }), [toast]);
+  const warning = useCallback((message, options = {}) => toast({ type: 'warning', message, ...options }), [toast]);
 
   return (
     <ToastContext.Provider value={{ toast, success, error, info, warning, dismiss }}>
@@ -87,7 +140,7 @@ export function ToastProvider({ children }) {
       {/* Toast container */}
       <div
         aria-live="polite"
-        className="fixed z-[9999] bottom-4 left-1/2 -translate-x-1/2 lg:left-auto lg:translate-x-0 lg:right-4 lg:bottom-4 flex flex-col gap-2 items-center lg:items-end pointer-events-none w-full max-w-sm px-4 lg:px-0"
+        className="fixed z-[9999] bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] left-1/2 flex w-full max-w-sm -translate-x-1/2 flex-col items-center gap-2 px-3 pointer-events-none lg:bottom-4 lg:left-auto lg:right-4 lg:translate-x-0 lg:items-end lg:px-0"
       >
         {toasts.map(t => (
           <Toast key={t.id} toast={t} onDismiss={dismiss} />
