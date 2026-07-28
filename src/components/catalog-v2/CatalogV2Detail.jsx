@@ -53,6 +53,7 @@ export default function CatalogV2Detail({
   initialLineSlug,
   favorite,
   onToggleFavorite,
+  onAddToCart,
   onClose,
 }) {
   const { detail, loading, error, refresh } = useProductDetail(slug);
@@ -73,6 +74,20 @@ export default function CatalogV2Detail({
   const image = variant?.image_url
     || product?.mainImageUrl
     || getInlineProductPlaceholder(product?.name || 'Producto');
+  const canAddToCart = selection.complete
+    && Boolean(price.pricing)
+    && !price.quantityError
+    && presentation?.inStock !== false;
+
+  const addToCart = () => {
+    if (!canAddToCart) return;
+    onAddToCart({
+      product,
+      variant,
+      presentation,
+      quantity,
+    });
+  };
 
   return (
     <div className="catalog-v2-detail" role="dialog" aria-modal="true" aria-label={product?.name || 'Detalle del producto'}>
@@ -208,15 +223,18 @@ export default function CatalogV2Detail({
               <button
                 type="button"
                 className="catalog-v2-primary-button catalog-v2-detail__cart-button"
-                disabled
+                disabled={!canAddToCart}
+                onClick={addToCart}
               >
-                {selection.complete && price.pricing
-                  ? `Carrito V2 · ${money(price.pricing.subtotal)}`
+                {canAddToCart
+                  ? `Agregar al pedido · ${money(price.pricing.subtotal)}`
                   : 'Completa tus opciones'}
               </button>
-              <p className="catalog-v2-detail__phase-note">
-                La selección y el precio ya usan el catálogo V2. El carrito transaccional se conecta en la siguiente fase.
-              </p>
+              {presentation?.inStock === false && (
+                <p className="catalog-v2-detail__phase-note">
+                  Esta presentación no tiene existencia disponible.
+                </p>
+              )}
 
               {presentation?.tiers?.length > 0 && (
                 <section className="catalog-v2-detail__tiers">

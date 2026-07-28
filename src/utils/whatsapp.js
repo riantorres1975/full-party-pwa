@@ -83,6 +83,58 @@ export function generarMensajeWhatsApp(items, total, entrega) {
   return `https://api.whatsapp.com/send?${params.toString()}`;
 }
 
+export function generarMensajeWhatsAppCatalogoV2(items, total, entrega) {
+  if (!NUMERO_WHATSAPP || !/^\d{10,15}$/.test(NUMERO_WHATSAPP)) {
+    throw new Error('NUMERO_WHATSAPP no está configurado o es inválido.');
+  }
+
+  const lines = Array.isArray(items) ? items : [];
+  const money = (value) => `${SIMBOLO_MONEDA}${(Number(value) || 0).toFixed(2)}`;
+  const fecha = new Date().toLocaleDateString('es-MX', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+  const delivery = entrega.tipo === 'envio'
+    ? `Envío a domicilio\nDirección: ${entrega.direccion}`
+    : 'Recoger en tienda';
+
+  let mensaje = `*Nuevo pedido - ${NOMBRE_NEGOCIO}*\n`;
+  mensaje += `Fecha: ${fecha}\n`;
+  mensaje += `Folio: *${entrega.folio}*\n`;
+  mensaje += `Rastreo: ${construirUrlRastreo(entrega.folio)}\n\n`;
+  mensaje += `*Cliente:* ${entrega.nombre}\n`;
+  mensaje += `*Teléfono:* ${entrega.telefono}\n`;
+  mensaje += `*Entrega:* ${delivery}\n\n`;
+  mensaje += '*Productos*\n\n';
+
+  lines.forEach((item, index) => {
+    mensaje += `${index + 1}. *${item.nombre || 'Producto'}*\n`;
+    if (item.marca) mensaje += `   Marca: ${item.marca}\n`;
+    if (item.gama) mensaje += `   Gama: ${item.gama}\n`;
+    if (item.color) mensaje += `   Color: ${item.color}\n`;
+    if (item.medida) mensaje += `   Medida: ${item.medida}\n`;
+    mensaje += `   Presentación: ${item.presentacion || 'Presentación'}\n`;
+    mensaje += `   Cantidad: ${item.cantidad}\n`;
+    mensaje += `   Precio aplicado: ${money(item.precio)} por presentación\n`;
+    if (item.nivel_precio) {
+      mensaje += `   Nivel de precio: ${item.nivel_precio}\n`;
+    }
+    mensaje += `   Contenido total: ${item.contenido_total} ${item.unidad_base || 'unidades'}\n`;
+    if (item.sku) mensaje += `   SKU: ${item.sku}\n`;
+    mensaje += `   Subtotal: ${money(item.subtotal)}\n\n`;
+  });
+
+  mensaje += `*TOTAL: ${money(total)}*\n\n`;
+  mensaje += 'La existencia y el precio serán confirmados por la sucursal al preparar el pedido.';
+
+  const params = new URLSearchParams({
+    phone: NUMERO_WHATSAPP,
+    text: mensaje,
+  });
+  return `https://api.whatsapp.com/send?${params.toString()}`;
+}
+
 // ── Notificación WhatsApp al cliente (admin → cliente) ──────────────────────
 export function notificarCliente(pedido, articulosSurtidos = null) {
   const { cliente_nombre: nombre, cliente_telefono: tel, folio, estado, tipo_entrega, direccion } = pedido;

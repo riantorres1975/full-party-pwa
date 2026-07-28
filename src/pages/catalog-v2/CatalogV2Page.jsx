@@ -17,15 +17,18 @@ import {
 } from 'react-router-dom';
 
 import CatalogV2Card from '../../components/catalog-v2/CatalogV2Card.jsx';
+import CatalogV2Cart from '../../components/catalog-v2/CatalogV2Cart.jsx';
 import CatalogV2Detail from '../../components/catalog-v2/CatalogV2Detail.jsx';
 import CatalogV2Filters from '../../components/catalog-v2/CatalogV2Filters.jsx';
 import {
+  useCatalogCart,
   useCatalogCards,
   useCatalogCategories,
   useCatalogCollections,
   useCatalogFacets,
   useCatalogFilters,
 } from '../../hooks/catalog/index.js';
+import { useToast } from '../../components/ui/ToastProvider.jsx';
 import { useDebounce } from '../../hooks/useDebounce.js';
 import { useProductPreferences } from '../../hooks/useProductPreferences.js';
 import { useCatalogSeo } from '../../contexts/CatalogSeoContext.jsx';
@@ -92,6 +95,9 @@ export default function CatalogV2Page() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
+  const cart = useCatalogCart();
+  const toast = useToast();
   const { favoriteIds, isFavorite, toggleFavorite, recordViewedProduct } = useProductPreferences();
   const { tree: categories, bySlug, loading: categoriesLoading } = useCatalogCategories();
   const { collections } = useCatalogCollections();
@@ -236,6 +242,15 @@ export default function CatalogV2Page() {
     requestAnimationFrame(() => searchInputRef.current?.focus());
   };
 
+  const addToCart = (selection) => {
+    const result = cart.addSelection(selection);
+    if (!result.ok) {
+      toast.warning(result.message);
+      return;
+    }
+    toast.success(`${result.item.productName} se agregó a tu pedido.`);
+  };
+
   return (
     <div className="catalog-v2-shell">
       <header className="catalog-v2-header">
@@ -279,9 +294,14 @@ export default function CatalogV2Page() {
               <span>Mis favoritos</span>
               {favoriteIds.length > 0 && <small>{favoriteIds.length}</small>}
             </button>
-            <button type="button" disabled title="Disponible en la Fase 6">
+            <button
+              type="button"
+              className={cartOpen ? 'is-active' : ''}
+              onClick={() => setCartOpen(true)}
+            >
               <ShoppingBag size={18} />
               <span>Mi pedido</span>
+              {cart.quantity > 0 && <small>{cart.quantity}</small>}
             </button>
           </div>
         </div>
@@ -509,8 +529,13 @@ export default function CatalogV2Page() {
         <button type="button" className={favoritesOnly ? 'is-active' : ''} onClick={() => setFavoritesOnly((current) => !current)}>
           <Heart size={20} fill={favoritesOnly ? 'currentColor' : 'none'} /><span>Favoritos</span>
         </button>
-        <button type="button" disabled>
+        <button
+          type="button"
+          className={cartOpen ? 'is-active' : ''}
+          onClick={() => setCartOpen(true)}
+        >
           <ShoppingBag size={20} /><span>Mi pedido</span>
+          {cart.quantity > 0 && <small>{cart.quantity}</small>}
         </button>
       </nav>
 
@@ -531,7 +556,14 @@ export default function CatalogV2Page() {
         initialLineSlug={selectedLineSlug}
         favorite={selectedProductId ? isFavorite(selectedProductId) : false}
         onToggleFavorite={toggleFavorite}
+        onAddToCart={addToCart}
         onClose={closeDetail}
+      />
+
+      <CatalogV2Cart
+        open={cartOpen}
+        onClose={() => setCartOpen(false)}
+        cart={cart}
       />
     </div>
   );

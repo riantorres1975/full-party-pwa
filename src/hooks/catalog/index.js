@@ -4,6 +4,7 @@ export { useCatalogCollections } from './useCatalogCollections.js';
 export { useCatalogFacets } from './useCatalogFacets.js';
 export { useCatalogFilters } from './useCatalogFilters.js';
 export { useCatalogInventory } from './useCatalogInventory.js';
+export { useCatalogCart } from './useCatalogCart.js';
 export { useAdminCatalogWorkspace } from './useAdminCatalogWorkspace.js';
 export { useAdminProductsWorkspace } from './useAdminProductsWorkspace.js';
 export { useCatalogSearch } from './useCatalogSearch.js';
