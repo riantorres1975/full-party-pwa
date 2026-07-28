@@ -63,16 +63,67 @@ BEGIN
   JOIN public.catalog_variants v ON v.id = sp.variant_id
   WHERE v.sku = 'GLOMEX-ESTANDAR-ROJO-12' AND sp.presentation_type = 'caja';
 
-  IF v_caja.base_units_total <> 1200 THEN
-    RAISE EXCEPTION 'FAIL C1: la caja debería equivaler a 1200 globos, equivale a %', v_caja.base_units_total;
+  IF v_caja.base_units_total <> 10000 THEN
+    RAISE EXCEPTION 'FAIL C1: la caja debería equivaler a 10000 globos, equivale a %', v_caja.base_units_total;
   END IF;
   IF v_caja.base_price <> 900 THEN
     RAISE EXCEPTION 'FAIL C2: el precio de caja debería ser 900 (independiente), es %', v_caja.base_price;
   END IF;
-  IF v_caja.contains_presentation_id IS NULL OR v_caja.contains_quantity <> 12 THEN
-    RAISE EXCEPTION 'FAIL C3: la caja debe contener 12 bolsas (presentación anidada)';
+  IF v_caja.contains_presentation_id IS NULL OR v_caja.contains_quantity <> 100 THEN
+    RAISE EXCEPTION 'FAIL C3: la caja debe contener 100 bolsas (presentación anidada)';
   END IF;
-  RAISE NOTICE 'PASS C: caja = 12 bolsas = 1200 globos, precio independiente $900';
+  RAISE NOTICE 'PASS C: caja = 100 bolsas = 10000 globos, precio independiente $900';
+END $$;
+
+-- ─── C2. Tarifario Glomex corregido ────────────────────────────────────────
+DO $$
+DECLARE
+  v_price NUMERIC;
+  v_content NUMERIC;
+  v_minimum INT;
+BEGIN
+  SELECT sp.base_price, sp.contained_quantity
+    INTO v_price, v_content
+  FROM public.catalog_sale_presentations sp
+  JOIN public.catalog_variants v ON v.id = sp.variant_id
+  WHERE v.sku = 'GLOMEX-ESTANDAR-ROJO-10'
+    AND sp.presentation_type = 'bolsa';
+  IF v_price <> 37 OR v_content <> 50 THEN
+    RAISE EXCEPTION 'FAIL C4: Estándar 10 debe ser bolsa de 50 piezas a $37';
+  END IF;
+
+  SELECT r.unit_price INTO v_price
+  FROM public.catalog_sale_presentations sp
+  JOIN public.catalog_variants v ON v.id = sp.variant_id
+  CROSS JOIN LATERAL public.catalog_resolve_price(sp.id, 12) r
+  WHERE v.sku = 'GLOMEX-ESTANDAR-ROJO-10'
+    AND sp.presentation_type = 'bolsa';
+  IF v_price <> 34 THEN
+    RAISE EXCEPTION 'FAIL C5: Estándar 10 debe costar $34 desde 12 bolsas';
+  END IF;
+
+  SELECT sp.base_price, pt.minimum_quantity
+    INTO v_price, v_minimum
+  FROM public.catalog_sale_presentations sp
+  JOIN public.catalog_variants v ON v.id = sp.variant_id
+  JOIN public.catalog_price_tiers pt ON pt.sale_presentation_id = sp.id
+  WHERE v.sku = 'GLOMEX-CHROME-DORADO-12'
+    AND sp.presentation_type = 'bolsa';
+  IF v_price <> 80 OR v_minimum <> 12 THEN
+    RAISE EXCEPTION 'FAIL C6: Chrome 12 debe ser $80 con mayoreo desde 12';
+  END IF;
+
+  SELECT r.unit_price INTO v_price
+  FROM public.catalog_sale_presentations sp
+  JOIN public.catalog_variants v ON v.id = sp.variant_id
+  CROSS JOIN LATERAL public.catalog_resolve_price(sp.id, 12) r
+  WHERE v.sku = 'GLOMEX-CHROME-DORADO-12'
+    AND sp.presentation_type = 'bolsa';
+  IF v_price <> 70 THEN
+    RAISE EXCEPTION 'FAIL C7: Chrome 12 debe costar $70 desde 12 bolsas';
+  END IF;
+
+  RAISE NOTICE 'PASS C2: tarifario Glomex 10 y Chrome 12 corregido';
 END $$;
 
 -- ─── D. Oasis sin bolsa (§33 caso 3) y Espuma con latas (§33 caso 4) ───────
@@ -251,8 +302,8 @@ BEGIN
   IF jsonb_array_length(v_card->'sizes') <> 3 THEN
     RAISE EXCEPTION 'FAIL H3: Estándar debe mostrar 3 medidas (5/10/12)';
   END IF;
-  IF (v_card->>'min_price')::NUMERIC <> 85 THEN
-    RAISE EXCEPTION 'FAIL H4: precio desde debería ser 85';
+  IF (v_card->>'min_price')::NUMERIC <> 37 THEN
+    RAISE EXCEPTION 'FAIL H4: precio desde debería ser 37';
   END IF;
   IF (v_card->>'in_stock')::BOOLEAN IS NOT TRUE THEN
     RAISE EXCEPTION 'FAIL H5: la tarjeta debería estar en existencia';
@@ -281,8 +332,8 @@ BEGIN
 
   SELECT p INTO v_pres FROM jsonb_array_elements(v_variant->'presentations') p
   WHERE p->>'presentation_type' = 'caja';
-  IF (v_pres->>'available_quantity')::INT <> 20 THEN
-    RAISE EXCEPTION 'FAIL H10: disponibilidad de caja debería ser 20, es %', v_pres->>'available_quantity';
+  IF (v_pres->>'available_quantity')::INT <> 2 THEN
+    RAISE EXCEPTION 'FAIL H10: disponibilidad de caja debería ser 2, es %', v_pres->>'available_quantity';
   END IF;
   RAISE NOTICE 'PASS H2: detalle con variantes, presentaciones, escalones y disponibilidad';
 

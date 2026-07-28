@@ -36,7 +36,8 @@ for f in \
   005_catalog_functions.sql \
   006_catalog_seed.sql \
   009_catalog_rls_policy_optimization.sql \
-  010_catalog_bulk_operations.sql
+  010_catalog_bulk_operations.sql \
+  011_catalog_glomex_pricing.sql
 do
   echo "== $f"
   psql -U postgres -d catalog_test -v ON_ERROR_STOP=1 -q -f "/repo/$f"

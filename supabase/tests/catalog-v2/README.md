@@ -1,6 +1,6 @@
 # Harness de pruebas SQL — Catálogo V2
 
-Valida las migraciones `001…006`, `009` y `010` del catálogo V2 contra PostgreSQL 15
+Valida las migraciones `001…006` y `009…011` del catálogo V2 contra PostgreSQL 15
 y 17, aplicando primero TODO el estado V1 del repositorio y luego ejecutando
 los casos de prueba obligatorios del §33 del plan maestro más las
 verificaciones RLS.
@@ -43,7 +43,8 @@ docker exec pg-catalog-test sh /harness/run_all.sh
 ## Cobertura (§33 del plan maestro)
 
 - [x] Globo con mayoreo: 11×$85, 12×$78, 20×$78, nivel indicado, total del servidor
-- [x] Globo por caja: 1 caja = 1,200 globos, precio de caja independiente ($900), snapshot y mensaje por caja
+- [x] Globo por caja: 1 caja = 100 bolsas, precio de caja independiente ($900), snapshot y mensaje por caja
+- [x] Tarifario Glomex: Standard 5/10/12 y Chrome 12 con mayoreo desde 12 bolsas
 - [x] Caja de piezas (oasis, sin bolsa)
 - [x] Caja de latas (espuma, anidación de presentaciones)
 - [x] Producto simple (bomba, sin gama/color/medida)

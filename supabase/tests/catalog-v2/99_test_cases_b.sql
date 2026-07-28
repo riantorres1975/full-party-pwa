@@ -68,7 +68,7 @@ BEGIN
   JOIN public.catalog_sale_presentations sp ON sp.variant_id = v.id
   WHERE v.sku = 'GLOMEX-ESTANDAR-ROJO-12' AND sp.presentation_type = 'caja';
 
-  -- J1: pedido de 1 caja (inventario COMPARTIDO: reserva 1200 unidades base)
+  -- J1: pedido de 1 caja (inventario COMPARTIDO: reserva 10000 unidades base)
   SELECT reserved_quantity INTO v_res_before
   FROM public.catalog_inventory
   WHERE variant_id = v_variant_globo AND sale_presentation_id IS NULL;
@@ -87,19 +87,19 @@ BEGIN
   SELECT reserved_quantity INTO v_res_after
   FROM public.catalog_inventory
   WHERE variant_id = v_variant_globo AND sale_presentation_id IS NULL;
-  IF v_res_after - v_res_before <> 1200 THEN
-    RAISE EXCEPTION 'FAIL J2: la reserva compartida debió subir 1200, subió %', v_res_after - v_res_before;
+  IF v_res_after - v_res_before <> 10000 THEN
+    RAISE EXCEPTION 'FAIL J2: la reserva compartida debió subir 10000, subió %', v_res_after - v_res_before;
   END IF;
 
   -- Snapshot completo en detalles_json
   SELECT detalles_json INTO v_detalles FROM public.pedidos WHERE folio = v_order->>'folio';
   v_line := v_detalles->0;
-  IF v_line->>'presentacion' IS NULL OR (v_line->>'contenido_total')::NUMERIC <> 1200
+  IF v_line->>'presentacion' IS NULL OR (v_line->>'contenido_total')::NUMERIC <> 10000
      OR (v_line->>'precio')::NUMERIC <> 900 OR v_line->>'gama' <> 'Estándar'
      OR v_line->>'color' <> 'Rojo' OR v_line->>'medida' <> '12 pulgadas' THEN
     RAISE EXCEPTION 'FAIL J3: snapshot V2 incompleto: %', v_line;
   END IF;
-  RAISE NOTICE 'PASS J1-J3: pedido por caja $900, reserva compartida +1200, snapshot completo';
+  RAISE NOTICE 'PASS J1-J3: pedido por caja $900, reserva compartida +10000, snapshot completo';
 
   -- J2: idempotencia (mismo key, mismo folio, sin duplicar)
   SELECT public.catalog_create_order(
@@ -114,7 +114,7 @@ BEGIN
   SELECT reserved_quantity INTO v_res_after
   FROM public.catalog_inventory
   WHERE variant_id = v_variant_globo AND sale_presentation_id IS NULL;
-  IF v_res_after - v_res_before <> 1200 THEN
+  IF v_res_after - v_res_before <> 10000 THEN
     RAISE EXCEPTION 'FAIL J5: el replay duplicó la reserva de inventario';
   END IF;
   RAISE NOTICE 'PASS J4-J5: idempotencia sin duplicar pedido ni reserva';
