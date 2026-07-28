@@ -104,8 +104,8 @@ Además: `npm test` 110/110 ✓ y `npm run build` ✓ (sin cambios de JS en esta
 - [x] Respaldo remoto verificado: 105/105 productos y 23 objetos SQL.
 - [x] Drift de `pedidos.idempotency_key` corregido con `supabase_order_idempotency.sql`.
 - [x] Fase 3: capa de datos en `src/services/catalog/` y `src/hooks/catalog/`.
-- [ ] Importación controlada de productos reales V1 → V2 (paso 7 del plan, siguiente).
-- [ ] Fase 4: panel administrativo V2.
+- [x] Importación controlada de 104 productos útiles V1 → V2; se excluyó únicamente `Prueba`.
+- [x] Fase 4: panel administrativo V2.
 
 ## 8. Riesgos abiertos
 

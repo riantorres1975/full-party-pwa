@@ -4,6 +4,7 @@ import { getInlineProductPlaceholder } from '../../utils/imagenes.js';
 import {
   buildCardTitle,
   getCardAction,
+  getPrimaryPresentationType,
 } from '../../services/catalog/publicCatalogModel.js';
 
 function formatMoney(value) {
@@ -23,7 +24,7 @@ export default function CatalogV2Card({
   const title = buildCardTitle(card);
   const image = card.imageUrl || getInlineProductPlaceholder(title);
   const sizeLabels = card.sizes.map((size) => size.name).filter(Boolean);
-  const presentation = card.presentationTypes[0] || 'presentación';
+  const presentation = getPrimaryPresentationType(card.presentationTypes);
 
   return (
     <article className="catalog-v2-card">

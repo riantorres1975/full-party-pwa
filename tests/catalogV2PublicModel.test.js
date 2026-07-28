@@ -8,6 +8,7 @@ import {
   closeProductParams,
   getCatalogCategoryPath,
   getCardAction,
+  getPrimaryPresentationType,
   getPresentationDescription,
   resolveInitialLineId,
 } from '../src/services/catalog/publicCatalogModel.js';
@@ -63,6 +64,14 @@ test('decide CTA por disponibilidad y opciones reales', () => {
     lineCount: 0,
     sizes: [],
   }).kind, 'simple');
+});
+
+test('prioriza la presentacion principal sobre la caja', () => {
+  assert.equal(getPrimaryPresentationType(['caja', 'lata']), 'lata');
+  assert.equal(getPrimaryPresentationType(['caja', 'pieza']), 'pieza');
+  assert.equal(getPrimaryPresentationType(['caja', 'bolsa']), 'bolsa');
+  assert.equal(getPrimaryPresentationType(['caja']), 'caja');
+  assert.equal(getPrimaryPresentationType([]), 'presentación');
 });
 
 test('abre y cierra detalle conservando filtros URL', () => {

@@ -1,5 +1,19 @@
 import { cardRequiresOptions } from './adapters.js';
 
+const CARD_PRESENTATION_PRIORITY = [
+  'pieza',
+  'lata',
+  'botella',
+  'bolsa',
+  'paquete',
+  'docena',
+  'juego',
+  'rollo',
+  'metro',
+  'otro',
+  'caja',
+];
+
 export function getCatalogCategoryPath(pathname) {
   const parts = String(pathname ?? '')
     .split('/')
@@ -39,6 +53,16 @@ export function getCardAction(card) {
     return { label: 'Elegir opciones', disabled: false, kind: 'options' };
   }
   return { label: 'Ver producto', disabled: false, kind: 'simple' };
+}
+
+export function getPrimaryPresentationType(types) {
+  const available = Array.isArray(types)
+    ? types.map((type) => String(type || '').trim()).filter(Boolean)
+    : [];
+
+  return CARD_PRESENTATION_PRIORITY.find((type) => available.includes(type))
+    || available[0]
+    || 'presentación';
 }
 
 export function buildCardProductParams(current, card) {
