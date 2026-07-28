@@ -78,6 +78,15 @@ export default function CatalogV2Detail({
     && Boolean(price.pricing)
     && !price.quantityError
     && presentation?.inStock !== false;
+  const finishValues = new Set(detail?.variants.map((item) => item.finish).filter(Boolean) ?? []);
+  const matchingAttributeNames = detail?.attributes
+    .filter((attribute) => finishValues.has(attribute.value))
+    .map((attribute) => attribute.name)
+    .filter(Boolean) ?? [];
+  const finishLabel = matchingAttributeNames.length > 0
+    && matchingAttributeNames.every((name) => name === matchingAttributeNames[0])
+    ? matchingAttributeNames[0]
+    : 'Acabado';
 
   const addToCart = () => {
     if (!canAddToCart) return;
@@ -181,7 +190,7 @@ export default function CatalogV2Detail({
               </div>
               {variant && (
                 <div className="catalog-v2-detail__selection-tags" aria-label="Selección actual">
-                  {[variant.line_name, variant.color_name, variant.size_name]
+                  {[variant.line_name, variant.color_name, variant.size_name, variant.finish]
                     .filter(Boolean)
                     .map((label) => <span key={label}>{label}</span>)}
                 </div>
@@ -193,6 +202,7 @@ export default function CatalogV2Detail({
               <OptionGroup label="Gama" state={selection.dimensionStates.lineId} onSelect={selection.selectLine} />
               <OptionGroup label="Color" state={selection.dimensionStates.colorId} onSelect={selection.selectColor} color />
               <OptionGroup label="Medida" state={selection.dimensionStates.sizeId} onSelect={selection.selectSize} />
+              <OptionGroup label={finishLabel} state={selection.dimensionStates.finish} onSelect={selection.selectFinish} />
 
               {variant && (
                 <fieldset className="catalog-v2-detail__presentations">

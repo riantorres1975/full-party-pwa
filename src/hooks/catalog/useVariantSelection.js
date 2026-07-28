@@ -9,7 +9,7 @@ import {
 const EMPTY_VARIANTS = Object.freeze([]);
 
 /**
- * Estado del selector Gama -> Color -> Medida -> Presentacion -> Cantidad.
+ * Estado del selector Gama -> Color -> Medida -> Acabado -> Presentacion -> Cantidad.
  * Todas las actualizaciones pasan por la maquina de estados pura.
  */
 export function useVariantSelection(variants, initialSelection = {}) {
@@ -49,6 +49,7 @@ export function useVariantSelection(variants, initialSelection = {}) {
     selectLine: (lineId) => updateSelection({ lineId }),
     selectColor: (colorId) => updateSelection({ colorId }),
     selectSize: (sizeId) => updateSelection({ sizeId }),
+    selectFinish: (finish) => updateSelection({ finish }),
     selectPresentation: (presentationId) => updateSelection({ presentationId }),
     setQuantity: (quantity) => updateSelection({ quantity }),
     reset,

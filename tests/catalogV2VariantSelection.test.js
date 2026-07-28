@@ -115,6 +115,41 @@ test('producto simple oculta dimensiones y queda listo para agregar', () => {
   assert.equal(result.complete, true);
 });
 
+test('expone y resuelve variantes diferenciadas por acabado o atributo', () => {
+  const finishVariants = [
+    {
+      id: 'letter-a',
+      line_id: null,
+      color_id: null,
+      size_id: null,
+      finish: 'A',
+      image_url: '/a.webp',
+      presentations: [{ id: 'piece-a' }],
+    },
+    {
+      id: 'letter-b',
+      line_id: null,
+      color_id: null,
+      size_id: null,
+      finish: 'B',
+      image_url: '/b.webp',
+      presentations: [{ id: 'piece-b' }],
+    },
+  ];
+
+  const initial = createInitialSelection(finishVariants);
+  assert.equal(initial.complete, false);
+
+  const states = getDimensionStates(finishVariants, initial.selection);
+  assert.equal(states.finish.visible, true);
+  assert.deepEqual(states.finish.options.map((option) => option.name), ['A', 'B']);
+
+  const selected = applySelection(finishVariants, initial.selection, { finish: 'B' });
+  assert.equal(selected.variant.id, 'letter-b');
+  assert.equal(selected.presentation.id, 'piece-b');
+  assert.equal(selected.complete, true);
+});
+
 test('normaliza minimo, paso y maximo con presentaciones adaptadas o crudas', () => {
   const adapted = {
     minimumOrderQuantity: 2,

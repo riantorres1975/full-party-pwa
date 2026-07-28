@@ -1,19 +1,20 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Lógica PURA de selección de variantes del catálogo V2.
 // Sin dependencias de Supabase ni React: es la máquina de estados del selector
-// Gama → Color → Medida → Presentación → Cantidad (§14 del plan maestro).
+// Gama → Color → Medida → Acabado/Atributo → Presentación → Cantidad.
 //
 // Reglas:
 //  - Solo se pueden elegir combinaciones que EXISTEN como variante activa.
 //  - Al elegir gama, los colores se limitan a esa gama (y así en cascada).
 //  - Cuando una dimensión queda con una sola opción válida, se auto-selecciona.
-//  - Productos sin gama/color/medida ocultan esos selectores.
+//  - Productos sin gama/color/medida/acabado ocultan esos selectores.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const EMPTY_SELECTION = Object.freeze({
   lineId: null,
   colorId: null,
   sizeId: null,
+  finish: null,
   presentationId: null,
   quantity: 1,
 });
@@ -29,13 +30,15 @@ export function getDimensionPresence(variants) {
     hasLines: list.some((v) => v.line_id != null),
     hasColors: list.some((v) => v.color_id != null),
     hasSizes: list.some((v) => v.size_id != null),
+    hasFinishes: list.some((v) => v.finish != null),
   };
 }
 
 const DIMENSIONS = [
-  { selectionKey: 'lineId', variantKey: 'line_id', labels: { name: 'line_name', slug: 'line_slug' } },
-  { selectionKey: 'colorId', variantKey: 'color_id', labels: { name: 'color_name', slug: 'color_slug', hex: 'color_hex' } },
-  { selectionKey: 'sizeId', variantKey: 'size_id', labels: { name: 'size_name', slug: null } },
+  { selectionKey: 'lineId', variantKey: 'line_id', presenceKey: 'hasLines', labels: { name: 'line_name', slug: 'line_slug' } },
+  { selectionKey: 'colorId', variantKey: 'color_id', presenceKey: 'hasColors', labels: { name: 'color_name', slug: 'color_slug', hex: 'color_hex' } },
+  { selectionKey: 'sizeId', variantKey: 'size_id', presenceKey: 'hasSizes', labels: { name: 'size_name', slug: null } },
+  { selectionKey: 'finish', variantKey: 'finish', presenceKey: 'hasFinishes', labels: { name: 'finish', slug: null } },
 ];
 
 function matchesSelection(variant, selection, dimensions) {
@@ -78,7 +81,7 @@ export function getDimensionStates(variants, selection) {
   const presence = getDimensionPresence(list);
   const states = {};
 
-  const dimensionOrder = ['line_id', 'color_id', 'size_id'];
+  const dimensionOrder = DIMENSIONS.map((dimension) => dimension.variantKey);
   DIMENSIONS.forEach((dim, index) => {
     const previousDims = dimensionOrder.slice(0, index);
     const candidates = list.filter((v) =>
@@ -90,10 +93,7 @@ export function getDimensionStates(variants, selection) {
       }),
     );
     states[dim.selectionKey] = {
-      visible:
-        (dim.variantKey === 'line_id' && presence.hasLines) ||
-        (dim.variantKey === 'color_id' && presence.hasColors) ||
-        (dim.variantKey === 'size_id' && presence.hasSizes),
+      visible: presence[dim.presenceKey],
       options: toOptions(candidates, dim.variantKey, dim.labels),
       value: selection[dim.selectionKey] ?? null,
     };
@@ -109,7 +109,8 @@ export function findVariant(variants, selection) {
     (v) =>
       (v.line_id ?? null) === (selection.lineId ?? null) &&
       (v.color_id ?? null) === (selection.colorId ?? null) &&
-      (v.size_id ?? null) === (selection.sizeId ?? null),
+      (v.size_id ?? null) === (selection.sizeId ?? null) &&
+      (v.finish ?? null) === (selection.finish ?? null),
   );
   return found.length === 1 ? found[0] : null;
 }
@@ -120,7 +121,7 @@ export function findVariant(variants, selection) {
  *  - auto-selecciona cuando una dimensión queda con una única opción,
  *  - resuelve la variante y su presentación cuando la combinación es única.
  *
- * patch: { lineId?, colorId?, sizeId?, presentationId?, quantity? }
+ * patch: { lineId?, colorId?, sizeId?, finish?, presentationId?, quantity? }
  */
 export function applySelection(variants, selection, patch) {
   const list = Array.isArray(variants) ? variants : [];
@@ -131,13 +132,19 @@ export function applySelection(variants, selection, patch) {
   if (Object.prototype.hasOwnProperty.call(safePatch, 'lineId')) {
     if (!Object.prototype.hasOwnProperty.call(safePatch, 'colorId')) next.colorId = null;
     if (!Object.prototype.hasOwnProperty.call(safePatch, 'sizeId')) next.sizeId = null;
+    if (!Object.prototype.hasOwnProperty.call(safePatch, 'finish')) next.finish = null;
     next.presentationId = null;
   }
   if (Object.prototype.hasOwnProperty.call(safePatch, 'colorId')) {
     if (!Object.prototype.hasOwnProperty.call(safePatch, 'sizeId')) next.sizeId = null;
+    if (!Object.prototype.hasOwnProperty.call(safePatch, 'finish')) next.finish = null;
     next.presentationId = null;
   }
   if (Object.prototype.hasOwnProperty.call(safePatch, 'sizeId')) {
+    if (!Object.prototype.hasOwnProperty.call(safePatch, 'finish')) next.finish = null;
+    next.presentationId = null;
+  }
+  if (Object.prototype.hasOwnProperty.call(safePatch, 'finish')) {
     next.presentationId = null;
   }
   if (Object.prototype.hasOwnProperty.call(safePatch, 'presentationId')) {
@@ -202,6 +209,7 @@ export function isSelectionComplete(variants, selection) {
   if (presence.hasLines && selection.lineId == null) return false;
   if (presence.hasColors && selection.colorId == null) return false;
   if (presence.hasSizes && selection.sizeId == null) return false;
+  if (presence.hasFinishes && selection.finish == null) return false;
   const variant = findVariant(list, selection);
   if (!variant) return false;
   const presentations = Array.isArray(variant.presentations) ? variant.presentations : [];
