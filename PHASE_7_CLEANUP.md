@@ -55,12 +55,13 @@ Antes de borrarlos se liberaron todas las reservas. Estado final:
 - Navegador real:
   catalogo, detalle, inventario y dashboard cargan sin errores de consola.
 
-## Pendiente de seguridad independiente
+## Cierre de seguridad posterior
 
-El asesor de Supabase reporta RLS deshabilitado en `public.admins`. No se
-habilito automaticamente porque hacerlo sin politicas bloquearia accesos. La
-remediacion debe definir primero las politicas necesarias y despues ejecutar:
+La migracion `secure_admins_rls` cerro el pendiente independiente:
 
-```sql
-ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
-```
+- Habilita RLS en `public.admins`.
+- Mantiene la tabla sin politicas para negar todo acceso desde clientes.
+- Conserva el acceso privilegiado requerido por el trigger de perfiles.
+- Revoca la ejecucion anonima de helpers internos de autenticacion y roles.
+- Restringe la consulta de correos existentes al rol `admin`.
+- Fija el `search_path` de las funciones incluidas en la migracion.
