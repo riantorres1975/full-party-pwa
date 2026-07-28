@@ -66,3 +66,18 @@ La migracion `secure_admins_rls` cerro el pendiente independiente:
 - Restringe la consulta de correos existentes al rol `admin`.
 - Fija el `search_path` de las funciones incluidas en la migracion.
 - Cierra la ejecucion RPC de los helpers internos de folio y timestamps.
+
+### Extension e imagenes
+
+- Mueve `pg_trgm` de `public` a `extensions`.
+- Conserva validos los cinco indices trigram del catalogo.
+- Elimina el listado anonimo del bucket publico `productos-imagenes`.
+- Limita la gestion de archivos a los roles `admin` y `manager`.
+- Restringe cargas a AVIF, JPEG, PNG o WebP con un maximo de 5 MB.
+- Conserva las URLs publicas de imagenes sin una policy publica de listado.
+
+## Configuracion pendiente en Dashboard
+
+El asesor de Auth mantiene el aviso `auth_leaked_password_protection`. Esta
+proteccion se habilita desde la configuracion de autenticacion del Dashboard
+de Supabase y no mediante una migracion SQL.

@@ -120,11 +120,11 @@ ALTER TABLE public.catalog_products
 CREATE INDEX IF NOT EXISTS catalog_products_search_tsv_idx
   ON public.catalog_products USING gin (search_tsv);
 
-CREATE INDEX IF NOT EXISTS catalog_products_name_trgm     ON public.catalog_products USING gin (name gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS catalog_brands_name_trgm       ON public.catalog_brands USING gin (name gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS catalog_product_lines_name_trgm ON public.catalog_product_lines USING gin (name gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS catalog_colors_name_trgm       ON public.catalog_colors USING gin (exact_name gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS catalog_categories_name_trgm   ON public.catalog_categories USING gin (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS catalog_products_name_trgm     ON public.catalog_products USING gin (name extensions.gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS catalog_brands_name_trgm       ON public.catalog_brands USING gin (name extensions.gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS catalog_product_lines_name_trgm ON public.catalog_product_lines USING gin (name extensions.gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS catalog_colors_name_trgm       ON public.catalog_colors USING gin (exact_name extensions.gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS catalog_categories_name_trgm   ON public.catalog_categories USING gin (name extensions.gin_trgm_ops);
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 5. TRIGGERS ANTI-CICLOS

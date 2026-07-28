@@ -4,7 +4,8 @@
 
 BEGIN;
 
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE SCHEMA IF NOT EXISTS extensions;
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA extensions;
 
 -- Orden principal del catalogo y desempate estable para paginacion.
 CREATE INDEX IF NOT EXISTS idx_productos_catalogo_destacados
@@ -24,19 +25,19 @@ CREATE INDEX IF NOT EXISTS idx_productos_catalogo_tamano
 
 -- Acelera ILIKE con comodines para la busqueda publica.
 CREATE INDEX IF NOT EXISTS idx_productos_nombre_trgm
-  ON public.productos USING gin (nombre gin_trgm_ops);
+  ON public.productos USING gin (nombre extensions.gin_trgm_ops);
 
 CREATE INDEX IF NOT EXISTS idx_productos_descripcion_trgm
-  ON public.productos USING gin (descripcion gin_trgm_ops);
+  ON public.productos USING gin (descripcion extensions.gin_trgm_ops);
 
 CREATE INDEX IF NOT EXISTS idx_productos_categoria_trgm
-  ON public.productos USING gin (categoria gin_trgm_ops);
+  ON public.productos USING gin (categoria extensions.gin_trgm_ops);
 
 CREATE INDEX IF NOT EXISTS idx_productos_marca_trgm
-  ON public.productos USING gin (marca gin_trgm_ops);
+  ON public.productos USING gin (marca extensions.gin_trgm_ops);
 
 CREATE INDEX IF NOT EXISTS idx_productos_tamano_trgm
-  ON public.productos USING gin (tamano gin_trgm_ops);
+  ON public.productos USING gin (tamano extensions.gin_trgm_ops);
 
 CREATE OR REPLACE VIEW public.catalogo_facetas_publicas
 WITH (security_invoker = true)
