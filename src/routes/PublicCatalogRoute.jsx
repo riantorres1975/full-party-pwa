@@ -1,36 +1,9 @@
-import { useEffect, useState } from 'react';
-import '../catalog.css';
-import App from '../App';
+import { useEffect } from 'react';
+import '../catalog-v2.css';
+import CatalogV2Page from '../pages/catalog-v2/CatalogV2Page.jsx';
 import { ToastProvider } from '../components/ui/ToastProvider';
-import { useTheme } from '../hooks/useTheme';
-import { deferSupabase } from '../utils/deferSupabase';
 
 export default function PublicCatalogRoute() {
-  const { isDarkMode, toggleTheme } = useTheme();
-  const [hasSession, setHasSession] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    let authSubscription;
-
-    const cancelDeferredLoad = deferSupabase((supabase) => {
-      supabase.auth.getSession().then(({ data }) => {
-        if (active) setHasSession(Boolean(data.session));
-      });
-
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (active) setHasSession(Boolean(session));
-      });
-      authSubscription = subscription;
-    });
-
-    return () => {
-      active = false;
-      cancelDeferredLoad();
-      authSubscription?.unsubscribe();
-    };
-  }, []);
-
   useEffect(() => {
     document.body.classList.add('catalogo');
     document.body.classList.remove('landing-page');
@@ -41,17 +14,12 @@ export default function PublicCatalogRoute() {
 
     return () => {
       document.body.classList.remove('catalogo');
-      document.body.classList.remove('theme-dark');
     };
   }, []);
 
   return (
     <ToastProvider>
-      <App
-        temaOscuro={isDarkMode}
-        onToggleTema={toggleTheme}
-        isAdmin={hasSession}
-      />
+      <CatalogV2Page />
     </ToastProvider>
   );
 }

@@ -1,5 +1,7 @@
 export { useCatalogCards, CARDS_PAGE_SIZE } from './useCatalogCards.js';
 export { useCatalogCategories } from './useCatalogCategories.js';
+export { useCatalogCollections } from './useCatalogCollections.js';
+export { useCatalogFacets } from './useCatalogFacets.js';
 export { useCatalogFilters } from './useCatalogFilters.js';
 export { useCatalogInventory } from './useCatalogInventory.js';
 export { useAdminCatalogWorkspace } from './useAdminCatalogWorkspace.js';

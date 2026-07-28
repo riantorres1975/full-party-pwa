@@ -6,12 +6,14 @@ import {
   getDimensionStates,
 } from '../../services/catalog/variantSelection.js';
 
+const EMPTY_VARIANTS = Object.freeze([]);
+
 /**
  * Estado del selector Gama -> Color -> Medida -> Presentacion -> Cantidad.
  * Todas las actualizaciones pasan por la maquina de estados pura.
  */
 export function useVariantSelection(variants, initialSelection = {}) {
-  const list = Array.isArray(variants) ? variants : [];
+  const list = Array.isArray(variants) ? variants : EMPTY_VARIANTS;
   const initialKey = JSON.stringify(initialSelection ?? {});
   const [selection, setSelection] = useState(
     () => createInitialSelection(list, initialSelection).selection,

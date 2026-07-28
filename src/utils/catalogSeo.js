@@ -55,8 +55,10 @@ export function buildCatalogCategoryMeta(
   const cleanPath = String(pathname || '').split(/[?#]/, 1)[0].replace(/\/+$/, '');
   if (!cleanPath.startsWith('/catalogo/')) return null;
 
-  const rawSlug = cleanPath.slice('/catalogo/'.length);
-  if (!rawSlug || rawSlug.includes('/')) return null;
+  const rawPath = cleanPath.slice('/catalogo/'.length);
+  const rawSlug = rawPath.split('/').filter(Boolean).at(-1);
+  if (!rawSlug) return null;
+  if (rawPath.includes('/') && !normalizeText(category?.canonicalPath)) return null;
 
   const resolved = resolveCategoryRoute(rawSlug, []);
   const canonicalSlug = resolved?.canonicalSlug || slugifyCategory(rawSlug);
@@ -65,7 +67,9 @@ export function buildCatalogCategoryMeta(
   const label = normalizeText(category?.label)
     || resolved?.label
     || humanizeCategorySlug(canonicalSlug);
-  const canonical = new URL(`/catalogo/${canonicalSlug}`, siteUrl).toString();
+  const canonicalPath = normalizeText(category?.canonicalPath)
+    || (rawPath.includes('/') ? rawPath : canonicalSlug);
+  const canonical = new URL(`/catalogo/${canonicalPath}`, siteUrl).toString();
   const customDescription = normalizeText(category?.description);
   const description = customDescription
     ? truncateDescription(customDescription)

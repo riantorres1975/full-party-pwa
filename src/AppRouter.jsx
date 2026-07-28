@@ -395,7 +395,7 @@ export default function AppRouter() {
             }
           />
           <Route
-            path="/catalogo/:categoria"
+            path="/catalogo/*"
             element={
               <Suspense fallback={CatalogSpinner}>
                 <PublicCatalogRoute />

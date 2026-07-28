@@ -3,7 +3,7 @@
 // Caché en módulo + localStorage (TTL 10 min); las categorías cambian poco.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { listCategoryTree } from '../../services/catalog/categoriesRepository.js';
 import { indexCategoriesBySlug } from '../../services/catalog/adapters.js';
 
@@ -40,8 +40,10 @@ export function useCatalogCategories() {
   const [error, setError] = useState(null);
   const mountedRef = useRef(true);
 
-  const bySlug = useRef(new Map());
-  bySlug.current = tree.length > 0 ? indexCategoriesBySlug(tree) : new Map();
+  const bySlug = useMemo(
+    () => (tree.length > 0 ? indexCategoriesBySlug(tree) : new Map()),
+    [tree],
+  );
 
   const load = useCallback(async () => {
     try {
@@ -67,5 +69,5 @@ export function useCatalogCategories() {
     };
   }, [load]);
 
-  return { tree, bySlug: bySlug.current, loading, error, refresh: load };
+  return { tree, bySlug, loading, error, refresh: load };
 }
