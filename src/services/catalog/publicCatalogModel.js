@@ -47,6 +47,53 @@ export function buildCardTitle(card) {
     .join(' ');
 }
 
+function normalizeSearchValue(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('es')
+    .trim();
+}
+
+export function getCardSearchMatch(card, search) {
+  const tokens = normalizeSearchValue(search).split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return null;
+
+  const colors = (Array.isArray(card?.colors) ? card.colors : [])
+    .filter((color) => {
+      const name = normalizeSearchValue(color?.name);
+      return tokens.some((token) => name.includes(token));
+    });
+  const sizes = (Array.isArray(card?.sizes) ? card.sizes : [])
+    .filter((size) => {
+      const name = normalizeSearchValue(size?.name);
+      return tokens.some((token) => name.includes(token));
+    });
+
+  if (colors.length === 0 && sizes.length === 0) return null;
+
+  const color = colors[0] ?? null;
+  const size = sizes[0] ?? null;
+  const labels = [];
+  if (color) {
+    labels.push(colors.length > 1
+      ? `${color.name} +${colors.length - 1}`
+      : color.name);
+  }
+  if (size) labels.push(size.name);
+
+  return {
+    colorSlug: color?.slug ?? null,
+    colorName: color?.name ?? null,
+    colorHex: color?.hex ?? null,
+    colorImageUrl: color?.imageUrl ?? null,
+    colorCount: colors.length,
+    sizeId: size?.id ?? null,
+    sizeName: size?.name ?? null,
+    label: labels.join(' · '),
+  };
+}
+
 export function getCardAction(card) {
   if (!card?.inStock) return { label: 'No disponible', disabled: true, kind: 'unavailable' };
   if (cardRequiresOptions(card)) {
@@ -65,16 +112,22 @@ export function getPrimaryPresentationType(types) {
     || 'presentación';
 }
 
-export function buildCardProductParams(current, card) {
+export function buildCardProductParams(current, card, searchMatch = null) {
   const params = new URLSearchParams(current ?? undefined);
   if (card?.slug) params.set('producto', card.slug);
   if (card?.lineSlug) params.set('gama', card.lineSlug);
+  if (searchMatch?.colorSlug) params.set('seleccionColor', searchMatch.colorSlug);
+  else params.delete('seleccionColor');
+  if (searchMatch?.sizeName) params.set('seleccionMedida', searchMatch.sizeName);
+  else params.delete('seleccionMedida');
   return params;
 }
 
 export function closeProductParams(current) {
   const params = new URLSearchParams(current ?? undefined);
   params.delete('producto');
+  params.delete('seleccionColor');
+  params.delete('seleccionMedida');
   return params;
 }
 
@@ -96,4 +149,42 @@ export function resolveInitialLineId(variants, lineSlug) {
   if (!lineSlug) return null;
   return (Array.isArray(variants) ? variants : [])
     .find((variant) => variant?.line_slug === lineSlug)?.line_id ?? null;
+}
+
+export function resolveInitialVariantSelection(
+  variants,
+  { lineSlug, colorSlug, sizeName } = {},
+) {
+  const list = Array.isArray(variants) ? variants : [];
+  const normalizedSize = normalizeSearchValue(sizeName);
+  const matches = (variant) => (
+    (!lineSlug || variant?.line_slug === lineSlug)
+    && (!colorSlug || variant?.color_slug === colorSlug)
+    && (!normalizedSize || normalizeSearchValue(variant?.size_name) === normalizedSize)
+  );
+  const exact = list.find(matches);
+
+  if (exact) {
+    return {
+      lineId: exact.line_id ?? null,
+      colorId: exact.color_id ?? null,
+      sizeId: exact.size_id ?? null,
+    };
+  }
+
+  return {
+    lineId: resolveInitialLineId(list, lineSlug),
+    colorId: colorSlug
+      ? list.find((variant) => (
+        (!lineSlug || variant?.line_slug === lineSlug)
+        && variant?.color_slug === colorSlug
+      ))?.color_id ?? null
+      : null,
+    sizeId: normalizedSize
+      ? list.find((variant) => (
+        (!lineSlug || variant?.line_slug === lineSlug)
+        && normalizeSearchValue(variant?.size_name) === normalizedSize
+      ))?.size_id ?? null
+      : null,
+  };
 }

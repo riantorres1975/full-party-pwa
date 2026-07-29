@@ -48,6 +48,7 @@ export function adaptCard(raw) {
     slug: c?.slug ?? null,
     name: c?.name ?? null,
     hex: c?.hex ?? null,
+    imageUrl: c?.image_url ?? c?.imageUrl ?? null,
   }));
   const card = {
     groupKey: raw?.group_key ?? null,

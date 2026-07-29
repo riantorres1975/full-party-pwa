@@ -11,6 +11,43 @@ function listOrNull(values) {
   return Array.isArray(values) && values.length > 0 ? values : null;
 }
 
+async function addSearchColorImages(page, filters, client) {
+  if (!filters.search || !page.cards.length) return page;
+
+  const lineIds = [...new Set(
+    page.cards.map((card) => card.lineId).filter(Boolean),
+  )];
+  if (lineIds.length === 0) return page;
+
+  const { data, error } = await client
+    .from('catalog_line_colors')
+    .select(`
+      line_id,
+      image_url,
+      color:catalog_colors!catalog_line_colors_color_id_fkey(slug)
+    `)
+    .in('line_id', lineIds)
+    .not('image_url', 'is', null);
+
+  if (error || !Array.isArray(data)) return page;
+
+  const images = new Map(data.map((row) => [
+    `${row.line_id}:${row.color?.slug}`,
+    row.image_url,
+  ]));
+
+  return {
+    ...page,
+    cards: page.cards.map((card) => ({
+      ...card,
+      colors: card.colors.map((color) => ({
+        ...color,
+        imageUrl: images.get(`${card.lineId}:${color.slug}`) ?? color.imageUrl,
+      })),
+    })),
+  };
+}
+
 /**
  * Tarjetas del catálogo con filtros, orden y paginación por offset.
  * @param {object} filters - estado de filtros (ver filterUrl.js) + sizeIds resueltos
@@ -42,7 +79,7 @@ export async function listCards(filters = {}, { client = defaultClient, signal }
 
   const { data, error } = await query;
   if (error) throw classifyCatalogError(error, 'No se pudo cargar el catálogo.');
-  return adaptCardsResponse(data);
+  return addSearchColorImages(adaptCardsResponse(data), filters, client);
 }
 
 /**

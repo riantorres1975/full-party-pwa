@@ -1,13 +1,17 @@
 import {
   Check,
+  ChevronDown,
   ChevronLeft,
   Heart,
   Minus,
   PackageX,
   Plus,
+  Search,
   Share2,
   X,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { usePresentationPricing } from '../../hooks/catalog/usePresentationPricing.js';
 import { useProductDetail } from '../../hooks/catalog/useProductDetail.js';
@@ -15,7 +19,7 @@ import { useVariantSelection } from '../../hooks/catalog/useVariantSelection.js'
 import { getInlineProductPlaceholder } from '../../utils/imagenes.js';
 import {
   getPresentationDescription,
-  resolveInitialLineId,
+  resolveInitialVariantSelection,
 } from '../../services/catalog/publicCatalogModel.js';
 import { getMaximumPurchasableQuantity } from '../../services/catalog/variantSelection.js';
 
@@ -58,9 +62,365 @@ function OptionGroup({ label, state, onSelect, color = false }) {
   );
 }
 
+function normalizeColorSearch(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+const COLOR_FILTERS = [
+  { id: 'todos', label: 'Todos' },
+  { id: 'rosas', label: 'Rosas', keywords: ['rosa', 'fucsia', 'pink', 'coral'] },
+  { id: 'azules', label: 'Azules', keywords: ['azul', 'turquesa'] },
+  { id: 'verdes', label: 'Verdes', keywords: ['verde'] },
+  {
+    id: 'neutros',
+    label: 'Neutros',
+    keywords: [
+      'arena', 'beige', 'blanco', 'cafe', 'caqui', 'crema', 'gris',
+      'marfil', 'marron', 'negro', 'piel', 'plata',
+    ],
+  },
+];
+
+function getColorFilter(option) {
+  const name = normalizeColorSearch(option?.name);
+  return COLOR_FILTERS.find((filter) => (
+    filter.keywords?.some((keyword) => name.includes(keyword))
+  ))?.id ?? 'otros';
+}
+
+function getVisualColorOptions({
+  options,
+  variants,
+  lines,
+  images,
+  selectedLineId,
+  selectedSizeId,
+  productImage,
+}) {
+  const selectedLine = lines.find((line) => line.id === selectedLineId);
+  const fallbackImages = new Set(
+    [selectedLine?.imageUrl, productImage].filter(Boolean),
+  );
+
+  return options.map((option) => {
+    const lineColor = selectedLine?.colors?.find(
+      (color) => color.colorId === option.id,
+    );
+    const colorImage = images
+      .filter((image) => (
+        image.colorId === option.id
+        && (!selectedLineId || image.lineId === selectedLineId)
+      ))
+      .sort((first, second) => first.sortOrder - second.sortOrder)
+      .find((image) => image.imageUrl);
+    const colorVariants = variants
+      .filter((variant) => (
+        variant.color_id === option.id
+        && (!selectedLineId || variant.line_id === selectedLineId)
+      ))
+      .sort((first, second) => {
+        const score = (variant) => {
+          if (variant.size_id === selectedSizeId) return 0;
+          if (variant.size_numeric === 12) return 1;
+          return 2;
+        };
+        return score(first) - score(second);
+      });
+    const imageUrl = [
+      colorImage?.imageUrl,
+      lineColor?.imageUrl,
+      ...colorVariants.map((variant) => variant.image_url),
+    ].find((candidate) => candidate && !fallbackImages.has(candidate))
+      || colorImage?.imageUrl
+      || null;
+
+    return {
+      ...option,
+      imageUrl,
+      filter: getColorFilter(option),
+    };
+  });
+}
+
+function ColorVisual({ option }) {
+  if (option.imageUrl) {
+    return (
+      <img
+        src={option.imageUrl}
+        alt=""
+        width="180"
+        height="180"
+        loading="lazy"
+        onError={(event) => {
+          event.currentTarget.hidden = true;
+          event.currentTarget.nextElementSibling?.removeAttribute('hidden');
+        }}
+      />
+    );
+  }
+
+  return (
+    <span
+      className="catalog-v2-detail__color-balloon"
+      style={{ '--catalog-option-color': option.hex || '#d8d8df' }}
+      aria-hidden="true"
+    />
+  );
+}
+
+function MobileColorOptionGroup({
+  state,
+  onSelect,
+  variants = [],
+  lines = [],
+  images = [],
+  selectedLineId,
+  selectedSizeId,
+  productImage,
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState('todos');
+  const [draftColorId, setDraftColorId] = useState(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [open]);
+
+  if (!state?.visible) return null;
+  if (state.options.length <= 12) {
+    return <OptionGroup label="Color" state={state} onSelect={onSelect} color />;
+  }
+
+  const selectedOption = state.options.find((option) => option.id === state.value);
+  const visualOptions = getVisualColorOptions({
+    options: state.options,
+    variants,
+    lines,
+    images,
+    selectedLineId,
+    selectedSizeId,
+    productImage,
+  });
+  const draftOption = visualOptions.find((option) => option.id === draftColorId);
+  const normalizedQuery = normalizeColorSearch(query);
+  const availableFilters = COLOR_FILTERS.filter((filter) => (
+    filter.id === 'todos'
+    || visualOptions.some((option) => option.filter === filter.id)
+  ));
+  const filteredOptions = visualOptions.filter((option) => (
+    (activeFilter === 'todos' || option.filter === activeFilter)
+    && (!normalizedQuery || normalizeColorSearch(option.name).includes(normalizedQuery))
+  ));
+
+  const closePicker = () => {
+    setQuery('');
+    setActiveFilter('todos');
+    setOpen(false);
+  };
+
+  const openPicker = () => {
+    setDraftColorId(state.value);
+    setQuery('');
+    setActiveFilter('todos');
+    setOpen(true);
+  };
+
+  const confirmColor = () => {
+    if (!draftColorId) return;
+    onSelect(draftColorId);
+    closePicker();
+  };
+
+  return (
+    <fieldset className="catalog-v2-detail__options catalog-v2-detail__color-options">
+      <legend>
+        <span>Color</span>
+        <small>{state.options.length} colores</small>
+      </legend>
+
+      <div className="catalog-v2-detail__color-desktop">
+        {state.options.map((option) => {
+          const selected = option.id === state.value;
+          return (
+            <button
+              type="button"
+              key={option.id}
+              className={selected ? 'is-selected' : ''}
+              onClick={() => onSelect(option.id)}
+              aria-pressed={selected}
+            >
+              <span
+                className="catalog-v2-color-dot"
+                style={{ background: option.hex || '#e5e7eb' }}
+              />
+              {option.name}
+              {selected && <Check size={13} />}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="catalog-v2-detail__color-mobile">
+        <button
+          type="button"
+          className={[
+            'catalog-v2-detail__color-summary',
+            selectedOption ? 'has-selection' : '',
+          ].filter(Boolean).join(' ')}
+          onClick={openPicker}
+          aria-expanded={open}
+          aria-haspopup="dialog"
+        >
+          <span
+            className="catalog-v2-color-dot"
+            style={{ background: selectedOption?.hex || '#e5e7eb' }}
+          />
+          <span>
+            <small>{selectedOption ? 'Color elegido' : 'Elige un color'}</small>
+            <strong>{selectedOption?.name || `${state.options.length} colores disponibles`}</strong>
+          </span>
+          <span className="catalog-v2-detail__color-summary-action">
+            Ver colores
+            <ChevronDown size={16} aria-hidden="true" />
+          </span>
+        </button>
+
+        {open && typeof document !== 'undefined' && createPortal(
+          <div className="catalog-v2-color-sheet">
+            <button
+              type="button"
+              className="catalog-v2-color-sheet__backdrop"
+              onClick={closePicker}
+              aria-label="Cerrar selector de colores"
+            />
+            <section
+              id="catalog-v2-mobile-color-picker"
+              className="catalog-v2-color-sheet__panel"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="catalog-v2-color-sheet-title"
+            >
+              <span className="catalog-v2-color-sheet__handle" aria-hidden="true" />
+              <header>
+                <div>
+                  <h3 id="catalog-v2-color-sheet-title">Elige un color</h3>
+                  <p>{state.options.length} colores disponibles</p>
+                </div>
+                <button type="button" onClick={closePicker} aria-label="Cerrar">
+                  <X size={20} />
+                </button>
+              </header>
+
+              <label className="catalog-v2-color-sheet__search">
+                <Search size={17} aria-hidden="true" />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Buscar color..."
+                  aria-label="Buscar color"
+                  autoComplete="off"
+                  autoFocus
+                />
+              </label>
+
+              <div className="catalog-v2-color-sheet__filters" aria-label="Familias de color">
+                {availableFilters.map((filter) => (
+                  <button
+                    type="button"
+                    key={filter.id}
+                    className={activeFilter === filter.id ? 'is-active' : ''}
+                    onClick={() => setActiveFilter(filter.id)}
+                    aria-pressed={activeFilter === filter.id}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="catalog-v2-color-sheet__scroll">
+                {filteredOptions.length > 0 ? (
+                  <div className="catalog-v2-color-sheet__grid">
+                    {filteredOptions.map((option) => {
+                      const selected = option.id === draftColorId;
+                      return (
+                        <button
+                          type="button"
+                          key={option.id}
+                          className={selected ? 'is-selected' : ''}
+                          onClick={() => setDraftColorId(option.id)}
+                          aria-pressed={selected}
+                          aria-label={`${option.name}, ${option.imageUrl ? 'fotografía' : 'muestra de color'}`}
+                        >
+                          <span className="catalog-v2-color-sheet__visual">
+                            <ColorVisual option={option} />
+                            {option.imageUrl && (
+                              <span
+                                hidden
+                                className="catalog-v2-detail__color-balloon"
+                                style={{ '--catalog-option-color': option.hex || '#d8d8df' }}
+                                aria-hidden="true"
+                              />
+                            )}
+                            {selected && (
+                              <span className="catalog-v2-color-sheet__check">
+                                <Check size={15} />
+                              </span>
+                            )}
+                          </span>
+                          <span className="catalog-v2-color-sheet__name">
+                            <span
+                              className="catalog-v2-color-dot"
+                              style={{ background: option.hex || '#e5e7eb' }}
+                            />
+                            {option.name}
+                          </span>
+                          {!option.imageUrl && <small>Muestra de color</small>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="catalog-v2-color-sheet__empty">
+                    No encontramos un color con esos filtros.
+                  </p>
+                )}
+              </div>
+
+              <footer>
+                <button
+                  type="button"
+                  className="catalog-v2-primary-button"
+                  disabled={!draftOption}
+                  onClick={confirmColor}
+                >
+                  {draftOption ? `Elegir ${draftOption.name}` : 'Selecciona un color'}
+                </button>
+              </footer>
+            </section>
+          </div>,
+          document.querySelector('.catalog-v2-shell') ?? document.body,
+        )}
+      </div>
+    </fieldset>
+  );
+}
+
 export default function CatalogV2Detail({
   slug,
   initialLineSlug,
+  initialColorSlug,
+  initialSizeName,
   cartItems = [],
   favorite,
   onToggleFavorite,
@@ -68,10 +428,16 @@ export default function CatalogV2Detail({
   onClose,
 }) {
   const { detail, loading, error, refresh } = useProductDetail(slug);
-  const initialLineId = resolveInitialLineId(detail?.variants, initialLineSlug);
+  const initialSelection = resolveInitialVariantSelection(detail?.variants, {
+    lineSlug: initialLineSlug,
+    colorSlug: initialColorSlug,
+    sizeName: initialSizeName,
+  });
   const selection = useVariantSelection(
     detail?.variants,
-    initialLineId ? { lineId: initialLineId } : {},
+    Object.fromEntries(
+      Object.entries(initialSelection).filter(([, value]) => Boolean(value)),
+    ),
   );
 
   const product = detail?.product;
@@ -107,14 +473,25 @@ export default function CatalogV2Detail({
     1,
     Number(presentation?.minimumOrderQuantity) || 1,
   );
+  const selectedColorVisual = getVisualColorOptions({
+    options: selection.dimensionStates.colorId?.options ?? [],
+    variants: detail?.variants ?? [],
+    lines: detail?.lines ?? [],
+    images: detail?.images ?? [],
+    selectedLineId: selection.selection.lineId,
+    selectedSizeId: selection.selection.sizeId,
+    productImage: product?.mainImageUrl,
+  }).find((option) => option.id === selection.selection.colorId);
   const image = variant?.image_url
+    || selectedColorVisual?.imageUrl
     || product?.mainImageUrl
     || getInlineProductPlaceholder(product?.name || 'Producto');
   const sourceOutOfStock = presentation?.inStock === false || availableQuantity === 0;
   const cartUsesAllStock = availableQuantity != null
     && availableQuantity > 0
     && remainingQuantity === 0;
-  const stockBelowMinimum = maximumQuantity === 0
+  const stockBelowMinimum = Boolean(presentation)
+    && maximumQuantity === 0
     && !sourceOutOfStock
     && !cartUsesAllStock;
   const stockUnavailable = selection.complete
@@ -255,7 +632,16 @@ export default function CatalogV2Detail({
               {product.shortDescription && <p className="catalog-v2-detail__description">{product.shortDescription}</p>}
 
               <OptionGroup label="Gama" state={selection.dimensionStates.lineId} onSelect={selection.selectLine} />
-              <OptionGroup label="Color" state={selection.dimensionStates.colorId} onSelect={selection.selectColor} color />
+              <MobileColorOptionGroup
+                state={selection.dimensionStates.colorId}
+                onSelect={selection.selectColor}
+                variants={detail.variants}
+                lines={detail.lines}
+                images={detail.images}
+                selectedLineId={selection.selection.lineId}
+                selectedSizeId={selection.selection.sizeId}
+                productImage={product.mainImageUrl}
+              />
               <OptionGroup label="Medida" state={selection.dimensionStates.sizeId} onSelect={selection.selectSize} />
               <OptionGroup label={finishLabel} state={selection.dimensionStates.finish} onSelect={selection.selectFinish} />
 

@@ -6,11 +6,13 @@ import {
   buildCardTitle,
   buildCategoryHref,
   closeProductParams,
+  getCardSearchMatch,
   getCatalogCategoryPath,
   getCardAction,
   getPrimaryPresentationType,
   getPresentationDescription,
   resolveInitialLineId,
+  resolveInitialVariantSelection,
 } from '../src/services/catalog/publicCatalogModel.js';
 
 test('extrae rutas jerarquicas desde la URL publica', () => {
@@ -78,15 +80,50 @@ test('abre y cierra detalle conservando filtros URL', () => {
   const opened = buildCardProductParams('marca=glomex&q=globo', {
     slug: 'globo-latex-glomex',
     lineSlug: 'pastel',
+  }, {
+    colorSlug: 'rojo-pastel',
+    sizeName: '12 pulgadas',
   });
   assert.equal(opened.get('producto'), 'globo-latex-glomex');
   assert.equal(opened.get('gama'), 'pastel');
+  assert.equal(opened.get('seleccionColor'), 'rojo-pastel');
+  assert.equal(opened.get('seleccionMedida'), '12 pulgadas');
   assert.equal(opened.get('marca'), 'glomex');
   assert.equal(opened.get('q'), 'globo');
 
   const closed = closeProductParams(opened);
   assert.equal(closed.has('producto'), false);
+  assert.equal(closed.has('seleccionColor'), false);
+  assert.equal(closed.has('seleccionMedida'), false);
   assert.equal(closed.get('gama'), 'pastel');
+});
+
+test('destaca color y medida encontrados dentro de una familia', () => {
+  assert.deepEqual(getCardSearchMatch({
+    colors: [
+      {
+        slug: 'rojo-coral',
+        name: 'Rojo coral',
+        hex: '#E76F51',
+        imageUrl: '/rojo-coral.webp',
+      },
+      { slug: 'rojo-oscuro', name: 'Rojo oscuro', hex: '#7A2633' },
+    ],
+    sizes: [
+      { id: '10', name: '10 pulgadas' },
+      { id: '12', name: '12 pulgadas' },
+    ],
+  }, 'rojo 12'), {
+    colorSlug: 'rojo-coral',
+    colorName: 'Rojo coral',
+    colorHex: '#E76F51',
+    colorImageUrl: '/rojo-coral.webp',
+    colorCount: 2,
+    sizeId: '12',
+    sizeName: '12 pulgadas',
+    label: 'Rojo coral +1 · 12 pulgadas',
+  });
+  assert.equal(getCardSearchMatch({ colors: [], sizes: [] }, 'glomex'), null);
 });
 
 test('resume contenido de presentaciones directas y compuestas', () => {
@@ -106,4 +143,26 @@ test('resuelve gama inicial desde el slug de la tarjeta', () => {
     { line_id: 'pastel-id', line_slug: 'pastel' },
   ], 'pastel'), 'pastel-id');
   assert.equal(resolveInitialLineId([], 'pastel'), null);
+});
+
+test('preselecciona la combinacion encontrada por la busqueda', () => {
+  const variants = [
+    {
+      line_id: 'retro-id',
+      line_slug: 'retro',
+      color_id: 'coral-id',
+      color_slug: 'rojo-coral',
+      size_id: 'size-12',
+      size_name: '12 pulgadas',
+    },
+  ];
+  assert.deepEqual(resolveInitialVariantSelection(variants, {
+    lineSlug: 'retro',
+    colorSlug: 'rojo-coral',
+    sizeName: '12 pulgadas',
+  }), {
+    lineId: 'retro-id',
+    colorId: 'coral-id',
+    sizeId: 'size-12',
+  });
 });

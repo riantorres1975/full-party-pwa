@@ -146,6 +146,8 @@ export default function CatalogV2Page() {
 
   const selectedProductSlug = searchParams.get('producto');
   const selectedLineSlug = catalogFilters.filters.lines[0] || null;
+  const selectedColorSlug = searchParams.get('seleccionColor');
+  const selectedSizeName = searchParams.get('seleccionMedida');
   const selectedProductId = cards.find((card) => card.slug === selectedProductSlug)?.productId;
 
   useEffect(() => {
@@ -217,8 +219,8 @@ export default function CatalogV2Page() {
         : null)
       || 'Catálogo completo';
 
-  const openCard = (card) => {
-    setSearchParams(buildCardProductParams(searchParams, card));
+  const openCard = (card, searchMatch) => {
+    setSearchParams(buildCardProductParams(searchParams, card, searchMatch));
   };
 
   const closeDetail = () => {
@@ -530,6 +532,7 @@ export default function CatalogV2Page() {
                     favorite={isFavorite(card.productId)}
                     onToggleFavorite={toggleFavorite}
                     onOpen={openCard}
+                    searchQuery={catalogFilters.filters.search}
                   />
                 ))}
             </div>
@@ -600,6 +603,8 @@ export default function CatalogV2Page() {
       <CatalogV2Detail
         slug={selectedProductSlug}
         initialLineSlug={selectedLineSlug}
+        initialColorSlug={selectedColorSlug}
+        initialSizeName={selectedSizeName}
         cartItems={cart.items}
         favorite={selectedProductId ? isFavorite(selectedProductId) : false}
         onToggleFavorite={toggleFavorite}
