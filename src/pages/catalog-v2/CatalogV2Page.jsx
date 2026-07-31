@@ -9,7 +9,13 @@ import {
   SlidersHorizontal,
   X,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   useLocation,
   useNavigate,
@@ -36,6 +42,7 @@ import { resolveCategoryPath } from '../../services/catalog/categoriesRepository
 import {
   buildCardProductParams,
   buildCategoryHref,
+  buildProductSelectionParams,
   closeProductParams,
   getCatalogCategoryPath,
 } from '../../services/catalog/publicCatalogModel.js';
@@ -92,6 +99,7 @@ export default function CatalogV2Page() {
   );
   const { setCategoryPresentation } = useCatalogSeo();
   const searchInputRef = useRef(null);
+  const detailOriginParamsRef = useRef(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -220,12 +228,27 @@ export default function CatalogV2Page() {
       || 'Catálogo completo';
 
   const openCard = (card, searchMatch) => {
+    detailOriginParamsRef.current = searchParams.toString();
     setSearchParams(buildCardProductParams(searchParams, card, searchMatch));
   };
 
   const closeDetail = () => {
+    if (detailOriginParamsRef.current !== null) {
+      const originParams = detailOriginParamsRef.current;
+      detailOriginParamsRef.current = null;
+      setSearchParams(new URLSearchParams(originParams), { replace: true });
+      return;
+    }
     setSearchParams(closeProductParams(searchParams), { replace: true });
   };
+
+  const syncDetailSelection = useCallback((nextSelection) => {
+    if (!selectedProductSlug) return;
+    setSearchParams(
+      (current) => buildProductSelectionParams(current, nextSelection),
+      { replace: true },
+    );
+  }, [selectedProductSlug, setSearchParams]);
 
   const selectCategory = (category) => {
     setMobileMenuOpen(false);
@@ -609,6 +632,7 @@ export default function CatalogV2Page() {
         favorite={selectedProductId ? isFavorite(selectedProductId) : false}
         onToggleFavorite={toggleFavorite}
         onAddToCart={addToCart}
+        onSelectionChange={syncDetailSelection}
         onClose={closeDetail}
       />
 

@@ -4,6 +4,10 @@ import AxeBuilder from '@axe-core/playwright';
 const productId = '11111111-1111-4111-8111-111111111111';
 const variantId = '22222222-2222-4222-8222-222222222222';
 const presentationId = '33333333-3333-4333-8333-333333333333';
+const pastelLineId = '99999999-9999-4999-8999-999999999999';
+const pastelColorId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const pastelVariantId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+const pastelPresentationId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 const image = '/icons/icon-192.png';
 
 const categories = [{
@@ -57,41 +61,79 @@ const detail = {
     category: categories[0],
   },
   breadcrumb: [{ id: categories[0].id, name: 'Globos', slug: 'globos' }],
-  lines: [{
-    id: card.line_id,
-    name: 'Estandar',
-    slug: 'glomex-estandar',
-    colors: [{ color_id: '88888888-8888-4888-8888-888888888888', exact_name: 'Rojo', slug: 'rojo', hex: '#ef4444' }],
-  }],
+  lines: [
+    {
+      id: card.line_id,
+      name: 'Estandar',
+      slug: 'glomex-estandar',
+      colors: [{ color_id: '88888888-8888-4888-8888-888888888888', exact_name: 'Rojo', slug: 'rojo', hex: '#ef4444' }],
+    },
+    {
+      id: pastelLineId,
+      name: 'Pastel',
+      slug: 'glomex-pastel',
+      colors: [{ color_id: pastelColorId, exact_name: 'Azul pastel', slug: 'azul-pastel', hex: '#93c5fd' }],
+    },
+  ],
   sizes: [{ id: card.sizes[0].id, name: '12 pulgadas', numeric_value: 12, unit: 'pulgada' }],
-  variants: [{
-    id: variantId,
-    line_id: card.line_id,
-    line_name: 'Estandar',
-    line_slug: 'glomex-estandar',
-    color_id: '88888888-8888-4888-8888-888888888888',
-    color_name: 'Rojo',
-    color_slug: 'rojo',
-    color_hex: '#ef4444',
-    size_id: card.sizes[0].id,
-    size_name: '12 pulgadas',
-    image_url: image,
-    inventory_policy: 'shared_base_units',
-    presentations: [{
-      id: presentationId,
-      variant_id: variantId,
-      name: 'Bolsa con 100 piezas',
-      presentation_type: 'bolsa',
-      base_unit: 'pieza',
-      base_units_total: 100,
-      base_price: 85,
-      minimum_order_quantity: 1,
-      quantity_step: 1,
-      available_quantity: 50,
-      in_stock: true,
-      tiers: [{ minimum_quantity: 12, maximum_quantity: null, price_per_presentation: 78, label: 'Mayoreo' }],
-    }],
-  }],
+  variants: [
+    {
+      id: variantId,
+      line_id: card.line_id,
+      line_name: 'Estandar',
+      line_slug: 'glomex-estandar',
+      color_id: '88888888-8888-4888-8888-888888888888',
+      color_name: 'Rojo',
+      color_slug: 'rojo',
+      color_hex: '#ef4444',
+      size_id: card.sizes[0].id,
+      size_name: '12 pulgadas',
+      image_url: image,
+      inventory_policy: 'shared_base_units',
+      presentations: [{
+        id: presentationId,
+        variant_id: variantId,
+        name: 'Bolsa con 100 piezas',
+        presentation_type: 'bolsa',
+        base_unit: 'pieza',
+        base_units_total: 100,
+        base_price: 85,
+        minimum_order_quantity: 1,
+        quantity_step: 1,
+        available_quantity: 50,
+        in_stock: true,
+        tiers: [{ minimum_quantity: 12, maximum_quantity: null, price_per_presentation: 78, label: 'Mayoreo' }],
+      }],
+    },
+    {
+      id: pastelVariantId,
+      line_id: pastelLineId,
+      line_name: 'Pastel',
+      line_slug: 'glomex-pastel',
+      color_id: pastelColorId,
+      color_name: 'Azul pastel',
+      color_slug: 'azul-pastel',
+      color_hex: '#93c5fd',
+      size_id: card.sizes[0].id,
+      size_name: '12 pulgadas',
+      image_url: image,
+      inventory_policy: 'shared_base_units',
+      presentations: [{
+        id: pastelPresentationId,
+        variant_id: pastelVariantId,
+        name: 'Bolsa con 100 piezas',
+        presentation_type: 'bolsa',
+        base_unit: 'pieza',
+        base_units_total: 100,
+        base_price: 85,
+        minimum_order_quantity: 1,
+        quantity_step: 1,
+        available_quantity: 50,
+        in_stock: true,
+        tiers: [],
+      }],
+    },
+  ],
   images: [],
   attributes: [],
   related: [],
@@ -186,6 +228,58 @@ test('opens a V2 product, applies tier information and adds it to the order', as
   const cart = page.getByRole('dialog', { name: 'Mi pedido' });
   await expect(cart.getByText('Globo Latex Glomex')).toBeVisible();
   await expect(cart.getByRole('heading', { name: /Qui.n recibe el pedido/ })).toBeVisible();
+});
+
+test('lets customers choose visually by color across product lines', async ({ page }) => {
+  await mockCatalogV2(page);
+  await page.goto('/catalogo?producto=globo-latex-glomex');
+
+  const dialog = page.getByRole('dialog', { name: 'Globo Latex Glomex' });
+  await expect(dialog.getByRole('heading', { name: '¿Cómo quieres empezar?' })).toBeVisible();
+  await dialog.getByTestId('catalog-v2-global-color-trigger').click();
+
+  const colorPicker = page.getByRole('dialog', { name: 'Explora por color' });
+  await colorPicker.getByRole('button', { name: /Azul pastel/ }).click();
+  await colorPicker.getByRole('button', { name: 'Elegir Azul pastel' }).click();
+
+  await expect(dialog.getByRole('button', {
+    name: 'Color elegido Azul pastel Pastel Ver colores',
+  })).toBeVisible();
+  await expect(page).toHaveURL(/gama=glomex-pastel/);
+  await expect(page).toHaveURL(/seleccionColor=azul-pastel/);
+  await expect(page).toHaveURL(/seleccionMedida=12(\+|%20)pulgadas/);
+  await expect(dialog.getByRole('button', { name: /Agregar al pedido/ })).toBeEnabled();
+});
+
+test('keeps the product-line path active while selecting a line', async ({ page }) => {
+  await mockCatalogV2(page);
+  await page.goto('/catalogo?producto=globo-latex-glomex');
+
+  const dialog = page.getByRole('dialog', { name: 'Globo Latex Glomex' });
+  const linePath = dialog.getByRole('button', {
+    name: /Conozco la gama/,
+  });
+  await linePath.click();
+  await dialog.getByRole('button', { name: 'Pastel', exact: true }).click();
+
+  await expect(linePath).toHaveAttribute('aria-pressed', 'true');
+  await expect(page).toHaveURL(/gama=glomex-pastel/);
+});
+
+test('restores the original catalog filters after closing product detail', async ({ page }) => {
+  await mockCatalogV2(page);
+  await page.goto('/catalogo');
+
+  await page.locator('.catalog-v2-card__action').first().click();
+  const dialog = page.getByRole('dialog', { name: 'Globo Latex Glomex' });
+  await dialog.getByRole('button', { name: /Conozco la gama/ }).click();
+  await dialog.getByRole('button', { name: 'Pastel', exact: true }).click();
+  await expect(page).toHaveURL(/gama=glomex-pastel/);
+
+  await dialog.getByRole('button', { name: 'Regresar' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page).toHaveURL(/\/catalogo$/);
+  await expect(page.getByRole('heading', { name: /Globo Latex Glomex/ })).toBeVisible();
 });
 
 test('has no serious accessibility violations in the catalog results', async ({ page }) => {

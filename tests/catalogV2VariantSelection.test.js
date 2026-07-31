@@ -5,6 +5,7 @@ import {
   applySelection,
   createInitialSelection,
   getCandidateVariants,
+  getColorExplorerOptions,
   getDimensionStates,
   getMaximumPurchasableQuantity,
   getQuantityError,
@@ -66,6 +67,46 @@ test('limita opciones en cascada y no ofrece combinaciones inexistentes', () => 
   assert.deepEqual(states.colorId.options.map((option) => option.id), ['dorado']);
   assert.deepEqual(states.sizeId.options.map((option) => option.id), ['18']);
   assert.equal(states.sizeId.options.some((option) => option.id === '5'), false);
+});
+
+test('construye un explorador visual por color y conserva la gama correcta', () => {
+  const options = getColorExplorerOptions([
+    ...variants,
+    {
+      ...variants[0],
+      id: 'v-pastel-rosa-18',
+      size_id: '18',
+      size_name: '18 pulgadas',
+      image_url: '/rosa-pastel.webp',
+    },
+  ]);
+  const rosa = options.find((option) => option.colorId === 'rosa');
+
+  assert.equal(rosa.id, 'pastel:rosa');
+  assert.equal(rosa.lineId, 'pastel');
+  assert.equal(rosa.lineName, 'Pastel');
+  assert.deepEqual(rosa.sizeNames.sort(), ['12 pulgadas', '18 pulgadas']);
+  assert.equal(rosa.imageUrl, '/rosa-pastel.webp');
+});
+
+test('marca opciones agotadas sin eliminar combinaciones validas', () => {
+  const soldOutVariants = [{
+    ...variants[0],
+    presentations: [{
+      id: 'bag-rosa',
+      inStock: false,
+      availableQuantity: 0,
+    }],
+  }];
+  const states = getDimensionStates(soldOutVariants, {
+    lineId: 'pastel',
+    colorId: null,
+    sizeId: null,
+  });
+  const explorer = getColorExplorerOptions(soldOutVariants);
+
+  assert.equal(states.colorId.options[0].available, false);
+  assert.equal(explorer[0].available, false);
 });
 
 test('preserva deep links completos y resuelve variante y presentacion', () => {

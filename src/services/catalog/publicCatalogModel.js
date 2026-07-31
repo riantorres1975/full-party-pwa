@@ -123,6 +123,20 @@ export function buildCardProductParams(current, card, searchMatch = null) {
   return params;
 }
 
+export function buildProductSelectionParams(
+  current,
+  { lineSlug, colorSlug, sizeName } = {},
+) {
+  const params = new URLSearchParams(current ?? undefined);
+  if (lineSlug) params.set('gama', lineSlug);
+  else params.delete('gama');
+  if (colorSlug) params.set('seleccionColor', colorSlug);
+  else params.delete('seleccionColor');
+  if (sizeName) params.set('seleccionMedida', sizeName);
+  else params.delete('seleccionMedida');
+  return params;
+}
+
 export function closeProductParams(current) {
   const params = new URLSearchParams(current ?? undefined);
   params.delete('producto');

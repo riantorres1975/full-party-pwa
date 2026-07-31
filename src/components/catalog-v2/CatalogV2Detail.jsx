@@ -3,8 +3,10 @@ import {
   ChevronDown,
   ChevronLeft,
   Heart,
+  Layers3,
   Minus,
   PackageX,
+  Palette,
   Plus,
   Search,
   Share2,
@@ -21,7 +23,10 @@ import {
   getPresentationDescription,
   resolveInitialVariantSelection,
 } from '../../services/catalog/publicCatalogModel.js';
-import { getMaximumPurchasableQuantity } from '../../services/catalog/variantSelection.js';
+import {
+  getColorExplorerOptions,
+  getMaximumPurchasableQuantity,
+} from '../../services/catalog/variantSelection.js';
 
 function money(value) {
   return new Intl.NumberFormat('es-MX', {
@@ -38,13 +43,18 @@ function OptionGroup({ label, state, onSelect, color = false }) {
       <div>
         {state.options.map((option) => {
           const selected = option.id === state.value;
+          const unavailable = option.available === false;
           return (
             <button
               type="button"
               key={option.id}
-              className={selected ? 'is-selected' : ''}
+              className={[
+                selected ? 'is-selected' : '',
+                unavailable ? 'is-unavailable' : '',
+              ].filter(Boolean).join(' ')}
               onClick={() => onSelect(option.id)}
               aria-pressed={selected}
+              disabled={unavailable && !selected}
             >
               {color && (
                 <span
@@ -54,6 +64,7 @@ function OptionGroup({ label, state, onSelect, color = false }) {
               )}
               {option.name}
               {selected && <Check size={13} />}
+              {unavailable && <small>Agotado</small>}
             </button>
           );
         })}
@@ -101,26 +112,27 @@ function getVisualColorOptions({
   selectedSizeId,
   productImage,
 }) {
-  const selectedLine = lines.find((line) => line.id === selectedLineId);
-  const fallbackImages = new Set(
-    [selectedLine?.imageUrl, productImage].filter(Boolean),
-  );
-
   return options.map((option) => {
+    const optionLineId = option.lineId ?? selectedLineId;
+    const optionColorId = option.colorId ?? option.id;
+    const selectedLine = lines.find((line) => line.id === optionLineId);
+    const fallbackImages = new Set(
+      [selectedLine?.imageUrl, productImage].filter(Boolean),
+    );
     const lineColor = selectedLine?.colors?.find(
-      (color) => color.colorId === option.id,
+      (color) => color.colorId === optionColorId,
     );
     const colorImage = images
       .filter((image) => (
-        image.colorId === option.id
-        && (!selectedLineId || image.lineId === selectedLineId)
+        image.colorId === optionColorId
+        && (!optionLineId || image.lineId === optionLineId)
       ))
       .sort((first, second) => first.sortOrder - second.sortOrder)
       .find((image) => image.imageUrl);
     const colorVariants = variants
       .filter((variant) => (
-        variant.color_id === option.id
-        && (!selectedLineId || variant.line_id === selectedLineId)
+        variant.color_id === optionColorId
+        && (!optionLineId || variant.line_id === optionLineId)
       ))
       .sort((first, second) => {
         const score = (variant) => {
@@ -133,6 +145,7 @@ function getVisualColorOptions({
     const imageUrl = [
       colorImage?.imageUrl,
       lineColor?.imageUrl,
+      option.imageUrl,
       ...colorVariants.map((variant) => variant.image_url),
     ].find((candidate) => candidate && !fallbackImages.has(candidate))
       || colorImage?.imageUrl
@@ -181,6 +194,9 @@ function MobileColorOptionGroup({
   selectedLineId,
   selectedSizeId,
   productImage,
+  forceVisual = false,
+  showLine = false,
+  label = 'Color',
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -197,11 +213,10 @@ function MobileColorOptionGroup({
   }, [open]);
 
   if (!state?.visible) return null;
-  if (state.options.length <= 12) {
-    return <OptionGroup label="Color" state={state} onSelect={onSelect} color />;
+  if (state.options.length <= 12 && !forceVisual) {
+    return <OptionGroup label={label} state={state} onSelect={onSelect} color />;
   }
 
-  const selectedOption = state.options.find((option) => option.id === state.value);
   const visualOptions = getVisualColorOptions({
     options: state.options,
     variants,
@@ -211,6 +226,7 @@ function MobileColorOptionGroup({
     selectedSizeId,
     productImage,
   });
+  const selectedOption = visualOptions.find((option) => option.id === state.value);
   const draftOption = visualOptions.find((option) => option.id === draftColorId);
   const normalizedQuery = normalizeColorSearch(query);
   const availableFilters = COLOR_FILTERS.filter((filter) => (
@@ -242,22 +258,33 @@ function MobileColorOptionGroup({
   };
 
   return (
-    <fieldset className="catalog-v2-detail__options catalog-v2-detail__color-options">
+    <fieldset className={[
+      'catalog-v2-detail__options',
+      'catalog-v2-detail__color-options',
+      forceVisual ? 'is-global' : '',
+    ].filter(Boolean).join(' ')}>
       <legend>
-        <span>Color</span>
-        <small>{state.options.length} colores</small>
+        <span>{label}</span>
+        <small>
+          {state.options.length} {showLine ? 'opciones' : 'colores'}
+        </small>
       </legend>
 
-      <div className="catalog-v2-detail__color-desktop">
+      {!forceVisual && <div className="catalog-v2-detail__color-desktop">
         {state.options.map((option) => {
           const selected = option.id === state.value;
+          const unavailable = option.available === false;
           return (
             <button
               type="button"
               key={option.id}
-              className={selected ? 'is-selected' : ''}
+              className={[
+                selected ? 'is-selected' : '',
+                unavailable ? 'is-unavailable' : '',
+              ].filter(Boolean).join(' ')}
               onClick={() => onSelect(option.id)}
               aria-pressed={selected}
+              disabled={unavailable && !selected}
             >
               <span
                 className="catalog-v2-color-dot"
@@ -265,12 +292,16 @@ function MobileColorOptionGroup({
               />
               {option.name}
               {selected && <Check size={13} />}
+              {unavailable && <small>Agotado</small>}
             </button>
           );
         })}
-      </div>
+      </div>}
 
-      <div className="catalog-v2-detail__color-mobile">
+      <div className={[
+        'catalog-v2-detail__color-mobile',
+        forceVisual ? 'is-global' : '',
+      ].filter(Boolean).join(' ')}>
         <button
           type="button"
           className={[
@@ -280,6 +311,7 @@ function MobileColorOptionGroup({
           onClick={openPicker}
           aria-expanded={open}
           aria-haspopup="dialog"
+          data-testid={forceVisual ? 'catalog-v2-global-color-trigger' : undefined}
         >
           <span
             className="catalog-v2-color-dot"
@@ -287,7 +319,11 @@ function MobileColorOptionGroup({
           />
           <span>
             <small>{selectedOption ? 'Color elegido' : 'Elige un color'}</small>
-            <strong>{selectedOption?.name || `${state.options.length} colores disponibles`}</strong>
+            <strong>
+              {selectedOption?.name
+                || `${state.options.length} ${showLine ? 'opciones' : 'colores disponibles'}`}
+            </strong>
+            {showLine && selectedOption?.lineName && <em>{selectedOption.lineName}</em>}
           </span>
           <span className="catalog-v2-detail__color-summary-action">
             Ver colores
@@ -313,8 +349,13 @@ function MobileColorOptionGroup({
               <span className="catalog-v2-color-sheet__handle" aria-hidden="true" />
               <header>
                 <div>
-                  <h3 id="catalog-v2-color-sheet-title">Elige un color</h3>
-                  <p>{state.options.length} colores disponibles</p>
+                  <h3 id="catalog-v2-color-sheet-title">
+                    {showLine ? 'Explora por color' : 'Elige un color'}
+                  </h3>
+                  <p>
+                    {state.options.length} {showLine ? 'opciones de color' : 'colores disponibles'}
+                    {showLine ? ' entre todas las gamas' : ''}
+                  </p>
                 </div>
                 <button type="button" onClick={closePicker} aria-label="Cerrar">
                   <X size={20} />
@@ -353,14 +394,19 @@ function MobileColorOptionGroup({
                   <div className="catalog-v2-color-sheet__grid">
                     {filteredOptions.map((option) => {
                       const selected = option.id === draftColorId;
+                      const unavailable = option.available === false;
                       return (
                         <button
                           type="button"
                           key={option.id}
-                          className={selected ? 'is-selected' : ''}
+                          className={[
+                            selected ? 'is-selected' : '',
+                            unavailable ? 'is-unavailable' : '',
+                          ].filter(Boolean).join(' ')}
                           onClick={() => setDraftColorId(option.id)}
                           aria-pressed={selected}
                           aria-label={`${option.name}, ${option.imageUrl ? 'fotografía' : 'muestra de color'}`}
+                          disabled={unavailable && !selected}
                         >
                           <span className="catalog-v2-color-sheet__visual">
                             <ColorVisual option={option} />
@@ -385,7 +431,17 @@ function MobileColorOptionGroup({
                             />
                             {option.name}
                           </span>
-                          {!option.imageUrl && <small>Muestra de color</small>}
+                          {showLine && option.lineName && (
+                            <small>
+                              {option.lineName} · {option.sizeNames?.length || 0}
+                              {' '}
+                              {option.sizeNames?.length === 1 ? 'medida' : 'medidas'}
+                            </small>
+                          )}
+                          {!showLine && !option.imageUrl && <small>Muestra de color</small>}
+                          {unavailable && (
+                            <small className="catalog-v2-color-sheet__unavailable">Agotado</small>
+                          )}
                         </button>
                       );
                     })}
@@ -425,9 +481,18 @@ export default function CatalogV2Detail({
   favorite,
   onToggleFavorite,
   onAddToCart,
+  onSelectionChange,
   onClose,
 }) {
   const { detail, loading, error, refresh } = useProductDetail(slug);
+  const [selectionPath, setSelectionPath] = useState(
+    initialColorSlug ? 'color' : initialLineSlug ? 'line' : 'color',
+  );
+  useEffect(() => {
+    setSelectionPath(initialColorSlug ? 'color' : initialLineSlug ? 'line' : 'color');
+    // La URL cambia al elegir opciones; solo otro producto debe reiniciar este modo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug]);
   const initialSelection = resolveInitialVariantSelection(detail?.variants, {
     lineSlug: initialLineSlug,
     colorSlug: initialColorSlug,
@@ -443,6 +508,38 @@ export default function CatalogV2Detail({
   const product = detail?.product;
   const variant = selection.variant;
   const presentation = selection.presentation;
+  const colorExplorerOptions = getColorExplorerOptions(detail?.variants);
+  const guidedSelection = colorExplorerOptions.length > 1
+    && (selection.dimensionStates.lineId?.options.length ?? 0) > 1;
+  const explorerSelectionId = selection.selection.lineId && selection.selection.colorId
+    ? `${selection.selection.lineId}:${selection.selection.colorId}`
+    : null;
+  const selectedLine = detail?.lines.find(
+    (line) => line.id === selection.selection.lineId,
+  );
+  const selectedVariantColor = detail?.variants.find(
+    (item) => item.line_id === selection.selection.lineId
+      && item.color_id === selection.selection.colorId,
+  );
+  const selectedSize = detail?.sizes.find(
+    (size) => size.id === selection.selection.sizeId,
+  );
+  useEffect(() => {
+    if (!detail || !selection.selection.lineId || !onSelectionChange) return;
+    onSelectionChange({
+      lineSlug: selectedLine?.slug ?? selectedVariantColor?.line_slug ?? null,
+      colorSlug: selectedVariantColor?.color_slug ?? null,
+      sizeName: selectedSize?.name ?? null,
+    });
+  }, [
+    detail,
+    onSelectionChange,
+    selectedLine?.slug,
+    selectedSize?.name,
+    selectedVariantColor?.color_slug,
+    selectedVariantColor?.line_slug,
+    selection.selection.lineId,
+  ]);
   const cartQuantity = Math.max(
     0,
     Number(cartItems.find(
@@ -527,6 +624,15 @@ export default function CatalogV2Detail({
       variant,
       presentation,
       quantity,
+    });
+  };
+
+  const selectExplorerColor = (optionId) => {
+    const option = colorExplorerOptions.find((item) => item.id === optionId);
+    if (!option) return;
+    selection.updateSelection({
+      lineId: option.lineId,
+      colorId: option.colorId,
     });
   };
 
@@ -631,17 +737,106 @@ export default function CatalogV2Detail({
               <h2>{product.name}</h2>
               {product.shortDescription && <p className="catalog-v2-detail__description">{product.shortDescription}</p>}
 
-              <OptionGroup label="Gama" state={selection.dimensionStates.lineId} onSelect={selection.selectLine} />
-              <MobileColorOptionGroup
-                state={selection.dimensionStates.colorId}
-                onSelect={selection.selectColor}
-                variants={detail.variants}
-                lines={detail.lines}
-                images={detail.images}
-                selectedLineId={selection.selection.lineId}
-                selectedSizeId={selection.selection.sizeId}
-                productImage={product.mainImageUrl}
-              />
+              {guidedSelection ? (
+                <section
+                  className="catalog-v2-detail__selection-guide"
+                  aria-labelledby="catalog-v2-selection-guide-title"
+                >
+                  <div className="catalog-v2-detail__selection-guide-heading">
+                    <div>
+                      <span>Te ayudamos a elegir</span>
+                      <h3 id="catalog-v2-selection-guide-title">¿Cómo quieres empezar?</h3>
+                    </div>
+                    <small>Puedes cambiar de opción cuando quieras</small>
+                  </div>
+                  <div className="catalog-v2-detail__selection-paths" role="group" aria-label="Forma de elegir">
+                    <button
+                      type="button"
+                      className={selectionPath === 'color' ? 'is-selected' : ''}
+                      onClick={() => setSelectionPath('color')}
+                      aria-pressed={selectionPath === 'color'}
+                    >
+                      <Palette size={19} aria-hidden="true" />
+                      <span>
+                        <strong>Elegir por color</strong>
+                        <small>Quiero ver fotos y tonos</small>
+                      </span>
+                      {selectionPath === 'color' && <Check size={15} />}
+                    </button>
+                    <button
+                      type="button"
+                      className={selectionPath === 'line' ? 'is-selected' : ''}
+                      onClick={() => setSelectionPath('line')}
+                      aria-pressed={selectionPath === 'line'}
+                    >
+                      <Layers3 size={19} aria-hidden="true" />
+                      <span>
+                        <strong>Conozco la gama</strong>
+                        <small>Estándar, Pastel, Retro...</small>
+                      </span>
+                      {selectionPath === 'line' && <Check size={15} />}
+                    </button>
+                  </div>
+
+                  {selectionPath === 'color' ? (
+                    <MobileColorOptionGroup
+                      state={{
+                        visible: true,
+                        options: colorExplorerOptions,
+                        value: explorerSelectionId,
+                      }}
+                      onSelect={selectExplorerColor}
+                      variants={detail.variants}
+                      lines={detail.lines}
+                      images={detail.images}
+                      selectedLineId={null}
+                      selectedSizeId={selection.selection.sizeId}
+                      productImage={product.mainImageUrl}
+                      forceVisual
+                      showLine
+                      label="Color"
+                    />
+                  ) : (
+                    <>
+                      <OptionGroup
+                        label="Gama"
+                        state={selection.dimensionStates.lineId}
+                        onSelect={selection.selectLine}
+                      />
+                      {selection.selection.lineId ? (
+                        <MobileColorOptionGroup
+                          state={selection.dimensionStates.colorId}
+                          onSelect={selection.selectColor}
+                          variants={detail.variants}
+                          lines={detail.lines}
+                          images={detail.images}
+                          selectedLineId={selection.selection.lineId}
+                          selectedSizeId={selection.selection.sizeId}
+                          productImage={product.mainImageUrl}
+                        />
+                      ) : (
+                        <p className="catalog-v2-detail__selection-hint">
+                          Elige una gama para mostrar sus colores.
+                        </p>
+                      )}
+                    </>
+                  )}
+                </section>
+              ) : (
+                <>
+                  <OptionGroup label="Gama" state={selection.dimensionStates.lineId} onSelect={selection.selectLine} />
+                  <MobileColorOptionGroup
+                    state={selection.dimensionStates.colorId}
+                    onSelect={selection.selectColor}
+                    variants={detail.variants}
+                    lines={detail.lines}
+                    images={detail.images}
+                    selectedLineId={selection.selection.lineId}
+                    selectedSizeId={selection.selection.sizeId}
+                    productImage={product.mainImageUrl}
+                  />
+                </>
+              )}
               <OptionGroup label="Medida" state={selection.dimensionStates.sizeId} onSelect={selection.selectSize} />
               <OptionGroup label={finishLabel} state={selection.dimensionStates.finish} onSelect={selection.selectFinish} />
 
@@ -669,46 +864,73 @@ export default function CatalogV2Detail({
                 </fieldset>
               )}
 
-              {presentation && (
-                <div className="catalog-v2-detail__purchase">
-                  <div>
-                    <span>Cantidad</span>
-                    <div className="catalog-v2-quantity">
-                      <button
-                        type="button"
-                        disabled={!canDecreaseQuantity}
-                        onClick={() => selection.setQuantity(quantity - quantityStep)}
-                        aria-label="Reducir cantidad"
-                      >
-                        <Minus size={16} />
-                      </button>
-                      <strong>{quantity}</strong>
-                      <button
-                        type="button"
-                        disabled={!canIncreaseQuantity}
-                        onClick={() => selection.setQuantity(quantity + quantityStep)}
-                        aria-label="Aumentar cantidad"
-                      >
-                        <Plus size={16} />
-                      </button>
+              {variant && (
+                <div className="catalog-v2-detail__purchase-cluster">
+                  <section className="catalog-v2-detail__choice-summary" aria-live="polite">
+                    <span><Check size={17} aria-hidden="true" /></span>
+                    <div>
+                      <small>Tu elección</small>
+                      <strong>
+                        {[variant.color_name, variant.size_name].filter(Boolean).join(' · ')}
+                      </strong>
+                      <p>
+                        {[variant.line_name, presentation?.name].filter(Boolean).join(' · ')}
+                      </p>
                     </div>
-                    {remainingQuantity != null && (
-                      <small className="catalog-v2-detail__stock-limit">
-                        Puedes agregar hasta {maximumQuantity ?? remainingQuantity}
-                        {cartQuantity > 0 && ` · ${cartQuantity} en tu pedido`}
-                      </small>
-                    )}
-                  </div>
-                  <div className="catalog-v2-detail__price-summary">
-                    <span>Precio aplicado</span>
-                    <strong>{money(price.pricing?.unitPrice)} c/u</strong>
-                    {price.pricing?.nextTier && (
-                      <small>
-                        Agrega {price.pricing.nextTier.missing} para pagar {money(price.pricing.nextTier.price)} c/u
-                      </small>
-                    )}
-                    <p>Contenido total: {price.pricing?.totalUnits ?? 0} unidades</p>
-                  </div>
+                    <div>
+                      <small>Disponibilidad</small>
+                      <strong>
+                        {stockUnavailable
+                          ? 'No disponible'
+                          : remainingQuantity == null
+                            ? 'Disponible'
+                            : `${remainingQuantity} disponibles`}
+                      </strong>
+                    </div>
+                  </section>
+
+                  {presentation && (
+                    <div className="catalog-v2-detail__purchase">
+                      <div>
+                        <span>Cantidad</span>
+                        <div className="catalog-v2-quantity">
+                          <button
+                            type="button"
+                            disabled={!canDecreaseQuantity}
+                            onClick={() => selection.setQuantity(quantity - quantityStep)}
+                            aria-label="Reducir cantidad"
+                          >
+                            <Minus size={16} />
+                          </button>
+                          <strong>{quantity}</strong>
+                          <button
+                            type="button"
+                            disabled={!canIncreaseQuantity}
+                            onClick={() => selection.setQuantity(quantity + quantityStep)}
+                            aria-label="Aumentar cantidad"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
+                        {remainingQuantity != null && (
+                          <small className="catalog-v2-detail__stock-limit">
+                            Máximo {maximumQuantity ?? remainingQuantity}
+                            {cartQuantity > 0 && ` · ${cartQuantity} en tu pedido`}
+                          </small>
+                        )}
+                      </div>
+                      <div className="catalog-v2-detail__price-summary">
+                        <span>Precio aplicado</span>
+                        <strong>{money(price.pricing?.unitPrice)} c/u</strong>
+                        {price.pricing?.nextTier && (
+                          <small>
+                            Agrega {price.pricing.nextTier.missing} para pagar {money(price.pricing.nextTier.price)} c/u
+                          </small>
+                        )}
+                        <p>{price.pricing?.totalUnits ?? 0} unidades en total</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -751,20 +973,36 @@ export default function CatalogV2Detail({
                 aria-describedby={stockUnavailable ? 'catalog-v2-stock-message' : undefined}
                 onClick={addToCart}
               >
-                {canAddToCart
-                  ? `Agregar al pedido · ${money(price.pricing.subtotal)}`
-                  : sourceOutOfStock
-                    ? 'Agotado'
-                    : cartUsesAllStock
-                      ? 'Máximo agregado'
-                      : stockBelowMinimum
-                        ? 'Existencia insuficiente'
-                    : 'Completa tus opciones'}
+                <span>
+                  {canAddToCart
+                    ? `Agregar al pedido · ${money(price.pricing.subtotal)}`
+                    : sourceOutOfStock
+                      ? 'Agotado'
+                      : cartUsesAllStock
+                        ? 'Máximo agregado'
+                        : stockBelowMinimum
+                          ? 'Existencia insuficiente'
+                          : 'Completa tus opciones'}
+                </span>
+                {selection.complete && (
+                  <small>
+                    {[variant?.color_name, variant?.size_name].filter(Boolean).join(' · ')}
+                  </small>
+                )}
               </button>
 
               {presentation?.tiers?.length > 0 && (
-                <section className="catalog-v2-detail__tiers">
-                  <h3>Precios por cantidad</h3>
+                <details className="catalog-v2-detail__tiers">
+                  <summary>
+                    <span>
+                      <h3>Precios por cantidad</h3>
+                      <small>
+                        Desde {presentation.tiers[0].minimumQuantity}:&nbsp;
+                        {money(presentation.tiers[0].pricePerPresentation)} c/u
+                      </small>
+                    </span>
+                    <span>Ver tabla <ChevronDown size={15} aria-hidden="true" /></span>
+                  </summary>
                   <div>
                     <span>Desde</span><span>Hasta</span><span>Precio</span>
                     <strong>1</strong>
@@ -778,7 +1016,7 @@ export default function CatalogV2Detail({
                       </div>
                     ))}
                   </div>
-                </section>
+                </details>
               )}
             </div>
           </div>

@@ -5,6 +5,7 @@ import {
   buildCardProductParams,
   buildCardTitle,
   buildCategoryHref,
+  buildProductSelectionParams,
   closeProductParams,
   getCardSearchMatch,
   getCatalogCategoryPath,
@@ -96,6 +97,30 @@ test('abre y cierra detalle conservando filtros URL', () => {
   assert.equal(closed.has('seleccionColor'), false);
   assert.equal(closed.has('seleccionMedida'), false);
   assert.equal(closed.get('gama'), 'pastel');
+});
+
+test('sincroniza la combinacion elegida sin perder el producto ni la busqueda', () => {
+  const selected = buildProductSelectionParams(
+    'producto=globo-latex-glomex&q=azul',
+    {
+      lineSlug: 'glomex-pastel',
+      colorSlug: 'azul-pastel',
+      sizeName: '12 pulgadas',
+    },
+  );
+
+  assert.equal(selected.get('producto'), 'globo-latex-glomex');
+  assert.equal(selected.get('q'), 'azul');
+  assert.equal(selected.get('gama'), 'glomex-pastel');
+  assert.equal(selected.get('seleccionColor'), 'azul-pastel');
+  assert.equal(selected.get('seleccionMedida'), '12 pulgadas');
+
+  const cleared = buildProductSelectionParams(selected, {
+    lineSlug: 'glomex-retro',
+  });
+  assert.equal(cleared.get('gama'), 'glomex-retro');
+  assert.equal(cleared.has('seleccionColor'), false);
+  assert.equal(cleared.has('seleccionMedida'), false);
 });
 
 test('destaca color y medida encontrados dentro de una familia', () => {

@@ -23,6 +23,17 @@ function dimensionValue(variant, dimension) {
   return variant?.[dimension] ?? null;
 }
 
+function presentationHasStock(presentation) {
+  if (presentation?.inStock === false || presentation?.in_stock === false) return false;
+  const available = presentation?.availableQuantity ?? presentation?.available_quantity;
+  return available == null || Number(available) > 0;
+}
+
+function variantHasStock(variant) {
+  const presentations = Array.isArray(variant?.presentations) ? variant.presentations : [];
+  return presentations.some(presentationHasStock);
+}
+
 /** ¿El producto usa cada dimensión? (al menos una variante la tiene no nula) */
 export function getDimensionPresence(variants) {
   const list = Array.isArray(variants) ? variants : [];
@@ -59,17 +70,63 @@ function toOptions(variants, dimension, labelKeys) {
   const seen = new Map();
   for (const variant of variants) {
     const id = dimensionValue(variant, dimension);
-    if (id == null || seen.has(id)) continue;
-    seen.set(id, {
-      id,
-      name: variant[labelKeys.name] ?? null,
-      slug: labelKeys.slug ? variant[labelKeys.slug] ?? null : null,
-      hex: labelKeys.hex ? variant[labelKeys.hex] ?? null : undefined,
-    });
+    if (id == null) continue;
+    const current = seen.get(id);
+    if (current) {
+      current.available = current.available || variantHasStock(variant);
+    } else {
+      seen.set(id, {
+        id,
+        name: variant[labelKeys.name] ?? null,
+        slug: labelKeys.slug ? variant[labelKeys.slug] ?? null : null,
+        hex: labelKeys.hex ? variant[labelKeys.hex] ?? null : undefined,
+        available: variantHasStock(variant),
+      });
+    }
   }
   return [...seen.values()].sort((a, b) =>
     String(a.name ?? '').localeCompare(String(b.name ?? ''), 'es', { sensitivity: 'base' }),
   );
+}
+
+/** Colores navegables entre gamas para clientes que no conocen la línea comercial. */
+export function getColorExplorerOptions(variants) {
+  const options = new Map();
+  for (const variant of Array.isArray(variants) ? variants : []) {
+    if (variant?.line_id == null || variant?.color_id == null) continue;
+    const id = `${variant.line_id}:${variant.color_id}`;
+    const current = options.get(id);
+    if (!current) {
+      options.set(id, {
+        id,
+        lineId: variant.line_id,
+        lineName: variant.line_name ?? null,
+        lineSlug: variant.line_slug ?? null,
+        colorId: variant.color_id,
+        name: variant.color_name ?? null,
+        slug: variant.color_slug ?? null,
+        hex: variant.color_hex ?? null,
+        imageUrl: variant.image_url ?? null,
+        available: variantHasStock(variant),
+        sizeNames: new Set(variant.size_name ? [variant.size_name] : []),
+      });
+      continue;
+    }
+    current.available = current.available || variantHasStock(variant);
+    current.imageUrl ||= variant.image_url ?? null;
+    if (variant.size_name) current.sizeNames.add(variant.size_name);
+  }
+
+  return [...options.values()]
+    .map((option) => ({ ...option, sizeNames: [...option.sizeNames] }))
+    .sort((first, second) => (
+      String(first.name ?? '').localeCompare(String(second.name ?? ''), 'es', {
+        sensitivity: 'base',
+      })
+      || String(first.lineName ?? '').localeCompare(String(second.lineName ?? ''), 'es', {
+        sensitivity: 'base',
+      })
+    ));
 }
 
 /**
