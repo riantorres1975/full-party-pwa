@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   ShoppingBag, MessageCircle, MapPin, Star, Package,
   Sparkles, ArrowRight, Menu, X, Navigation, Clock,
-  BadgeCheck, Truck,
+  BadgeCheck, Truck, Search,
 } from 'lucide-react';
 import './LandingPage.css';
 import { C } from '../styles/tokens';
@@ -18,6 +18,7 @@ import Button from '../components/ui/Button';
 import ReviewsCarousel from '../components/landing/ReviewsCarousel';
 import GaleriaCard from '../components/landing/GaleriaCard';
 import BrandCard from '../components/landing/BrandCard';
+import CatalogQuickLinks from '../components/landing/CatalogQuickLinks';
 import { trackEvent } from '../utils/analytics';
 
 const NovedadesSection = lazy(() => import('../components/landing/NovedadesSection'));
@@ -36,14 +37,14 @@ function NovedadesPlaceholder() {
             </span>
             <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
               <h2 className="font-display text-3xl sm:text-4xl" style={{ color: C.textHead }}>
-                Novedades
+                Descubre algo nuevo
               </h2>
               <span className="lp-novedades-count inline-flex items-center gap-1.5 text-xs font-black opacity-0">
                 12 productos nuevos
               </span>
             </div>
             <p className="lp-novedades-copy mt-2 text-sm sm:text-base leading-relaxed opacity-0" style={{ color: C.textBody }}>
-              Lo mas reciente para surtir tu fiesta o negocio, listo para agregar al catalogo.
+              Productos recien llegados con opciones de menudeo y mayoreo.
             </p>
           </div>
           <span className="lp-novedades-link text-xs font-black inline-flex items-center gap-1.5 opacity-0">
@@ -178,10 +179,10 @@ const BENEFICIOS = [
 ];
 
 const CATEGORIAS = [
-  { emoji: '🎈', titulo: 'Globos de Látex',        desc: 'Glomex, Decoratex y Sempertex. Colores, tamaños y calidad helio',  color: C.pink   },
-  { emoji: '🦸', titulo: 'Globos de Personajes',   desc: 'Personajes de moda, graduación y Día de las Madres',               color: C.orange },
-  { emoji: '🎀', titulo: 'Cortinas y Guirnaldas',  desc: 'Cortinas de lluvia, guirnaldas y decoraciones para todo evento',   color: C.purple },
-  { emoji: '🏷️', titulo: 'Sets y Accesorios',      desc: 'Sets de 5 piezas, velas, brillo, bombas eléctricas y más',         color: C.green  },
+  { emoji: '🎈', titulo: 'Globos de Látex',        desc: 'Glomex, Decoratex y Sempertex. Colores, tamaños y calidad helio',  color: C.pink,   href: '/catalogo/globos/globos-latex'   },
+  { emoji: '🦸', titulo: 'Globos de Personajes',   desc: 'Personajes de moda, graduación y Día de las Madres',               color: C.orange, href: '/catalogo/globos/globos-figuras' },
+  { emoji: '🎀', titulo: 'Cortinas y Guirnaldas',  desc: 'Cortinas de lluvia, guirnaldas y decoraciones para todo evento',   color: C.purple, href: '/catalogo/decoracion'             },
+  { emoji: '🏷️', titulo: 'Sets y Accesorios',      desc: 'Sets de 5 piezas, velas, brillo, bombas eléctricas y más',         color: C.green,  href: '/catalogo/inflado-y-helio'       },
 ];
 
 const PASOS = [
@@ -387,6 +388,7 @@ const PARTICLES = [
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [loadNovedades, setLoadNovedades] = useState(false);
+  const [catalogSearch, setCatalogSearch] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -426,6 +428,13 @@ export default function LandingPage() {
     trackEvent('cta_catalogo_click');
     navigate('/catalogo');
   }, [navigate]);
+
+  const buscarEnCatalogo = useCallback((event) => {
+    event.preventDefault();
+    const query = catalogSearch.trim();
+    trackEvent('landing_catalog_search', { has_query: Boolean(query) });
+    navigate(query ? `/catalogo?q=${encodeURIComponent(query)}` : '/catalogo');
+  }, [catalogSearch, navigate]);
 
   return (
     <div id="top" className="lp-page-shell relative min-h-screen font-body overflow-x-hidden">
@@ -600,9 +609,26 @@ export default function LandingPage() {
             </div>
 
             <p className="lp-hero-copy text-base sm:text-lg leading-relaxed mb-7 max-w-2xl mx-auto" style={{ color: C.textBody }}>
-              Compra por pieza o aprovecha precios de mayoreo en globos y decoración.
-              Elige tus productos y envía el pedido listo por WhatsApp.
+              Todo para tu celebración, por pieza o mayoreo. Encuentra globos por color,
+              medida o gama y envía tu pedido listo por WhatsApp.
             </p>
+
+            <form className="lp-hero-search" role="search" onSubmit={buscarEnCatalogo}>
+              <Search size={19} aria-hidden="true" />
+              <label htmlFor="landing-catalog-search" className="sr-only">Buscar en el catálogo</label>
+              <input
+                id="landing-catalog-search"
+                type="search"
+                value={catalogSearch}
+                onChange={(event) => setCatalogSearch(event.target.value)}
+                placeholder="Busca globos, colores, medidas o decoración"
+                autoComplete="off"
+              />
+              <button type="submit" aria-label="Buscar en el catálogo">
+                <span>Buscar</span>
+                <ArrowRight size={16} aria-hidden="true" />
+              </button>
+            </form>
 
             <div className="lp-hero-actions w-full max-w-[340px] mx-auto sm:max-w-none flex flex-col sm:flex-row items-center justify-center gap-3">
               <Button
@@ -667,6 +693,8 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <CatalogQuickLinks />
+
         {/* ══ NOVEDADES ═══════════════════════════════════ */}
         <Suspense fallback={<NovedadesPlaceholder />}>
           {loadNovedades ? (
@@ -676,16 +704,16 @@ export default function LandingPage() {
           )}
         </Suspense>
         {/* ══ BENEFICIOS ══════════════════════════════════ */}
-        <section className="lp-below-fold lp-section-white px-5 py-16">
+        <section className="lp-below-fold lp-section-white lp-benefits-section px-5 py-16">
           <div className="max-w-5xl mx-auto">
             <Reveal><SectionTitle eyebrow="Ventajas" title="¿Por qué Full Party?" subtitle="Todo lo que necesitas para hacer tu fiesta un éxito." /></Reveal>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div className="lp-benefit-grid grid grid-cols-1 sm:grid-cols-3 gap-5">
               {BENEFICIOS.map(({ icon: Icon, titulo, desc, color, gradient }, i) => (
                 <Reveal key={titulo} delay={i * 0.1}>
-                  <GradCard gradient={gradient} hoverColor={`${color}22`} className="h-full">
+                  <GradCard gradient={gradient} hoverColor={`${color}22`} className="lp-benefit-card h-full">
                     <div className="p-6 flex flex-col gap-4">
                       <div
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                        className="lp-benefit-icon w-12 h-12 rounded-2xl flex items-center justify-center"
                         style={{ background: gradient, boxShadow: `0 8px 20px ${color}40` }}
                       >
                         <Icon size={22} style={{ color: '#ffffff' }} aria-hidden="true" />
@@ -701,18 +729,17 @@ export default function LandingPage() {
         </section>
 
         {/* ══ CATEGORÍAS ══════════════════════════════════ */}
-        <section className="lp-below-fold lp-section-tint px-5 py-16">
+        <section className="lp-below-fold lp-section-tint lp-categories-section px-5 py-16">
           <div className="max-w-5xl mx-auto">
             <Reveal><SectionTitle eyebrow="Explora" title="Categorías Destacadas" subtitle="Los artículos más solicitados para tus eventos." /></Reveal>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {CATEGORIAS.map(({ emoji, titulo, desc, color }, i) => (
+              {CATEGORIAS.map(({ emoji, titulo, desc, color, href }, i) => (
                 <Reveal key={titulo} delay={i * 0.08}>
-                  <button
-                    onClick={irAlCatalogo}
-                    className="lp-cat-card lp-scale-hover w-full rounded-2xl p-5 text-center flex flex-col items-center gap-3 bg-white"
+                  <Link
+                    to={href}
+                    className="lp-cat-card w-full rounded-2xl p-5 text-center flex flex-col items-center gap-3"
                     style={{
-                      border:              `2px solid ${color}22`,
-                      boxShadow:           '0 2px 12px rgba(0,0,0,0.06)',
+                      '--cat-accent':       color,
                       '--cat-border-hover': `${color}66`,
                       '--cat-shadow-hover': `0 8px 28px ${color}22`,
                     }}
@@ -721,7 +748,7 @@ export default function LandingPage() {
                     <h3 className="font-display text-sm leading-snug" style={{ color: C.textHead }}>{titulo}</h3>
                     <p  className="text-xs leading-snug"              style={{ color: C.textMuted }}>{desc}</p>
                     <span className="text-xs font-black flex items-center gap-1" style={{ color }}>Ver más <ArrowRight size={11} aria-hidden="true" /></span>
-                  </button>
+                  </Link>
                 </Reveal>
               ))}
             </div>
@@ -729,12 +756,12 @@ export default function LandingPage() {
         </section>
 
         {/* ══ CÓMO FUNCIONA ═══════════════════════════════ */}
-        <section className="lp-below-fold lp-section-white px-5 py-16">
+        <section className="lp-below-fold lp-section-white lp-steps-section px-5 py-16">
           <div className="max-w-5xl mx-auto">
             <Reveal><SectionTitle eyebrow="Paso a paso" title="¿Cómo funciona?" subtitle="Pedir al mayoreo nunca había sido tan fácil." /></Reveal>
 
             {/* Desktop */}
-            <div className="hidden md:grid grid-cols-4 gap-0 relative">
+            <div className="lp-steps-panel hidden md:grid grid-cols-4 gap-0 relative">
               <div
                 className="absolute top-[38px] left-[13%] right-[13%] h-[2px] rounded-full"
                 style={{ background: `linear-gradient(90deg, ${C.pink}, ${C.purple}, ${C.cyan}, ${C.green})` }}
@@ -742,7 +769,7 @@ export default function LandingPage() {
               />
               {PASOS.map(({ num, icon: Icon, titulo, desc, color }, i) => (
                 <Reveal key={num} delay={i * 0.12}>
-                  <div className="flex flex-col items-center text-center px-4">
+                  <div className="lp-step flex flex-col items-center text-center px-4">
                     <div
                       className="relative z-10 w-[76px] h-[76px] rounded-full flex items-center justify-center mb-5 bg-white"
                       style={{ border: `3px solid ${color}`, boxShadow: `0 4px 20px ${color}44` }}
@@ -762,7 +789,7 @@ export default function LandingPage() {
             </div>
 
             {/* Mobile */}
-            <div className="md:hidden flex flex-col gap-0 relative">
+            <div className="lp-steps-mobile md:hidden flex flex-col gap-0 relative">
               <div
                 className="absolute left-[19px] top-5 bottom-5 w-[2px] rounded-full"
                 style={{ background: `linear-gradient(180deg, ${C.pink}, ${C.purple}, ${C.cyan}, ${C.green})` }}
@@ -770,7 +797,7 @@ export default function LandingPage() {
               />
               {PASOS.map(({ num, icon: Icon, titulo, desc, color }, i) => (
                 <Reveal key={num} delay={i * 0.1} direction="left">
-                  <div className={`grid grid-cols-[40px_minmax(0,1fr)] gap-4 items-start relative ${i === PASOS.length - 1 ? 'pb-0' : 'pb-9'}`}>
+                  <div className={`lp-step-mobile grid grid-cols-[40px_minmax(0,1fr)] gap-4 items-start relative ${i === PASOS.length - 1 ? 'pb-0' : 'pb-9'}`}>
                     <div
                       className="w-10 h-10 rounded-full flex items-center justify-center z-10 bg-white"
                       style={{ border: `2px solid ${color}`, boxShadow: `0 0 12px ${color}44` }}
@@ -793,7 +820,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ MARCAS ══════════════════════════════════════ */}
-        <section className="lp-below-fold lp-section-tint px-5 py-16">
+        <section className="lp-below-fold lp-section-tint lp-brands-section px-5 py-16">
           <div className="max-w-5xl mx-auto">
             <Reveal><SectionTitle eyebrow="Calidad garantizada" title="Trabajamos con las Mejores Marcas" subtitle="Distribuidores autorizados de globos de látex y globos de personajes." /></Reveal>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
@@ -805,8 +832,7 @@ export default function LandingPage() {
             </div>
             <Reveal delay={0.2}>
               <div
-                className="rounded-2xl px-6 py-4 flex flex-wrap items-center justify-center gap-4 text-xs font-black"
-                style={{ background: C.surfaceLavender, border: `1px solid ${C.purple}18` }}
+                className="lp-brand-proof rounded-2xl px-6 py-4 flex flex-wrap items-center justify-center gap-4 text-xs font-black"
               >
                 {[
                   { label: 'Distribuidores Autorizados', color: C.pink   },
@@ -824,7 +850,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ RESEÑAS ═════════════════════════════════════ */}
-        <section id="resenas" className="lp-below-fold lp-section-white px-5 py-16">
+        <section id="resenas" className="lp-below-fold lp-section-white lp-reviews-section px-5 py-16">
           <div className="max-w-5xl mx-auto">
             <Reveal>
               <SectionTitle
@@ -840,7 +866,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ GALERÍA DE CLIENTES ═════════════════════════ */}
-        <section className="lp-below-fold lp-section-tint px-5 py-16">
+        <section className="lp-below-fold lp-section-tint lp-gallery-section px-5 py-16">
           <div className="max-w-5xl mx-auto">
             <Reveal>
               <SectionTitle
@@ -865,8 +891,7 @@ export default function LandingPage() {
             {/* CTA para que clientes compartan sus fotos */}
             <Reveal delay={0.2}>
               <div
-                className="rounded-2xl px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-4"
-                style={{ background: `${C.pink}10`, border: `1.5px dashed ${C.pink}44` }}
+                className="lp-gallery-share rounded-2xl px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-4"
               >
                 <div>
                   <p className="font-display text-sm" style={{ color: C.textHead }}>
@@ -894,7 +919,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ FAQ ═════════════════════════════════════════ */}
-        <section id="faq" className="lp-below-fold lp-section-white px-5 py-16">
+        <section id="faq" className="lp-below-fold lp-section-white lp-faq-section px-5 py-16">
           <div className="max-w-3xl mx-auto">
             <Reveal>
               <SectionTitle
@@ -905,8 +930,7 @@ export default function LandingPage() {
             </Reveal>
             <Reveal delay={0.1}>
               <div
-                className="bg-white rounded-3xl px-6 py-2"
-                style={{ boxShadow: `0 2px 20px ${C.shadowLavender}`, border: `1px solid ${C.purple}18` }}
+                className="lp-faq-panel rounded-3xl p-2"
               >
                 {FAQS.map((faq, i) => (
                   <FaqItem key={i} {...faq} />
@@ -917,7 +941,7 @@ export default function LandingPage() {
         </section>
 
         {/* ══ SUCURSALES ══════════════════════════════════ */}
-        <section id="sucursales" className="lp-below-fold lp-section-tint px-5 py-16">
+        <section id="sucursales" className="lp-below-fold lp-section-tint lp-branches-section px-5 py-16">
           <div className="max-w-5xl mx-auto">
             <Reveal><SectionTitle eyebrow="Visítanos" title="Nuestras Sucursales" subtitle="Visítanos en Uruapan, Michoacán." /></Reveal>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -926,12 +950,12 @@ export default function LandingPage() {
                   <GradCard
                     gradient={`linear-gradient(135deg, ${color}, ${accent})`}
                     hoverColor={`${color}22`}
-                    className="h-full"
+                    className="lp-branch-card h-full"
                   >
                     <div>
                       {/* Encabezado con mapa embebido */}
                       <div
-                        className="h-40 relative overflow-hidden rounded-t-[14px]"
+                        className="lp-branch-map h-40 relative overflow-hidden rounded-t-[14px]"
                         style={{ borderBottom: `1px solid ${color}33` }}
                       >
                         <LazyMapIframe
@@ -948,7 +972,7 @@ export default function LandingPage() {
                           }}
                         >{badge}</span>
                       </div>
-                      <div className="p-5 flex flex-col gap-3">
+                      <div className="lp-branch-content p-5 flex flex-col gap-3">
                         <h3 className="font-display text-base" style={{ color: C.textHead }}>{ENV.negocio} {nombre}</h3>
                         <p className="flex items-start gap-2 text-sm" style={{ color: C.textBody }}>
                           <MapPin size={13} className="mt-0.5 flex-shrink-0" style={{ color }} aria-hidden="true" />{direccion}
@@ -960,7 +984,7 @@ export default function LandingPage() {
                           href={mapsUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="mt-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-black lp-scale-hover"
+                          className="lp-branch-action mt-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-black"
                           style={{ background: `${color}12`, color, border: `1px solid ${color}33` }}
                           onClick={() => trackEvent('maps_link_click', { sucursal: nombre })}
                         >

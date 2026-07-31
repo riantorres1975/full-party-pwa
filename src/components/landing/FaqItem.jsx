@@ -6,10 +6,10 @@ import { C } from '../../styles/tokens';
 export default function FaqItem({ pregunta, respuesta }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border-b" style={{ borderColor: `${C.purple}22` }}>
+    <div className="lp-faq-item" data-open={String(open)}>
       <button
         onClick={() => setOpen(v => !v)}
-        className="w-full text-left flex items-center justify-between py-4 gap-4"
+        className="lp-faq-question w-full text-left flex items-center justify-between gap-4"
         style={{ color: C.textHead }}
         aria-expanded={open}
       >
@@ -23,7 +23,7 @@ export default function FaqItem({ pregunta, respuesta }) {
         />
       </button>
       {open && (
-        <p className="pb-4 text-sm leading-relaxed" style={{ color: C.textBody }}>
+        <p className="lp-faq-answer text-sm leading-relaxed" style={{ color: C.textBody }}>
           {respuesta}
         </p>
       )}

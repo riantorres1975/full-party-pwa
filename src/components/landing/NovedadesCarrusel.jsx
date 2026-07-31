@@ -1,9 +1,10 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Sparkles, ArrowRight, ChevronLeft, ChevronRight, Layers3, Palette, Ruler,
+} from 'lucide-react';
 import { C } from '../../styles/tokens';
 import OptimizedImage from '../OptimizedImage';
-import Badge from '../ui/Badge';
 
 const CARRUSEL_INTERVAL = 3800;
 const CARD_GAP = 18;
@@ -21,14 +22,15 @@ export default function NovedadesCarrusel({ novedades }) {
   const [inView, setInView] = useState(false);
   const [cols, setCols] = useState(4);
   const [cardW, setCardW] = useState(0);
+  const touchStartX = useRef(null);
 
   useEffect(() => {
     function measure() {
       if (!containerRef.current) return;
       const w = containerRef.current.offsetWidth;
-      const c = w >= 900 ? 4 : w >= 620 ? 3 : 2;
+      const c = w >= 900 ? 4 : w >= 620 ? 3 : 1;
       setCols(c);
-      setCardW((w - CARD_GAP * (c - 1)) / c);
+      setCardW(c === 1 ? w : (w - CARD_GAP * (c - 1)) / c);
     }
 
     measure();
@@ -92,10 +94,10 @@ export default function NovedadesCarrusel({ novedades }) {
   }, [animating]);
 
   useEffect(() => {
-    if (paused || !hasOverflow || !inView) return;
+    if (paused || !hasOverflow || !inView || cols === 1) return;
     const t = setInterval(goNext, CARRUSEL_INTERVAL);
     return () => clearInterval(t);
-  }, [paused, hasOverflow, inView, goNext]);
+  }, [paused, hasOverflow, inView, goNext, cols]);
 
   const translateX = -(idx * (cardW + CARD_GAP));
   const dotIdx = idx % realLen;
@@ -107,6 +109,16 @@ export default function NovedadesCarrusel({ novedades }) {
       className="lp-novedades-shell"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
+      onTouchStart={(event) => { touchStartX.current = event.touches[0]?.clientX ?? null; }}
+      onTouchEnd={(event) => {
+        if (touchStartX.current == null) return;
+        const endX = event.changedTouches[0]?.clientX ?? touchStartX.current;
+        const delta = touchStartX.current - endX;
+        touchStartX.current = null;
+        if (Math.abs(delta) < 42) return;
+        if (delta > 0) goNext();
+        else goPrev();
+      }}
     >
       <div ref={containerRef} className="lp-novedades-window overflow-hidden">
         <div
@@ -139,12 +151,14 @@ export default function NovedadesCarrusel({ novedades }) {
                   className="lp-novedad-img w-full h-full"
                   style={{ objectFit: 'contain', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.10))' }}
                 />
-                <div className="absolute top-3 left-3">
-                  <Badge variant="new" size="md" icon={<Sparkles size={9} aria-hidden="true" />}>Nuevo</Badge>
-                </div>
-                <div className="absolute top-3 right-3">
-                  <Badge variant="info" size="md">Mayoreo</Badge>
-                </div>
+                <span className="lp-novedad-status lp-novedad-status--new">
+                  <Sparkles size={10} aria-hidden="true" /> Nuevo
+                </span>
+                {p.inStock && (
+                  <span className="lp-novedad-status lp-novedad-status--stock">
+                    <i aria-hidden="true" /> Disponible
+                  </span>
+                )}
                 <div
                   className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none rounded-xl"
                   style={{ background: `radial-gradient(circle at 50% 50%, ${C.pink}12, transparent 70%)` }}
@@ -152,22 +166,30 @@ export default function NovedadesCarrusel({ novedades }) {
               </div>
 
               <div className="lp-novedad-info p-4 flex flex-col flex-1">
-                <p className="text-[10px] font-black uppercase tracking-wider mb-1" style={{ color: C.purple }}>
+                <p className="lp-novedad-line">
                   {p.lineName || p.brandName || 'Articulo'}
                 </p>
                 <h3 className="font-display text-sm leading-snug flex-1 line-clamp-2" style={{ color: C.textHead }}>
                   {p.name}
                 </h3>
-                <div className="mt-3 flex items-center justify-between gap-3">
+                <div className="lp-novedad-facts" aria-label="Opciones disponibles">
+                  {p.colorCount > 0 && <span><Palette size={12} /> {p.colorCount} colores</span>}
+                  {p.sizes.length > 0 && (
+                    <span><Ruler size={12} /> {p.sizes.length} {p.sizes.length === 1 ? 'medida' : 'medidas'}</span>
+                  )}
+                  <span><Layers3 size={12} /> Mayoreo</span>
+                </div>
+                <div className="lp-novedad-footer">
                   {Number.isFinite(Number(p.minPrice)) && Number(p.minPrice) > 0 ? (
                     <span className="lp-novedad-price">
-                      Desde {MXN_COMPACT.format(Number(p.minPrice))}
+                      <small>Desde</small>
+                      <strong>{MXN_COMPACT.format(Number(p.minPrice))}</strong>
                     </span>
                   ) : (
                     <span />
                   )}
                   <span className="lp-novedad-cta">
-                    Ver <ArrowRight size={10} aria-hidden="true" />
+                    {p.requiresOptions ? 'Elegir opciones' : 'Ver producto'} <ArrowRight size={12} aria-hidden="true" />
                   </span>
                 </div>
               </div>
@@ -182,19 +204,11 @@ export default function NovedadesCarrusel({ novedades }) {
             <ChevronLeft size={17} />
           </button>
 
-          <div className="lp-novedades-dots">
-            {novedades.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => { setAnimating(true); setIdx(i); }}
-                aria-label={`Producto ${i + 1}`}
-                className="lp-novedades-dot"
-                style={{
-                  width: i === dotIdx ? 22 : 7,
-                  background: i === dotIdx ? `linear-gradient(90deg, ${C.pink}, ${C.purple})` : `${C.pink}40`,
-                }}
-              />
-            ))}
+          <div className="lp-novedades-progress" aria-live="polite">
+            <span>{dotIdx + 1} de {realLen}</span>
+            <div aria-hidden="true">
+              <i style={{ width: `${((dotIdx + 1) / realLen) * 100}%` }} />
+            </div>
           </div>
 
           <button onClick={goNext} aria-label="Siguiente" className="lp-novedades-arrow" style={{ color: C.pink }}>

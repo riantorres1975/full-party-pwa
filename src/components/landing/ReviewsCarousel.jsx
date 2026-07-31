@@ -48,7 +48,7 @@ export default function ReviewsCarousel({ resenas }) {
   return (
     <div
       ref={rootRef}
-      className="max-w-2xl mx-auto"
+      className="lp-reviews-carousel max-w-2xl mx-auto"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -56,15 +56,15 @@ export default function ReviewsCarousel({ resenas }) {
         {/* Tarjeta de reseña activa */}
         <div
           key={r.id}
-          className={`${animCls} lp-review-card rounded-3xl p-7 bg-white text-left`}
-          style={{ boxShadow: `0 4px 24px ${r.color}22, 0 1px 6px rgba(0,0,0,0.06)`, border: `1.5px solid ${r.color}22` }}
+          className={`${animCls} lp-review-card rounded-3xl p-7 text-left`}
+          style={{ '--review-accent': r.color }}
           aria-live="polite"
           aria-atomic="true"
         >
           {/* Header */}
           <div className="flex items-center gap-4 mb-4">
             <div
-              className="w-12 h-12 rounded-full flex items-center justify-center font-display text-lg text-white flex-shrink-0"
+              className="lp-review-avatar w-12 h-12 rounded-full flex items-center justify-center font-display text-lg text-white flex-shrink-0"
               style={{ background: `linear-gradient(135deg, ${r.color}, ${C.purple})` }}
               aria-hidden="true"
             >
@@ -96,12 +96,11 @@ export default function ReviewsCarousel({ resenas }) {
       </div>
 
       {/* Controles: prev · dots · next */}
-      <div className="flex items-center justify-center gap-2 mt-5">
+      <div className="lp-review-controls flex items-center justify-center gap-2 mt-5">
         <button
           onClick={() => goTo((idx - 1 + resenas.length) % resenas.length)}
           aria-label="Reseña anterior"
-          className="w-8 h-8 rounded-full flex items-center justify-center transition-colors lp-scale-hover"
-          style={{ background: `${C.pink}18`, color: C.pink }}
+          className="lp-review-arrow w-8 h-8 rounded-full flex items-center justify-center"
         >
           <ChevronLeft size={16} />
         </button>
@@ -124,15 +123,14 @@ export default function ReviewsCarousel({ resenas }) {
         <button
           onClick={() => goTo((idx + 1) % resenas.length)}
           aria-label="Siguiente reseña"
-          className="w-8 h-8 rounded-full flex items-center justify-center transition-colors lp-scale-hover"
-          style={{ background: `${C.pink}18`, color: C.pink }}
+          className="lp-review-arrow w-8 h-8 rounded-full flex items-center justify-center"
         >
           <ChevronRight size={16} />
         </button>
       </div>
 
       {/* Rating global */}
-      <div className="flex items-center justify-center gap-2 mt-4">
+      <div className="lp-review-rating flex items-center justify-center gap-2 mt-4">
         <StarRating count={5} />
         <span className="font-black text-sm" style={{ color: C.textHead }}>4.7</span>
         <span className="text-xs" style={{ color: C.textMuted }}>· {resenas.length} reseñas en Google Maps</span>

@@ -19,7 +19,7 @@ function NovedadesLoadingState() {
             </span>
             <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
               <h2 className="font-display text-3xl sm:text-4xl" style={{ color: C.textHead }}>
-                Novedades
+                Descubre algo nuevo
               </h2>
               <span className="lp-novedades-count inline-flex items-center gap-1.5 text-xs font-black opacity-0">
                 <PackageCheck size={13} aria-hidden="true" />
@@ -27,7 +27,7 @@ function NovedadesLoadingState() {
               </span>
             </div>
             <p className="lp-novedades-copy mt-2 text-sm sm:text-base leading-relaxed opacity-0" style={{ color: C.textBody }}>
-              Lo mas reciente para surtir tu fiesta o negocio, listo para agregar al catalogo.
+              Productos recien llegados con opciones de menudeo y mayoreo.
             </p>
           </div>
           <span className="lp-novedades-link text-xs font-black inline-flex items-center gap-1.5 opacity-0">
@@ -61,7 +61,7 @@ function NovedadesLoadingState() {
 
 export default function NovedadesSection() {
   const { cards, loading } = useCatalogCards({ sort: 'featured' });
-  const novedades = cards.filter((card) => card.isNew).slice(0, 12);
+  const novedades = cards.filter((card) => card.isNew && card.inStock).slice(0, 12);
 
   if (loading && cards.length === 0) return <NovedadesLoadingState />;
   if (novedades.length === 0) return null;
@@ -80,7 +80,7 @@ export default function NovedadesSection() {
               </span>
               <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
                 <h2 className="font-display text-3xl sm:text-4xl" style={{ color: C.textHead }}>
-                  Novedades
+                  Descubre algo nuevo
                 </h2>
                 <span className="lp-novedades-count inline-flex items-center gap-1.5 text-xs font-black">
                   <PackageCheck size={13} aria-hidden="true" />
@@ -88,14 +88,14 @@ export default function NovedadesSection() {
                 </span>
               </div>
               <p className="lp-novedades-copy mt-2 text-sm sm:text-base leading-relaxed" style={{ color: C.textBody }}>
-                Lo mas reciente para surtir tu fiesta o negocio, listo para agregar al catalogo.
+                Productos recien llegados con opciones de menudeo y mayoreo.
               </p>
             </div>
             <Link
               to="/catalogo"
               className="lp-novedades-link text-xs font-black inline-flex items-center gap-1.5 transition-all"
             >
-              Ver todo el catalogo <ArrowRight size={12} aria-hidden="true" />
+              Explorar novedades <ArrowRight size={12} aria-hidden="true" />
             </Link>
           </div>
         </Reveal>
