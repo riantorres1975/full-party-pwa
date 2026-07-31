@@ -1,17 +1,28 @@
-import { C } from '../../styles/tokens';
-
-/** Tarjeta de marca con interacción gestionada por CSS. */
-export default function BrandCard({ nombre, desc, color, emoji }) {
+/** Wordmark editorial para representar una marca sin inventar su logotipo. */
+export default function BrandCard({ nombre, desc, color, code, tag, featured = false, index }) {
   return (
-    <div
-      className="lp-brand-card rounded-2xl p-5 flex flex-col items-center gap-3 text-center"
+    <article
+      className={`lp-brand-card${featured ? ' lp-brand-card--featured' : ''}`}
       style={{ '--brand-accent': color }}
     >
-      <div className="lp-brand-mark w-16 h-16 rounded-2xl flex items-center justify-center text-3xl">
-        <span>{emoji}</span>
+      <div className="lp-brand-card-head">
+        <span className="lp-brand-index">{String(index + 1).padStart(2, '0')}</span>
+        <span className="lp-brand-tag">{tag}</span>
       </div>
-      <p className="font-display text-sm" style={{ color: C.textHead }}>{nombre}</p>
-      <p className="text-xs" style={{ color: C.textMuted }}>{desc}</p>
-    </div>
+
+      <div className="lp-brand-identity">
+        <p className="lp-brand-wordmark">{nombre}</p>
+        <div className="lp-brand-seal" aria-hidden="true">
+          <span>{code}</span>
+        </div>
+      </div>
+
+      <p className="lp-brand-description">{desc}</p>
+
+      <div className="lp-brand-card-foot">
+        <span>{featured ? 'Marca principal en globos de látex' : 'Selección Full Party'}</span>
+        <i aria-hidden="true" />
+      </div>
+    </article>
   );
 }

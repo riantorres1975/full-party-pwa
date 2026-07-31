@@ -3,7 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   ShoppingBag, MessageCircle, MapPin, Star, Package,
   Sparkles, ArrowRight, Menu, X, Navigation, Clock,
-  BadgeCheck, Truck, Search,
+  BadgeCheck, Truck, Search, CircleDot, Shapes,
+  PanelsTopLeft, Boxes, PartyPopper,
 } from 'lucide-react';
 import './LandingPage.css';
 import { C } from '../styles/tokens';
@@ -179,10 +180,10 @@ const BENEFICIOS = [
 ];
 
 const CATEGORIAS = [
-  { emoji: '🎈', titulo: 'Globos de Látex',        desc: 'Glomex, Decoratex y Sempertex. Colores, tamaños y calidad helio',  color: C.pink,   href: '/catalogo/globos/globos-latex'   },
-  { emoji: '🦸', titulo: 'Globos de Personajes',   desc: 'Personajes de moda, graduación y Día de las Madres',               color: C.orange, href: '/catalogo/globos/globos-figuras' },
-  { emoji: '🎀', titulo: 'Cortinas y Guirnaldas',  desc: 'Cortinas de lluvia, guirnaldas y decoraciones para todo evento',   color: C.purple, href: '/catalogo/decoracion'             },
-  { emoji: '🏷️', titulo: 'Sets y Accesorios',      desc: 'Sets de 5 piezas, velas, brillo, bombas eléctricas y más',         color: C.green,  href: '/catalogo/inflado-y-helio'       },
+  { icon: CircleDot,     titulo: 'Globos de Látex',       desc: 'Glomex, Decoratex y Sempertex. Colores, tamaños y calidad helio', color: C.pink,   href: '/catalogo/globos/globos-latex'   },
+  { icon: Shapes,        titulo: 'Globos de Personajes',  desc: 'Personajes de moda, graduación y Día de las Madres',              color: C.orange, href: '/catalogo/globos/globos-figuras' },
+  { icon: PanelsTopLeft, titulo: 'Cortinas y Guirnaldas', desc: 'Cortinas de lluvia, guirnaldas y decoraciones para todo evento',  color: C.purple, href: '/catalogo/decoracion'             },
+  { icon: Boxes,         titulo: 'Sets y Accesorios',     desc: 'Sets de 5 piezas, velas, brillo, bombas eléctricas y más',        color: C.green,  href: '/catalogo/inflado-y-helio'       },
 ];
 
 const PASOS = [
@@ -193,12 +194,12 @@ const PASOS = [
 ];
 
 const MARCAS = [
-  { nombre: 'Glomex',      desc: 'Globos de látex al mayoreo',    color: C.pink,   emoji: '🎈' },
-  { nombre: 'Decoratex',   desc: 'Globos de látex y decoración',  color: C.purple, emoji: '🎀' },
-  { nombre: 'Sempertex',   desc: 'Calidad premium en látex',      color: C.green,  emoji: '✨' },
-  { nombre: 'El Bueno',    desc: 'Globos y artículos de fiesta',  color: C.orange, emoji: '🎊' },
-  { nombre: 'Mega Shine',  desc: 'Brillo y accesorios para globos', color: C.cyan, emoji: '💫' },
-  { nombre: 'Glow Shine',  desc: 'Acabados brillantes premium',   color: C.blue,   emoji: '⭐' },
+  { nombre: 'Glomex',     code: 'GX', tag: 'Látex profesional', desc: 'Colores, gamas y medidas para decoración y mayoreo.', color: C.pink,   featured: true },
+  { nombre: 'Decoratex',  code: 'DX', tag: 'Decoración y látex', desc: 'Opciones versátiles para montajes y celebraciones.', color: C.purple },
+  { nombre: 'Sempertex',  code: 'SX', tag: 'Látex premium',      desc: 'Calidad profesional y color uniforme.',              color: C.green  },
+  { nombre: 'El Bueno',   code: 'EB', tag: 'Fiesta y foil',      desc: 'Globos y artículos para completar cada evento.',     color: C.orange },
+  { nombre: 'Mega Shine', code: 'MS', tag: 'Cuidado del globo',  desc: 'Brillo y accesorios para acabados impecables.',      color: C.cyan   },
+  { nombre: 'Glow Shine', code: 'GS', tag: 'Acabado profesional', desc: 'Soluciones de brillo para decoraciones premium.',   color: C.blue   },
 ];
 
 const RESENAS = [
@@ -733,7 +734,7 @@ export default function LandingPage() {
           <div className="max-w-5xl mx-auto">
             <Reveal><SectionTitle eyebrow="Explora" title="Categorías Destacadas" subtitle="Los artículos más solicitados para tus eventos." /></Reveal>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {CATEGORIAS.map(({ emoji, titulo, desc, color, href }, i) => (
+              {CATEGORIAS.map(({ icon: Icon, titulo, desc, color, href }, i) => (
                 <Reveal key={titulo} delay={i * 0.08}>
                   <Link
                     to={href}
@@ -744,7 +745,9 @@ export default function LandingPage() {
                       '--cat-shadow-hover': `0 8px 28px ${color}22`,
                     }}
                   >
-                    <span className="lp-cat-emoji" style={{ background: `${color}14`, border: `1.5px solid ${color}30` }} aria-hidden="true">{emoji}</span>
+                    <span className="lp-cat-icon" aria-hidden="true">
+                      <Icon size={25} strokeWidth={1.8} />
+                    </span>
                     <h3 className="font-display text-sm leading-snug" style={{ color: C.textHead }}>{titulo}</h3>
                     <p  className="text-xs leading-snug"              style={{ color: C.textMuted }}>{desc}</p>
                     <span className="text-xs font-black flex items-center gap-1" style={{ color }}>Ver más <ArrowRight size={11} aria-hidden="true" /></span>
@@ -822,28 +825,34 @@ export default function LandingPage() {
         {/* ══ MARCAS ══════════════════════════════════════ */}
         <section className="lp-below-fold lp-section-tint lp-brands-section px-5 py-16">
           <div className="max-w-5xl mx-auto">
-            <Reveal><SectionTitle eyebrow="Calidad garantizada" title="Trabajamos con las Mejores Marcas" subtitle="Distribuidores autorizados de globos de látex y globos de personajes." /></Reveal>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
+            <Reveal><SectionTitle eyebrow="Marcas especializadas" title="Una marca para cada acabado" subtitle="Seleccionamos opciones confiables para decoración profesional, mayoreo y celebraciones." /></Reveal>
+            <div className="lp-brand-showcase">
               {MARCAS.map((m, i) => (
-                <Reveal key={m.nombre} delay={i * 0.09}>
-                  <BrandCard {...m} />
+                <Reveal key={m.nombre} delay={i * 0.07} className={m.featured ? 'lp-brand-cell--featured' : 'lp-brand-cell'}>
+                  <BrandCard {...m} index={i} />
                 </Reveal>
               ))}
             </div>
             <Reveal delay={0.2}>
-              <div
-                className="lp-brand-proof rounded-2xl px-6 py-4 flex flex-wrap items-center justify-center gap-4 text-xs font-black"
-              >
-                {[
-                  { label: 'Distribuidores Autorizados', color: C.pink   },
-                  { label: 'Productos Originales',       color: C.purple },
-                  { label: 'Stock Garantizado',          color: C.cyan   },
-                  { label: 'Precios de Mayoreo',         color: C.green  },
-                ].map(({ label, color }) => (
-                  <span key={label} className="flex items-center gap-1.5" style={{ color }}>
-                    <span aria-hidden="true">✓</span> {label}
-                  </span>
-                ))}
+              <div className="lp-brand-proof">
+                <div className="lp-brand-proof-copy">
+                  <BadgeCheck size={24} aria-hidden="true" />
+                  <div>
+                    <span>Respaldo Full Party</span>
+                    <strong>Compra con confianza</strong>
+                  </div>
+                </div>
+                <div className="lp-brand-proof-items">
+                  {[
+                    { label: 'Distribución autorizada', color: C.pink   },
+                    { label: 'Producto original',       color: C.purple },
+                    { label: 'Opciones de mayoreo',     color: C.green  },
+                  ].map(({ label, color }) => (
+                    <span key={label} style={{ '--proof-accent': color }}>
+                      <i aria-hidden="true">✓</i> {label}
+                    </span>
+                  ))}
+                </div>
               </div>
             </Reveal>
           </div>
@@ -1023,12 +1032,10 @@ export default function LandingPage() {
           <div className="max-w-4xl mx-auto text-center">
             <Reveal>
               <div className="lp-cta-panel rounded-[2rem] px-8 py-14 sm:py-16">
-                <span className="lp-cta-emoji" style={{ top: '12%', left: '7%', transform: 'rotate(-14deg)' }} aria-hidden="true">🎈</span>
-                <span className="lp-cta-emoji" style={{ top: '16%', right: '8%', transform: 'rotate(12deg)' }} aria-hidden="true">🎊</span>
-                <span className="lp-cta-emoji hidden sm:block" style={{ bottom: '14%', left: '12%', transform: 'rotate(8deg)' }} aria-hidden="true">🎀</span>
-                <span className="lp-cta-emoji hidden sm:block" style={{ bottom: '12%', right: '11%', transform: 'rotate(-10deg)' }} aria-hidden="true">✨</span>
                 <div className="relative" style={{ zIndex: 1 }}>
-                  <div className="text-5xl mb-4" aria-hidden="true">🎉</div>
+                  <div className="lp-cta-mark" aria-hidden="true">
+                    <PartyPopper size={27} strokeWidth={1.8} />
+                  </div>
                   <h2 className="font-display text-3xl sm:text-4xl mb-4 text-white">¿Listo para ordenar al mayoreo?</h2>
                   <p className="text-sm sm:text-base leading-relaxed mb-10 max-w-lg mx-auto" style={{ color: 'rgba(255,255,255,0.88)' }}>
                     Escríbenos por WhatsApp o explora el catálogo. Atención personalizada para distribuidores y organizadores de eventos.
