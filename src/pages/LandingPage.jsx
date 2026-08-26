@@ -2,7 +2,7 @@ import { lazy, Suspense, useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ShoppingBag, MessageCircle, MapPin, Star, Package,
-  Sparkles, ArrowRight, Menu, X, Navigation, Clock,
+  Sparkles, ArrowRight, Navigation, Clock,
   BadgeCheck, Truck, Search, CircleDot, Shapes,
   PanelsTopLeft, Boxes, PartyPopper,
 } from 'lucide-react';
@@ -20,6 +20,7 @@ import ReviewsCarousel from '../components/landing/ReviewsCarousel';
 import GaleriaCard from '../components/landing/GaleriaCard';
 import BrandCard from '../components/landing/BrandCard';
 import CatalogQuickLinks from '../components/landing/CatalogQuickLinks';
+import PublicSiteHeader from '../components/PublicSiteHeader';
 import { trackEvent } from '../utils/analytics';
 
 const NovedadesSection = lazy(() => import('../components/landing/NovedadesSection'));
@@ -387,7 +388,6 @@ const PARTICLES = [
 // 7. COMPONENTE PRINCIPAL
 // ════════════════════════════════════════════════════════════
 export default function LandingPage() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const [loadNovedades, setLoadNovedades] = useState(false);
   const [catalogSearch, setCatalogSearch] = useState('');
   const navigate = useNavigate();
@@ -417,7 +417,6 @@ export default function LandingPage() {
   }, [loadNovedades]);
 
   const handleNav = useCallback((link) => {
-    setMenuOpen(false);
     if (link.hash) {
       navigate(link.href);
     } else {
@@ -470,113 +469,7 @@ export default function LandingPage() {
 
       <div className="relative" style={{ zIndex: 2 }}>
 
-        {/* ══ NAV ════════════════════════════════════════ */}
-        <nav
-          className="lp-main-nav sticky top-0 z-50"
-          aria-label="Navegación principal"
-        >
-          <div className="lp-main-nav-inner max-w-6xl mx-auto px-5 flex items-center justify-between">
-            {/* Logo */}
-            <Link
-              to="/"
-              className="flex items-center gap-3 min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
-            >
-              <img
-                src="/icons/icon-192.png"
-                alt={`${ENV.negocio} logo`}
-                width="44"
-                height="44"
-                className="w-11 h-11 rounded-xl flex-shrink-0"
-                style={{ boxShadow: `0 4px 12px ${C.pink}44` }}
-              />
-              <div className="lp-main-nav-brand min-w-0 leading-none">
-                <span
-                  className="lp-main-nav-title font-display text-2xl block"
-                  style={{
-                    background:            `linear-gradient(135deg, ${C.pink}, ${C.purple})`,
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor:  'transparent',
-                    backgroundClip:       'text',
-                  }}
-                >
-                  <span className="lp-brand-full">Full</span>
-                  <span className="lp-brand-party">Party</span>
-                </span>
-                <span className="lp-main-nav-subtitle text-[10px] font-black tracking-widest uppercase">
-                  Mayoreo · Uruapan
-                </span>
-              </div>
-            </Link>
-
-            {/* Links desktop */}
-            <div className="hidden lg:flex items-center gap-0.5">
-              {NAV_LINKS.map(l => (
-                <button
-                  key={l.label}
-                  onClick={() => handleNav(l)}
-                  className="lp-nav-link px-3 py-2 whitespace-nowrap text-xs"
-                  style={{ color: C.textBody }}
-                >
-                  {l.label}
-                </button>
-              ))}
-              <Button
-                variant="outline"
-                size="sm"
-                as="a"
-                href={WA_HREF}
-                target="_blank"
-                rel="noopener noreferrer"
-                iconLeft={<WaIcon size={13} />}
-                className="lp-nav-whatsapp ml-2 whitespace-nowrap"
-                onClick={() => trackEvent('nav_whatsapp_click')}
-              >
-                WhatsApp
-              </Button>
-            </div>
-
-            {/* Hamburger */}
-            <button
-              className="lg:hidden p-2 rounded-xl flex-shrink-0"
-              style={{ background: C.surfaceLavender, color: C.purple }}
-              onClick={() => setMenuOpen(v => !v)}
-              aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
-              aria-expanded={menuOpen}
-            >
-              {menuOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-          </div>
-
-          {/* Menú mobile */}
-          {menuOpen && (
-            <div className="lg:hidden border-t bg-white px-5 py-4 flex flex-col gap-1" style={{ borderColor: C.borderSoft }}>
-              {NAV_LINKS.map(l => (
-                <button
-                  key={l.label}
-                  onClick={() => handleNav(l)}
-                  className="text-left px-4 py-3 rounded-xl text-sm font-black transition-all hover:bg-purple-50"
-                  style={{ color: C.textBody }}
-                >
-                  {l.label}
-                </button>
-              ))}
-              <Button
-                variant="primary"
-                size="md"
-                as="a"
-                href={WA_HREF}
-                target="_blank"
-                rel="noopener noreferrer"
-                iconLeft={<WaIcon size={14} />}
-                fullWidth
-                className="mt-1"
-                onClick={() => { setMenuOpen(false); trackEvent('nav_whatsapp_click'); }}
-              >
-                Contactar por WhatsApp
-              </Button>
-            </div>
-          )}
-        </nav>
+        <PublicSiteHeader />
 
         {/* ══ CONTENIDO PRINCIPAL ════════════════════════ */}
         <main id="main-content">
