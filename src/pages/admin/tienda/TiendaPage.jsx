@@ -14,7 +14,7 @@ function Section({ icon: Icon, title, children }) {
     <div className="bg-admin-card rounded-xl border border-admin-border overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-admin-border">
         <Icon size={15} className="text-admin-muted" />
-        <h3 className="text-sm font-body font-black text-admin-text">{title}</h3>
+        <h2 className="text-sm font-black text-admin-text">{title}</h2>
       </div>
       <div className="p-4 space-y-4">{children}</div>
     </div>
@@ -40,7 +40,7 @@ function Field({ id, label, hint, error, children }) {
   );
 }
 
-const inputCls = 'w-full px-3 py-2 rounded-lg border border-admin-border bg-admin-bg text-admin-text text-sm font-body focus:outline-none focus:ring-2 focus:ring-fiesta-magenta/40 transition-colors';
+const inputCls = 'min-h-11 w-full rounded-lg border border-admin-border bg-admin-input px-3 py-2 text-base text-admin-text transition-colors focus:outline-none focus:ring-2 focus:ring-violet-600/60 sm:text-sm';
 
 export default function TiendaPage() {
   const { t } = useLanguage();
@@ -52,7 +52,7 @@ export default function TiendaPage() {
     loading, saving, error, isDirty, isValid, validationErrors,
     updateInfo, updateSucursal, updateRedes,
     addSucursal, removeSucursal,
-    save, refetch,
+    save, reset, refetch,
   } = useTiendaConfig();
 
   useEffect(() => {
@@ -93,6 +93,16 @@ export default function TiendaPage() {
     await save();
   };
 
+  const handleReset = async () => {
+    const accepted = await confirm({
+      title: t('tienda.descartar'),
+      message: t('tienda.descartarConfirm'),
+      confirmLabel: t('tienda.descartar'),
+      variant: 'warning',
+    });
+    if (accepted) reset();
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-16">
@@ -112,28 +122,7 @@ export default function TiendaPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        title={t('tienda.title')}
-        subtitle={t('tienda.subtitle')}
-        actions={canEdit && (
-          <div className="flex items-center gap-3">
-            {isDirty && (
-              <span className="hidden sm:inline text-xs font-body font-bold text-amber-500" aria-live="polite">
-                {t('tienda.cambiosPendientes')}
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving || !isDirty}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-fiesta-magenta text-white text-sm font-body font-bold hover:bg-fiesta-magenta/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Save size={14} />
-              {saving ? t('common.saving') : t('tienda.guardar')}
-            </button>
-          </div>
-        )}
-      />
+      <PageHeader title={t('tienda.title')} subtitle={t('tienda.subtitle')} />
 
       {!canEdit && (
         <div className="rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm font-body text-admin-text">
@@ -148,7 +137,7 @@ export default function TiendaPage() {
         </div>
       )}
 
-      <fieldset disabled={!canEdit} className={`space-y-5 ${!canEdit ? 'opacity-75' : ''}`}>
+      <fieldset disabled={!canEdit || saving} className="min-w-0 space-y-5">
 
       {/* Info general */}
       <Section icon={Store} title={t('tienda.seccion.info')}>
@@ -282,19 +271,17 @@ export default function TiendaPage() {
         </div>
       </Section>
 
-      {/* Guardar sticky bottom mobile */}
-      {canEdit && <div className="sm:hidden fixed bottom-16 right-4 z-20">
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving || !isDirty}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-fiesta-magenta text-white text-sm font-body font-bold shadow-elevated hover:bg-fiesta-magenta/90 disabled:opacity-60 transition-colors"
-        >
-          <Save size={14} />
-          {saving ? t('common.saving') : t('tienda.guardar')}
-        </button>
-      </div>}
       </fieldset>
+
+      {canEdit && isDirty && (
+        <div className="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] z-10 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-admin-border bg-admin-card p-3 shadow-card lg:bottom-0">
+          <p className="text-sm font-bold text-admin-text-secondary" role="status">{t('tienda.cambiosPendientes')}</p>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={handleReset} disabled={saving} className="min-h-10 rounded-lg border border-admin-border px-3 text-xs font-bold text-admin-text-secondary hover:bg-admin-elevated disabled:opacity-50">{t('tienda.descartar')}</button>
+            <button type="button" onClick={handleSave} disabled={saving} className="flex min-h-10 items-center gap-1.5 rounded-lg bg-violet-700 px-3 text-xs font-black text-white hover:bg-violet-800 disabled:opacity-50"><Save size={15} aria-hidden="true" />{saving ? t('common.saving') : t('tienda.guardar')}</button>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal
         open={isOpen}

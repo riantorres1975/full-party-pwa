@@ -16,8 +16,10 @@ export default function DataTable({
   rowKey = 'id',
   onRowClick,
   isRowClickable,
+  rowActionLabel,
   searchable = true,
   searchPlaceholder,
+  searchKeys,
   selectable = false,
   bulkActions = [],
   pagination = { pageSize: 25 },
@@ -26,6 +28,7 @@ export default function DataTable({
   className = '',
 }) {
   const { t } = useLanguage();
+  const pageSize = pagination.pageSize ?? 25;
 
   const {
     sortKey,
@@ -34,6 +37,7 @@ export default function DataTable({
     page,
     selection,
     setSort,
+    setSortChoice,
     setSearch,
     setPage,
     toggleRow,
@@ -47,7 +51,8 @@ export default function DataTable({
   } = useDataTable({
     data,
     columns,
-    pageSize: pagination.pageSize,
+    searchKeys,
+    pageSize,
   });
 
   const allIds = sortedData.map(row => row[rowKey]);
@@ -72,7 +77,7 @@ export default function DataTable({
   }
 
   return (
-    <div className={`border border-admin-border rounded-lg overflow-hidden bg-admin-card ${className}`}>
+    <div className={`overflow-hidden rounded-2xl border border-admin-border bg-admin-card ${className}`}>
       {searchable && (
         <DataTableToolbar
           search={search}
@@ -85,6 +90,24 @@ export default function DataTable({
           onClearSelection={clearSelection}
           bulkActions={bulkActions}
         />
+      )}
+
+      {columns.some(col => col.sortable) && totalResults > 0 && (
+        <label className="flex items-center gap-2 border-b border-admin-border-soft px-3 py-2 text-xs font-bold text-admin-muted lg:hidden">
+          {t('datatable.sort')}
+          <select
+            value={sortKey ? `${sortKey}:${sortDir}` : ''}
+            onChange={event => setSortChoice(...event.target.value.split(':'))}
+            className="min-h-10 min-w-0 flex-1 rounded-lg border border-admin-border bg-admin-input px-2 text-sm text-admin-text"
+          >
+            <option value="">{t('datatable.sort.default')}</option>
+            {columns.filter(col => col.sortable).flatMap(col => ['asc', 'desc'].map(dir => (
+              <option key={`${col.key ?? col.id}:${dir}`} value={`${col.key ?? col.id}:${dir}`}>
+                {t(`datatable.sort.${dir}`, { column: col.label })}
+              </option>
+            )))}
+          </select>
+        </label>
       )}
 
       {totalResults === 0 ? (
@@ -127,7 +150,7 @@ export default function DataTable({
       </div>
 
       {/* Mobile Cards */}
-      <div className="lg:hidden p-4 space-y-2">
+      <ul role="list" className="space-y-2 bg-admin-elevated/50 p-3 lg:hidden">
         {paginatedData.map(row => (
           <DataTableRow
             key={row[rowKey]}
@@ -138,15 +161,16 @@ export default function DataTable({
             isSelected={selection.has(row[rowKey])}
             onToggle={toggleRow}
             onRowClick={!isRowClickable || isRowClickable(row) ? onRowClick : undefined}
+            rowActionLabel={rowActionLabel}
             variant="card"
           />
         ))}
-      </div>
+      </ul>
 
       <DataTablePagination
         currentPage={currentPage}
         totalPages={totalPages}
-        pageSize={pagination.pageSize}
+        pageSize={pageSize}
         totalResults={totalResults}
         onPageChange={setPage}
       />

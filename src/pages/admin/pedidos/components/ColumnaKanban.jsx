@@ -8,11 +8,11 @@ export default function ColumnaKanban({ estado, pedidos, sucursalPorPedidoId, on
   const meta = ESTADO_META[estado] ?? ESTADO_META['Por Surtir'];
   return (
     <section className="min-w-0 flex flex-col border border-admin-border rounded-xl overflow-hidden min-h-56 max-h-[calc(100dvh-270px)]">
-      <div className="flex items-center justify-between px-4 py-3" style={{ background: meta.color }}>
-        <h3 className="text-sm font-body font-black text-white flex items-center gap-2">
-          <meta.icon size={16} /> {estadoLabel(estado, t)}
+      <div className="flex items-center justify-between gap-2 border-b border-admin-border bg-admin-card px-3.5 py-3">
+        <h3 className="flex items-center gap-2 text-sm font-black leading-tight text-admin-text">
+          <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-lg" style={{ background: meta.bg, color: '#312338' }}><meta.icon size={14} aria-hidden="true" /></span> {estadoLabel(estado, t)}
         </h3>
-        <span className="text-xs font-body font-black text-white bg-black/20 px-2 py-1 rounded-full">
+        <span className="rounded-lg bg-admin-elevated px-2 py-1 text-xs font-black tabular-nums text-admin-text-secondary">
           {pedidos.length}
         </span>
       </div>
@@ -32,7 +32,7 @@ export default function ColumnaKanban({ estado, pedidos, sucursalPorPedidoId, on
             >
               <div className="flex items-start justify-between gap-2 mb-1">
                 <p className="font-body font-bold text-sm text-admin-text">{pedido.folio}</p>
-                <span className="text-xs font-body px-1.5 py-0.5 rounded-full" style={{ background: meta.color, color: 'white' }}>
+                <span className="rounded-md bg-admin-elevated px-1.5 py-0.5 text-xs font-bold tabular-nums text-admin-text-secondary">
                   {t('common.total')}: ${Number(pedido.total).toFixed(2)}
                 </span>
               </div>

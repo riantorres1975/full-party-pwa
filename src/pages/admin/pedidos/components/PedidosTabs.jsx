@@ -90,8 +90,6 @@ export default function PedidosTabs() {
       )}
       {tabActivo === 'historial' && <PedidosHistorial />}
 
-      {/* Mobile padding */}
-      <div className="h-16 lg:hidden" />
     </>
   );
 }

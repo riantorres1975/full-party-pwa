@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Search, X } from 'lucide-react';
 import { useLanguage } from '../../../hooks/useLanguage';
 import Can from '../../auth/Can';
@@ -11,10 +12,11 @@ export default function DataTableToolbar({
   bulkActions,
 }) {
   const { t } = useLanguage();
+  const searchRef = useRef(null);
 
   if (selectionCount > 0) {
     return (
-      <div className="fixed bottom-6 left-6 right-6 lg:relative lg:bottom-auto lg:left-auto lg:right-auto bg-ink-600 text-white rounded-lg p-4 shadow-elevated flex items-center gap-3 animate-slide-up-toast z-40">
+      <div className="flex flex-wrap items-center gap-3 border-b border-admin-border bg-ink-600 p-3 text-white">
         <span className="text-sm font-bold">
           {t('datatable.selected', { count: selectionCount })}
         </span>
@@ -46,20 +48,24 @@ export default function DataTableToolbar({
     );
   }
 
-  if (!search && !searchPlaceholder) return null;
-
   return (
-    <div className="px-4 py-3 border-b border-admin-border-soft bg-admin-elevated">
+    <div className="border-b border-admin-border-soft px-3 py-3 sm:px-4">
       <div className="relative">
-        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-admin-text-secondary" />
+        <Search size={18} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-admin-muted" />
         <input
+          ref={searchRef}
           type="search"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={searchPlaceholder || t('datatable.search')}
           aria-label={searchPlaceholder || t('datatable.search')}
-          className="w-full pl-9 pr-4 py-2 rounded border border-admin-border bg-admin-input text-admin-text placeholder-admin-text-secondary outline-none focus:ring-2 focus:ring-ink-500/50"
+          className="min-h-11 w-full rounded-xl border border-admin-border bg-admin-input py-2 pl-9 pr-11 text-base text-admin-text outline-none placeholder:text-admin-muted focus:ring-2 focus:ring-violet-600/60 sm:text-sm [&::-webkit-search-cancel-button]:hidden"
         />
+        {search && (
+          <button type="button" onClick={() => { onSearchChange(''); searchRef.current?.focus(); }} aria-label={t('datatable.no_matches.clear')} className="absolute right-1 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-lg text-admin-muted hover:bg-admin-elevated">
+            <X size={17} aria-hidden="true" />
+          </button>
+        )}
       </div>
     </div>
   );

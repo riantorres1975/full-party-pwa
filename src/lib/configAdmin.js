@@ -1,35 +1,27 @@
-import { supabase } from './supabase';
-import { guardedQuery, throwIfSessionError } from './supabaseGuard';
+import { guardedQuery } from './supabaseGuard';
 
 /**
- * Lee un valor de la tabla configuracion (lectura pública).
- * Devuelve el valor parseado o `defaultVal` si no existe.
+ * Lee la configuración del panel. Las claves ausentes se completan en el formulario.
  */
-export async function getConfig(clave, defaultVal = null) {
-  const { data, error } = await supabase
-    .from('configuracion')
-    .select('valor')
-    .eq('clave', clave)
-    .maybeSingle();
-
-  if (error) return defaultVal;
-  return data ? data.valor : defaultVal;
+export async function getConfigEntries(keys) {
+  const { data, error } = await guardedQuery(client => client.from('configuracion').select('clave,valor').in('clave', keys));
+  if (error) throw new Error(error.message);
+  return Object.fromEntries((data ?? []).map(({ clave, valor }) => [clave, valor]));
 }
 
 /**
- * Escribe un valor en la tabla configuracion (requiere sesión admin).
- * Hace upsert por clave.
+ * Escribe la configuración en una sola operación (requiere sesión admin).
  */
-export async function setConfig(clave, valor) {
+export async function setConfigEntries(config) {
+  const entries = Object.entries(config).map(([clave, valor]) => ({ clave, valor }));
   const { error } = await guardedQuery((client) =>
     client
       .from('configuracion')
-      .upsert({ clave, valor }, { onConflict: 'clave' })
+      .upsert(entries, { onConflict: 'clave' })
   );
-  if (error) throwIfSessionError(error);
-  if (error) throw new Error(`Error guardando config "${clave}": ${error.message}`);
+  if (error) throw new Error(error.message);
 
-  window.dispatchEvent(new CustomEvent('fp:config-updated', {
-    detail: { clave, valor },
-  }));
+  for (const entry of entries) {
+    window.dispatchEvent(new CustomEvent('fp:config-updated', { detail: entry }));
+  }
 }

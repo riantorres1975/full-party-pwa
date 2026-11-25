@@ -1,24 +1,15 @@
 import { useId, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ClipboardList, LayoutGrid, LogOut, MoreHorizontal, Home, Users, Sun, Moon, RefreshCw, Bell, Package, BarChart3, CreditCard, Store, X } from 'lucide-react';
+import { ChevronRight, LogOut, MoreHorizontal, Sun, Moon, RefreshCw, Bell, X } from 'lucide-react';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useTheme } from '../../hooks/useTheme';
-import { usePermission } from '../../hooks/usePermission';
+import { usePermissions } from '../../contexts/PermissionsContext';
+import { adminNavigation } from '../../layouts/admin/adminNavigation';
 import { useAdminData } from '../../contexts/AdminDataContext';
 import ConfirmModal from './ConfirmModal';
 import { useDialogFocus } from '../../hooks/useDialogFocus';
 
-const ROUTE_MAP = {
-  pedidos: '/admin/pedidos',
-  catalogo: '/admin/catalogo',
-  dashboard: '/admin/dashboard',
-  clientes: '/admin/clientes',
-  inventario: '/admin/inventario',
-  reportes: '/admin/reportes',
-  pagos: '/admin/pagos',
-  usuarios: '/admin/usuarios',
-  tienda: '/admin/tienda',
-};
+const primaryKeys = new Set(['dashboard', 'pedidos', 'catalogo']);
 
 export default function BottomNav({ onSignOut }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -37,13 +28,9 @@ export default function BottomNav({ onSignOut }) {
     testNotification,
   } = useAdminData();
 
-  const canViewDashboard = usePermission('reportes.view');
-  const canViewClients = usePermission('clientes.view');
-  const canViewInventario = usePermission('catalogo.view');
-  const canViewReportes = usePermission('reportes.view');
-  const canViewPayments = usePermission('pagos.view');
-  const canViewUsers = usePermission('usuarios.view');
-  const canViewSettings = usePermission('configuracion.view');
+  const { can } = usePermissions();
+  const visibleSections = adminNavigation.filter(section => can(section.permission));
+  const secondarySections = visibleSections.filter(section => !primaryKeys.has(section.key));
 
   const badge = contadores?.['Por Surtir'] ?? 0;
   const notificationsEnabled = notificationPermission === 'granted';
@@ -55,24 +42,13 @@ export default function BottomNav({ onSignOut }) {
     onClose: () => setSheetOpen(false),
   });
 
-  const active = location.pathname.startsWith('/admin/pedidos') ? 'pedidos'
-    : location.pathname.startsWith('/admin/catalogo') ? 'catalogo'
-    : location.pathname.startsWith('/admin/dashboard') ? 'dashboard'
-    : location.pathname.startsWith('/admin/clientes') ? 'clientes'
-    : location.pathname.startsWith('/admin/inventario') ? 'inventario'
-    : location.pathname.startsWith('/admin/reportes') ? 'reportes'
-    : location.pathname.startsWith('/admin/pagos') ? 'pagos'
-    : location.pathname.startsWith('/admin/usuarios') ? 'usuarios'
-    : location.pathname.startsWith('/admin/tienda') ? 'tienda'
-    : null;
+  const active = visibleSections.find(section => section.path === location.pathname)?.key;
 
   const mainTabs = [
-    ...(canViewDashboard ? [{ key: 'dashboard', label: t('admin.nav.dashboard'), icon: Home }] : []),
-    { key: 'pedidos', label: t('admin.nav.orders'), icon: ClipboardList },
-    { key: 'catalogo', label: t('admin.nav.catalog'), icon: LayoutGrid },
+    ...visibleSections.filter(section => primaryKeys.has(section.key)).map(section => ({ ...section, label: t(section.label) })),
     { key: 'more', label: t('common.more') || 'Más', icon: MoreHorizontal },
   ];
-  const moreActive = active !== null && !mainTabs.some(tab => tab.key === active);
+  const moreActive = secondarySections.some(section => section.key === active);
 
   const handleMenuClick = (key) => {
     setSheetOpen(false);
@@ -90,8 +66,9 @@ export default function BottomNav({ onSignOut }) {
           if (p === 'granted') testNotification();
         });
       }
-    } else if (ROUTE_MAP[key]) {
-      navigate(ROUTE_MAP[key]);
+    } else {
+      const section = visibleSections.find(item => item.key === key);
+      if (section) navigate(section.path);
     }
   };
 
@@ -139,7 +116,7 @@ export default function BottomNav({ onSignOut }) {
               className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-14 transition-colors
                          ${isActive ? 'text-admin-text' : 'text-admin-muted'}`}
             >
-              <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+              <Icon size={20} aria-hidden="true" strokeWidth={isActive ? 2.5 : 2} />
               <span className="text-[10px] font-body font-bold">{label}</span>
               {key === 'pedidos' && badge > 0 && (
                 <span className="absolute top-1.5 left-1/2 ml-1 bg-red-500 text-white text-[9px] font-black min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center leading-none">
@@ -194,63 +171,13 @@ export default function BottomNav({ onSignOut }) {
           </div>
 
           <div className="px-2 pb-2">
-            {/* Perfil (disabled) */}
-            {/* Sections — navigation */}
-            {canViewClients && (
-              <button
-                onClick={() => handleMenuClick('clientes')}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-body font-bold text-admin-text hover:bg-admin-elevated transition-colors rounded-lg"
-              >
-                <Users size={18} />
-                <span className="flex-1 text-left">{t('admin.nav.clients')}</span>
+            {secondarySections.map(({ key, label, icon: Icon }) => (
+              <button key={key} type="button" onClick={() => handleMenuClick(key)} aria-current={active === key ? 'page' : undefined} className={`flex min-h-11 w-full items-center gap-3 rounded-lg px-4 py-2 text-sm font-bold text-admin-text hover:bg-admin-elevated ${active === key ? 'bg-admin-elevated' : ''}`}>
+                <Icon size={18} aria-hidden="true" />
+                <span className="flex-1 text-left">{t(label)}</span>
+                <ChevronRight size={15} aria-hidden="true" className="text-admin-muted" />
               </button>
-            )}
-            {canViewInventario && (
-              <button
-                onClick={() => handleMenuClick('inventario')}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-body font-bold text-admin-text hover:bg-admin-elevated transition-colors rounded-lg"
-              >
-                <Package size={18} />
-                <span className="flex-1 text-left">{t('admin.nav.inventory')}</span>
-              </button>
-            )}
-            {canViewReportes && (
-              <button
-                onClick={() => handleMenuClick('reportes')}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-body font-bold text-admin-text hover:bg-admin-elevated transition-colors rounded-lg"
-              >
-                <BarChart3 size={18} />
-                <span className="flex-1 text-left">{t('admin.nav.reports')}</span>
-              </button>
-            )}
-
-            {canViewPayments && (
-              <button
-                onClick={() => handleMenuClick('pagos')}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-body font-bold text-admin-text hover:bg-admin-elevated transition-colors rounded-lg"
-              >
-                <CreditCard size={18} />
-                <span className="flex-1 text-left">{t('admin.nav.payments')}</span>
-              </button>
-            )}
-            {canViewUsers && (
-              <button
-                onClick={() => handleMenuClick('usuarios')}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-body font-bold text-admin-text hover:bg-admin-elevated transition-colors rounded-lg"
-              >
-                <Users size={18} />
-                <span className="flex-1 text-left">{t('admin.nav.users')}</span>
-              </button>
-            )}
-            {canViewSettings && (
-              <button
-                onClick={() => handleMenuClick('tienda')}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-body font-bold text-admin-text hover:bg-admin-elevated transition-colors rounded-lg"
-              >
-                <Store size={18} />
-                <span className="flex-1 text-left">{t('admin.nav.store')}</span>
-              </button>
-            )}
+            ))}
 
             <div className="border-t border-admin-border my-1" />
 

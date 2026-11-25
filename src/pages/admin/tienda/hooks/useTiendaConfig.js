@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { getConfig, setConfig } from '../../../../lib/configAdmin';
+import { getConfigEntries, setConfigEntries } from '../../../../lib/configAdmin';
 import { useToast } from '../../../../components/ui/ToastProvider';
 import { useLanguage } from '../../../../hooks/useLanguage';
 import { validateTiendaConfig } from '../tiendaValidation';
@@ -56,11 +56,7 @@ export function useTiendaConfig() {
     setLoading(true);
     setError(null);
     try {
-      const [dbInfo, dbSuc, dbRedes] = await Promise.all([
-        getConfig('tienda_info', null),
-        getConfig('sucursales', null),
-        getConfig('redes_sociales', null),
-      ]);
+      const { tienda_info: dbInfo, sucursales: dbSuc, redes_sociales: dbRedes } = await getConfigEntries(Object.keys(DEFAULTS));
       const nextInfo = dbInfo ? { ...DEFAULTS.tienda_info, ...dbInfo } : DEFAULTS.tienda_info;
       const nextSucursales = dbSuc || DEFAULTS.sucursales;
       const nextRedes = dbRedes ? { ...DEFAULTS.redes_sociales, ...dbRedes } : DEFAULTS.redes_sociales;
@@ -97,11 +93,7 @@ export function useTiendaConfig() {
 
     setSaving(true);
     try {
-      await Promise.all([
-        setConfig('tienda_info', info),
-        setConfig('sucursales', sucursales),
-        setConfig('redes_sociales', redes),
-      ]);
+      await setConfigEntries({ tienda_info: info, sucursales, redes_sociales: redes });
       setSavedSnapshot(serializeConfig(info, sucursales, redes));
       toast.success(t('tienda.guardado'));
       return true;
@@ -124,12 +116,20 @@ export function useTiendaConfig() {
     { id: String(Date.now()), badge: '', nombre: '', direccion: '', maps_url: '', facebook: '' },
   ]);
   const removeSucursal = (id) => setSucursales(prev => prev.filter(s => s.id !== id));
+  const reset = () => {
+    if (!savedSnapshot) return;
+    const saved = JSON.parse(savedSnapshot);
+    setInfo(saved.info);
+    setSucursales(saved.sucursales);
+    setRedes(saved.redes);
+  };
   return {
     info, sucursales, redes,
     loading, saving, error, isDirty, isValid, validationErrors,
     updateInfo, updateSucursal, updateRedes,
     addSucursal, removeSucursal,
     save,
+    reset,
     refetch: load,
   };
 }

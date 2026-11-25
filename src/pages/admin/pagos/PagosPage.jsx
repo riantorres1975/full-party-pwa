@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { CreditCard, CheckCircle, Clock, RefreshCw, Banknote, Smartphone, MoreHorizontal } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../../hooks/useLanguage';
 import { useBreadcrumb } from '../../../contexts/BreadcrumbContext';
 import { useToast } from '../../../components/ui/ToastProvider';
+import { useAdminData } from '../../../contexts/AdminDataContext';
 import PageHeader from '../../../components/admin/PageHeader';
-import StatsCard from '../../../components/admin/StatsCard';
 import { DataTable } from '../../../components/admin/DataTable';
 import ModalConfirmarPago from './ModalConfirmarPago';
 import { usePagos } from './hooks/usePagos';
@@ -13,11 +14,14 @@ import ConfirmModal from '../../../components/ui/ConfirmModal';
 
 const FILTROS = ['todos', 'pendiente', 'confirmado'];
 const PERIODOS = ['hoy', 'semana', 'mes', 'todo'];
+const SEARCH_KEYS = ['folio', 'cliente_nombre', 'cliente_telefono'];
 
-function getInitialOption(key, options, fallback) {
-  const value = new URLSearchParams(window.location.search).get(key);
+function getOption(params, key, options, fallback) {
+  const value = params.get(key);
   return options.includes(value) ? value : fallback;
 }
+
+const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
 
 function inicioDelDia() {
   const d = new Date();
@@ -60,7 +64,7 @@ function EstadoBadge({ estado }) {
       }
     >
       {esConfirmado ? <CheckCircle size={11} /> : <Clock size={11} />}
-      {t(`pagos.estado.${estado}`)}
+      {t(esConfirmado ? 'pagos.estado.confirmado' : 'pagos.estado.pendiente')}
     </span>
   );
 }
@@ -81,9 +85,16 @@ export default function PagosPage() {
   const { t } = useLanguage();
   const setBreadcrumb = useBreadcrumb();
   const toast = useToast();
+  const { setPedidos } = useAdminData();
   const { pagos, loading, error, actualizando, refetch, confirmarPago, marcarPendiente } = usePagos();
-  const [filtro, setFiltro] = useState(() => getInitialOption('filtro', FILTROS, 'todos'));
-  const [periodo, setPeriodo] = useState(() => getInitialOption('periodo', PERIODOS, 'hoy'));
+  const [params, setParams] = useSearchParams();
+  const filtro = getOption(params, 'filtro', FILTROS, 'todos');
+  const periodo = getOption(params, 'periodo', PERIODOS, 'hoy');
+  const changeOption = (key, value) => setParams(current => {
+    const next = new URLSearchParams(current);
+    next.set(key, value);
+    return next;
+  }, { replace: true });
   const [pedidoModal, setPedidoModal] = useState(null);
   const { isOpen, config, confirm, onConfirm, onCancel } = useConfirm();
 
@@ -98,7 +109,7 @@ export default function PagosPage() {
   }, [pagos, periodo]);
 
   const stats = useMemo(() => {
-    const pendientes = pagosPeriodo.filter((p) => p.pago_estado === 'pendiente');
+    const pendientes = pagosPeriodo.filter(p => p.pago_estado !== 'confirmado');
     const confirmados = pagosPeriodo.filter((p) => p.pago_estado === 'confirmado');
     return {
       pendientesCount: pendientes.length,
@@ -111,17 +122,19 @@ export default function PagosPage() {
   const datosFiltrados = useMemo(() => {
     const base = pagosPeriodo;
     if (filtro === 'todos') return base;
-    return base.filter((p) => p.pago_estado === filtro);
+    return base.filter(p => (p.pago_estado === 'confirmado' ? 'confirmado' : 'pendiente') === filtro);
   }, [pagosPeriodo, filtro]);
 
   const handleConfirmar = async ({ metodo_pago, notas }) => {
     if (!pedidoModal) return;
-    const result = await confirmarPago(pedidoModal.id, { metodo_pago, notas });
+    const result = await confirmarPago(pedidoModal, { metodo_pago, notas });
     if (result.ok) {
+      setPedidos(prev => prev.map(pedido => pedido.id === result.pedido.id ? { ...pedido, ...result.pedido } : pedido));
       toast.success(t('pagos.toast.confirmado'));
       setPedidoModal(null);
     } else {
-      toast.error(result.error || t('pagos.toast.error'));
+      if (result.stale) setPedidoModal(null);
+      toast.error(result.stale ? t('pagos.toast.stale') : (result.error || t('pagos.toast.error')));
     }
   };
 
@@ -134,11 +147,12 @@ export default function PagosPage() {
     });
     if (!accepted) return;
 
-    const result = await marcarPendiente(pedido.id);
+    const result = await marcarPendiente(pedido);
     if (result.ok) {
+      setPedidos(prev => prev.map(pedido => pedido.id === result.pedido.id ? { ...pedido, ...result.pedido } : pedido));
       toast.success(t('pagos.toast.pendiente'));
     } else {
-      toast.error(result.error || t('pagos.toast.error'));
+      toast.error(result.stale ? t('pagos.toast.stale') : (result.error || t('pagos.toast.error')));
     }
   };
 
@@ -177,6 +191,7 @@ export default function PagosPage() {
     },
     {
       key: 'pago_estado',
+      mobile: 'primary',
       label: t('pagos.col.estado'),
       sortable: true,
       render: (row) => <EstadoBadge estado={row.pago_estado} />,
@@ -190,6 +205,7 @@ export default function PagosPage() {
     },
     {
       key: '_acciones',
+      mobile: 'action',
       label: '',
       sortable: false,
       align: 'right',
@@ -200,8 +216,8 @@ export default function PagosPage() {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); handleMarcarPendiente(row); }}
-              disabled={isLoading}
-              className="text-xs font-body text-admin-muted hover:text-admin-text border border-admin-border rounded-lg px-2.5 py-1 transition-colors disabled:opacity-50"
+              disabled={Boolean(actualizando)}
+              className="min-h-10 rounded-lg border border-admin-border px-3 text-xs font-bold text-admin-text-secondary hover:bg-admin-elevated disabled:opacity-50"
             >
               {isLoading ? '…' : t('pagos.accion.pendiente')}
             </button>
@@ -211,9 +227,8 @@ export default function PagosPage() {
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); setPedidoModal(row); }}
-            disabled={isLoading}
-            className="text-xs font-body rounded-lg px-2.5 py-1 font-bold transition-colors disabled:opacity-50"
-            style={{ color: '#16a34a', background: '#16a34a22', border: '1px solid #16a34a44' }}
+            disabled={Boolean(actualizando)}
+            className="min-h-10 rounded-lg bg-violet-700 px-3 text-xs font-bold text-white hover:bg-violet-800 disabled:opacity-50"
           >
             {isLoading ? '…' : t('pagos.accion.confirmar')}
           </button>
@@ -223,9 +238,7 @@ export default function PagosPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-admin-bg px-4 lg:px-6 py-4">
-      {/* Header */}
-      <div className="mb-6">
+    <div>
         <PageHeader
           title={t('pagos.title')}
           subtitle={t('pagos.subtitle')}
@@ -240,18 +253,17 @@ export default function PagosPage() {
             </button>
           }
         />
-      </div>
 
       {/* Selector de período */}
       <div className="flex items-center gap-2 mb-4">
-        <div className="flex gap-1 p-1 bg-admin-elevated rounded-xl border border-admin-border">
+        <div role="group" aria-label={t('pagos.periodLabel')} className="flex flex-wrap gap-1 rounded-xl border border-admin-border bg-admin-elevated p-1">
           {PERIODOS.map((p) => (
             <button
               type="button"
               key={p}
-              onClick={() => setPeriodo(p)}
+              onClick={() => changeOption('periodo', p)}
               aria-pressed={periodo === p}
-              className={`px-3 py-1.5 rounded-lg text-xs font-body font-bold transition-all ${
+              className={`min-h-10 rounded-lg px-3 text-xs font-bold transition-colors ${
                 periodo === p
                   ? 'bg-admin-card text-admin-text shadow-sm'
                   : 'text-admin-muted hover:text-admin-text'
@@ -263,47 +275,31 @@ export default function PagosPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <StatsCard
-          label={t('pagos.stat.pendientesCount')}
-          value={stats.pendientesCount}
-          icon={Clock}
-          variant="warning"
-          onClick={() => setFiltro('pendiente')}
-        />
-        <StatsCard
-          label={t('pagos.stat.pendientesTotal')}
-          value={`$${stats.pendientesTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
-          icon={CreditCard}
-          variant="warning"
-          onClick={() => setFiltro('pendiente')}
-        />
-        <StatsCard
-          label={t('pagos.stat.confirmadosCount')}
-          value={stats.confirmadosCount}
-          icon={CheckCircle}
-          variant="success"
-          onClick={() => setFiltro('confirmado')}
-        />
-        <StatsCard
-          label={t('pagos.stat.confirmadosTotal')}
-          value={`$${stats.confirmadosTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
-          icon={CheckCircle}
-          variant="success"
-          onClick={() => setFiltro('confirmado')}
-        />
+      <div className="mb-5 grid gap-3 min-[400px]:grid-cols-2">
+        {[
+          { key: 'pendiente', Icon: Clock, count: stats.pendientesCount, total: stats.pendientesTotal, label: 'pendientesCount' },
+          { key: 'confirmado', Icon: CheckCircle, count: stats.confirmadosCount, total: stats.confirmadosTotal, label: 'confirmadosCount' },
+        ].map(({ key, Icon, count, total, label }) => (
+          <button key={key} type="button" onClick={() => changeOption('filtro', key)} aria-pressed={filtro === key} className={`flex items-start gap-3 rounded-2xl border bg-admin-card p-3.5 text-left hover:bg-admin-elevated sm:p-4 ${filtro === key ? 'border-violet-600 ring-1 ring-violet-600' : 'border-admin-border'}`}>
+            <Icon size={19} aria-hidden="true" className="mt-1 shrink-0 text-admin-muted" />
+            <span className="min-w-0">
+              <span className="block text-xs font-bold text-admin-muted">{t(`pagos.stat.${label}`)}</span>
+              <strong className="block break-words text-lg tabular-nums text-admin-text sm:text-2xl">{loading || error ? '—' : currency.format(total)}</strong>
+              {!loading && !error && <span className="block text-xs font-semibold text-admin-muted">{t('pagos.stat.orders', { count })}</span>}
+            </span>
+          </button>
+        ))}
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-1 mb-4 p-1 bg-admin-elevated rounded-xl w-fit border border-admin-border">
+      <div role="group" aria-label={t('pagos.statusLabel')} className="mb-4 flex w-fit flex-wrap gap-1 rounded-xl border border-admin-border bg-admin-elevated p-1">
         {FILTROS.map((f) => (
           <button
             type="button"
             key={f}
-            onClick={() => setFiltro(f)}
+            onClick={() => changeOption('filtro', f)}
             aria-pressed={filtro === f}
-            className={`px-4 py-1.5 rounded-lg text-sm font-body font-bold transition-all ${
+            className={`min-h-10 rounded-lg px-3 text-sm font-bold transition-colors ${
               filtro === f
                 ? 'bg-admin-card text-admin-text shadow-sm'
                 : 'text-admin-muted hover:text-admin-text'
@@ -323,8 +319,9 @@ export default function PagosPage() {
         columns={columns}
         rowKey="id"
         onRowClick={(row) => setPedidoModal(row)}
-        isRowClickable={(row) => row.pago_estado === 'pendiente'}
+        isRowClickable={row => !actualizando && row.pago_estado !== 'confirmado'}
         searchable
+        searchKeys={SEARCH_KEYS}
         searchPlaceholder={t('pagos.buscar')}
         emptyState={{
           icon: CreditCard,
@@ -339,7 +336,7 @@ export default function PagosPage() {
         <ModalConfirmarPago
           pedido={pedidoModal}
           onConfirm={handleConfirmar}
-          onClose={() => setPedidoModal(null)}
+          onClose={() => { if (!actualizando) setPedidoModal(null); }}
           guardando={actualizando === pedidoModal.id}
         />
       )}
@@ -351,7 +348,6 @@ export default function PagosPage() {
         onCancel={onCancel}
       />
 
-      <div className="h-20 lg:h-0" />
     </div>
   );
 }

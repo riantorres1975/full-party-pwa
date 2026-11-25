@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, UserPlus, Copy, Check, Trash2, RefreshCw, Clock } from 'lucide-react';
+import { Users, UserPlus, Check, Trash2, RefreshCw, Clock } from 'lucide-react';
 import { useLanguage } from '../../../hooks/useLanguage';
 import { useBreadcrumb } from '../../../contexts/BreadcrumbContext';
 import { usePermission } from '../../../hooks/usePermission';
@@ -13,6 +13,8 @@ import { usePendingInvites } from './hooks/usePendingInvites';
 import { useConfirm } from '../../../hooks/useConfirm';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 
+const USER_SEARCH_KEYS = ['nombre', 'email'];
+
 function UsuarioAvatar({ profile }) {
   const initials = (profile.nombre || profile.email || '?').charAt(0).toUpperCase();
   return (
@@ -22,9 +24,9 @@ function UsuarioAvatar({ profile }) {
       </div>
       <div className="min-w-0">
         {profile.nombre && (
-          <p className="text-xs font-body font-bold text-admin-text truncate">{profile.nombre}</p>
+          <p className="break-words text-xs font-bold text-admin-text">{profile.nombre}</p>
         )}
-        <p className="text-sm font-body text-admin-text truncate">{profile.email}</p>
+        <p className="break-all text-sm text-admin-text">{profile.email}</p>
       </div>
     </div>
   );
@@ -41,7 +43,7 @@ function timeAgo(iso) {
 
 function timeLeft(iso) {
   const diff = new Date(iso).getTime() - Date.now();
-  if (diff <= 0) return 'expirado';
+  if (diff <= 0) return null;
   const hrs = Math.floor(diff / 3600000);
   if (hrs < 24) return `${hrs}h`;
   return `${Math.floor(hrs / 24)}d`;
@@ -72,70 +74,33 @@ function PendingInvitesSection({ invites, loading, onResend, onCancel, t }) {
         </span>
       </div>
 
-      <div className="rounded-xl border border-admin-border overflow-hidden">
-        <table className="w-full text-sm font-body">
-          <thead>
-            <tr className="border-b border-admin-border bg-admin-elevated">
-              <th className="text-left px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide">
-                {t('usuarios.email')}
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide hidden sm:table-cell">
-                {t('usuarios.role')}
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide hidden md:table-cell">
-                {t('admin.users.pending.invitedAgo').replace('{time}', '')}
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-bold text-admin-muted uppercase tracking-wide hidden md:table-cell">
-                {t('admin.users.pending.expiresIn').replace('{time}', '')}
-              </th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody>
-            {invites.map((inv) => (
-              <tr key={inv.email} className="border-b border-admin-border last:border-0 hover:bg-admin-elevated/50 transition-colors">
-                <td className="px-4 py-3 text-admin-text truncate max-w-[180px]">{inv.email}</td>
-                <td className="px-4 py-3 hidden sm:table-cell">
+      <ul className="divide-y divide-admin-border rounded-2xl border border-admin-border bg-admin-card">
+        {invites.map(inv => {
+          const expires = timeLeft(inv.expires_at);
+          const Icon = copiedEmail === inv.email ? Check : RefreshCw;
+          return (
+            <li key={inv.email} className="flex flex-wrap items-center justify-between gap-3 p-3.5">
+              <div className="min-w-0 flex-1 basis-56">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="min-w-0 break-all text-sm font-bold text-admin-text">{inv.email}</p>
                   <RoleBadge role={inv.role} />
-                </td>
-                <td className="px-4 py-3 text-admin-muted hidden md:table-cell">
-                  {t('admin.users.pending.invitedAgo').replace('{time}', timeAgo(inv.invited_at))}
-                </td>
-                <td className="px-4 py-3 hidden md:table-cell">
-                  <span className={`text-xs font-bold ${
-                    timeLeft(inv.expires_at) === 'expirado' ? 'text-red-500' : 'text-admin-muted'
-                  }`}>
-                    {t('admin.users.pending.expiresIn').replace('{time}', timeLeft(inv.expires_at))}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-1">
-                    <button
-                      type="button"
-                      onClick={() => handleResend(inv.email, inv.role)}
-                      title={t('admin.users.invite.resend')}
-                      className="p-1.5 rounded-lg text-admin-muted hover:text-fiesta-magenta hover:bg-admin-elevated transition-colors"
-                    >
-                      {copiedEmail === inv.email
-                        ? <Check size={14} className="text-emerald-500" />
-                        : <RefreshCw size={14} />
-                      }
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onCancel(inv.email)}
-                      title={t('admin.users.invite.cancel')}
-                      className="p-1.5 rounded-lg text-admin-muted hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                </div>
+                <p className="mt-1 text-xs text-admin-muted">
+                  {t('admin.users.pending.invitedAgo', { time: timeAgo(inv.invited_at) })} · {expires ? t('admin.users.pending.expiresIn', { time: expires }) : t('admin.users.pending.expired')}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => handleResend(inv.email, inv.role)} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-admin-border px-2.5 text-xs font-bold text-admin-text-secondary hover:bg-admin-elevated">
+                  <Icon size={14} aria-hidden="true" />{t('admin.users.invite.resend')}
+                </button>
+                <button type="button" onClick={() => onCancel(inv.email)} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-admin-border px-2.5 text-xs font-bold text-admin-text-secondary hover:bg-admin-elevated">
+                  <Trash2 size={14} aria-hidden="true" />{t('admin.users.invite.cancel')}
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
@@ -221,8 +186,9 @@ export default function UsuariosPage() {
         actions={
           canManage && (
             <button
+              type="button"
               onClick={() => setInvitarOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-fiesta-magenta text-white text-sm font-body font-bold hover:opacity-90 transition-opacity"
+              className="flex min-h-11 items-center gap-2 rounded-xl bg-violet-700 px-4 text-sm font-bold text-white hover:bg-violet-800"
             >
               <UserPlus size={15} />
               {t('admin.users.invite')}
@@ -238,7 +204,9 @@ export default function UsuariosPage() {
         columns={columns}
         rowKey="id"
         onRowClick={(row) => setDetalle(row)}
+        rowActionLabel={t('usuarios.openProfile')}
         searchable
+        searchKeys={USER_SEARCH_KEYS}
         searchPlaceholder={t('usuarios.buscar')}
         onRetry={refetch}
         emptyState={{

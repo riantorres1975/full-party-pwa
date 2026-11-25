@@ -1,12 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { guardedQuery } from '../../../../lib/supabaseGuard';
 import { supabase } from '../../../../lib/supabase';
 
+const PAYMENT_FIELDS = 'id,folio,cliente_nombre,cliente_telefono,total,estado,pago_estado,metodo_pago,pago_fecha,pago_notas,created_at';
+
 export function usePagos() {
   const [pagos, setPagos] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actualizando, setActualizando] = useState(null);
+  const guardandoRef = useRef(false);
 
   const fetchPagos = useCallback(async () => {
     setLoading(true);
@@ -15,7 +18,7 @@ export function usePagos() {
       const { data, error: err } = await guardedQuery((client) =>
         client
           .from('pedidos')
-          .select('id,folio,cliente_nombre,cliente_telefono,total,estado,pago_estado,metodo_pago,pago_fecha,pago_notas,created_at')
+          .select(PAYMENT_FIELDS)
           .neq('estado', 'Cancelado')
           .order('created_at', { ascending: false })
       );
@@ -33,56 +36,39 @@ export function usePagos() {
     fetchPagos();
   }, [fetchPagos]);
 
-  const confirmarPago = useCallback(async (pedidoId, { metodo_pago, notas } = {}) => {
-    setActualizando(pedidoId);
+  const guardarPago = async (pedido, cambios) => {
+    if (guardandoRef.current) return { ok: false };
+    guardandoRef.current = true;
+    setActualizando(pedido.id);
     try {
-      const { error: err } = await supabase
+      let query = supabase
         .from('pedidos')
-        .update({
-          pago_estado: 'confirmado',
-          metodo_pago: metodo_pago || null,
-          pago_fecha: new Date().toISOString(),
-          pago_notas: notas || null,
-        })
-        .eq('id', pedidoId);
+        .update(cambios)
+        .eq('id', pedido.id)
+        .neq('estado', 'Cancelado');
+      query = pedido.pago_estado == null ? query.is('pago_estado', null) : query.eq('pago_estado', pedido.pago_estado);
+      const { data, error: err } = await query.select(PAYMENT_FIELDS).maybeSingle();
       if (err) throw new Error(err.message);
-      setPagos((prev) =>
-        prev.map((p) =>
-          p.id === pedidoId
-            ? { ...p, pago_estado: 'confirmado', metodo_pago: metodo_pago || p.metodo_pago, pago_fecha: new Date().toISOString(), pago_notas: notas || p.pago_notas }
-            : p
-        )
-      );
-      return { ok: true };
+      if (!data) {
+        await fetchPagos();
+        return { ok: false, stale: true };
+      }
+      setPagos(prev => prev.map(p => p.id === pedido.id ? data : p));
+      return { ok: true, pedido: data };
     } catch (err) {
-      console.error('[usePagos.confirmarPago]', err);
+      console.error('[usePagos.guardarPago]', err);
       return { ok: false, error: err.message };
     } finally {
+      guardandoRef.current = false;
       setActualizando(null);
     }
-  }, []);
+  };
 
-  const marcarPendiente = useCallback(async (pedidoId) => {
-    setActualizando(pedidoId);
-    try {
-      const { error: err } = await supabase
-        .from('pedidos')
-        .update({ pago_estado: 'pendiente', pago_fecha: null })
-        .eq('id', pedidoId);
-      if (err) throw new Error(err.message);
-      setPagos((prev) =>
-        prev.map((p) =>
-          p.id === pedidoId ? { ...p, pago_estado: 'pendiente', pago_fecha: null } : p
-        )
-      );
-      return { ok: true };
-    } catch (err) {
-      console.error('[usePagos.marcarPendiente]', err);
-      return { ok: false, error: err.message };
-    } finally {
-      setActualizando(null);
-    }
-  }, []);
+  const confirmarPago = (pedido, { metodo_pago, notas } = {}) => guardarPago(pedido, {
+    pago_estado: 'confirmado', metodo_pago: metodo_pago || null, pago_fecha: new Date().toISOString(), pago_notas: notas || null,
+  });
+
+  const marcarPendiente = pedido => guardarPago(pedido, { pago_estado: 'pendiente', pago_fecha: null });
 
   return { pagos, loading, error, actualizando, refetch: fetchPagos, confirmarPago, marcarPendiente };
 }

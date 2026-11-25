@@ -122,7 +122,7 @@ export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut,
 
             {/* Page content */}
             <main ref={contentRef} id="admin-main" tabIndex={-1} className="min-h-0 flex-1 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain">
-              <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 lg:p-5 lg:max-w-none pb-20 lg:pb-0">
+              <div className="mx-auto w-full max-w-screen-2xl px-3 pt-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:px-4 sm:pt-5 lg:px-6 lg:pb-6">
                 <AppErrorBoundary compact homePath="/admin">
                   {children}
                 </AppErrorBoundary>

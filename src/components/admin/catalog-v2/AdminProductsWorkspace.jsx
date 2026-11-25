@@ -19,7 +19,7 @@ import { getAdminProductReadiness } from '../../../services/catalog/adminProduct
 import ProductEditorDrawer from './ProductEditorDrawer.jsx';
 import ProductQuickCreateDrawer from './ProductQuickCreateDrawer.jsx';
 
-const PRODUCT_GRID_CLASS = 'grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-3';
+const PRODUCT_GRID_CLASS = 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,290px),1fr))] gap-3';
 
 function ProductSkeleton() {
   return (

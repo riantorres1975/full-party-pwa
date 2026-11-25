@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { BarChart3, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { useEffect } from 'react';
+import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../../hooks/useLanguage';
 import { useBreadcrumb } from '../../../contexts/BreadcrumbContext';
 import PageHeader from '../../../components/admin/PageHeader';
@@ -16,39 +17,47 @@ const TABS = ['ventas', 'productos', 'clientes', 'entrega'];
 export default function ReportesPage() {
   const { t } = useLanguage();
   const setBreadcrumb = useBreadcrumb();
-  const [anio, setAnio] = useState(new Date().getFullYear());
-  const [tab, setTab] = useState('ventas');
+  const [params, setParams] = useSearchParams();
+  const anioActual = new Date().getFullYear();
+  const anioSolicitado = Number(params.get('anio'));
+  const anio = Number.isInteger(anioSolicitado) && anioSolicitado >= 1000 && anioSolicitado <= anioActual ? anioSolicitado : anioActual;
+  const tab = TABS.includes(params.get('vista')) ? params.get('vista') : 'ventas';
   const { data, loading, error, refetch } = useReportesData(anio);
 
   useEffect(() => {
     setBreadcrumb([t('reportes.title')]);
   }, [setBreadcrumb, t]);
 
-  const anioActual = new Date().getFullYear();
+  const changeView = (name, value) => setParams(current => {
+    const next = new URLSearchParams(current);
+    next.set(name, String(value));
+    return next;
+  }, { replace: true });
 
   return (
     <div>
-      <div className="sticky top-0 z-10 bg-admin-bg pb-4">
+      <div className="pb-4">
         <PageHeader
           title={t('reportes.title')}
           subtitle={t('reportes.subtitle')}
           actions={
-            <div className="flex items-center gap-2">
+            <div role="group" aria-label={t('reportes.yearLabel')} className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => setAnio((y) => y - 1)}
+                onClick={() => changeView('anio', anio - 1)}
+                disabled={anio <= 1000}
                 aria-label={t('reportes.anioAnterior')}
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-admin-border text-admin-muted hover:text-admin-text hover:bg-admin-elevated transition-colors"
+                className="flex size-10 items-center justify-center rounded-lg border border-admin-border text-admin-text-secondary hover:bg-admin-elevated disabled:opacity-40"
               >
                 <ChevronLeft size={16} />
               </button>
-              <span className="text-sm font-body font-black text-admin-text w-12 text-center">{anio}</span>
+              <span aria-live="polite" className="w-12 text-center text-sm font-black tabular-nums text-admin-text">{anio}</span>
               <button
                 type="button"
-                onClick={() => setAnio((y) => y + 1)}
+                onClick={() => changeView('anio', anio + 1)}
                 disabled={anio >= anioActual}
                 aria-label={t('reportes.anioSiguiente')}
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-admin-border text-admin-muted hover:text-admin-text hover:bg-admin-elevated transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex size-10 items-center justify-center rounded-lg border border-admin-border text-admin-text-secondary hover:bg-admin-elevated disabled:opacity-40"
               >
                 <ChevronRight size={16} />
               </button>
@@ -56,7 +65,8 @@ export default function ReportesPage() {
                 type="button"
                 onClick={refetch}
                 aria-label={t('admin.reloadData')}
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-admin-border text-admin-muted hover:text-admin-text hover:bg-admin-elevated transition-colors"
+                disabled={loading}
+                className="flex size-10 items-center justify-center rounded-lg border border-admin-border text-admin-text-secondary hover:bg-admin-elevated disabled:opacity-40"
                 title={t('admin.reloadData')}
               >
                 <RefreshCw size={14} />
@@ -66,17 +76,17 @@ export default function ReportesPage() {
         />
 
         {/* Tabs */}
-        <div className="flex gap-1 flex-wrap">
+        <div role="group" aria-label={t('reportes.sectionLabel')} className="flex flex-wrap gap-2">
           {TABS.map((key) => (
             <button
               type="button"
               key={key}
-              onClick={() => setTab(key)}
+              onClick={() => changeView('vista', key)}
               aria-pressed={tab === key}
-              className={`px-3 py-1.5 rounded-lg text-xs font-body font-bold transition-colors ${
+              className={`min-h-10 rounded-lg border px-3 text-sm font-bold transition-colors ${
                 tab === key
-                  ? 'bg-fiesta-magenta text-white'
-                  : 'bg-admin-elevated text-admin-muted hover:text-admin-text'
+                  ? 'border-violet-700 bg-violet-700 text-white'
+                  : 'border-admin-border bg-admin-card text-admin-text-secondary hover:bg-admin-elevated'
               }`}
             >
               {t(`reportes.tab.${key}`)}

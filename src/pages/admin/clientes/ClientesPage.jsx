@@ -70,10 +70,10 @@ export default function ClientesPage() {
       sortable: true,
       render: (row) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-fiesta-magenta to-fiesta-cyan flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+          <div aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-xs font-bold text-violet-800">
             {row.nombre?.charAt(0).toUpperCase()}
           </div>
-          <span className="truncate">{row.nombre}</span>
+          <span className="min-w-0 break-words font-bold">{row.nombre}</span>
         </div>
       ),
     },
@@ -105,13 +105,11 @@ export default function ClientesPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-admin-bg px-4 lg:px-6 py-4">
-      <div className="mb-6">
+    <div>
         <PageHeader
           title={t('clientes.title')}
           subtitle={t('clientes.subtitle')}
         />
-      </div>
 
       <div className="mb-8">
         <DataTable
@@ -122,6 +120,7 @@ export default function ClientesPage() {
           columns={columns}
           rowKey="id"
           onRowClick={(row) => setClienteSeleccionado(row)}
+          rowActionLabel={t('clientes.openProfile')}
           searchable
           searchPlaceholder={t('clientes.buscar')}
           emptyState={{
@@ -157,8 +156,6 @@ export default function ClientesPage() {
         />
       )}
 
-      {/* Footer spacing en mobile */}
-      <div className="h-20 lg:h-0" />
     </div>
   );
 }

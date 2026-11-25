@@ -20,24 +20,26 @@ export default function CatalogoPage() {
   return (
     <>
       <PageHeader
-        title="Catálogo"
-        subtitle="Administra los productos que ven tus clientes."
+        title={t('admin.nav.catalog')}
+        subtitle={t('admin.catalog.pageSubtitle')}
         actions={(
           <div className="flex rounded-xl border border-admin-border bg-admin-card p-1">
             <button
               type="button"
+              aria-pressed={!baseMode}
               onClick={() => setSearchParams({ vista: 'productos' })}
               className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-black ${
-                !baseMode ? 'bg-fiesta-magenta text-white' : 'text-admin-muted hover:bg-admin-elevated'
+                !baseMode ? 'bg-violet-700 text-white' : 'text-admin-text-secondary hover:bg-admin-elevated'
               }`}
             >
               <PackageOpen size={14} /> Productos
             </button>
             <button
               type="button"
+              aria-pressed={baseMode}
               onClick={() => setSearchParams({ vista: 'base', seccion: 'categories' })}
               className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-black ${
-                baseMode ? 'bg-fiesta-magenta text-white' : 'text-admin-muted hover:bg-admin-elevated'
+                baseMode ? 'bg-violet-700 text-white' : 'text-admin-text-secondary hover:bg-admin-elevated'
               }`}
             >
               <Database size={14} /> Configuración

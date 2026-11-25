@@ -1,17 +1,17 @@
-export default function PageHeader({ title, subtitle, actions }) {
+export default function PageHeader({ title, subtitle, actions, accent = false }) {
   return (
-    <div className="flex items-start justify-between gap-4 mb-6">
-      <div className="flex-1">
-        <h1 className="text-2xl font-display font-black text-admin-text mb-1">{title}</h1>
+    <header className={`mb-5 flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-admin-border bg-admin-card px-4 py-4 sm:items-center sm:gap-4 sm:px-6 sm:py-5 ${accent ? 'bg-gradient-to-br from-violet-500/10 to-transparent' : ''}`}>
+      <div className="min-w-0">
+        <h1 className="text-2xl font-black leading-tight tracking-tight text-admin-text sm:text-3xl">{title}</h1>
         {subtitle && (
-          <p className="text-sm font-body text-admin-muted">{subtitle}</p>
+          <p className="mt-1 text-sm leading-relaxed text-admin-muted">{subtitle}</p>
         )}
       </div>
       {actions && (
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex max-w-full flex-wrap items-center gap-2">
           {actions}
         </div>
       )}
-    </div>
+    </header>
   );
 }

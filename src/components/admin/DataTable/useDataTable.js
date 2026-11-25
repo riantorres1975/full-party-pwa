@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { fuzzySearchByText } from '../../../utils/fuzzySearch';
 
+const compareText = new Intl.Collator('es-MX', { numeric: true, sensitivity: 'base' }).compare;
+
 function getByPath(row, path) {
   return String(path || '')
     .split('.')
@@ -17,22 +19,22 @@ function valueToSearchText(value) {
 
 function getSearchableKeys(columns) {
   if (!Array.isArray(columns) || columns.length === 0) return [];
-  const explicit = columns.filter(col => col.searchable === true).map(col => col.key).filter(Boolean);
+  const explicit = columns.filter(col => col.searchable === true).map(col => col.key ?? col.id).filter(Boolean);
   if (explicit.length > 0) return explicit;
   return columns
-    .filter(col => col.searchable !== false && !String(col.key || '').startsWith('_'))
-    .map(col => col.key)
+    .filter(col => col.searchable !== false && !String(col.key ?? col.id ?? '').startsWith('_'))
+    .map(col => col.key ?? col.id)
     .filter(Boolean);
 }
 
 function getRowSearchText(row, searchableKeys) {
   const values = searchableKeys.length > 0
     ? searchableKeys.map(key => getByPath(row, key))
-    : Object.values(row);
+    : [];
   return values.map(valueToSearchText).join(' ');
 }
 
-export function useDataTable({ data = [], columns = [], pageSize = 25, onSortChange, onFilterChange }) {
+export function useDataTable({ data = [], columns = [], searchKeys, pageSize = 25, onSortChange, onFilterChange }) {
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState('asc'); // 'asc' | 'desc' | null
   const [search, setSearch] = useState('');
@@ -54,6 +56,12 @@ export function useDataTable({ data = [], columns = [], pageSize = 25, onSortCha
       setSortDir('asc');
     }
   }, [sortKey, sortDir]);
+
+  const setSortChoice = (key, direction = 'asc') => {
+    setPage(0);
+    setSortKey(key || null);
+    setSortDir(direction);
+  };
 
   const toggleRow = useCallback((id) => {
     setSelection(prev => {
@@ -103,7 +111,7 @@ export function useDataTable({ data = [], columns = [], pageSize = 25, onSortCha
 
     // Search filter: fuzzy matching across searchable columns.
     if (search.trim()) {
-      const searchableKeys = getSearchableKeys(columns);
+      const searchableKeys = searchKeys ?? getSearchableKeys(columns);
       result = fuzzySearchByText(
         result,
         search,
@@ -122,8 +130,8 @@ export function useDataTable({ data = [], columns = [], pageSize = 25, onSortCha
     // Sorting
     if (sortKey && sortDir) {
       result.sort((a, b) => {
-        const aVal = a[sortKey];
-        const bVal = b[sortKey];
+        const aVal = getByPath(a, sortKey);
+        const bVal = getByPath(b, sortKey);
         if (aVal == null && bVal == null) return 0;
         if (aVal == null) return 1;
         if (bVal == null) return -1;
@@ -132,9 +140,7 @@ export function useDataTable({ data = [], columns = [], pageSize = 25, onSortCha
           return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
         }
 
-        const aStr = String(aVal).toLowerCase();
-        const bStr = String(bVal).toLowerCase();
-        return sortDir === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
+        return sortDir === 'asc' ? compareText(String(aVal), String(bVal)) : compareText(String(bVal), String(aVal));
       });
     }
 
@@ -153,7 +159,7 @@ export function useDataTable({ data = [], columns = [], pageSize = 25, onSortCha
       currentPage: safePage,
       total: result.length,
     };
-  }, [data, columns, search, filters, sortKey, sortDir, page, pageSize]);
+  }, [data, columns, searchKeys, search, filters, sortKey, sortDir, page, pageSize]);
 
   useEffect(() => {
     if (page !== processedData.currentPage) {
@@ -172,6 +178,7 @@ export function useDataTable({ data = [], columns = [], pageSize = 25, onSortCha
 
     // Setters
     setSort,
+    setSortChoice,
     setSearch: setSearchValue,
     setPage,
     toggleRow,

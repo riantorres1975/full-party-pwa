@@ -58,7 +58,7 @@ export default function ModalConfirmarPago({ pedido, onConfirm, onClose, guardan
               <p className="text-xs text-admin-muted font-body">{pedido.folio} · {pedido.cliente_nombre}</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} aria-label={t('common.close')} className="p-1.5 rounded-lg text-admin-muted hover:bg-admin-elevated transition-colors">
+          <button type="button" onClick={onClose} disabled={guardando} aria-label={t('common.close')} className="flex size-10 items-center justify-center rounded-lg text-admin-muted hover:bg-admin-elevated disabled:opacity-50">
             <X size={16} />
           </button>
         </div>
@@ -83,6 +83,7 @@ export default function ModalConfirmarPago({ pedido, onConfirm, onClose, guardan
                 <button
                   key={value}
                   type="button"
+                  disabled={guardando}
                   aria-pressed={metodo === value}
                   onClick={() => setMetodo(metodo === value ? '' : value)}
                   className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-body font-bold transition-all ${
@@ -105,6 +106,7 @@ export default function ModalConfirmarPago({ pedido, onConfirm, onClose, guardan
             </label>
             <textarea
               id="pago-notas"
+              disabled={guardando}
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
               placeholder={t('pagos.modal.notasPlaceholder')}
@@ -119,6 +121,7 @@ export default function ModalConfirmarPago({ pedido, onConfirm, onClose, guardan
               ref={cancelRef}
               type="button"
               onClick={onClose}
+              disabled={guardando}
               className="flex-1 py-2.5 rounded-xl border border-admin-border text-sm font-body font-bold text-admin-muted hover:text-admin-text hover:bg-admin-elevated transition-colors"
             >
               {t('pagos.modal.cancelar')}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { guardedQuery } from '../../../../lib/supabaseGuard';
+import { summarizeSoldProducts } from '../../../../services/catalog/orderSales';
 
 export function useReportesData(anio) {
   const [data, setData] = useState(null);
@@ -54,27 +55,9 @@ export function useReportesData(anio) {
       });
 
       // ── Productos ranking ──
-      const prodMap = {};
-      cobrados.forEach((p) => {
-        const items = Array.isArray(p.detalles_json) ? p.detalles_json : [];
-        items.forEach((item) => {
-          const key = item.id || item.nombre;
-          if (!key) return;
-          if (!prodMap[key]) {
-            prodMap[key] = {
-              id: item.id,
-              nombre: item.nombre,
-              imagen_url: item.imagen_url || null,
-              cantidad: 0,
-              ingresos: 0,
-            };
-          }
-          prodMap[key].cantidad += Number(item.cantidad) || 0;
-          prodMap[key].ingresos += (Number(item.precio) || 0) * (Number(item.cantidad) || 0);
-        });
-      });
-      const totalIngresosProductos = Object.values(prodMap).reduce((s, p) => s + p.ingresos, 0);
-      const productosRanking = Object.values(prodMap)
+      const productosVendidos = summarizeSoldProducts(cobrados);
+      const totalIngresosProductos = productosVendidos.reduce((s, p) => s + p.ingresos, 0);
+      const productosRanking = productosVendidos
         .map((p) => ({ ...p, pct: totalIngresosProductos > 0 ? (p.ingresos / totalIngresosProductos) * 100 : 0 }))
         .sort((a, b) => b.ingresos - a.ingresos);
 

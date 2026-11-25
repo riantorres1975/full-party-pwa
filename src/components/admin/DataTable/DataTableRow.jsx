@@ -8,11 +8,15 @@ export default function DataTableRow({
   isSelected,
   onToggle,
   onRowClick,
-  formatters,
+  rowActionLabel,
   variant = 'row',
 }) {
   const { t } = useLanguage();
   const rowId = row[rowKey];
+  const handleRowClick = (event) => {
+    if (event.defaultPrevented || event.target.closest('button, a, label, input, select, textarea, details')) return;
+    onRowClick?.(row);
+  };
 
   const handleRowKeyDown = (event) => {
     if (event.target !== event.currentTarget || !onRowClick || (event.key !== 'Enter' && event.key !== ' ')) return;
@@ -63,14 +67,23 @@ export default function DataTableRow({
   };
 
   if (variant === 'card') {
+    const actions = columns.filter(col => col.mobile === 'action');
+    const fields = columns.filter(col => col.mobile !== 'action');
+    const visible = fields.filter((col, idx) => col.mobile === 'primary' || (idx < 3 && col.mobile !== 'detail'));
+    const extra = fields.filter(col => !visible.includes(col));
+    const renderField = (col) => {
+      const colKey = col.key ?? col.id;
+      return (
+        <div key={colKey} className="grid min-w-0 grid-cols-[minmax(4rem,0.75fr)_minmax(0,1.25fr)] items-start gap-2">
+          <dt className="text-xs font-bold text-admin-muted">{col.label}</dt>
+          <dd className="min-w-0 break-words text-sm text-admin-text">{renderCellValue(col, row[colKey])}</dd>
+        </div>
+      );
+    };
     return (
-      <div
-        onClick={() => onRowClick && onRowClick(row)}
-        onKeyDown={handleRowKeyDown}
-        tabIndex={onRowClick ? 0 : undefined}
-        className={`p-4 border-b border-admin-border-soft bg-admin-card rounded-lg ${
-          onRowClick ? 'cursor-pointer active:scale-95 transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-500' : ''
-        }`}
+      <li
+        onClick={onRowClick ? handleRowClick : undefined}
+        className="space-y-3 rounded-xl border border-admin-border bg-admin-card px-3.5 py-3 sm:px-4"
       >
         {selectable && (
           <div className="mb-3">
@@ -84,50 +97,30 @@ export default function DataTableRow({
             />
           </div>
         )}
-        <div className="space-y-2">
-          {columns.slice(0, 3).map(col => {
-            const colKey = col.key ?? col.id;
-            return (
-              <div key={colKey} className="flex justify-between items-start gap-2">
-                <span className="text-xs font-bold text-admin-text-secondary">
-                  {col.label}
-                </span>
-                <span className="text-sm font-body text-admin-text text-right">
-                  {renderCellValue(col, row[colKey])}
-                </span>
-              </div>
-            );
-          })}
-          {columns.length > 3 && (
-            <details className="mt-2 pt-2 border-t border-admin-border-soft">
-              <summary className="text-xs font-bold text-ink-500 cursor-pointer">
-                Ver más
-              </summary>
-              <div className="space-y-2 mt-2">
-                {columns.slice(3).map(col => {
-                  const colKey = col.key ?? col.id;
-                  return (
-                    <div key={colKey} className="flex justify-between items-start gap-2">
-                      <span className="text-xs font-bold text-admin-text-secondary">
-                        {col.label}
-                      </span>
-                      <span className="text-sm font-body text-admin-text text-right">
-                        {renderCellValue(col, row[colKey])}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </details>
-          )}
-        </div>
-      </div>
+        <dl className="space-y-2">{visible.map(renderField)}</dl>
+        {extra.length > 0 && (
+          <details className="border-t border-admin-border-soft">
+            <summary className="cursor-pointer py-2 text-xs font-bold text-admin-text-secondary">{t('datatable.more_details')}</summary>
+            <dl className="space-y-2 pb-1">{extra.map(renderField)}</dl>
+          </details>
+        )}
+        {(actions.length > 0 || onRowClick) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {actions.map(col => <div key={col.key ?? col.id}>{renderCellValue(col, row[col.key ?? col.id])}</div>)}
+            {onRowClick && actions.length === 0 && (
+              <button type="button" onClick={() => onRowClick(row)} className="min-h-11 rounded-lg border border-admin-border px-3 text-sm font-bold text-admin-text-secondary hover:bg-admin-elevated">
+                {rowActionLabel ?? t('datatable.open_row')}
+              </button>
+            )}
+          </div>
+        )}
+      </li>
     );
   }
 
   return (
     <tr
-      onClick={() => onRowClick && !selectable && onRowClick(row)}
+      onClick={onRowClick && !selectable ? handleRowClick : undefined}
       onKeyDown={onRowClick && !selectable ? handleRowKeyDown : undefined}
       tabIndex={onRowClick && !selectable ? 0 : undefined}
       className={`border-b border-admin-border-soft hover:bg-admin-elevated transition-colors ${

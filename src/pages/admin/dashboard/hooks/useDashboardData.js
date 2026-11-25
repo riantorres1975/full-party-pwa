@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { guardedQuery } from '../../../../lib/supabaseGuard';
 import { getAvailableStock } from '../../../../services/catalog/inventoryModel';
+import { summarizeSoldProducts } from '../../../../services/catalog/orderSales';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -101,27 +102,7 @@ export function useDashboardData({ desde, hasta }) {
       });
       const pedidosPorEstado = Object.entries(estadoCounts).map(([estado, count]) => ({ estado, count }));
 
-      // Top productos
-      const productoCounts = {};
-      pedidosCobrados.forEach(p => {
-        const items = Array.isArray(p.detalles_json) ? p.detalles_json : [];
-        items.forEach(item => {
-          const key = item.id || item.nombre;
-          if (!key) return;
-          if (!productoCounts[key]) {
-            productoCounts[key] = {
-              id: item.id,
-              nombre: item.nombre,
-              cantidad: 0,
-              ingresos: 0,
-              imagen_url: item.imagen_url,
-            };
-          }
-          productoCounts[key].cantidad += Number(item.cantidad) || 0;
-          productoCounts[key].ingresos += (Number(item.precio) || 0) * (Number(item.cantidad) || 0);
-        });
-      });
-      const topProductos = Object.values(productoCounts)
+      const topProductos = summarizeSoldProducts(pedidosCobrados)
         .sort((a, b) => b.cantidad - a.cantidad)
         .slice(0, 5);
 

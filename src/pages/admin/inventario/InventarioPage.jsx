@@ -5,6 +5,7 @@ import { useLanguage } from '../../../hooks/useLanguage';
 import { useBreadcrumb } from '../../../contexts/BreadcrumbContext';
 import { usePermission } from '../../../hooks/usePermission';
 import DataErrorState from '../../../components/admin/DataErrorState';
+import PageHeader from '../../../components/admin/PageHeader';
 import { createFuzzySearchIndex } from '../../../utils/fuzzySearch';
 import EditarExistencia from './components/EditarExistencia';
 import InventarioFilters, { FILTROS } from './components/InventarioFilters';
@@ -153,15 +154,11 @@ export default function InventarioPage() {
 
   return (
     <div className="mx-auto max-w-screen-2xl space-y-4 pb-5">
-      <header className="flex flex-wrap items-start justify-between gap-3 rounded-3xl border border-admin-border bg-admin-card px-4 py-5 sm:items-center sm:px-6">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-admin-text sm:text-3xl">{t('inventario.title')}</h1>
-          <p className="mt-1 text-sm text-admin-muted">{t('inventario.subtitle')}</p>
-        </div>
+      <PageHeader title={t('inventario.title')} subtitle={t('inventario.subtitle')} actions={(
         <Link to="/admin/catalogo" className={`inline-flex min-h-10 items-center gap-2 rounded-xl border border-admin-border px-3 text-sm font-bold text-admin-text-secondary hover:bg-admin-elevated ${focusStyle}`}>
           {t('inventario.verCatalogo')} <ArrowUpRight size={15} aria-hidden="true" />
         </Link>
-      </header>
+      )} />
 
       <div className="space-y-3 rounded-2xl border border-admin-border bg-admin-card p-3.5 sm:p-4">
         <div className="grid gap-2.5 sm:grid-cols-[minmax(0,1fr)_minmax(11rem,0.55fr)]">

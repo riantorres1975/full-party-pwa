@@ -10,14 +10,14 @@ export default function DataTablePagination({
 }) {
   const { t } = useLanguage();
 
-  if (totalPages <= 1) return null;
+  if (totalResults === 0) return null;
 
   const start = currentPage * pageSize + 1;
   const end = Math.min((currentPage + 1) * pageSize, totalResults);
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-admin-border-soft text-sm">
-      <span className="text-admin-text-secondary">
+    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-admin-border-soft px-3 py-2 text-sm sm:px-4">
+      <span aria-live="polite" className="text-admin-text-secondary">
         {t('datatable.pagination.showing', {
           from: start,
           to: end,
@@ -25,12 +25,12 @@ export default function DataTablePagination({
         })}
       </span>
 
-      <div className="flex items-center gap-2">
+      {totalPages > 1 && <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 0}
-          className="p-1 rounded hover:bg-admin-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="flex size-10 items-center justify-center rounded-lg border border-admin-border hover:bg-admin-elevated disabled:opacity-45"
           aria-label={t('datatable.pagination.previous')}
         >
           <ChevronLeft size={18} />
@@ -44,12 +44,12 @@ export default function DataTablePagination({
           type="button"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage >= totalPages - 1}
-          className="p-1 rounded hover:bg-admin-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="flex size-10 items-center justify-center rounded-lg border border-admin-border hover:bg-admin-elevated disabled:opacity-45"
           aria-label={t('datatable.pagination.next')}
         >
           <ChevronRight size={18} />
         </button>
-      </div>
+      </div>}
     </div>
   );
 }

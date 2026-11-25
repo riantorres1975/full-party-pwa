@@ -7,6 +7,7 @@ import { useAdminData } from '../../../contexts/AdminDataContext';
 import { usePermissions } from '../../../contexts/PermissionsContext';
 import { ESTADOS_HISTORIAL } from '../../../lib/estadoMeta';
 import DataErrorState from '../../../components/admin/DataErrorState';
+import PageHeader from '../../../components/admin/PageHeader';
 import RangoPeriodoPicker from './components/RangoPeriodoPicker';
 import KpiGrid from './components/KpiGrid';
 import VentasChart from './components/VentasChart';
@@ -55,20 +56,14 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-screen-2xl space-y-5 pb-6 sm:space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-4 rounded-3xl border border-admin-border bg-admin-card bg-gradient-to-br from-violet-500/10 to-transparent px-4 py-5 sm:items-center sm:px-6 sm:py-6">
-        <div>
-          <h1 className="text-2xl font-black leading-tight tracking-tight text-admin-text sm:text-3xl">{t('admin.dashboard.title')}</h1>
-          <p className="mt-1.5 text-sm leading-relaxed text-admin-muted">{t('admin.dashboard.subtitle')}</p>
-        </div>
-        {can('catalogo.edit') && (
+      <PageHeader accent title={t('admin.dashboard.title')} subtitle={t('admin.dashboard.subtitle')} actions={can('catalogo.edit') && (
           <Link
             to="/admin/catalogo?nuevo=1"
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-violet-700 px-4 text-sm font-black text-white transition-colors hover:bg-violet-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
           >
             <Plus size={18} aria-hidden="true" /> {t('admin.dashboard.newProduct')}
           </Link>
-        )}
-      </header>
+        )} />
 
       <PrioridadesOperativas
         contadores={contadores}
