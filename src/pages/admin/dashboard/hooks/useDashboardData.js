@@ -11,9 +11,9 @@ export function useDashboardData({ desde, hasta }) {
     pedidosPorEstado: [],
     topProductos: [],
     ultimosPedidos: [],
-    stockAlerts: { bajo: 0, sinStock: 0 },
+    stockAlerts: null,
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const requestIdRef = useRef(0);
 
@@ -166,7 +166,7 @@ export function useDashboardData({ desde, hasta }) {
         pedidosPorEstado,
         topProductos,
         ultimosPedidos,
-        stockAlerts,
+        stockAlerts: resultadoInventario.error ? null : stockAlerts,
       });
     } catch (err) {
       if (requestId !== requestIdRef.current) return;

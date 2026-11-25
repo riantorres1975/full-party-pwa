@@ -81,12 +81,12 @@ test('registers a priced product with a photo and retries publishing its existin
     return respond([]);
   });
 
-  await page.goto('/admin/catalogo');
+  await page.goto('/admin/dashboard');
   await page.locator('#admin-email').fill(email);
   await page.locator('#admin-password').fill('local-test-password');
   await page.locator('button[type="submit"]').click();
 
-  await page.getByRole('button', { name: 'Nuevo producto' }).click();
+  await page.getByRole('link', { name: 'Nuevo producto' }).click();
   const dialog = page.getByRole('dialog', { name: 'Nuevo producto' });
   const publish = dialog.getByRole('button', { name: 'Publicar producto' });
   await expect(dialog.getByLabel('Nombre del producto')).toBeFocused();

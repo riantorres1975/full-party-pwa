@@ -2,11 +2,13 @@ import { useEffect, useId, useRef } from 'react';
 import { X } from 'lucide-react';
 import { useFocusTrap } from '../../../../hooks/useFocusTrap.js';
 import { useLanguage } from '../../../../hooks/useLanguage';
+import { useAdminData } from '../../../../contexts/AdminDataContext';
 import { ESTADO_META, estadoLabel } from '../../../../lib/estadoMeta';
 import TarjetaPedido from './TarjetaPedido';
 
 export default function ModalDetallePedido({ pedido, onClose, onCambiarEstado, actualizando, notificando, onNotificar, onCancelar, onConfirmarPago, setPedidos }) {
   const { t, lang } = useLanguage();
+  const { sucursalPorPedidoId } = useAdminData();
   const meta = ESTADO_META[pedido.estado] ?? ESTADO_META['Por Surtir'];
   const fecha = new Date(pedido.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'es-MX', {
     day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
@@ -62,6 +64,7 @@ export default function ModalDetallePedido({ pedido, onClose, onCambiarEstado, a
           <TarjetaPedido
             key={pedido.id}
             pedido={pedido}
+            sucursal={sucursalPorPedidoId.get(pedido.id)}
             onCambiarEstado={async (id, estado) => {
               const actualizado = await onCambiarEstado(id, estado);
               if (actualizado && estado === 'Enviado') onClose();

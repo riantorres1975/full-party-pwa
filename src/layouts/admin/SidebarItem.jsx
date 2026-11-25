@@ -1,24 +1,18 @@
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 export default function SidebarItem({ href, icon: Icon, label, badge, disabled, tooltip, collapsed }) {
-  const navigate = useNavigate();
   const location = useLocation();
   const isActive = !disabled && location.pathname === href;
-
-  const handleClick = (e) => {
-    if (disabled) {
-      e.preventDefault();
-      return;
-    }
-    navigate(href);
-  };
+  const Element = disabled ? 'button' : Link;
+  const props = disabled ? { type: 'button', disabled: true } : { to: href };
 
   return (
-    <button
-      onClick={handleClick}
-      disabled={disabled}
-      title={disabled ? tooltip : ''}
-      className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all duration-200 w-full text-left
+    <Element
+      {...props}
+      title={disabled ? tooltip : collapsed ? label : undefined}
+      aria-label={collapsed ? label : undefined}
+      aria-current={isActive ? 'page' : undefined}
+      className={`relative flex min-h-10 items-center gap-2.5 rounded-lg transition-colors duration-200 w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-fiesta-magenta ${collapsed ? 'justify-center' : 'px-3 py-2.5'}
         ${isActive
           ? 'bg-admin-elevated border-l-[3px] border-l-fiesta-magenta text-admin-text'
           : disabled
@@ -26,7 +20,7 @@ export default function SidebarItem({ href, icon: Icon, label, badge, disabled, 
             : 'text-admin-muted hover:text-admin-text hover:bg-admin-elevated'
         }`}
     >
-      <Icon size={18} className="flex-shrink-0" />
+      <Icon size={18} aria-hidden="true" className="flex-shrink-0" />
       {!collapsed && (
         <>
           <span className="flex-1 text-sm font-body font-bold">{label}</span>
@@ -42,6 +36,6 @@ export default function SidebarItem({ href, icon: Icon, label, badge, disabled, 
           {badge > 9 ? '9+' : badge}
         </span>
       )}
-    </button>
+    </Element>
   );
 }

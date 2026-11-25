@@ -1,10 +1,11 @@
-import { Truck, Store, MessageCircle, CheckCircle, AlertCircle, Banknote, Smartphone, CreditCard, MoreHorizontal, ChevronRight } from 'lucide-react';
+import { MessageCircle, CheckCircle, AlertCircle, Banknote, Smartphone, CreditCard, MoreHorizontal, ChevronRight } from 'lucide-react';
 import { ESTADOS } from '../../../../hooks/usePedidosAdmin';
 import { ESTADO_META, estadoLabel } from '../../../../lib/estadoMeta';
 import { maskPhone } from '../../../../utils/formatters';
 import { SIMBOLO_MONEDA } from '../../../../data/productos';
 import { useLanguage } from '../../../../hooks/useLanguage';
 import Can from '../../../../components/auth/Can';
+import EntregaPedido from './EntregaPedido';
 
 const METODOS_ICONO = {
   transferencia: Smartphone,
@@ -25,6 +26,7 @@ function tiempoRelativo(fechaStr, lang) {
 
 export default function TarjetaPedidoMobile({
   pedido,
+  sucursal,
   actualizando,
   notificando,
   onCambiarEstado,
@@ -78,13 +80,7 @@ export default function TarjetaPedidoMobile({
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
             <p className="font-body font-bold text-sm text-admin-text truncate">{pedido.cliente_nombre}</p>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              {pedido.tipo_entrega === 'envio'
-                ? <Truck size={11} className="text-admin-muted flex-shrink-0" />
-                : <Store size={11} className="text-admin-muted flex-shrink-0" />
-              }
-              <span className="text-[11px] font-body text-admin-muted">{maskPhone(pedido.cliente_telefono)}</span>
-            </div>
+            <p className="text-xs font-body text-admin-muted">{maskPhone(pedido.cliente_telefono)}</p>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
             <span className="font-body font-black text-base" style={{ color: meta.color }}>
@@ -94,6 +90,9 @@ export default function TarjetaPedidoMobile({
           </div>
         </div>
 
+        <span className="block text-xs font-semibold">
+          <EntregaPedido tipo={pedido.tipo_entrega} sucursal={sucursal} />
+        </span>
       </button>
 
       <div className="flex flex-wrap items-center gap-2 border-t border-admin-border-soft p-3">

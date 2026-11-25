@@ -1,4 +1,5 @@
-import { useDeferredValue, useState } from 'react';
+import { useDeferredValue, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Box,
   CircleDollarSign,
@@ -50,6 +51,15 @@ export default function AdminProductsWorkspace() {
   const canEdit = usePermission('catalogo.edit');
   const canDelete = usePermission('catalogo.delete');
   const toast = useToast();
+  const [params, setParams] = useSearchParams();
+
+  useEffect(() => {
+    if (params.get('nuevo') !== '1' || workspace.loading || workspace.error) return;
+    if (canEdit) setQuickCreateOpen(true);
+    const siguiente = new URLSearchParams(params);
+    siguiente.delete('nuevo');
+    setParams(siguiente, { replace: true });
+  }, [canEdit, params, setParams, workspace.error, workspace.loading]);
 
   const openEditor = (product = null) => {
     setSelectedProduct(product);

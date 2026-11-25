@@ -4,7 +4,7 @@ import { SIMBOLO_MONEDA } from '../data/productos';
 import { useLanguage } from '../hooks/useLanguage';
 
 // ── Definición de pasos del stepper ─────────────────────────────────────────
-function usePasos() {
+function usePasos(esEnvio) {
   const { t } = useLanguage();
   return [
     {
@@ -26,26 +26,24 @@ function usePasos() {
     {
       estado:    'Listo para Entrega',
       emoji:     '🎉',
-      label:     t('tracking.status.ready'),
-      sublabel:  t('tracking.status.readySub'),
+      label:     t(esEnvio ? 'tracking.status.readyToShip' : 'tracking.status.readyForPickup'),
+      sublabel:  t(esEnvio ? 'tracking.status.readyToShipSub' : 'tracking.status.readyForPickupSub'),
       color:     '#22c55e',
       colorLight:'#dcfce7',
     },
     {
       estado:    'Enviado',
-      emoji:     '🚚',
-      label:     'Enviado',
-      sublabel:  'Tu pedido va en camino',
+      emoji:     esEnvio ? '🚚' : '✅',
+      label:     t(esEnvio ? 'tracking.status.shipped' : 'tracking.status.pickedUp'),
+      sublabel:  t(esEnvio ? 'tracking.status.shippedSub' : 'tracking.status.pickedUpSub'),
       color:     '#3b82f6',
       colorLight:'#dbeafe',
     },
   ];
 }
 
-function Stepper({ estadoActual }) {
+function Stepper({ estadoActual, pasos }) {
   const { t } = useLanguage();
-  const PASOS = usePasos();
-  const ORDEN = PASOS.map(p => p.estado);
 
   if (estadoActual === 'Cancelado') {
     return (
@@ -64,7 +62,7 @@ function Stepper({ estadoActual }) {
     );
   }
 
-  const indexActual = ORDEN.indexOf(estadoActual);
+  const indexActual = pasos.findIndex(paso => paso.estado === estadoActual);
 
   return (
     <div className="w-full px-2 pt-2 pb-4">
@@ -81,12 +79,12 @@ function Stepper({ estadoActual }) {
           }}
         />
 
-        {PASOS.map((paso, i) => {
+        {pasos.map((paso, i) => {
           const completado = i <= indexActual;
           const activo     = i === indexActual;
 
           return (
-            <div key={paso.estado} className="relative flex flex-col items-center z-10" style={{ width: `${100 / PASOS.length}%` }}>
+            <div key={paso.estado} aria-current={activo ? 'step' : undefined} className="relative flex flex-col items-center z-10" style={{ width: `${100 / pasos.length}%` }}>
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-lg
                            transition-all duration-500 border-2"
@@ -120,11 +118,11 @@ function Stepper({ estadoActual }) {
 function TarjetaPedido({ pedido }) {
   const [expandido, setExpandido] = useState(false);
   const { t } = useLanguage();
-  const PASOS = usePasos();
+  const pasos = usePasos(pedido.tipo_entrega === 'envio');
   const esCancelado = pedido.estado === 'Cancelado';
   const pasoActual = esCancelado
-    ? { color: '#6b7280', colorLight: '#f3f4f6', emoji: '❌', estado: 'Cancelado' }
-    : (PASOS.find(p => p.estado === pedido.estado) ?? PASOS[0]);
+    ? { color: '#6b7280', colorLight: '#f3f4f6', emoji: '❌', label: t('tracking.cancelled') }
+    : (pasos.find(paso => paso.estado === pedido.estado) ?? pasos[0]);
   const fecha = new Date(pedido.created_at).toLocaleDateString('es-MX', {
     day: '2-digit', month: 'short', year: 'numeric',
   });
@@ -142,7 +140,7 @@ function TarjetaPedido({ pedido }) {
           </div>
           <span className="text-xs font-body font-black px-3 py-1.5 rounded-full"
                 style={{ background: pasoActual.colorLight, color: pasoActual.color }}>
-            <span aria-hidden="true">{pasoActual.emoji}</span> {pedido.estado}
+            <span aria-hidden="true">{pasoActual.emoji}</span> {pasoActual.label}
           </span>
         </div>
         <p className="text-sm font-body font-bold text-ink-700">{pedido.cliente_nombre}</p>
@@ -152,7 +150,7 @@ function TarjetaPedido({ pedido }) {
       </div>
 
       <div className="px-4 py-2 border-t border-ink-100">
-        <Stepper estadoActual={pedido.estado} />
+        <Stepper estadoActual={pedido.estado} pasos={pasos} />
       </div>
 
       <div className="px-4 pb-4 flex items-center justify-between border-t border-ink-100 pt-3">

@@ -1,6 +1,11 @@
 import { ShoppingBag, Clock, CheckCircle2, Truck, XCircle } from 'lucide-react';
 
 export const ESTADOS_ACTIVOS = ['Por Surtir', 'Armando Pedido', 'Listo para Entrega'];
+export const FILTRO_ESTADO_ACTIVO = {
+  'Por Surtir': 'por-surtir',
+  'Armando Pedido': 'en-preparacion',
+  'Listo para Entrega': 'listos',
+};
 export const ESTADOS_HISTORIAL = ['Enviado', 'Cancelado'];
 export const ESTADO_META = {
   'Por Surtir':         { color: '#ef4444', bg: '#fee2e2', colorClass: 'text-status-pending',  bgClass: 'bg-status-pending-light',  borderClass: 'border-status-pending',  accentClass: 'bg-status-pending',  icon: ShoppingBag, activeStyle: { background: '#ef4444', color: 'white', boxShadow: '0 2px 8px #ef444455' }, inactiveStyle: { background: '#fee2e2', color: '#ef4444' } },

@@ -1,65 +1,45 @@
-import StatsCard from '../../../../components/admin/StatsCard';
 import { DollarSign, ShoppingCart, TrendingUp, Users } from 'lucide-react';
 import { useLanguage } from '../../../../hooks/useLanguage';
+
+const indicadores = [
+  { key: 'ingresos', label: 'revenue', Icon: DollarSign, currency: true },
+  { key: 'pedidos', label: 'orders', Icon: ShoppingCart },
+  { key: 'ticketPromedio', label: 'avg_ticket', Icon: TrendingUp, currency: true },
+  { key: 'clientesUnicos', label: 'unique_clients', Icon: Users },
+];
+
+const formatCurrency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+const formatCount = new Intl.NumberFormat('es-MX');
+const formatChange = new Intl.NumberFormat('es-MX', { style: 'percent', signDisplay: 'exceptZero' });
 
 export default function KpiGrid({ kpis, kpisAnterior, loading }) {
   const { t } = useLanguage();
 
-  const calculateDelta = (current, previous) => {
-    if (previous === 0) return current > 0 ? '+100%' : '0%';
-    const pct = Math.round(((current - previous) / previous) * 100);
-    const sign = pct >= 0 ? '+' : '';
-    return `${sign}${pct}%`;
-  };
-
-  const deltaIngresos = calculateDelta(kpis.ingresos, kpisAnterior.ingresos);
-  const deltaPedidos = calculateDelta(kpis.pedidos, kpisAnterior.pedidos);
-  const deltaTicket = calculateDelta(kpis.ticketPromedio, kpisAnterior.ticketPromedio);
-  const deltaClientes = calculateDelta(kpis.clientesUnicos, kpisAnterior.clientesUnicos);
-
-  const formatCurrency = (val) =>
-    new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 }).format(val);
-
-  if (loading) {
-    return (
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-24 bg-admin-muted rounded-lg animate-pulse" />
-        ))}
-      </div>
-    );
-  }
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <StatsCard
-        icon={DollarSign}
-        label={t('admin.dashboard.kpi.revenue')}
-        value={formatCurrency(kpis.ingresos)}
-        trend={deltaIngresos}
-        variant="success"
-      />
-      <StatsCard
-        icon={ShoppingCart}
-        label={t('admin.dashboard.kpi.orders')}
-        value={kpis.pedidos}
-        trend={deltaPedidos}
-        variant="info"
-      />
-      <StatsCard
-        icon={TrendingUp}
-        label={t('admin.dashboard.kpi.avg_ticket')}
-        value={formatCurrency(kpis.ticketPromedio)}
-        trend={deltaTicket}
-        variant="warning"
-      />
-      <StatsCard
-        icon={Users}
-        label={t('admin.dashboard.kpi.unique_clients')}
-        value={kpis.clientesUnicos}
-        trend={deltaClientes}
-        variant="default"
-      />
+    <div aria-busy={loading} className="grid gap-3 min-[360px]:grid-cols-2 xl:grid-cols-4">
+      {indicadores.map(({ key, label, Icon, currency }) => {
+        const previo = kpisAnterior[key];
+        const actual = kpis[key];
+        const cambio = previo > 0 ? formatChange.format((actual - previo) / previo) : null;
+        return (
+          <div key={key} className="min-w-0 rounded-2xl border border-admin-border bg-admin-card px-3.5 py-4 sm:p-4">
+            <div className="flex items-center gap-2 text-admin-muted">
+              <Icon size={16} className="shrink-0" aria-hidden="true" />
+              <p className="text-xs font-bold leading-tight sm:text-sm">{t(`admin.dashboard.kpi.${label}`)}</p>
+            </div>
+            {loading ? (
+              <div className="mt-2 h-12 max-w-32 animate-pulse rounded-lg bg-admin-elevated" />
+            ) : (
+              <>
+                <p className="mt-2 break-words text-xl font-black tabular-nums text-admin-text sm:text-2xl">{(currency ? formatCurrency : formatCount).format(actual)}</p>
+                <p className="mt-1 text-[11px] font-semibold leading-snug text-admin-muted">
+                  {cambio ? t('admin.dashboard.kpi.periodChange', { value: cambio }) : t('admin.dashboard.kpi.noPrevious')}
+                </p>
+              </>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

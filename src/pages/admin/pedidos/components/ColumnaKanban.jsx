@@ -1,8 +1,9 @@
 import { useLanguage } from '../../../../hooks/useLanguage';
 import { maskPhone } from '../../../../utils/formatters';
 import { ESTADO_META, estadoLabel } from '../../../../lib/estadoMeta';
+import EntregaPedido from './EntregaPedido';
 
-export default function ColumnaKanban({ estado, pedidos, onCardClick }) {
+export default function ColumnaKanban({ estado, pedidos, sucursalPorPedidoId, onCardClick }) {
   const { t, lang } = useLanguage();
   const meta = ESTADO_META[estado] ?? ESTADO_META['Por Surtir'];
   return (
@@ -37,6 +38,9 @@ export default function ColumnaKanban({ estado, pedidos, onCardClick }) {
               </div>
               <p className="text-xs font-body text-admin-muted truncate">{pedido.cliente_nombre}</p>
               <p className="text-xs font-body text-admin-muted truncate">{maskPhone(pedido.cliente_telefono)}</p>
+              <div className="mt-1.5 text-xs font-semibold">
+                <EntregaPedido tipo={pedido.tipo_entrega} sucursal={sucursalPorPedidoId.get(pedido.id)} />
+              </div>
               <p className="text-[10px] font-body text-admin-inactive mt-1">{new Date(pedido.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
             </button>
           ))

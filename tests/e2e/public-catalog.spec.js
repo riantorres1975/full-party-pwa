@@ -150,7 +150,7 @@ const facets = {
   availability: { in_stock: 1, out_of_stock: 0 },
 };
 
-async function mockCatalogV2(page, { listing = [card], productDetail = detail } = {}) {
+async function mockCatalogV2(page, { listing = [card], productDetail = detail, unavailablePickup = null } = {}) {
   const requests = [];
   await page.route('**/rest/v1/**', async (route) => {
     const request = route.request();
@@ -174,10 +174,17 @@ async function mockCatalogV2(page, { listing = [card], productDetail = detail } 
     if (url.pathname.endsWith('/rpc/catalog_get_facets')) body = facets;
     if (url.pathname.endsWith('/rpc/catalog_get_product_detail')) body = productDetail;
     if (url.pathname.endsWith('/rpc/catalog_create_order')) {
+      if (request.postDataJSON().p_location_slug === unavailablePickup && unavailablePickup) {
+        await route.fulfill({ status: 400, json: { message: 'OUT_OF_STOCK: Existencia insuficiente' } });
+        return;
+      }
       body = { folio: 'FP-PRUEBA-001', total: 85 };
     }
     if (url.pathname.endsWith('/rpc/catalog_validate_cart')) {
       body = { valid: true, issues: [], lines: [], total: 85 };
+    }
+    if (url.pathname.endsWith('/rpc/buscar_pedido_por_folio')) {
+      body = [{ folio: 'FP-PRUEBA-001', total: 85, tipo_entrega: 'tienda', estado: 'Enviado', created_at: new Date().toISOString() }];
     }
 
     await route.fulfill({
@@ -311,7 +318,7 @@ test('keeps the main results visible until the shopper opens the filters', async
 });
 
 test('opens a V2 product, applies tier information and adds it to the order', async ({ page }) => {
-  await mockCatalogV2(page);
+  await mockCatalogV2(page, { unavailablePickup: 'sol-naciente' });
   await page.goto('/catalogo?gama=glomex-estandar');
 
   await page.locator('article').getByRole('button', { name: 'Ver producto' }).click();
@@ -330,14 +337,22 @@ test('opens a V2 product, applies tier information and adds it to the order', as
   await cart.getByRole('button', { name: 'Continuar a mis datos' }).click();
   await expect(cart.getByRole('heading', { name: 'Tus datos y entrega' })).toBeFocused();
   await cart.getByLabel('Nombre completo').fill('Cliente Pruebas');
-  await expect(cart.getByLabel('Sucursal para recoger')).toHaveValue('sol-naciente');
+  const branches = cart.getByRole('group', { name: 'Sucursal para recoger' });
+  await expect(branches.getByRole('radio', { name: /Sol Naciente/ })).toBeChecked();
+  await expect(branches.getByText(/C\. Francisco Villa 103/)).toBeVisible();
   await cart.getByRole('button', { name: 'Volver a mis productos' }).click();
   await expect(cart.getByText('Globo Latex Glomex')).toBeVisible();
   await cart.getByRole('button', { name: 'Continuar a mis datos' }).click();
   await expect(cart.getByLabel('Nombre completo')).toHaveValue('Cliente Pruebas');
 
   await cart.getByLabel('Teléfono de WhatsApp').fill('452 123 4567');
-  await cart.getByLabel('Sucursal para recoger').selectOption('francisco-villa');
+  await cart.getByRole('button', { name: 'Registrar pedido' }).click();
+  const pickupError = branches.getByRole('alert');
+  await expect(pickupError).toContainText('El pedido no se puede surtir completo en Suc. Sol Naciente');
+  await expect(pickupError).toBeFocused();
+  await branches.getByRole('radio', { name: /Suc\. Francisco Villa/ }).check();
+  await expect(cart.getByLabel('Teléfono de WhatsApp')).toHaveValue('452 123 4567');
+  await expect(pickupError).toHaveCount(0);
   const submitted = page.waitForRequest('**/rpc/catalog_create_order');
   await cart.getByRole('button', { name: 'Registrar pedido' }).click();
   expect((await submitted).postDataJSON()).toMatchObject({
@@ -346,6 +361,8 @@ test('opens a V2 product, applies tier information and adds it to the order', as
     p_items: [{ variant_id: variantId, sale_presentation_id: presentationId, quantity: 1 }],
   });
   await expect(cart.getByRole('heading', { name: 'FP-PRUEBA-001' })).toBeVisible();
+  await expect(cart.getByText('Recoge en Suc. Francisco Villa')).toBeVisible();
+  await expect(cart.getByRole('link', { name: 'Cómo llegar' })).toHaveAttribute('href', 'https://share.google/9X5mrN6G5bMTOGfvH');
   const whatsapp = await cart.getByRole('link', { name: 'Abrir WhatsApp' }).getAttribute('href');
   expect(new URL(whatsapp).searchParams.get('text')).toContain('Suc. Francisco Villa');
   expect(page.context().pages()).toHaveLength(1);
@@ -354,6 +371,8 @@ test('opens a V2 product, applies tier information and adds it to the order', as
   await page.reload();
   await page.getByRole('button', { name: 'Mi pedido', exact: true }).click();
   await expect(cart.getByRole('link', { name: 'Ver mi último pedido' })).toHaveAttribute('href', '/rastrear/FP-PRUEBA-001');
+  await cart.getByRole('link', { name: 'Ver mi último pedido' }).click();
+  await expect(page.locator('[aria-current="step"]')).toContainText('Entregado en tienda');
 });
 
 test('groups product lines and keeps color, size and quantity choices on one product', async ({ page }) => {

@@ -8,15 +8,16 @@ import ColumnaKanban from './ColumnaKanban';
 import TarjetaPedidoMobile from './TarjetaPedidoMobile';
 import ModalDetallePedido from './ModalDetallePedido';
 
-export default function PedidosActivos({ busquedaInput, setBusquedaInput, busquedaDebounced, setBusqueda }) {
+export default function PedidosActivos({ busquedaInput, setBusquedaInput, busquedaDebounced, setBusqueda, estadoVisible, setEstadoVisible }) {
   const { t } = useLanguage();
   const [pedidoModal, setPedidoModal] = useState(null);
-  const [estadoVisible, setEstadoVisible] = useState('todos');
+  const [sucursalVisible, setSucursalVisible] = useState('todas');
   const {
     setPedidos,
     actualizando,
     notificando,
     pedidos, pedidosPorBusqueda,
+    sucursalesPedidos, sucursalPorPedidoId,
     cambiarEstado, cancelarPedido, notificar, confirmarPagoPedido,
   } = useAdminData();
 
@@ -27,9 +28,12 @@ export default function PedidosActivos({ busquedaInput, setBusquedaInput, busque
     setBreadcrumb([t('admin.nav.orders')]);
   }, [t, setBreadcrumb]);
 
-  const pedidosPorEstado = useMemo(() => Object.fromEntries(
-    ESTADOS_ACTIVOS.map(estado => [estado, pedidosPorBusqueda.filter(p => p.estado === estado)]),
-  ), [pedidosPorBusqueda]);
+  const pedidosPorEstado = useMemo(() => {
+    const pedidosVisibles = sucursalVisible === 'todas' ? pedidosPorBusqueda : pedidosPorBusqueda.filter(pedido => (
+      (sucursalPorPedidoId.get(pedido.id)?.id ?? 'sin-sucursal') === sucursalVisible
+    ));
+    return Object.fromEntries(ESTADOS_ACTIVOS.map(estado => [estado, pedidosVisibles.filter(p => p.estado === estado)]));
+  }, [pedidosPorBusqueda, sucursalPorPedidoId, sucursalVisible]);
   const estadosVisibles = estadoVisible === 'todos' ? ESTADOS_ACTIVOS : [estadoVisible];
   const activos = ESTADOS_ACTIVOS.reduce((total, estado) => total + pedidosPorEstado[estado].length, 0);
   const hayResultados = estadosVisibles.some(estado => pedidosPorEstado[estado].length > 0);
@@ -57,27 +61,41 @@ export default function PedidosActivos({ busquedaInput, setBusquedaInput, busque
       )}
 
       {/* Barra de búsqueda */}
-      <div className="relative mb-4">
-        <Search size={16} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-admin-muted" />
-        <input
-          type="search"
-          aria-label={t('admin.orders.searchPlaceholder')}
-          value={busquedaInput}
-          onChange={e => setBusquedaInput(e.target.value)}
-          placeholder={t('admin.orders.searchPlaceholder')}
-          className="w-full bg-admin-input rounded-2xl lg:rounded-xl pl-9 pr-9 py-3 lg:py-2.5 text-sm font-body font-semibold
-                     text-admin-text placeholder:text-admin-inactive outline-none border-2
-                     border-admin-border focus:border-fiesta-magenta transition-colors"
-        />
-        {busquedaInput && (
-          <button
-            type="button"
-            onClick={() => setBusquedaInput('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-admin-inactive hover:text-admin-muted"
-            aria-label={t('admin.orders.clearSearch')}
+      <div className="mb-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="relative">
+          <Search size={16} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-admin-muted" />
+          <input
+            type="search"
+            aria-label={t('admin.orders.searchPlaceholder')}
+            value={busquedaInput}
+            onChange={e => setBusquedaInput(e.target.value)}
+            placeholder={t('admin.orders.searchPlaceholder')}
+            className="w-full bg-admin-input rounded-2xl lg:rounded-xl pl-9 pr-9 py-3 lg:py-2.5 text-sm font-body font-semibold
+                       text-admin-text placeholder:text-admin-inactive outline-none border-2
+                       border-admin-border focus:border-fiesta-magenta transition-colors"
+          />
+          {busquedaInput && (
+            <button
+              type="button"
+              onClick={() => setBusquedaInput('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-admin-inactive hover:text-admin-muted"
+              aria-label={t('admin.orders.clearSearch')}
+            >
+              <X size={16} aria-hidden="true" />
+            </button>
+          )}
+        </div>
+        {sucursalesPedidos.length > 0 && (
+          <select
+            aria-label={t('admin.orders.branchFilter')}
+            value={sucursalVisible}
+            onChange={event => setSucursalVisible(event.target.value)}
+            className="min-h-11 rounded-xl border-2 border-admin-border bg-admin-input px-3 py-2 text-sm font-bold text-admin-text focus:border-fiesta-magenta focus:outline-none"
           >
-            <X size={16} aria-hidden="true" />
-          </button>
+            <option value="todas">{t('admin.orders.allBranches')}</option>
+            {sucursalesPedidos.map(sucursal => <option key={sucursal.id} value={sucursal.id}>{sucursal.nombre}</option>)}
+            <option value="sin-sucursal">{t('admin.orders.unassignedBranch')}</option>
+          </select>
         )}
       </div>
 
@@ -105,7 +123,8 @@ export default function PedidosActivos({ busquedaInput, setBusquedaInput, busque
       {!hayResultados ? (
         <div className="rounded-2xl border border-dashed border-admin-border bg-admin-card px-5 py-8 text-center" role="status">
           <p className="font-bold text-admin-text">{t('common.noOrders')}</p>
-          {busquedaInput && <button type="button" className="mt-2 min-h-11 px-3 text-sm font-bold text-admin-text underline" onClick={() => setBusquedaInput('')}>Limpiar búsqueda</button>}
+          {busquedaInput && <button type="button" className="mt-2 min-h-11 px-3 text-sm font-bold text-admin-text underline" onClick={() => setBusquedaInput('')}>{t('admin.orders.clearSearch')}</button>}
+          {sucursalVisible !== 'todas' && <button type="button" className="mt-2 min-h-11 px-3 text-sm font-bold text-admin-text underline" onClick={() => setSucursalVisible('todas')}>{t('admin.orders.allBranches')}</button>}
         </div>
       ) : (
         <>
@@ -118,6 +137,7 @@ export default function PedidosActivos({ busquedaInput, setBusquedaInput, busque
                     <TarjetaPedidoMobile
                       key={pedido.id}
                       pedido={pedido}
+                      sucursal={sucursalPorPedidoId.get(pedido.id)}
                       actualizando={actualizando}
                       notificando={notificando}
                       onCambiarEstado={avanzarDesdeTarjeta}
@@ -136,6 +156,7 @@ export default function PedidosActivos({ busquedaInput, setBusquedaInput, busque
                 key={estado}
                 estado={estado}
                 pedidos={pedidosPorEstado[estado]}
+                sucursalPorPedidoId={sucursalPorPedidoId}
                 onCardClick={setPedidoModal}
               />
             ))}

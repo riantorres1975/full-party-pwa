@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { MessageCircle, Copy, Check, Phone, Truck, Store, MapPin, XCircle, CreditCard, Banknote, Smartphone, MoreHorizontal, CheckCircle, AlertCircle } from 'lucide-react';
+import { MessageCircle, Copy, Check, Phone, MapPin, XCircle, CreditCard, Banknote, Smartphone, MoreHorizontal, CheckCircle, AlertCircle } from 'lucide-react';
 import { SIMBOLO_MONEDA } from '../../../../data/productos';
 import { useLanguage } from '../../../../hooks/useLanguage';
 import { ESTADOS } from '../../../../hooks/usePedidosAdmin';
 import { maskPhone } from '../../../../utils/formatters';
 import Can from '../../../../components/auth/Can';
 import ListaArticulos from './ListaArticulos';
+import EntregaPedido from './EntregaPedido';
 import { ESTADO_META, estadoLabel } from '../../../../lib/estadoMeta';
 
 const METODOS_PAGO = [
@@ -15,7 +16,7 @@ const METODOS_PAGO = [
   { value: 'otro',          label: 'Otro',          icon: MoreHorizontal },
 ];
 
-export default function TarjetaPedido({ pedido, onCambiarEstado, actualizando, notificando, onNotificar, onPickingListo, onCancelar, onConfirmarPago, esDesktop, ocultarCabecera }) {
+export default function TarjetaPedido({ pedido, sucursal, onCambiarEstado, actualizando, notificando, onNotificar, onPickingListo, onCancelar, onConfirmarPago, esDesktop, ocultarCabecera }) {
   const { t, lang } = useLanguage();
   const meta = ESTADO_META[pedido.estado] ?? ESTADO_META['Por Surtir'];
   const fecha = new Date(pedido.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'es-MX', {
@@ -117,13 +118,15 @@ export default function TarjetaPedido({ pedido, onCambiarEstado, actualizando, n
         <div className="space-y-1.5 pb-4 mb-4 border-b border-admin-border-soft">
           <p className="font-body font-bold text-base text-admin-text">{pedido.cliente_nombre}</p>
           <p className="flex items-center gap-1.5 font-body text-admin-muted text-sm"><Phone size={14} /> {maskPhone(pedido.cliente_telefono)}</p>
-          <p className="flex items-center gap-1.5 font-body text-admin-muted text-sm">
-            {pedido.tipo_entrega === 'envio' ? <><Truck size={14} /> {t('cart.deliveryHome')}</> : <><Store size={14} /> {t('cart.pickupStore')}</>}
-          </p>
+          <p className="font-body text-sm font-semibold"><EntregaPedido tipo={pedido.tipo_entrega} sucursal={sucursal} /></p>
           {pedido.direccion && (
             <p className="flex items-center gap-1.5 font-body text-admin-muted text-sm leading-relaxed"><MapPin size={14} /> {pedido.direccion}</p>
           )}
         </div>
+      )}
+
+      {esPickingGuiado && sucursal && (
+        <p className="mb-3 text-sm font-semibold"><EntregaPedido tipo={pedido.tipo_entrega} sucursal={sucursal} /></p>
       )}
 
       {pedido.estado === 'Por Surtir' && avanzarPedido && <div className="mb-4">{avanzarPedido}</div>}

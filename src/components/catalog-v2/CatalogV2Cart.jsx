@@ -1,6 +1,7 @@
 import {
   AlertCircle,
   CheckCircle2,
+  MapPin,
   Minus,
   Plus,
   ShoppingBag,
@@ -228,11 +229,13 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
   const panelRef = useRef(null);
   const scrollRef = useRef(null);
   const stepTitleRef = useRef(null);
+  const pickupErrorRef = useRef(null);
   const [step, setStep] = useState('review');
   const [form, setForm] = useState(readCheckoutDraft);
   const [honeypot, setHoneypot] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [pickupStockUnavailable, setPickupStockUnavailable] = useState(false);
   const [completed, setCompleted] = useState(null);
   const [lastOrderFolio, setLastOrderFolio] = useState(readLastOrderFolio);
   const closeCart = () => {
@@ -245,6 +248,7 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
       setStep('review');
       setCompleted(null);
       setSubmitError('');
+      setPickupStockUnavailable(false);
       return undefined;
     }
     const previousOverflow = document.body.style.overflow;
@@ -268,6 +272,10 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
     stepTitleRef.current?.focus({ preventScroll: true });
   }, [open, step, completed]);
 
+  useEffect(() => {
+    if (pickupStockUnavailable) pickupErrorRef.current?.focus();
+  }, [pickupStockUnavailable]);
+
   const issuesByLine = useMemo(
     () => new Map((cart.validation?.issues || []).map((issue) => [
       issue.line - 1,
@@ -280,9 +288,12 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
 
   if (!open) return null;
 
+  const pickup = form.tipoEntrega === 'tienda' ? SUCURSALES.find(({ id }) => id === form.pickupId) : null;
+
   const updateForm = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
     setSubmitError('');
+    if (field === 'pickupId' || field === 'tipoEntrega') setPickupStockUnavailable(false);
   };
 
   const submitOrder = async (event) => {
@@ -301,6 +312,7 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
 
     setSubmitting(true);
     setSubmitError('');
+    setPickupStockUnavailable(false);
     try {
       const validated = await cart.validate();
       if (!validated.valid) {
@@ -314,7 +326,6 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
         tipoEntrega: form.tipoEntrega,
         direccion: form.tipoEntrega === 'envio' ? form.direccion.trim() : null,
       };
-      const pickup = customer.tipoEntrega === 'tienda' ? SUCURSALES.find(({ id }) => id === form.pickupId) : null;
       const fingerprint = getCatalogCartFingerprint(cart.items, { ...customer, locationSlug: pickup?.id });
       const request = { ...customer, items: cart.items, idempotencyKey: getOrderAttempt(fingerprint) };
       let order;
@@ -355,12 +366,15 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
         folio: order.folio,
         total: order.total,
         whatsappUrl,
+        pickup,
       });
     } catch (error) {
       if (error.type === CATALOG_ERROR_TYPES.OUT_OF_STOCK) {
-        setSubmitError(form.tipoEntrega === 'tienda'
-          ? 'No hay suficiente existencia para todo el pedido en esa sucursal. Elige otra o ajusta las cantidades.'
-          : 'No hay existencia para surtir todo el pedido. Vuelve a tus productos y ajusta las cantidades.');
+        if (pickup) {
+          setPickupStockUnavailable(true);
+        } else {
+          setSubmitError('No hay existencia para surtir todo el pedido. Vuelve a tus productos y ajusta las cantidades.');
+        }
       } else {
         setSubmitError(error?.message || 'No pudimos registrar el pedido.');
       }
@@ -397,8 +411,20 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
             <p>Pedido registrado</p>
             <h2 ref={stepTitleRef} tabIndex={-1}>{completed.folio}</h2>
             <strong>{money(completed.total)}</strong>
+            {completed.pickup && (
+              <div className="catalog-v2-cart__pickup-receipt">
+                <MapPin size={18} aria-hidden="true" />
+                <div>
+                  <strong>Recoge en {completed.pickup.nombre}</strong>
+                  <p>{completed.pickup.calle}</p>
+                  <a href={completed.pickup.mapsUrl} target="_blank" rel="noopener noreferrer">Cómo llegar</a>
+                </div>
+              </div>
+            )}
             <p>
-              Guarda tu folio. Si quieres avisar a la sucursal, abre WhatsApp y envía el mensaje preparado.
+              {completed.pickup
+                ? 'Consulta el estado de tu pedido y espera a que esté listo antes de ir por él.'
+                : 'Consulta el estado de tu pedido con tu folio.'}
             </p>
             <a className="catalog-v2-cart__whatsapp" href={completed.whatsappUrl} target="_blank" rel="noopener noreferrer">
               Abrir WhatsApp
@@ -461,6 +487,7 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
                       type="text"
                       autoComplete="name"
                       maxLength="120"
+                      disabled={submitting}
                       value={form.nombre}
                       onChange={(event) => updateForm('nombre', event.target.value)}
                       required
@@ -473,6 +500,7 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
                       inputMode="numeric"
                       autoComplete="tel"
                       maxLength="16"
+                      disabled={submitting}
                       value={form.telefono}
                       onChange={(event) => updateForm('telefono', event.target.value)}
                       placeholder="452 123 4567"
@@ -480,7 +508,7 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
                     />
                   </label>
 
-                  <fieldset>
+                  <fieldset disabled={submitting}>
                     <legend>Forma de entrega</legend>
                     <div className="catalog-v2-checkout__delivery">
                       <label className={form.tipoEntrega === 'tienda' ? 'is-selected' : ''}>
@@ -492,7 +520,7 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
                           onChange={() => updateForm('tipoEntrega', 'tienda')}
                         />
                         <strong>Recoger en tienda</strong>
-                        <span>La sucursal confirma por WhatsApp</span>
+                        <span>Espera a que esté listo para recoger</span>
                       </label>
                       <label className={form.tipoEntrega === 'envio' ? 'is-selected' : ''}>
                         <input
@@ -508,13 +536,27 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
                     </div>
                   </fieldset>
 
-                  {form.tipoEntrega === 'tienda' && (
-                    <label>
-                      <span>Sucursal para recoger</span>
-                      <select className="catalog-v2-checkout__branch" value={form.pickupId} onChange={(event) => updateForm('pickupId', event.target.value)}>
-                        {SUCURSALES.map(({ id, nombre }) => <option key={id} value={id}>{nombre}</option>)}
-                      </select>
-                    </label>
+                  {pickup && (
+                    <fieldset disabled={submitting} aria-describedby={pickupStockUnavailable ? 'catalog-pickup-error' : undefined}>
+                      <legend>Sucursal para recoger</legend>
+                      {pickupStockUnavailable && (
+                        <p ref={pickupErrorRef} tabIndex={-1} id="catalog-pickup-error" className="catalog-v2-cart__submit-error catalog-v2-checkout__pickup-error" role="alert">
+                          <AlertCircle size={16} aria-hidden="true" />
+                          <span>El pedido no se puede surtir completo en {pickup.nombre}. Elige otra sucursal o ajusta las cantidades.</span>
+                        </p>
+                      )}
+                      <div className="catalog-v2-checkout__branches">
+                        {SUCURSALES.map(({ id, nombre, calle }) => (
+                          <label key={id} className={id === form.pickupId ? 'is-selected' : ''}>
+                            <input type="radio" name="pickup" value={id} checked={id === form.pickupId} onChange={() => updateForm('pickupId', id)} />
+                            <span>
+                              <strong>{nombre}</strong>
+                              <small>{calle}</small>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
                   )}
 
                   {form.tipoEntrega === 'envio' && (
@@ -522,7 +564,9 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
                       <span>Dirección completa</span>
                       <textarea
                         rows="3"
+                        autoComplete="street-address"
                         maxLength="500"
+                        disabled={submitting}
                         value={form.direccion}
                         onChange={(event) => updateForm('direccion', event.target.value)}
                         required
@@ -570,6 +614,7 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
                   </button>
                   <button type="button" className="catalog-v2-cart__back-link" disabled={submitting} onClick={() => {
                     setSubmitError('');
+                    setPickupStockUnavailable(false);
                     setStep('review');
                   }}>
                     Volver a mis productos

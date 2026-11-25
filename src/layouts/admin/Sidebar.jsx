@@ -1,4 +1,4 @@
-import { ClipboardList, LayoutGrid, Users, CreditCard, Package, BarChart3, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ClipboardList, Home, LayoutGrid, Users, CreditCard, Package, BarChart3, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useAdminData } from '../../contexts/AdminDataContext';
 import { usePermission } from '../../hooks/usePermission';
@@ -32,7 +32,9 @@ export default function Sidebar({ user, collapsed, onToggle, onSignOut, temaOscu
           </div>
         )}
         <button
+          type="button"
           onClick={onToggle}
+          aria-expanded={!collapsed}
           className="flex items-center justify-center p-1.5 rounded-lg text-admin-muted hover:bg-admin-elevated transition-colors"
           title={collapsed ? t('admin.sidebar.expand') : t('admin.sidebar.collapse')}
         >
@@ -44,6 +46,9 @@ export default function Sidebar({ user, collapsed, onToggle, onSignOut, temaOscu
       <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 space-y-6" aria-label={t('admin.layout.sidebar')}>
         {/* PRINCIPAL */}
         <SidebarSection label={t('admin.section.main')} collapsed={collapsed}>
+          {canViewReports && (
+            <SidebarItem href="/admin/dashboard" icon={Home} label={t('admin.nav.dashboard')} collapsed={collapsed} />
+          )}
           <SidebarItem
             href="/admin/pedidos"
             icon={ClipboardList}
@@ -51,14 +56,6 @@ export default function Sidebar({ user, collapsed, onToggle, onSignOut, temaOscu
             badge={contadores['Por Surtir'] > 0 ? contadores['Por Surtir'] : null}
             disabled={!canViewOrders}
             tooltip={!canViewOrders ? t('admin.noPermission') : undefined}
-            collapsed={collapsed}
-          />
-          <SidebarItem
-            href="/admin/dashboard"
-            icon={BarChart3}
-            label={t('admin.nav.dashboard')}
-            disabled={!canViewReports}
-            tooltip={!canViewReports ? t('admin.noPermission') : undefined}
             collapsed={collapsed}
           />
         </SidebarSection>

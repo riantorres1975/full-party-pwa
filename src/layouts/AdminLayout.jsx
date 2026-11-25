@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import BottomNav from '../components/ui/BottomNav';
 import { useToast } from '../components/ui/ToastProvider';
 import { useConfirm } from '../hooks/useConfirm';
@@ -45,6 +46,8 @@ function PermissionsGate({ children, onSignOut }) {
 
 export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut, children }) {
   const { t } = useLanguage();
+  const { pathname } = useLocation();
+  const contentRef = useRef(null);
   const toast = useToast();
   const { isOpen: cancelConfirmOpen, config: cancelConfig, confirm: confirmCancelar, onConfirm: onConfirmCancelar, onCancel: onCancelCancelar } = useConfirm();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -74,6 +77,10 @@ export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut,
       document.body.classList.remove('admin-scroll-locked');
     };
   }, []);
+
+  useEffect(() => {
+    contentRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+  }, [pathname]);
 
   return (
     <PermissionsProvider user={user}>
@@ -114,7 +121,7 @@ export default function AdminLayout({ user, temaOscuro, onToggleTema, onSignOut,
             <Topbar />
 
             {/* Page content */}
-            <main id="admin-main" className="min-h-0 flex-1 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain">
+            <main ref={contentRef} id="admin-main" tabIndex={-1} className="min-h-0 flex-1 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain">
               <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 lg:p-5 lg:max-w-none pb-20 lg:pb-0">
                 <AppErrorBoundary compact homePath="/admin">
                   {children}

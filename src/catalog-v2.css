@@ -2044,6 +2044,66 @@
   font-weight: 700 !important;
 }
 
+.catalog-v2-checkout__branches {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.catalog-v2-checkout__branches label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #dcdce8;
+  border-radius: 0.72rem;
+  cursor: pointer;
+}
+
+.catalog-v2-checkout__branches label.is-selected {
+  border-color: var(--catalog-violet);
+  background: #f6f2ff;
+  box-shadow: inset 0 0 0 1px var(--catalog-violet);
+}
+
+.catalog-v2-checkout__branches label:focus-within {
+  outline: 2px solid var(--catalog-violet);
+  outline-offset: 2px;
+}
+
+.catalog-v2-checkout__branches input {
+  flex: none;
+  margin-top: 0.15rem;
+  accent-color: var(--catalog-violet);
+}
+
+.catalog-v2-checkout__branches label > span {
+  display: grid;
+  gap: 0.12rem;
+  margin: 0;
+  color: var(--catalog-ink);
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+
+.catalog-v2-checkout__branches small {
+  color: var(--catalog-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.catalog-v2-checkout .catalog-v2-checkout__pickup-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  color: #991b1b;
+  font-size: 0.85rem;
+}
+
+.catalog-v2-checkout__pickup-error svg {
+  flex: none;
+  margin-top: 0.1em;
+}
+
 .catalog-v2-checkout__honeypot {
   position: absolute;
   left: -10000px;
@@ -2118,6 +2178,7 @@
 }
 
 .catalog-v2-cart__success > span {
+  flex: none;
   color: #15803d;
   background: #dcfce7;
 }
@@ -2132,6 +2193,33 @@
   max-width: 23rem;
   color: var(--catalog-muted);
   font-size: 0.8rem;
+}
+
+.catalog-v2-cart__pickup-receipt {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0.85rem 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--catalog-line);
+  border-radius: 0.75rem;
+  text-align: left;
+}
+
+.catalog-v2-cart__pickup-receipt svg {
+  flex: none;
+  margin-top: 0.1rem;
+  color: var(--catalog-violet);
+}
+
+.catalog-v2-cart__pickup-receipt a {
+  display: inline-block;
+  padding-top: 0.35rem;
+  color: #5b277f;
+  font-size: 0.875rem;
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 
 .catalog-v2-cart__empty button,
@@ -4100,17 +4188,6 @@
   font-weight: 850;
   text-decoration: underline;
   text-underline-offset: 0.2em;
-}
-
-.catalog-v2-shell .catalog-v2-checkout__branch {
-  width: 100%;
-  min-height: 2.75rem;
-  padding: 0.45rem 0.75rem;
-  border: 1px solid #dcdce8;
-  border-radius: 0.72rem;
-  color: var(--catalog-ink);
-  background: #fbfbfd;
-  font-size: 1rem;
 }
 
 .catalog-v2-shell .catalog-v2-checkout :is(input[type="text"], input[type="tel"], textarea) {

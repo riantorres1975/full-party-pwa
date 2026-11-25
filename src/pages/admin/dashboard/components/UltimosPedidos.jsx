@@ -1,8 +1,10 @@
+import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../../../hooks/useLanguage';
-import { ESTADO_META } from '../../../../lib/estadoMeta';
+import { ESTADO_META, estadoLabel } from '../../../../lib/estadoMeta';
 
-export default function UltimosPedidos({ data, loading, onRowClick, onViewAll }) {
+export default function UltimosPedidos({ data, loading, getOrderHref }) {
   const { t } = useLanguage();
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -38,26 +40,19 @@ export default function UltimosPedidos({ data, loading, onRowClick, onViewAll })
     return `${diffDays}d`;
   };
 
-  const handleKeyDown = (event, pedido) => {
-    if (event.target !== event.currentTarget || !onRowClick || (event.key !== 'Enter' && event.key !== ' ')) return;
-    event.preventDefault();
-    onRowClick(pedido);
-  };
-
   return (
     <div className="bg-admin-card border border-admin-border rounded-lg overflow-hidden">
       <div className="flex items-center justify-between gap-3 p-4 border-b border-admin-border-soft">
         <h3 className="text-sm font-body font-bold text-admin-text">
           {t('admin.dashboard.recent_orders')}
         </h3>
-        {onViewAll && (
-          <button
-            type="button"
-            onClick={onViewAll}
+        {getOrderHref && (
+          <Link
+            to="/admin/pedidos"
             className="text-xs font-bold text-fiesta-magenta hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-fiesta-magenta"
           >
             {t('admin.dashboard.viewAll')}
-          </button>
+          </Link>
         )}
       </div>
 
@@ -86,17 +81,20 @@ export default function UltimosPedidos({ data, loading, onRowClick, onViewAll })
             {data.map(pedido => {
               const meta = ESTADO_META[pedido.estado] || {};
               const Icon = meta.icon;
+              const href = getOrderHref && pedido.folio ? getOrderHref(pedido) : null;
 
               return (
                 <tr
                   key={pedido.id}
-                  onClick={() => onRowClick && onRowClick(pedido)}
-                  onKeyDown={(event) => handleKeyDown(event, pedido)}
-                  tabIndex={onRowClick ? 0 : undefined}
-                  className={`border-b border-admin-border-soft hover:bg-admin-elevated transition-colors ${onRowClick ? 'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-500' : ''}`}
+                  onClick={href ? event => { if (!event.target.closest('a')) navigate(href); } : undefined}
+                  className={`border-b border-admin-border-soft hover:bg-admin-elevated transition-colors ${href ? 'cursor-pointer' : ''}`}
                 >
                   <td className="px-4 py-3 font-bold text-admin-text">
-                    {pedido.folio || t('common.notAvailable')}
+                    {href ? (
+                      <Link to={href} className="text-fiesta-magenta underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-500">
+                        {pedido.folio}
+                      </Link>
+                    ) : (pedido.folio || t('common.notAvailable'))}
                   </td>
                   <td className="px-4 py-3 text-admin-text-secondary text-xs">
                     {pedido.cliente_telefono}
@@ -104,7 +102,7 @@ export default function UltimosPedidos({ data, loading, onRowClick, onViewAll })
                   <td className="px-4 py-3">
                     <div className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold" style={{ color: meta.color, background: `${meta.color}22` }}>
                       {Icon && <Icon size={14} />}
-                      {pedido.estado}
+                      {estadoLabel(pedido.estado, t)}
                     </div>
                   </td>
                   <td className="px-4 py-3 text-admin-text text-right font-bold">
@@ -123,14 +121,14 @@ export default function UltimosPedidos({ data, loading, onRowClick, onViewAll })
       <div className="lg:hidden space-y-2 p-4">
         {data.map(pedido => {
           const meta = ESTADO_META[pedido.estado] || {};
+          const href = getOrderHref && pedido.folio ? getOrderHref(pedido) : null;
+          const Element = href ? Link : 'div';
           return (
-            <div
+            <Element
               key={pedido.id}
-              onClick={() => onRowClick && onRowClick(pedido)}
-              onKeyDown={(event) => handleKeyDown(event, pedido)}
-              tabIndex={onRowClick ? 0 : undefined}
-              role={onRowClick ? 'button' : undefined}
-              className={`p-3 bg-admin-elevated rounded ${onRowClick ? 'cursor-pointer active:scale-95 transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-500' : ''}`}
+              to={href || undefined}
+              aria-label={href ? pedido.folio : undefined}
+              className={`block rounded-lg bg-admin-elevated p-3 ${href ? 'hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-500' : ''}`}
             >
               <div className="flex justify-between items-start gap-2 mb-1">
                 <span className="font-bold text-admin-text">
@@ -146,14 +144,14 @@ export default function UltimosPedidos({ data, loading, onRowClick, onViewAll })
                 </span>
                 <div className="flex items-center gap-2">
                   <div className="text-xs font-bold px-2 py-1 rounded" style={{ color: meta.color, background: `${meta.color}22` }}>
-                    {pedido.estado}
+                    {estadoLabel(pedido.estado, t)}
                   </div>
                   <span className="text-sm font-bold text-admin-text">
                     {formatCurrency(pedido.total)}
                   </span>
                 </div>
               </div>
-            </div>
+            </Element>
           );
         })}
       </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useLanguage } from '../../../../hooks/useLanguage';
 
 const PRESETS = {
@@ -56,6 +56,7 @@ export default function RangoPeriodoPicker({ periodo, onChangePeriodo }) {
   const [mostrarCustom, setMostrarCustom] = useState(periodo === 'custom');
   const [desdeInput, setDesdeInput] = useState(dateToInput(new Date()));
   const [hastaInput, setHastaInput] = useState(dateToInput(new Date()));
+  const customId = useId();
   const presetLabels = {
     today: t('admin.dashboard.period.today'),
     '7d': t('admin.dashboard.period.7d'),
@@ -84,13 +85,15 @@ export default function RangoPeriodoPicker({ periodo, onChangePeriodo }) {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
+    <div className="flex min-w-0 flex-wrap items-start gap-3">
       <div className="flex gap-2 flex-wrap">
         {Object.entries(PRESETS).map(([key]) => (
           <button
             key={key}
+            type="button"
+            aria-pressed={periodo === key}
             onClick={() => handlePreset(key)}
-            className={`px-3 py-1 rounded text-sm font-bold transition-colors ${
+            className={`min-h-10 rounded-lg px-3 text-sm font-bold transition-colors ${
               periodo === key
                 ? 'bg-ink-500 text-white'
                 : 'bg-admin-elevated text-admin-text hover:bg-admin-muted'
@@ -100,8 +103,11 @@ export default function RangoPeriodoPicker({ periodo, onChangePeriodo }) {
           </button>
         ))}
         <button
+          type="button"
+          aria-expanded={mostrarCustom}
+          aria-controls={mostrarCustom ? customId : undefined}
           onClick={() => setMostrarCustom(!mostrarCustom)}
-          className={`px-3 py-1 rounded text-sm font-bold transition-colors ${
+          className={`min-h-10 rounded-lg px-3 text-sm font-bold transition-colors ${
             periodo === 'custom'
               ? 'bg-ink-500 text-white'
               : 'bg-admin-elevated text-admin-text hover:bg-admin-muted'
@@ -112,32 +118,38 @@ export default function RangoPeriodoPicker({ periodo, onChangePeriodo }) {
       </div>
 
       {mostrarCustom && (
-        <div className="flex gap-2 items-end">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold text-admin-text-secondary">
+        <div id={customId} className="flex max-w-full flex-wrap items-end gap-2">
+          <div className="flex min-w-0 flex-col gap-1">
+            <label htmlFor={`${customId}-desde`} className="text-xs font-bold text-admin-text-secondary">
               {t('common.desde')}
             </label>
             <input
               type="date"
+              id={`${customId}-desde`}
               value={desdeInput}
+              max={hastaInput || undefined}
               onChange={(e) => setDesdeInput(e.target.value)}
-              className="px-3 py-1 rounded border border-admin-border bg-admin-input text-admin-text text-sm"
+              className="min-h-10 rounded-lg border border-admin-border bg-admin-input px-2 text-sm text-admin-text"
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold text-admin-text-secondary">
+          <div className="flex min-w-0 flex-col gap-1">
+            <label htmlFor={`${customId}-hasta`} className="text-xs font-bold text-admin-text-secondary">
               {t('common.hasta')}
             </label>
             <input
               type="date"
+              id={`${customId}-hasta`}
               value={hastaInput}
+              min={desdeInput || undefined}
               onChange={(e) => setHastaInput(e.target.value)}
-              className="px-3 py-1 rounded border border-admin-border bg-admin-input text-admin-text text-sm"
+              className="min-h-10 rounded-lg border border-admin-border bg-admin-input px-2 text-sm text-admin-text"
             />
           </div>
           <button
+            type="button"
             onClick={handleCustom}
-            className="px-3 py-1 rounded bg-ink-500 text-white font-bold hover:bg-ink-600 transition-colors text-sm"
+            disabled={!desdeInput || !hastaInput || desdeInput > hastaInput}
+            className="min-h-10 rounded-lg bg-ink-500 px-3 text-sm font-bold text-white transition-colors hover:bg-ink-600 disabled:opacity-50"
           >
             {t('common.aplicar')}
           </button>

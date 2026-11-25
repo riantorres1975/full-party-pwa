@@ -165,13 +165,13 @@ export async function updateAdminInventory(
   if (error) throw classifyCatalogError(error, 'No se pudo actualizar el inventario.');
 }
 
-/** Sucursales activas. Solo panel (el público no las necesita). */
-export async function listLocations({ client = defaultClient, signal } = {}) {
+/** Sucursales del panel. Los pedidos anteriores pueden referirse a una inactiva. */
+export async function listLocations({ client = defaultClient, signal, includeInactive = false } = {}) {
   let query = client
     .from('catalog_locations')
-    .select('id,name,slug,active')
-    .eq('active', true)
-    .order('created_at', { ascending: true });
+    .select('id,name,slug,active');
+  if (!includeInactive) query = query.eq('active', true);
+  query = query.order('created_at', { ascending: true });
 
   if (signal && typeof query.abortSignal === 'function') {
     query = query.abortSignal(signal);

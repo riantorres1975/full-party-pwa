@@ -66,13 +66,13 @@ export default function BottomNav({ onSignOut }) {
     : location.pathname.startsWith('/admin/tienda') ? 'tienda'
     : null;
 
-  const moreActive = active !== null && active !== 'pedidos' && active !== 'catalogo';
-
-  const MAIN_TABS = [
+  const mainTabs = [
+    ...(canViewDashboard ? [{ key: 'dashboard', label: t('admin.nav.dashboard'), icon: Home }] : []),
     { key: 'pedidos', label: t('admin.nav.orders'), icon: ClipboardList },
     { key: 'catalogo', label: t('admin.nav.catalog'), icon: LayoutGrid },
     { key: 'more', label: t('common.more') || 'Más', icon: MoreHorizontal },
   ];
+  const moreActive = active !== null && !mainTabs.some(tab => tab.key === active);
 
   const handleMenuClick = (key) => {
     setSheetOpen(false);
@@ -118,7 +118,7 @@ export default function BottomNav({ onSignOut }) {
       aria-label={t('admin.sections')}
     >
       <div className="flex items-center justify-around h-14">
-        {MAIN_TABS.map(({ key, label, icon: Icon }) => {
+        {mainTabs.map(({ key, label, icon: Icon }) => {
           const isActive = key === 'more' ? moreActive : key === active;
           const handleClick = () => {
             if (key === 'more') {
@@ -134,6 +134,8 @@ export default function BottomNav({ onSignOut }) {
               type="button"
               onClick={handleClick}
               aria-current={isActive ? 'page' : undefined}
+              aria-haspopup={key === 'more' ? 'dialog' : undefined}
+              aria-expanded={key === 'more' ? sheetOpen : undefined}
               className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-14 transition-colors
                          ${isActive ? 'text-admin-text' : 'text-admin-muted'}`}
             >
@@ -194,15 +196,6 @@ export default function BottomNav({ onSignOut }) {
           <div className="px-2 pb-2">
             {/* Perfil (disabled) */}
             {/* Sections — navigation */}
-            {canViewDashboard && (
-              <button
-                onClick={() => handleMenuClick('dashboard')}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-body font-bold text-admin-text hover:bg-admin-elevated transition-colors rounded-lg"
-              >
-                <Home size={18} />
-                <span className="flex-1 text-left">{t('admin.nav.dashboard')}</span>
-              </button>
-            )}
             {canViewClients && (
               <button
                 onClick={() => handleMenuClick('clientes')}

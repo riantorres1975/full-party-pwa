@@ -1,9 +1,12 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useLanguage } from '../../../hooks/useLanguage';
 import { useBreadcrumb } from '../../../contexts/BreadcrumbContext';
 import { useAdminData } from '../../../contexts/AdminDataContext';
-import PageHeader from '../../../components/admin/PageHeader';
+import { usePermissions } from '../../../contexts/PermissionsContext';
+import { ESTADOS_HISTORIAL } from '../../../lib/estadoMeta';
+import DataErrorState from '../../../components/admin/DataErrorState';
 import RangoPeriodoPicker from './components/RangoPeriodoPicker';
 import KpiGrid from './components/KpiGrid';
 import VentasChart from './components/VentasChart';
@@ -13,7 +16,6 @@ import UltimosPedidos from './components/UltimosPedidos';
 import PrioridadesOperativas from './components/PrioridadesOperativas';
 import { useDashboardData } from './hooks/useDashboardData';
 import { calcularPrioridades } from './dashboardPriorities';
-import DataErrorState from '../../../components/admin/DataErrorState';
 
 function getDefaultDates() {
   const desde = new Date();
@@ -23,148 +25,88 @@ function getDefaultDates() {
   return { desde, hasta };
 }
 
-function useIsDesktop() {
-  const getInitial = () => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(min-width: 1024px)').matches;
-  };
-
-  const [isDesktop, setIsDesktop] = useState(getInitial);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-
-    const media = window.matchMedia('(min-width: 1024px)');
-    const onChange = (event) => setIsDesktop(event.matches);
-    setIsDesktop(media.matches);
-
-    if (typeof media.addEventListener === 'function') {
-      media.addEventListener('change', onChange);
-      return () => media.removeEventListener('change', onChange);
-    }
-
-    media.addListener(onChange);
-    return () => media.removeListener(onChange);
-  }, []);
-
-  return isDesktop;
-}
-
 export default function DashboardPage() {
   const { t } = useLanguage();
-  const navigate = useNavigate();
+  const { can } = usePermissions();
   const setBreadcrumb = useBreadcrumb();
-  const { pedidos, loading: pedidosLoading } = useAdminData();
-  const isDesktop = useIsDesktop();
+  const { pedidos, contadores, loading: pedidosLoading, error: pedidosError } = useAdminData();
   const [periodo, setPeriodo] = useState('today');
-  const [fechas, setFechas] = useState(getDefaultDates());
+  const [fechas, setFechas] = useState(getDefaultDates);
+  const canViewOrders = can('pedidos.view');
 
   useEffect(() => {
     setBreadcrumb([t('admin.nav.dashboard')]);
   }, [t, setBreadcrumb]);
 
-  const { kpis, kpisAnterior, ventasDiarias, pedidosPorEstado, topProductos, ultimosPedidos, stockAlerts, loading, error, refetch } = useDashboardData({
-    desde: fechas.desde,
-    hasta: fechas.hasta,
-  });
-  const prioridades = useMemo(
-    () => calcularPrioridades(pedidos, stockAlerts),
-    [pedidos, stockAlerts]
-  );
+  const { kpis, kpisAnterior, ventasDiarias, pedidosPorEstado, topProductos, ultimosPedidos, stockAlerts, loading, error, refetch } = useDashboardData(fechas);
+  const prioridades = useMemo(() => calcularPrioridades(pedidos, stockAlerts ?? {}), [pedidos, stockAlerts]);
 
   const handleChangePeriodo = (newPeriodo, desde, hasta) => {
     setPeriodo(newPeriodo);
     setFechas({ desde, hasta });
   };
 
-  if (error) {
-    return <DataErrorState message={error} onRetry={refetch} />;
-  }
+  const rutaPedido = (pedido) => {
+    const tab = ESTADOS_HISTORIAL.includes(pedido.estado) ? 'historial' : 'activos';
+    const params = new URLSearchParams({ tab });
+    if (pedido.folio) params.set('pedido', pedido.folio);
+    return `/admin/pedidos?${params}`;
+  };
 
   return (
-    <div className="min-h-screen bg-admin-bg">
-      <div className="px-4 lg:px-6 py-4">
-        {/* Header */}
-        <div className="mb-6">
-          <PageHeader
-            title={t('admin.dashboard.title')}
-            subtitle={t('admin.dashboard.subtitle')}
-          />
+    <div className="mx-auto max-w-screen-2xl space-y-5 pb-6 sm:space-y-6">
+      <header className="flex flex-wrap items-start justify-between gap-4 rounded-3xl border border-admin-border bg-admin-card bg-gradient-to-br from-violet-500/10 to-transparent px-4 py-5 sm:items-center sm:px-6 sm:py-6">
+        <div>
+          <h1 className="text-2xl font-black leading-tight tracking-tight text-admin-text sm:text-3xl">{t('admin.dashboard.title')}</h1>
+          <p className="mt-1.5 text-sm leading-relaxed text-admin-muted">{t('admin.dashboard.subtitle')}</p>
         </div>
+        {can('catalogo.edit') && (
+          <Link
+            to="/admin/catalogo?nuevo=1"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-violet-700 px-4 text-sm font-black text-white transition-colors hover:bg-violet-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+          >
+            <Plus size={18} aria-hidden="true" /> {t('admin.dashboard.newProduct')}
+          </Link>
+        )}
+      </header>
 
-        {/* Periodo picker */}
-        <div className="mb-8">
+      <PrioridadesOperativas
+        contadores={contadores}
+        prioridades={prioridades}
+        pedidosLoading={pedidosLoading}
+        pedidosError={pedidosError}
+        stockLoading={loading}
+        stockAvailable={Boolean(stockAlerts)}
+        showOrders={canViewOrders}
+        showPayments={can('pagos.view')}
+        showInventory={can('catalogo.view')}
+      />
+
+      <section aria-labelledby="dashboard-period-title" className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="dashboard-period-title" className="text-lg font-black text-admin-text sm:text-xl">{t('admin.dashboard.periodSummary')}</h2>
           <RangoPeriodoPicker periodo={periodo} onChangePeriodo={handleChangePeriodo} />
         </div>
-
-        <div className="mb-8">
-          <PrioridadesOperativas
-            prioridades={prioridades}
-            loading={loading || pedidosLoading}
-          />
-        </div>
-
-        {/* KPI Grid */}
-        <div className="mb-8">
-          <KpiGrid kpis={kpis} kpisAnterior={kpisAnterior} loading={loading} />
-        </div>
-
-        {/* Charts Grid */}
-        <div className="mb-8">
-          {isDesktop ? (
-            <div className="grid lg:grid-cols-3 gap-4">
-              <div className="lg:col-span-2">
-                <VentasChart data={ventasDiarias} loading={loading} />
-              </div>
-              <div className="lg:col-span-1">
-                <PedidosPorEstadoChart data={pedidosPorEstado} loading={loading} />
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
+        {error ? (
+          <DataErrorState message={t('admin.dashboard.error')} onRetry={refetch} compact />
+        ) : (
+          <>
+            <KpiGrid kpis={kpis} kpisAnterior={kpisAnterior} loading={loading} />
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
               <VentasChart data={ventasDiarias} loading={loading} />
               <PedidosPorEstadoChart data={pedidosPorEstado} loading={loading} />
             </div>
-          )}
-        </div>
-
-        {/* Products + Recent orders */}
-        <div className="mb-8">
-          {isDesktop ? (
-            <div className="grid lg:grid-cols-3 gap-4">
-              <div className="lg:col-span-1">
-                <TopProductos data={topProductos} loading={loading} />
-              </div>
-              <div className="lg:col-span-2">
-                <UltimosPedidos
-                  data={ultimosPedidos}
-                  loading={loading}
-                  onViewAll={() => navigate('/admin/pedidos')}
-                  onRowClick={(pedido) => navigate(`/admin/pedidos?tab=${pedido.estado === 'Enviado' || pedido.estado === 'Cancelado' ? 'historial' : 'activos'}&q=${encodeURIComponent(pedido.folio || '')}`)}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="bg-admin-card border border-admin-border rounded-lg p-4">
-                <h3 className="text-sm font-body font-bold text-admin-text mb-4">
-                  {t('admin.dashboard.chart.top_products')}
-                </h3>
-                <TopProductos data={topProductos} loading={loading} />
-              </div>
+            <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
               <UltimosPedidos
                 data={ultimosPedidos}
                 loading={loading}
-                onViewAll={() => navigate('/admin/pedidos')}
-                onRowClick={(pedido) => navigate(`/admin/pedidos?tab=${pedido.estado === 'Enviado' || pedido.estado === 'Cancelado' ? 'historial' : 'activos'}&q=${encodeURIComponent(pedido.folio || '')}`)}
+                getOrderHref={canViewOrders ? rutaPedido : undefined}
               />
+              <TopProductos data={topProductos} loading={loading} />
             </div>
-          )}
-        </div>
-
-        {/* Footer spacing */}
-        <div className="h-24 lg:h-0" />
-      </div>
+          </>
+        )}
+      </section>
     </div>
   );
 }

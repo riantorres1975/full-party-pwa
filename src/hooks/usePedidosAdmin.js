@@ -4,6 +4,8 @@ import { guardedQuery } from '../lib/supabaseGuard';
 import { notificarCliente } from '../utils/whatsapp';
 import { fuzzySearch } from '../utils/fuzzySearch';
 import { cancelOrderInventory } from '../services/catalog/ordersRepository';
+import { listLocations } from '../services/catalog/inventoryRepository';
+import { SUCURSALES } from '../data/sucursales.js';
 
 const ESTADOS = ['Por Surtir', 'Armando Pedido', 'Listo para Entrega', 'Enviado'];
 const ESTADOS_CON_CANCELADO = [...ESTADOS, 'Cancelado'];
@@ -50,6 +52,7 @@ export { ESTADOS, ESTADOS_CON_CANCELADO };
  */
 export function usePedidosAdmin({ toast, confirmCancelar }) {
   const [pedidos, setPedidos] = useState([]);
+  const [sucursalesPedidos, setSucursalesPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actualizando, setActualizando] = useState(null);
@@ -142,6 +145,37 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
   }, []);
 
   useEffect(() => { fetchPedidos(); }, [fetchPedidos]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    listLocations({ signal: controller.signal, includeInactive: true })
+      .then(sucursales => {
+        if (!controller.signal.aborted) {
+          setSucursalesPedidos(sucursales.map(sucursal => ({
+            ...sucursal,
+            nombre: SUCURSALES.find(({ id }) => id === sucursal.slug)?.nombre ?? sucursal.name,
+          })));
+        }
+      })
+      .catch(error => {
+        if (!controller.signal.aborted) console.warn('[Pedidos] No se pudieron cargar las sucursales', error.message);
+      });
+    return () => controller.abort();
+  }, []);
+
+  const sucursalPorPedidoId = useMemo(() => {
+    const sucursalesPorId = new Map(sucursalesPedidos.map(sucursal => [sucursal.id, sucursal]));
+    const resultado = new Map();
+    for (const pedido of pedidos) {
+      const articulos = pedido.detalles_json;
+      if (!Array.isArray(articulos) || articulos.length === 0) continue;
+      const sucursalId = articulos[0]?.inventory_location_id;
+      if (sucursalesPorId.has(sucursalId) && articulos.every(item => item?.inventory_location_id === sucursalId)) {
+        resultado.set(pedido.id, sucursalesPorId.get(sucursalId));
+      }
+    }
+    return resultado;
+  }, [pedidos, sucursalesPedidos]);
 
   // ── Realtime ───────────────────────────────────────────────────
   useEffect(() => {
@@ -348,6 +382,7 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
 
   return {
     pedidos, setPedidos, loading, error,
+    sucursalesPedidos, sucursalPorPedidoId,
     actualizando, filtroEstado, setFiltroEstado,
     busqueda, setBusqueda, notificando,
     pedidoSeleccionadoId, setPedidoSeleccionadoId,
