@@ -2,6 +2,16 @@ function joinName(parts) {
   return parts.filter(Boolean).join(' ');
 }
 
+export function getAvailableStock(quantity, reserved) {
+  return Math.max(0, Math.round((quantity - reserved) * 1000) / 1000);
+}
+
+export function parseStockAmount(value) {
+  const amount = String(value).trim();
+  if (!/^(?:\d{1,11}(?:[.,]\d{0,3})?|[.,]\d{1,3})$/.test(amount)) return null;
+  return Number(amount.replace(',', '.'));
+}
+
 export function adaptAdminInventoryRow(row) {
   const variant = row?.variant ?? {};
   const product = variant.product ?? {};
@@ -30,7 +40,7 @@ export function adaptAdminInventoryRow(row) {
     imagen_url: variant.image_url ?? product.main_image_url ?? null,
     stock_actual: quantity,
     stock_reservado: reserved,
-    stock_disponible: Math.max(0, quantity - reserved),
+    stock_disponible: getAvailableStock(quantity, reserved),
     stock_minimo: threshold,
     unidad: presentation?.base_unit ?? 'pieza',
     contenido_presentacion: Number(presentation?.base_units_total) || 1,

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { guardedQuery } from '../../../../lib/supabaseGuard';
+import { getAvailableStock } from '../../../../services/catalog/inventoryModel';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -139,9 +140,9 @@ export function useDashboardData({ desde, hasta }) {
         }));
 
       const stockAlerts = productosInventario.reduce((acc, producto) => {
-        const disponible = Math.max(
-          0,
-          (Number(producto.quantity) || 0) - (Number(producto.reserved_quantity) || 0),
+        const disponible = getAvailableStock(
+          Number(producto.quantity) || 0,
+          Number(producto.reserved_quantity) || 0,
         );
         const minimo = Number(producto.low_stock_threshold) || 0;
         if (disponible <= 0) acc.sinStock += 1;

@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '../../../../components/ui/ToastProvider';
 import { useLanguage } from '../../../../hooks/useLanguage';
 import {
+  getAdminInventoryRow,
   listAdminInventory,
   updateAdminInventory,
 } from '../../../../services/catalog/inventoryRepository';
 
 export function useInventario() {
   const [productos, setProductos] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const toast = useToast();
   const { t } = useLanguage();
@@ -29,33 +30,22 @@ export function useInventario() {
 
   useEffect(() => { fetch(); }, [fetch]);
 
-  const updateStock = useCallback(async (id, fields) => {
+  const updateStock = useCallback(async (expected, fields) => {
     const repositoryFields = {
       ...(fields.stock_actual != null ? { quantity: fields.stock_actual } : {}),
       ...(fields.stock_minimo != null ? { lowStockThreshold: fields.stock_minimo } : {}),
     };
-    setProductos((prev) =>
-      prev.map((p) => {
-        if (p.id !== id) return p;
-        const next = { ...p, ...fields };
-        next.stock_disponible = Math.max(
-          0,
-          Number(next.stock_actual) - Number(next.stock_reservado),
-        );
-        return next;
-      })
-    );
-
-    try {
-      await updateAdminInventory(id, repositoryFields);
+    const guardado = await updateAdminInventory(expected.id, repositoryFields, { expected });
+    const actual = guardado ?? await getAdminInventoryRow(expected.id);
+    setProductos(prev => prev.flatMap(p => {
+      if (p.id !== expected.id) return [p];
+      return actual ? [actual] : [];
+    }));
+    if (guardado) {
       toast.success(t('inventario.guardado'));
-    } catch (err) {
-      console.error('[useInventario.updateStock]', err);
-      toast.error(t('inventario.error'));
-      // Revert on error
-      fetch();
     }
-  }, [fetch, toast, t]);
+    return { saved: Boolean(guardado), current: actual };
+  }, [toast, t]);
 
   return { productos, loading, error, refetch: fetch, updateStock };
 }

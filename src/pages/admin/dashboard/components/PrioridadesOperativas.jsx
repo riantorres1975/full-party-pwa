@@ -29,7 +29,7 @@ export default function PrioridadesOperativas({
     },
     showInventory && {
       label: t('admin.dashboard.priorities.stock'),
-      to: '/admin/inventario',
+      to: '/admin/inventario?filtro=alertas',
       Icon: Package,
       count: stockAvailable ? prioridades.stockBajo + prioridades.sinStock : stockLoading ? '…' : '—',
       detail: stockAvailable

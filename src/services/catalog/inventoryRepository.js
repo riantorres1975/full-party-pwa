@@ -149,20 +149,31 @@ export async function listAdminInventory({ client = defaultClient, signal } = {}
 export async function updateAdminInventory(
   inventoryId,
   fields,
-  { client = defaultClient } = {},
+  { expected, client = defaultClient } = {},
 ) {
   const updates = {};
-  if (fields.quantity != null) updates.quantity = Math.max(0, Number(fields.quantity) || 0);
-  if (fields.lowStockThreshold != null) {
-    updates.low_stock_threshold = Math.max(0, Number(fields.lowStockThreshold) || 0);
-  }
-  if (Object.keys(updates).length === 0) return;
+  if (fields.quantity != null) updates.quantity = fields.quantity;
+  if (fields.lowStockThreshold != null) updates.low_stock_threshold = fields.lowStockThreshold;
 
-  const { error } = await client
+  const { data, error } = await client
     .from('catalog_inventory')
     .update(updates)
-    .eq('id', inventoryId);
+    .eq('id', inventoryId)
+    .eq('updated_at', expected.updated_at)
+    .eq('reserved_quantity', expected.stock_reservado)
+    .select(ADMIN_INVENTORY_SELECT)
+    .maybeSingle();
   if (error) throw classifyCatalogError(error, 'No se pudo actualizar el inventario.');
+  return data ? adaptAdminInventoryRow(data) : null;
+}
+
+export async function getAdminInventoryRow(inventoryId, { client = defaultClient } = {}) {
+  const { data, error } = await client.from('catalog_inventory')
+    .select(ADMIN_INVENTORY_SELECT)
+    .eq('id', inventoryId)
+    .maybeSingle();
+  if (error) throw classifyCatalogError(error, 'No se pudo verificar la existencia actual.');
+  return data ? adaptAdminInventoryRow(data) : null;
 }
 
 /** Sucursales del panel. Los pedidos anteriores pueden referirse a una inactiva. */
