@@ -3,7 +3,7 @@ import { Heart } from 'lucide-react';
 import { getInlineProductPlaceholder } from '../../utils/imagenes.js';
 import {
   buildCardTitle,
-  getCardSearchMatch,
+  getGroupedCardSearchMatch,
   getCardAction,
   getPrimaryPresentationType,
 } from '../../services/catalog/publicCatalogModel.js';
@@ -25,9 +25,15 @@ export default function CatalogV2Card({
 }) {
   const action = getCardAction(card);
   const title = buildCardTitle(card);
-  const searchMatch = getCardSearchMatch(card, searchQuery);
+  const searchMatch = getGroupedCardSearchMatch(card, searchQuery);
   const image = card.imageUrl || getInlineProductPlaceholder(title);
   const presentation = card.presentationTypes.length === 1 ? getPrimaryPresentationType(card.presentationTypes) : null;
+  const hasColors = card.colorCount > 1;
+  const swatches = hasColors ? card.colors.filter(({ hex }) => /^#[0-9a-f]{6}$/i.test(hex ?? '')).slice(0, 4) : [];
+  const options = [
+    hasColors ? `${card.colorCount} colores` : null,
+    card.sizes.length > 1 ? `${card.sizes.length} medidas` : null,
+  ].filter(Boolean).join(' · ');
 
   return (
     <article className="catalog-v2-card">
@@ -83,7 +89,7 @@ export default function CatalogV2Card({
         )}
         <div className="catalog-v2-card__badges">
           {card.isNew && <span className="catalog-v2-badge catalog-v2-badge--pink">Nuevo</span>}
-          {card.featured && <span className="catalog-v2-badge">Destacado</span>}
+          {!card.isNew && card.featured && <span className="catalog-v2-badge">Destacado</span>}
         </div>
       </div>
       <button
@@ -115,11 +121,26 @@ export default function CatalogV2Card({
           </div>
         )}
 
+        {options && !searchMatch && (
+          <div className="catalog-v2-card__variants">
+            {swatches.length > 0 && (
+              <span className="catalog-v2-card__swatches" aria-hidden="true">
+                {swatches.map((color) => <i key={color.slug || color.name} style={{ '--swatch-color': color.hex }} />)}
+              </span>
+            )}
+            <span>{options}</span>
+          </div>
+        )}
+
         <div className="catalog-v2-card__price">
           {card.minPrice != null && action.kind !== 'simple' && <span>Desde</span>}
           <strong>{card.minPrice == null ? 'Precio por confirmar' : formatMoney(card.minPrice)}</strong>
         </div>
-        {presentation && <p className="catalog-v2-card__unit">Por {presentation}</p>}
+        {(presentation || card.presentationTypes.length > 1) && (
+          <p className="catalog-v2-card__unit">
+            {presentation ? `Por ${presentation}` : card.presentationTypes.join(' · ')}
+          </p>
+        )}
 
         <button
           type="button"

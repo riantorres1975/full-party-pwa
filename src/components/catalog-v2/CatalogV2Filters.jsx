@@ -8,7 +8,7 @@ function FilterGroup({ title, items, selected, onToggle, color = false }) {
   if (!items?.length) return null;
   return (
     <section className="catalog-v2-filter-group">
-      <h3>{title}</h3>
+      {title && <h3>{title}</h3>}
       <div className="catalog-v2-filter-list">
         {items.map((item) => {
           const value = item.slug ?? item.value ?? sizeNameToSlug(item.name);
@@ -56,6 +56,10 @@ export default function CatalogV2Filters({
   useDialogFocus({ open, containerRef: panelRef, onClose });
   if (!open) return null;
 
+  const colorCount = filters.colorFamilies.length + filters.colors.length;
+  const hasColorFamilies = facets.colorFamilies.length > 0;
+  const hasExactColors = facets.colors.length > 0;
+
   return (
     <div className="catalog-v2-filter-sheet catalog-v2-filter-sheet--simple" role="dialog" aria-modal="true" aria-labelledby="catalog-filters-title">
       <div className="catalog-v2-filter-sheet__backdrop" aria-hidden="true" onClick={onClose} />
@@ -94,8 +98,20 @@ export default function CatalogV2Filters({
           </button>
         </section>
 
-        <FilterGroup title="Color" items={facets.colors} selected={filters.colors} onToggle={(value) => onToggle('colors', value)} color />
         <FilterGroup title="Medida" items={facets.sizes} selected={filters.sizes} onToggle={(value) => onToggle('sizes', value)} />
+
+        {(hasColorFamilies || hasExactColors) && (
+          <details className="catalog-v2-filter-more">
+            <summary>{colorCount ? `Color (${colorCount})` : 'Color'}</summary>
+            <FilterGroup title="Colores generales" items={facets.colorFamilies} selected={filters.colorFamilies} onToggle={(value) => onToggle('colorFamilies', value)} color />
+            {hasExactColors && (
+              <details>
+                <summary>Tonos exactos</summary>
+                <FilterGroup items={facets.colors} selected={filters.colors} onToggle={(value) => onToggle('colors', value)} color />
+              </details>
+            )}
+          </details>
+        )}
 
         <details className="catalog-v2-filter-more">
           <summary>Más filtros</summary>
@@ -110,7 +126,6 @@ export default function CatalogV2Filters({
           )}
           <FilterGroup title="Marca" items={facets.brands} selected={filters.brands} onToggle={(value) => onToggle('brands', value)} />
           <FilterGroup title="Gama" items={facets.lines} selected={filters.lines} onToggle={(value) => onToggle('lines', value)} />
-          <FilterGroup title="Familia de color" items={facets.colorFamilies} selected={filters.colorFamilies} onToggle={(value) => onToggle('colorFamilies', value)} color />
         </details>
 
         <div className="catalog-v2-filter-actions">

@@ -85,7 +85,10 @@ function toOptions(variants, dimension, labelKeys) {
     }
   }
   return [...seen.values()].sort((a, b) =>
-    String(a.name ?? '').localeCompare(String(b.name ?? ''), 'es', { sensitivity: 'base' }),
+    String(a.name ?? '').localeCompare(String(b.name ?? ''), 'es', {
+      sensitivity: 'base',
+      numeric: dimension === 'size_id',
+    }),
   );
 }
 

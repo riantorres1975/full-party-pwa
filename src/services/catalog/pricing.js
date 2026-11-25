@@ -64,6 +64,28 @@ export function resolveNextTier(presentation, quantity) {
   };
 }
 
+/** Price ranges on valid order quantities, including the base price. */
+export function getPresentationPriceBreaks(presentation) {
+  const minimum = Math.max(1, Number(presentation?.minimumOrderQuantity) || 1);
+  const step = Math.max(1, Number(presentation?.quantityStep) || 1);
+  const configuredMaximum = presentation?.maximumOrderQuantity;
+  const maximum = configuredMaximum == null
+    ? null
+    : minimum + Math.floor((configuredMaximum - minimum) / step) * step;
+  if (maximum != null && maximum < minimum) return [];
+
+  const starts = [minimum];
+  for (const tier of normalizeTiers(presentation?.tiers)) {
+    const aligned = minimum + Math.max(0, Math.ceil((tier.minimumQuantity - minimum) / step)) * step;
+    if ((maximum == null || aligned <= maximum) && !starts.includes(aligned)) starts.push(aligned);
+  }
+  return starts.map((quantity, index) => ({
+    minimum: quantity,
+    maximum: index < starts.length - 1 ? starts[index + 1] - step : maximum,
+    unitPrice: resolveUnitPrice(presentation, quantity).unitPrice,
+  }));
+}
+
 /** Subtotal de línea redondeado a 2 decimales (igual que el servidor). */
 export function computeSubtotal(unitPrice, quantity) {
   const qty = Math.max(0, Number(quantity) || 0);

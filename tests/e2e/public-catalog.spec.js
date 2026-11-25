@@ -150,7 +150,7 @@ const facets = {
   availability: { in_stock: 1, out_of_stock: 0 },
 };
 
-async function mockCatalogV2(page) {
+async function mockCatalogV2(page, { listing = [card], productDetail = detail } = {}) {
   const requests = [];
   await page.route('**/rest/v1/**', async (route) => {
     const request = route.request();
@@ -167,12 +167,12 @@ async function mockCatalogV2(page) {
     if (url.pathname.endsWith('/catalog_collections')) body = [];
     if (url.pathname.endsWith('/rpc/catalog_list_cards')) {
       const params = request.postDataJSON();
-      const matches = !params.p_search
-        || card.product_name.toLowerCase().includes(String(params.p_search).toLowerCase());
-      body = { cards: matches ? [card] : [], total: matches ? 1 : 0, limit: 24, offset: 0 };
+      const matches = listing.filter((candidate) => !params.p_search
+        || candidate.product_name.toLowerCase().includes(String(params.p_search).toLowerCase()));
+      body = { cards: matches, total: matches.length, limit: 24, offset: 0 };
     }
     if (url.pathname.endsWith('/rpc/catalog_get_facets')) body = facets;
-    if (url.pathname.endsWith('/rpc/catalog_get_product_detail')) body = detail;
+    if (url.pathname.endsWith('/rpc/catalog_get_product_detail')) body = productDetail;
     if (url.pathname.endsWith('/rpc/catalog_create_order')) {
       body = { folio: 'FP-PRUEBA-001', total: 85 };
     }
@@ -286,8 +286,21 @@ test('keeps the main results visible until the shopper opens the filters', async
   await expect(page).toHaveURL(/catalogo\/globos$/);
   await trigger.click();
 
+  const colorFamily = filters.getByRole('button', { name: /^Rojos/ });
+  const exactColor = filters.getByRole('button', { name: /^Rojo\b/ });
   await expect(filters.getByText('Marca', { exact: true })).toBeHidden();
-  await filters.getByRole('button', { name: /^Rojo/ }).click();
+  await expect(colorFamily).toBeHidden();
+  await expect(exactColor).toBeHidden();
+
+  await filters.getByText('Color', { exact: true }).click();
+  await colorFamily.click();
+  await expect(page).toHaveURL(/familiaColor=rojos/);
+  await expect(filters.getByText('Color (1)', { exact: true })).toBeVisible();
+  await expect(exactColor).toBeHidden();
+
+  await filters.getByText('Tonos exactos', { exact: true }).click();
+  await exactColor.click();
+  await expect(filters.getByText('Color (2)', { exact: true })).toBeVisible();
   await filters.getByText('Más filtros', { exact: true }).click();
   await expect(filters.getByText('Marca', { exact: true })).toBeVisible();
   await filters.getByRole('button', { name: 'Ver productos' }).click();
@@ -336,6 +349,71 @@ test('opens a V2 product, applies tier information and adds it to the order', as
   await expect(cart.getByRole('heading', { name: 'FP-PRUEBA-001' })).toBeVisible();
   const whatsapp = await cart.getByRole('link', { name: 'Abrir WhatsApp' }).getAttribute('href');
   expect(new URL(whatsapp).searchParams.get('text')).toContain('Suc. Francisco Villa');
+});
+
+test('groups product lines and keeps color, size and quantity choices on one product', async ({ page }) => {
+  const smallSize = { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', name: '9 pulgadas', numeric_value: 9, unit: 'pulgada' };
+  const standard = detail.variants[0];
+  const pastel = detail.variants[1];
+  await mockCatalogV2(page, {
+    listing: [
+      { ...card, sizes: [smallSize, ...card.sizes], variant_count: 2, presentation_count: 2, presentation_types: ['bolsa', 'caja'] },
+      {
+        ...card,
+        group_key: `${productId}:glomex-pastel`,
+        line_id: pastelLineId,
+        line_name: 'Pastel',
+        line_slug: 'glomex-pastel',
+        colors: [{ slug: 'azul-pastel', name: 'Azul pastel', hex: '#93c5fd' }],
+      },
+    ],
+    productDetail: {
+      ...detail,
+      sizes: [smallSize, ...detail.sizes],
+      variants: [
+        {
+          ...standard,
+          presentations: [
+            ...standard.presentations,
+            { ...standard.presentations[0], id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', name: 'Caja con 500 piezas', presentation_type: 'caja', base_price: 380, tiers: [] },
+          ],
+        },
+        {
+          ...standard,
+          id: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+          size_id: smallSize.id,
+          size_name: smallSize.name,
+          presentations: [{ ...standard.presentations[0], id: '12121212-1212-4121-8121-121212121212' }],
+        },
+        pastel,
+      ],
+    },
+  });
+  await page.goto('/catalogo');
+
+  const tiles = page.locator('article');
+  await expect(tiles).toHaveCount(1);
+  await expect(tiles.first()).toContainText('2 colores · 2 medidas');
+  await tiles.getByRole('button', { name: 'Elegir opciones' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Globo Latex Glomex' });
+  await expect(dialog.getByRole('button', { name: 'Elige un color', exact: true })).toBeDisabled();
+
+  await dialog.getByTestId('catalog-v2-global-color-trigger').click();
+  const colorPicker = page.getByRole('dialog', { name: 'Explora por color' });
+  await colorPicker.getByRole('button', { name: /^Rojo/ }).click();
+  await colorPicker.getByRole('button', { name: 'Elegir Rojo' }).click();
+  await dialog.getByRole('button', { name: '12 pulgadas', exact: true }).click();
+  await dialog.getByRole('button', { name: /Bolsa con 100 piezas/ }).click();
+
+  const quantity = dialog.getByRole('textbox', { name: 'Cantidad a pedir' });
+  await quantity.fill('6');
+  await quantity.press('Tab');
+  await expect(dialog.getByRole('button', { name: /Agregar al pedido.*510/ })).toBeEnabled();
+
+  await dialog.getByText('Precios por cantidad', { exact: true }).click();
+  await dialog.getByRole('button', { name: 'Elegir 12', exact: true }).click();
+  await expect(quantity).toHaveValue('12');
+  await expect(dialog.getByRole('button', { name: /Agregar al pedido.*936/ })).toBeEnabled();
 });
 
 test('lets customers choose visually by color across product lines', async ({ page }) => {

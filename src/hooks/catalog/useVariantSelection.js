@@ -20,7 +20,12 @@ export function useVariantSelection(variants, initialSelection = {}) {
   );
 
   useEffect(() => {
-    setSelection(createInitialSelection(list, initialSelection).selection);
+    const initial = createInitialSelection(list, initialSelection).selection;
+    setSelection((current) => {
+      // URL synchronization must preserve quantity and the chosen package.
+      const matchesInitial = ['lineId', 'colorId', 'sizeId'].every((key) => initial[key] === current[key]);
+      return matchesInitial ? applySelection(list, current, {}).selection : initial;
+    });
     // initialKey evita reiniciar por un objeto equivalente creado en render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [variants, initialKey]);

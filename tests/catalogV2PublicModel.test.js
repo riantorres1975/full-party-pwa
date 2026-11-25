@@ -9,6 +9,8 @@ import {
   closeProductParams,
   getCardSearchMatch,
   getCatalogCategoryPath,
+  getGroupedCardSearchMatch,
+  groupCatalogCards,
   getCardAction,
   getPrimaryPresentationType,
   getPresentationDescription,
@@ -190,4 +192,41 @@ test('preselecciona la combinacion encontrada por la busqueda', () => {
     colorId: 'coral-id',
     sizeId: 'size-12',
   });
+});
+
+test('combines line cards by product and uses the price and image of available lines', () => {
+  const primary = {
+    productId: 'product', name: 'Globo', lineSlug: 'pastel', minPrice: 85,
+    imageUrl: '/pastel.webp', inStock: true, variantCount: 1, presentationCount: 1,
+    colors: [{ slug: 'rosa', name: 'Rosa' }],
+    sizes: [{ id: 'small', name: '5 pulgadas' }],
+    presentationTypes: ['bolsa'],
+  };
+  const second = {
+    ...primary, lineSlug: 'retro', minPrice: 35, imageUrl: '/retro.webp', inStock: false,
+    sizes: [{ id: 'large', name: '12 pulgadas' }],
+    colors: [{ slug: 'azul', name: 'Azul' }, ...primary.colors],
+    presentationTypes: ['caja', 'bolsa'],
+  };
+  const [group] = groupCatalogCards([second, primary]);
+  assert.equal(group.lineSlug, null);
+  assert.equal(group.minPrice, 85);
+  assert.equal(group.imageUrl, '/pastel.webp');
+  assert.equal(group.colorCount, 2);
+  assert.equal(group.sizes.length, 2);
+  assert.equal(group.inStock, true);
+  const match = getGroupedCardSearchMatch(group, 'rosa 12');
+  assert.equal(match.lineSlug, 'pastel');
+  assert.equal(match.colorSlug, 'rosa');
+  assert.equal(match.sizeName, null);
+});
+
+test('keeps multiple matching colors and sizes for the customer to choose', () => {
+  const variants = [
+    { line_id: 'line', line_slug: 'pastel', color_id: 'pink', size_id: 'five' },
+    { line_id: 'line', line_slug: 'pastel', color_id: 'pink', size_id: 'twelve' },
+    { line_id: 'line', line_slug: 'pastel', color_id: 'blue', size_id: 'five' },
+  ];
+  const selection = resolveInitialVariantSelection(variants, { lineSlug: 'pastel' });
+  assert.deepEqual(selection, { lineId: 'line', colorId: null, sizeId: null });
 });

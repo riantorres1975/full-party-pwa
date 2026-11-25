@@ -18,6 +18,7 @@ import { createPortal } from 'react-dom';
 import { usePresentationPricing } from '../../hooks/catalog/usePresentationPricing.js';
 import { useProductDetail } from '../../hooks/catalog/useProductDetail.js';
 import { useVariantSelection } from '../../hooks/catalog/useVariantSelection.js';
+import { getPresentationPriceBreaks } from '../../services/catalog/pricing.js';
 import { getInlineProductPlaceholder } from '../../utils/imagenes.js';
 import {
   getPresentationDescription,
@@ -26,6 +27,7 @@ import {
 import {
   getColorExplorerOptions,
   getMaximumPurchasableQuantity,
+  normalizeQuantity,
 } from '../../services/catalog/variantSelection.js';
 
 function money(value) {
@@ -472,6 +474,36 @@ function MobileColorOptionGroup({
   );
 }
 
+function QuantityInput({ quantity, disabled, onCommit }) {
+  const [draft, setDraft] = useState(null);
+  return (
+    <input
+      className="catalog-v2-quantity__input"
+      type="text"
+      inputMode="numeric"
+      maxLength={9}
+      aria-label="Cantidad a pedir"
+      value={draft ?? quantity}
+      disabled={disabled}
+      onChange={(event) => setDraft(event.target.value.replace(/\D/g, ''))}
+      onFocus={(event) => event.target.select()}
+      onBlur={() => {
+        if (draft) onCommit(Number(draft));
+        setDraft(null);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') event.currentTarget.blur();
+      }}
+    />
+  );
+}
+
+function formatQuantityRange({ minimum, maximum }) {
+  if (maximum == null) return `${minimum} o más`;
+  if (minimum === maximum) return String(minimum);
+  return `${minimum} a ${maximum}`;
+}
+
 export default function CatalogV2Detail({
   slug,
   initialLineSlug,
@@ -512,6 +544,9 @@ export default function CatalogV2Detail({
   const colorExplorerOptions = getColorExplorerOptions(detail?.variants);
   const guidedSelection = colorExplorerOptions.length > 1
     && (selection.dimensionStates.lineId?.options.length ?? 0) > 1;
+  const exploreByColor = guidedSelection && selectionPath === 'color';
+  const waitingForLine = guidedSelection && !exploreByColor && !selection.selection.lineId;
+  const hasProductOptions = Object.values(selection.dimensionStates).some(({ visible }) => visible);
   const explorerSelectionId = selection.selection.lineId && selection.selection.colorId
     ? `${selection.selection.lineId}:${selection.selection.colorId}`
     : null;
@@ -519,16 +554,18 @@ export default function CatalogV2Detail({
     (line) => line.id === selection.selection.lineId,
   );
   const selectedVariantColor = detail?.variants.find(
-    (item) => item.line_id === selection.selection.lineId
-      && item.color_id === selection.selection.colorId,
+    (item) => selection.selection.colorId
+      && item.color_id === selection.selection.colorId
+      && (!selection.selection.lineId || item.line_id === selection.selection.lineId),
   );
   const selectedSize = detail?.sizes.find(
     (size) => size.id === selection.selection.sizeId,
   );
   useEffect(() => {
-    if (!detail || !selection.selection.lineId || !onSelectionChange) return;
+    if (!detail || !onSelectionChange) return;
+    if (!selection.selection.lineId && !selectedVariantColor && !selectedSize) return;
     onSelectionChange({
-      lineSlug: selectedLine?.slug ?? selectedVariantColor?.line_slug ?? null,
+      lineSlug: selectedLine?.slug ?? (selection.selection.lineId ? selectedVariantColor?.line_slug : null),
       colorSlug: selectedVariantColor?.color_slug ?? null,
       sizeName: selectedSize?.name ?? null,
     });
@@ -602,6 +639,13 @@ export default function CatalogV2Detail({
     && !price.quantityError
     && !stockUnavailable
     && (remainingQuantity == null || quantity <= remainingQuantity);
+  const missingChoice = [
+    [!exploreByColor && selection.dimensionStates.lineId.visible && !selection.selection.lineId, 'Elige una gama'],
+    [selection.dimensionStates.colorId.visible && !selection.selection.colorId, 'Elige un color'],
+    [selection.dimensionStates.sizeId.visible && !selection.selection.sizeId, 'Elige una medida'],
+    [selection.dimensionStates.finish.visible && !selection.selection.finish, 'Elige el acabado'],
+    [selection.presentations.length > 1 && !presentation, 'Elige una forma de venta'],
+  ].find(([missing]) => missing)?.[1];
   const selectedOptionName = [
     variant?.finish,
     variant?.color_name,
@@ -617,6 +661,14 @@ export default function CatalogV2Detail({
     && matchingAttributeNames.every((name) => name === matchingAttributeNames[0])
     ? matchingAttributeNames[0]
     : 'Acabado';
+
+  const setPurchaseQuantity = (requested) => {
+    if (stockUnavailable) return;
+    const limited = maximumQuantity == null ? requested : Math.min(requested, maximumQuantity);
+    selection.setQuantity(normalizeQuantity(presentation, limited));
+  };
+
+  const priceBreaks = presentation?.tiers?.length ? getPresentationPriceBreaks(presentation) : [];
 
   const addToCart = () => {
     if (!canAddToCart) return;
@@ -727,99 +779,57 @@ export default function CatalogV2Detail({
               <div className="catalog-v2-detail__crumbs">
                 {detail.breadcrumb.map((item) => item.name).filter(Boolean).join(' / ')}
               </div>
-              {variant && (
-                <div className="catalog-v2-detail__selection-tags" aria-label="Selección actual">
-                  {[variant.line_name, variant.color_name, variant.size_name, variant.finish]
-                    .filter(Boolean)
-                    .map((label) => <span key={label}>{label}</span>)}
-                </div>
-              )}
               {product.brand?.name && <p className="catalog-v2-card__eyebrow">{product.brand.name}</p>}
               <h2>{product.name}</h2>
               {product.shortDescription && <p className="catalog-v2-detail__description">{product.shortDescription}</p>}
 
-              {guidedSelection ? (
-                <section
-                  className="catalog-v2-detail__selection-guide"
-                  aria-labelledby="catalog-v2-selection-guide-title"
-                >
+              {hasProductOptions && (
+                <section className="catalog-v2-detail__selection-guide" aria-labelledby="catalog-v2-selection-guide-title">
                   <h3 id="catalog-v2-selection-guide-title">Elige las opciones de tu producto</h3>
-                  <div className="catalog-v2-detail__selection-paths" role="group" aria-label="Forma de elegir">
-                    <button type="button" className={selectionPath === 'color' ? 'is-selected' : ''} onClick={() => setSelectionPath('color')} aria-pressed={selectionPath === 'color'}>
-                      <Palette size={17} aria-hidden="true" />
-                      <strong>Elegir por color</strong>
-                    </button>
-                    <button type="button" className={selectionPath === 'line' ? 'is-selected' : ''} onClick={() => setSelectionPath('line')} aria-pressed={selectionPath === 'line'}>
-                      <Layers3 size={17} aria-hidden="true" />
-                      <strong>Conozco la gama</strong>
-                    </button>
-                  </div>
-
-                  {selectionPath === 'color' ? (
+                  {guidedSelection && (
+                    <div className="catalog-v2-detail__selection-paths" role="group" aria-label="Forma de elegir">
+                      <button type="button" className={exploreByColor ? 'is-selected' : ''} onClick={() => setSelectionPath('color')} aria-pressed={exploreByColor}>
+                        <Palette size={17} aria-hidden="true" />
+                        <strong>Elegir por color</strong>
+                      </button>
+                      <button type="button" className={!exploreByColor ? 'is-selected' : ''} onClick={() => setSelectionPath('line')} aria-pressed={!exploreByColor}>
+                        <Layers3 size={17} aria-hidden="true" />
+                        <strong>Conozco la gama</strong>
+                      </button>
+                    </div>
+                  )}
+                  {!exploreByColor && <OptionGroup label="Gama" state={selection.dimensionStates.lineId} onSelect={selection.selectLine} />}
+                  {waitingForLine ? (
+                    <p className="catalog-v2-detail__selection-hint">Elige una gama para mostrar sus colores.</p>
+                  ) : (
                     <MobileColorOptionGroup
-                      state={{
-                        visible: true,
-                        options: colorExplorerOptions,
-                        value: explorerSelectionId,
-                      }}
-                      onSelect={selectExplorerColor}
+                      state={exploreByColor
+                        ? { visible: true, options: colorExplorerOptions, value: explorerSelectionId }
+                        : selection.dimensionStates.colorId}
+                      onSelect={exploreByColor ? selectExplorerColor : selection.selectColor}
                       variants={detail.variants}
                       lines={detail.lines}
                       images={detail.images}
-                      selectedLineId={null}
+                      selectedLineId={exploreByColor ? null : selection.selection.lineId}
                       selectedSizeId={selection.selection.sizeId}
                       productImage={product.mainImageUrl}
-                      forceVisual
-                      showLine
+                      forceVisual={exploreByColor}
+                      showLine={exploreByColor}
                       label="Color"
                     />
-                  ) : (
+                  )}
+                  {(!selection.dimensionStates.colorId.visible || selection.selection.colorId) && (
                     <>
-                      <OptionGroup
-                        label="Gama"
-                        state={selection.dimensionStates.lineId}
-                        onSelect={selection.selectLine}
-                      />
-                      {selection.selection.lineId ? (
-                        <MobileColorOptionGroup
-                          state={selection.dimensionStates.colorId}
-                          onSelect={selection.selectColor}
-                          variants={detail.variants}
-                          lines={detail.lines}
-                          images={detail.images}
-                          selectedLineId={selection.selection.lineId}
-                          selectedSizeId={selection.selection.sizeId}
-                          productImage={product.mainImageUrl}
-                        />
-                      ) : (
-                        <p className="catalog-v2-detail__selection-hint">
-                          Elige una gama para mostrar sus colores.
-                        </p>
-                      )}
+                      <OptionGroup label="Medida" state={selection.dimensionStates.sizeId} onSelect={selection.selectSize} />
+                      <OptionGroup label={finishLabel} state={selection.dimensionStates.finish} onSelect={selection.selectFinish} />
                     </>
                   )}
                 </section>
-              ) : (
-                <>
-                  <OptionGroup label="Gama" state={selection.dimensionStates.lineId} onSelect={selection.selectLine} />
-                  <MobileColorOptionGroup
-                    state={selection.dimensionStates.colorId}
-                    onSelect={selection.selectColor}
-                    variants={detail.variants}
-                    lines={detail.lines}
-                    images={detail.images}
-                    selectedLineId={selection.selection.lineId}
-                    selectedSizeId={selection.selection.sizeId}
-                    productImage={product.mainImageUrl}
-                  />
-                </>
               )}
-              <OptionGroup label="Medida" state={selection.dimensionStates.sizeId} onSelect={selection.selectSize} />
-              <OptionGroup label={finishLabel} state={selection.dimensionStates.finish} onSelect={selection.selectFinish} />
 
               {selection.presentations.length > 1 && (
                 <fieldset className="catalog-v2-detail__presentations">
-                  <legend>¿Cómo lo quieres comprar?</legend>
+                  <legend>Forma de venta</legend>
                   <div>
                     {selection.presentations.map((item) => (
                       <button
@@ -829,6 +839,7 @@ export default function CatalogV2Detail({
                           item.id === selection.selection.presentationId ? 'is-selected' : '',
                           item.inStock === false ? 'is-out-of-stock' : '',
                         ].filter(Boolean).join(' ')}
+                        aria-pressed={item.id === selection.selection.presentationId}
                         onClick={() => selection.selectPresentation(item.id)}
                       >
                         <span>{item.name}</span>
@@ -874,16 +885,16 @@ export default function CatalogV2Detail({
                           <button
                             type="button"
                             disabled={!canDecreaseQuantity}
-                            onClick={() => selection.setQuantity(quantity - quantityStep)}
+                            onClick={() => setPurchaseQuantity(quantity - quantityStep)}
                             aria-label="Reducir cantidad"
                           >
                             <Minus size={16} />
                           </button>
-                          <strong>{quantity}</strong>
+                          <QuantityInput key={presentation.id} quantity={quantity} onCommit={setPurchaseQuantity} disabled={stockUnavailable} />
                           <button
                             type="button"
                             disabled={!canIncreaseQuantity}
-                            onClick={() => selection.setQuantity(quantity + quantityStep)}
+                            onClick={() => setPurchaseQuantity(quantity + quantityStep)}
                             aria-label="Aumentar cantidad"
                           >
                             <Plus size={16} />
@@ -899,10 +910,8 @@ export default function CatalogV2Detail({
                       <div className="catalog-v2-detail__price-summary">
                         <span>Precio por {presentation.presentationType || 'unidad'}</span>
                         <strong>{money(price.pricing?.unitPrice)} c/u</strong>
-                        {price.pricing?.nextTier && (
-                          <small>
-                            Agrega {price.pricing.nextTier.missing} para pagar {money(price.pricing.nextTier.price)} c/u
-                          </small>
+                        {priceBreaks.length > 1 && (
+                          <small>{price.pricing?.tierLabel || 'Consulta los precios por cantidad'}</small>
                         )}
                         <p>{price.pricing?.totalUnits ?? 0} unidades en total</p>
                       </div>
@@ -959,7 +968,7 @@ export default function CatalogV2Detail({
                         ? 'Máximo agregado'
                         : stockBelowMinimum
                           ? 'Existencia insuficiente'
-                          : 'Completa tus opciones'}
+                          : missingChoice || 'Completa tus opciones'}
                 </span>
                 {selection.complete && (
                   <small>
@@ -974,31 +983,36 @@ export default function CatalogV2Detail({
                 </button>
               )}
 
-              {presentation?.tiers?.length > 0 && (
+              {priceBreaks.length > 1 && (
                 <details className="catalog-v2-detail__tiers">
                   <summary>
-                    <span>
-                      <h3>Precios por cantidad</h3>
-                      <small>
-                        Desde {presentation.tiers[0].minimumQuantity}:&nbsp;
-                        {money(presentation.tiers[0].pricePerPresentation)} c/u
-                      </small>
-                    </span>
-                    <span>Ver tabla <ChevronDown size={15} aria-hidden="true" /></span>
+                    <span><h3>Precios por cantidad</h3></span>
+                    <span>Ver precios <ChevronDown size={15} aria-hidden="true" /></span>
                   </summary>
-                  <div>
-                    <span>Desde</span><span>Hasta</span><span>Precio</span>
-                    <strong>1</strong>
-                    <strong>{presentation.tiers[0].minimumQuantity - 1}</strong>
-                    <strong>{money(presentation.basePrice)}</strong>
-                    {presentation.tiers.map((tier) => (
-                      <div key={`${tier.minimumQuantity}-${tier.maximumQuantity ?? 'plus'}`}>
-                        <strong>{tier.minimumQuantity}</strong>
-                        <strong>{tier.maximumQuantity ?? '+'}</strong>
-                        <strong>{money(tier.pricePerPresentation)}</strong>
-                      </div>
-                    ))}
-                  </div>
+                  <ul className="catalog-v2-price-breaks">
+                    {priceBreaks.map((range) => {
+                      const applied = quantity >= range.minimum && (range.maximum == null || quantity <= range.maximum);
+                      return (
+                        <li key={range.minimum} className={applied ? 'is-applied' : ''}>
+                          <div>
+                            <strong>{formatQuantityRange(range)}</strong>
+                            <span>{money(range.unitPrice)} c/u</span>
+                          </div>
+                          {applied ? (
+                            <small>Precio actual</small>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={stockUnavailable || (maximumQuantity != null && range.minimum > maximumQuantity)}
+                              onClick={() => setPurchaseQuantity(range.minimum)}
+                            >
+                              Elegir {range.minimum}
+                            </button>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </details>
               )}
             </div>

@@ -42,6 +42,7 @@ import {
   buildProductSelectionParams,
   closeProductParams,
   getCatalogCategoryPath,
+  groupCatalogCards,
 } from '../../services/catalog/publicCatalogModel.js';
 import { getInlineProductPlaceholder } from '../../utils/imagenes.js';
 
@@ -140,7 +141,6 @@ export default function CatalogV2Page() {
   }), [catalogFilters.rpcFilters, resolvedCategory?.slug]);
   const {
     cards,
-    total,
     hasMore,
     loading,
     loadingMore,
@@ -189,6 +189,9 @@ export default function CatalogV2Page() {
     }
   }, [catalogFilters, debouncedSearch, searchDraft]);
 
+  const sortOrder = catalogFilters.filters.sort;
+  const groupedCards = useMemo(() => groupCatalogCards(cards, sortOrder), [cards, sortOrder]);
+
   useEffect(() => {
     if (!resolvedCategory) {
       setCategoryPresentation(null);
@@ -199,7 +202,7 @@ export default function CatalogV2Page() {
       label: resolvedCategory.name,
       description: resolvedCategory.description || '',
       imageUrl: resolvedCategory.imageUrl || '',
-      count: total,
+      count: hasMore ? null : groupedCards.length,
       canonicalPath: canonicalCategoryPath,
     });
   }, [
@@ -207,7 +210,8 @@ export default function CatalogV2Page() {
     location.pathname,
     resolvedCategory,
     setCategoryPresentation,
-    total,
+    hasMore,
+    groupedCards.length,
   ]);
 
   useEffect(() => {
@@ -215,10 +219,10 @@ export default function CatalogV2Page() {
   }, [recordViewedProduct, selectedProductId]);
 
   const visibleCards = useMemo(() => {
-    if (!favoritesOnly) return cards;
+    if (!favoritesOnly) return groupedCards;
     const favorites = new Set(favoriteIds);
-    return cards.filter((card) => favorites.has(String(card.productId)));
-  }, [cards, favoriteIds, favoritesOnly]);
+    return groupedCards.filter((card) => favorites.has(String(card.productId)));
+  }, [groupedCards, favoriteIds, favoritesOnly]);
 
   const pageTitle = favoritesOnly
     ? 'Mis favoritos'
@@ -227,7 +231,7 @@ export default function CatalogV2Page() {
         ? collections.find((item) => item.slug === catalogFilters.filters.collectionSlug)?.name
         : null)
       || (catalogFilters.filters.search ? `Resultados para «${catalogFilters.filters.search}»` : 'Catálogo completo');
-  const visibleTotal = favoritesOnly ? visibleCards.length : total;
+  const visibleTotal = visibleCards.length;
 
   const openCard = (card, searchMatch) => {
     detailOriginParamsRef.current = searchParams.toString();
@@ -341,48 +345,54 @@ export default function CatalogV2Page() {
             className={`catalog-v2-results ${!resolvedCategory && !catalogFilters.hasActive ? 'catalog-v2-results--home' : ''}`}
             aria-labelledby="catalog-results-title"
           >
-            <div className="catalog-v2-results__heading">
-              <div>
-                <h1 id="catalog-results-title">{pageTitle}</h1>
-                {!loading && <span aria-live="polite">{visibleTotal} {visibleTotal === 1 ? 'producto' : 'productos'}</span>}
+            <div className="catalog-v2-listing-header">
+              <div className="catalog-v2-results__heading">
+                <div>
+                  <h1 id="catalog-results-title">{pageTitle}</h1>
+                  {!loading && (
+                    <span aria-live="polite">
+                      {visibleTotal} {visibleTotal === 1 ? 'producto' : 'productos'}{hasMore ? ' a la vista' : ''}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
 
-            <div className="catalog-v2-shopping-tools" aria-label="Opciones del catálogo">
-              <div className="catalog-v2-category-picker">
-                <label htmlFor="catalog-category-picker">Categoría</label>
-                <select
-                  id="catalog-category-picker"
-                  value={resolvedCategory?.slug ?? ''}
-                  disabled={categoriesLoading || categories.length === 0}
-                  onChange={(event) => selectCategory(bySlug.get(event.target.value))}
+              <div className="catalog-v2-shopping-tools" aria-label="Opciones del catálogo">
+                <div className="catalog-v2-category-picker">
+                  <label htmlFor="catalog-category-picker">Categoría</label>
+                  <select
+                    id="catalog-category-picker"
+                    value={resolvedCategory?.slug ?? ''}
+                    disabled={categoriesLoading || categories.length === 0}
+                    onChange={(event) => selectCategory(bySlug.get(event.target.value))}
+                  >
+                    <option value="">Todas las categorías</option>
+                    {categories.map((category) => category.children.length > 0 ? (
+                      <optgroup key={category.slug} label={category.name}>
+                        <option value={category.slug}>Todo en {category.name}</option>
+                        {Array.from(bySlug.values())
+                          .filter((item) => item.path.length > 1 && item.path[0] === category.slug)
+                          .map((item) => <option key={item.slug} value={item.slug}>{item.name}</option>)}
+                      </optgroup>
+                    ) : <option key={category.slug} value={category.slug}>{category.name}</option>)}
+                  </select>
+                </div>
+
+                <button type="button" className="catalog-v2-shopping-tool" aria-haspopup="dialog" aria-expanded={filtersOpen} onClick={() => setFiltersOpen(true)}>
+                  <SlidersHorizontal size={18} aria-hidden="true" />
+                  Filtros
+                  {catalogFilters.activeCount > 0 && <small>{catalogFilters.activeCount}</small>}
+                </button>
+                <button
+                  type="button"
+                  className="catalog-v2-shopping-tool"
+                  onClick={() => setFavoritesOnly((current) => !current)}
+                  aria-pressed={favoritesOnly}
                 >
-                  <option value="">Todas las categorías</option>
-                  {categories.map((category) => category.children.length > 0 ? (
-                    <optgroup key={category.slug} label={category.name}>
-                      <option value={category.slug}>Todo en {category.name}</option>
-                      {Array.from(bySlug.values())
-                        .filter((item) => item.path.length > 1 && item.path[0] === category.slug)
-                        .map((item) => <option key={item.slug} value={item.slug}>{item.name}</option>)}
-                    </optgroup>
-                  ) : <option key={category.slug} value={category.slug}>{category.name}</option>)}
-                </select>
+                  <Heart size={18} fill={favoritesOnly ? 'currentColor' : 'none'} aria-hidden="true" />
+                  Favoritos
+                </button>
               </div>
-
-              <button type="button" className="catalog-v2-shopping-tool" aria-haspopup="dialog" aria-expanded={filtersOpen} onClick={() => setFiltersOpen(true)}>
-                <SlidersHorizontal size={18} aria-hidden="true" />
-                Filtros
-                {catalogFilters.activeCount > 0 && <small>{catalogFilters.activeCount}</small>}
-              </button>
-              <button
-                type="button"
-                className="catalog-v2-shopping-tool"
-                onClick={() => setFavoritesOnly((current) => !current)}
-                aria-pressed={favoritesOnly}
-              >
-                <Heart size={18} fill={favoritesOnly ? 'currentColor' : 'none'} aria-hidden="true" />
-                Favoritos
-              </button>
             </div>
 
             {childCategories.length > 0 && !favoritesOnly && !catalogFilters.filters.search && (
@@ -415,7 +425,7 @@ export default function CatalogV2Page() {
                 ? Array.from({ length: 8 }, (_, index) => <CardSkeleton key={index} />)
                 : visibleCards.map((card, index) => (
                   <CatalogV2Card
-                    key={card.groupKey}
+                    key={card.productId || card.groupKey}
                     card={card}
                     eagerImage={index < 4}
                     favorite={isFavorite(card.productId)}

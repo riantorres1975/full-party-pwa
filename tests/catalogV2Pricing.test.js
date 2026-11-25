@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { adaptPresentation } from '../src/services/catalog/adapters.js';
 import {
   buildCartLineKey,
+  getPresentationPriceBreaks,
   resolveNextTier,
   resolvePresentationPricing,
   resolveUnitPrice,
@@ -50,4 +51,21 @@ test('acepta tambien la forma cruda de Supabase y separa presentaciones', () => 
     buildCartLineKey('variant-1', 'bag-100'),
     buildCartLineKey('variant-1', 'box-12'),
   );
+});
+
+test('shows the same price ranges as the calculation, aligned to order increments', () => {
+  assert.deepEqual(getPresentationPriceBreaks({
+    basePrice: 85,
+    minimumOrderQuantity: 2,
+    maximumOrderQuantity: 11,
+    quantityStep: 3,
+    tiers: [
+      { minimumQuantity: 1, pricePerPresentation: 82 },
+      { minimumQuantity: 6, pricePerPresentation: 78 },
+      { minimumQuantity: 15, pricePerPresentation: 70 },
+    ],
+  }), [
+    { minimum: 2, maximum: 5, unitPrice: 82 },
+    { minimum: 8, maximum: 11, unitPrice: 78 },
+  ]);
 });
