@@ -8,12 +8,9 @@ export default function Reveal({ children, delay = 0, direction = 'up', classNam
   return (
     <div
       ref={ref}
-      className={className}
-      style={{
-        opacity:    visible ? 1 : 0,
-        transform:  visible ? 'translate(0,0)' : `translate(${tx}px,${ty}px)`,
-        transition: `opacity 0.6s ease ${delay}s, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
-      }}
+      className={`lp-reveal ${className}`}
+      data-visible={visible}
+      style={{ '--reveal-x': `${tx}px`, '--reveal-y': `${ty}px`, '--reveal-delay': `${delay}s` }}
     >
       {children}
     </div>

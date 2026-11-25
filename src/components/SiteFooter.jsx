@@ -6,10 +6,10 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { MapPin, Clock, MessageCircle } from 'lucide-react';
 import { WaIcon, FbIcon, TikTokIcon } from './icons/SocialIcons';
+import { buildContactWhatsAppUrl } from '../data/siteContact';
 
 const ENV = {
   negocio:  import.meta.env.VITE_NOMBRE_NEGOCIO  || 'Full Party',
-  waNumber: import.meta.env.VITE_WHATSAPP_NUMBER || '5214521040377',
   tiktok:   import.meta.env.VITE_TIKTOK_URL      || null,
   suc1: {
     nombre:   import.meta.env.VITE_SUC1_NOMBRE   || 'Francisco Villa',
@@ -21,7 +21,7 @@ const ENV = {
   },
 };
 
-const WA_HREF = `https://wa.me/${ENV.waNumber}?text=${encodeURIComponent('Hola, me interesa hacer un pedido 🎉')}`;
+const WA_HREF = buildContactWhatsAppUrl('Hola, me interesa hacer un pedido 🎉');
 
 const NAV_LINKS = [
   { label: 'Inicio',        href: '/',              route: true  },

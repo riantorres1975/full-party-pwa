@@ -3,80 +3,27 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   ShoppingBag, MessageCircle, MapPin, Star, Package,
   Sparkles, ArrowRight, Navigation, Clock,
-  BadgeCheck, Truck, Search, CircleDot, Shapes,
-  PanelsTopLeft, Boxes, PartyPopper,
+  BadgeCheck, Truck, Search, PartyPopper,
 } from 'lucide-react';
 import './LandingPage.css';
 import { C } from '../styles/tokens';
 import Reveal from '../components/landing/Reveal';
 import GradCard from '../components/landing/GradCard';
 import { WaIcon, FbIcon, TikTokIcon } from '../components/icons/SocialIcons';
-import Balloon from '../components/landing/Balloon';
 import SectionTitle from '../components/landing/SectionTitle';
-import BranchTyper from '../components/landing/BranchTyper';
 import FaqItem from '../components/landing/FaqItem';
 import Button from '../components/ui/Button';
 import ReviewsCarousel from '../components/landing/ReviewsCarousel';
 import GaleriaCard from '../components/landing/GaleriaCard';
 import BrandCard from '../components/landing/BrandCard';
 import CatalogQuickLinks from '../components/landing/CatalogQuickLinks';
+import NovedadesPlaceholder from '../components/landing/NovedadesPlaceholder';
 import PublicSiteHeader from '../components/PublicSiteHeader';
 import { trackEvent } from '../utils/analytics';
+import { SUCURSALES as DATOS_SUCURSALES } from '../data/sucursales';
+import { buildContactWhatsAppUrl } from '../data/siteContact';
 
 const NovedadesSection = lazy(() => import('../components/landing/NovedadesSection'));
-
-function NovedadesPlaceholder() {
-  return (
-    <section className="lp-below-fold lp-section-white lp-novedades-section px-5 pt-8 pb-16" aria-hidden="true">
-      <div className="max-w-[1100px] mx-auto">
-        <div className="lp-novedades-heading mb-7">
-          <div className="min-w-0">
-            <span
-              className="lp-novedades-eyebrow inline-flex items-center gap-1.5 text-xs font-black px-3 py-1.5 rounded-full mb-3"
-              style={{ background: `linear-gradient(135deg, ${C.pink}30, ${C.purple}25)`, color: C.pink, border: `1px solid ${C.pink}33` }}
-            >
-              <Sparkles size={11} aria-hidden="true" /> Recién llegados
-            </span>
-            <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
-              <h2 className="font-display text-3xl sm:text-4xl" style={{ color: C.textHead }}>
-                Descubre algo nuevo
-              </h2>
-              <span className="lp-novedades-count inline-flex items-center gap-1.5 text-xs font-black opacity-0">
-                12 productos nuevos
-              </span>
-            </div>
-            <p className="lp-novedades-copy mt-2 text-sm sm:text-base leading-relaxed opacity-0" style={{ color: C.textBody }}>
-              Productos recien llegados con opciones de menudeo y mayoreo.
-            </p>
-          </div>
-          <span className="lp-novedades-link text-xs font-black inline-flex items-center gap-1.5 opacity-0">
-            Ver todo el catalogo <ArrowRight size={12} aria-hidden="true" />
-          </span>
-        </div>
-        <div className="lp-novedades-shell">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {[0, 1, 2, 3].map((item) => (
-              <div key={item} className={`lp-novedad-skeleton ${item > 1 ? 'hidden sm:block' : ''}`} />
-            ))}
-          </div>
-          <div className="lp-novedades-controls opacity-0">
-            <span className="lp-novedades-arrow" />
-            <span className="lp-novedades-dots">
-              {[0, 1, 2, 3, 4].map((item) => (
-                <span
-                  key={item}
-                  className="lp-novedades-dot"
-                  style={{ width: item === 3 ? 22 : 7, background: `${C.pink}40` }}
-                />
-              ))}
-            </span>
-            <span className="lp-novedades-arrow" />
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function LazyMapIframe({ src, title }) {
   const ref = useRef(null);
@@ -125,35 +72,16 @@ function LazyMapIframe({ src, title }) {
 // ════════════════════════════════════════════════════════════
 // 2. CONFIGURACIÓN — env vars y constantes globales
 // ════════════════════════════════════════════════════════════
-const ENV = {
-  waNumber: import.meta.env.VITE_WHATSAPP_NUMBER || '521XXXXXXXXXX',
-  negocio:  import.meta.env.VITE_NOMBRE_NEGOCIO  || 'Full Party',
-  horario:  import.meta.env.VITE_HORARIO_TIENDA  || 'Lun–Sáb 9am–7pm',
-  tiktok:   import.meta.env.VITE_TIKTOK_URL      || null,
-  suc1: {
-    nombre:   import.meta.env.VITE_SUC1_NOMBRE    || 'Francisco Villa',
-    badge:    import.meta.env.VITE_SUC1_BADGE     || 'Sucursal Principal',
-    direccion:import.meta.env.VITE_SUC1_DIRECCION || 'Uruapan, Michoacán',
-    mapsUrl:  import.meta.env.VITE_SUC1_MAPS_URL  || '#',
-    facebook: import.meta.env.VITE_SUC1_FACEBOOK  || null,
-  },
-  suc2: {
-    nombre:   import.meta.env.VITE_SUC2_NOMBRE    || 'Sol Naciente',
-    badge:    import.meta.env.VITE_SUC2_BADGE     || 'Sucursal Norte',
-    direccion:import.meta.env.VITE_SUC2_DIRECCION || 'Col. Sol Naciente, Uruapan, Michoacán',
-    mapsUrl:  import.meta.env.VITE_SUC2_MAPS_URL  || '#',
-    facebook: import.meta.env.VITE_SUC2_FACEBOOK  || null,
-  },
-};
-
-const WA_HREF  = `https://wa.me/${ENV.waNumber}?text=${encodeURIComponent('Hola, vi su página web y quiero ayuda para cotizar un pedido 🎉')}`;
+const NOMBRE_NEGOCIO = import.meta.env.VITE_NOMBRE_NEGOCIO || 'Full Party';
+const TIKTOK_URL = import.meta.env.VITE_TIKTOK_URL;
+const WA_HREF = buildContactWhatsAppUrl('Hola, vi su página web y quiero ayuda para cotizar un pedido 🎉');
 
 const NAV_LINKS = [
-  { label: 'Catálogo',      href: '/catalogo',      hash: true  },
-  { label: 'Destacados',    href: '/destacados',    hash: true  },
-  { label: 'Cómo comprar',  href: '/como-funciona', hash: true  },
-  { label: 'Sucursales',    href: '/sucursales',    hash: true  },
-  { label: 'Blog',          href: '/blog',          hash: true  },
+  { label: 'Catálogo', href: '/catalogo' },
+  { label: 'Destacados', href: '/destacados' },
+  { label: 'Cómo comprar', href: '/como-funciona' },
+  { label: 'Sucursales', href: '/sucursales' },
+  { label: 'Blog', href: '/blog' },
 ];
 
 const BENEFICIOS = [
@@ -167,7 +95,7 @@ const BENEFICIOS = [
   {
     icon:     MessageCircle,
     titulo:   'Pedidos por WhatsApp',
-    desc:     'Genera tu orden desde el catálogo y envíala directo al +52 452 104 0377. Sin llamadas.',
+    desc:     'Arma tu pedido desde el catálogo y envíalo por WhatsApp para confirmar los detalles.',
     color:    C.purple,
     gradient: `linear-gradient(135deg, ${C.purple}, ${C.cyan})`,
   },
@@ -180,18 +108,11 @@ const BENEFICIOS = [
   },
 ];
 
-const CATEGORIAS = [
-  { icon: CircleDot,     titulo: 'Globos de Látex',       desc: 'Glomex, Decoratex y Sempertex. Colores, tamaños y calidad helio', color: C.pink,   href: '/catalogo/globos/globos-latex'   },
-  { icon: Shapes,        titulo: 'Globos de Personajes',  desc: 'Personajes de moda, graduación y Día de las Madres',              color: C.orange, href: '/catalogo/globos/globos-figuras' },
-  { icon: PanelsTopLeft, titulo: 'Cortinas y Guirnaldas', desc: 'Cortinas de lluvia, guirnaldas y decoraciones para todo evento',  color: C.purple, href: '/catalogo/decoracion'             },
-  { icon: Boxes,         titulo: 'Sets y Accesorios',     desc: 'Sets de 5 piezas, velas, brillo, bombas eléctricas y más',        color: C.green,  href: '/catalogo/inflado-y-helio'       },
-];
-
 const PASOS = [
   { num: '1', icon: ShoppingBag,   titulo: 'Navega',       desc: 'Explora +500 artículos: globos, cortinas, guirnaldas, velas y más.',  color: C.pink   },
   { num: '2', icon: Package,       titulo: 'Al carrito',   desc: 'Agrega productos y ve el precio mayoreo actualizado en tiempo real.',  color: C.purple },
   { num: '3', icon: Sparkles,      titulo: 'Revisa',       desc: 'Confirma cantidades, precios escalonados y elige entrega o envío.',    color: C.cyan   },
-  { num: '4', icon: MessageCircle, titulo: 'Por WhatsApp', desc: 'Un toque y tu pedido llega listo al +52 452 104 0377. Sin llamadas.',  color: C.green  },
+  { num: '4', icon: MessageCircle, titulo: 'Por WhatsApp', desc: 'Envía tu pedido por WhatsApp desde el carrito.',  color: C.green  },
 ];
 
 const MARCAS = [
@@ -269,30 +190,23 @@ const RESENAS = [
   },
 ];
 
+const [franciscoVilla, solNaciente] = DATOS_SUCURSALES;
 const SUCURSALES = [
   {
-    nombre:    ENV.suc1.nombre,
-    badge:     ENV.suc1.badge,
-    direccion: ENV.suc1.direccion,
-    horario:   'Lun–Sáb 9am–7pm',
-    mapsUrl:   ENV.suc1.mapsUrl,
-    embedUrl:  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3762.8065692929063!2d-102.0549798!3d19.420761799999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x842de367f2d59469%3A0x4799181c21c26fd5!2sFull%20Party%20Uruapan%20Suc%20Francisco%20Villa!5e0!3m2!1ses-419!2smx!4v1776194961609!5m2!1ses-419!2smx',
-    facebook:  ENV.suc1.facebook,
-    color:     C.pink,
-    accent:    C.orange,
-    ilustId:   'suc1',
+    ...franciscoVilla,
+    nombre: import.meta.env.VITE_SUC1_NOMBRE || 'Francisco Villa',
+    badge: import.meta.env.VITE_SUC1_BADGE || franciscoVilla.badge,
+    direccion: import.meta.env.VITE_SUC1_DIRECCION || franciscoVilla.direccion,
+    mapsUrl: import.meta.env.VITE_SUC1_MAPS_URL || franciscoVilla.mapsUrl,
+    facebook: import.meta.env.VITE_SUC1_FACEBOOK,
   },
   {
-    nombre:    ENV.suc2.nombre,
-    badge:     ENV.suc2.badge,
-    direccion: ENV.suc2.direccion,
-    horario:   'Lun–Sáb 9am–7pm · Dom 9am–2pm',
-    mapsUrl:   ENV.suc2.mapsUrl,
-    embedUrl:  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3763.1415130404407!2d-102.0274577!3d19.4062907!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x842de3bcdec90e8d%3A0x5158156fe2efca48!2sFull%20Party%20Uruapan%20Suc%20Sol%20Naciente!5e0!3m2!1ses-419!2smx!4v1776194928231!5m2!1ses-419!2smx',
-    facebook:  ENV.suc2.facebook,
-    color:     C.purple,
-    accent:    C.cyan,
-    ilustId:   'suc2',
+    ...solNaciente,
+    nombre: import.meta.env.VITE_SUC2_NOMBRE || 'Sol Naciente',
+    badge: import.meta.env.VITE_SUC2_BADGE || solNaciente.badge,
+    direccion: import.meta.env.VITE_SUC2_DIRECCION || solNaciente.direccion,
+    mapsUrl: import.meta.env.VITE_SUC2_MAPS_URL || solNaciente.mapsUrl,
+    facebook: import.meta.env.VITE_SUC2_FACEBOOK,
   },
 ];
 
@@ -303,7 +217,7 @@ const FAQS = [
   },
   {
     pregunta:  '¿Cómo hago un pedido?',
-    respuesta: 'Navega el catálogo, agrega lo que necesitas al carrito y con un toque envías tu pedido listo a nuestro WhatsApp +52 452 104 0377. Sin llamadas, sin formularios.',
+    respuesta: 'Explora el catálogo, agrega lo que necesitas al carrito y envíanos tu pedido por WhatsApp.',
   },
   {
     pregunta:  '¿Hacen envíos a todo México?',
@@ -372,21 +286,6 @@ const GALERIA = [
   },
 ];
 
-// Confeti decorativo — reducido a 10 elementos para mejor rendimiento
-const PARTICLES = [
-  { id:  0, top:  6, left:  8, size: 10, color: C.pink,   dur:  7, delay: 0.0, shape: 'square'  },
-  { id:  1, top: 12, left: 87, size:  7, color: C.orange,  dur:  9, delay: 1.5, shape: 'circle'  },
-  { id:  2, top: 20, left: 62, size:  9, color: C.cyan,    dur:  8, delay: 0.5, shape: 'diamond' },
-  { id:  3, top:  3, left: 44, size:  6, color: C.purple,  dur: 10, delay: 2.0, shape: 'square'  },
-  { id:  4, top: 36, left: 17, size: 12, color: C.green,   dur:  7, delay: 3.0, shape: 'circle'  },
-  { id:  5, top: 56, left: 77, size:  8, color: C.pink,    dur: 11, delay: 1.0, shape: 'square'  },
-  { id:  6, top: 70, left: 32, size:  7, color: C.orange,  dur:  8, delay: 4.0, shape: 'diamond' },
-  { id:  7, top: 83, left: 91, size:  9, color: C.cyan,    dur:  9, delay: 2.5, shape: 'circle'  },
-  { id:  8, top: 47, left:  3, size:  8, color: C.blue,    dur: 10, delay: 0.8, shape: 'square'  },
-  { id:  9, top: 92, left: 54, size:  5, color: C.purple,  dur:  7, delay: 1.2, shape: 'circle'  },
-];
-// 7. COMPONENTE PRINCIPAL
-// ════════════════════════════════════════════════════════════
 export default function LandingPage() {
   const [loadNovedades, setLoadNovedades] = useState(false);
   const [catalogSearch, setCatalogSearch] = useState('');
@@ -416,18 +315,7 @@ export default function LandingPage() {
     };
   }, [loadNovedades]);
 
-  const handleNav = useCallback((link) => {
-    if (link.hash) {
-      navigate(link.href);
-    } else {
-      document.getElementById(link.href)?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [navigate]);
-
-  const irAlCatalogo = useCallback(() => {
-    trackEvent('cta_catalogo_click');
-    navigate('/catalogo');
-  }, [navigate]);
+  const trackCatalogClick = () => trackEvent('cta_catalogo_click');
 
   const buscarEnCatalogo = useCallback((event) => {
     event.preventDefault();
@@ -437,154 +325,98 @@ export default function LandingPage() {
   }, [catalogSearch, navigate]);
 
   return (
-    <div id="top" className="lp-page-shell relative min-h-screen font-body overflow-x-hidden">
+    <div id="top" className="lp-page-shell min-h-screen font-body">
 
       {/* ── Saltar al contenido principal ───────────────── */}
       <a
         href="#main-content"
-        className="sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:font-bold focus:text-white focus:no-underline"
-        style={{ '--tw-bg-opacity': 1, background: C.pink }}
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:font-bold focus:text-white focus:bg-[#44216a]"
       >
         Saltar al contenido principal
       </a>
 
-      {/* ── Confetti — solo en sm+ para no penalizar móvil ── */}
-      <div className="hidden sm:block fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }} aria-hidden="true">
-        {PARTICLES.map(p => (
-          <div
-            key={p.id}
-            style={{
-              position:    'absolute',
-              top:         `${p.top}%`,
-              left:        `${p.left}%`,
-              width:        p.size,
-              height:       p.size,
-              background:   p.color,
-              borderRadius: p.shape === 'circle' ? '50%' : '2px',
-              transform:    p.shape === 'diamond' ? 'rotate(45deg)' : 'none',
-            }}
-          />
-        ))}
-      </div>
+      <PublicSiteHeader />
 
-      <div className="relative" style={{ zIndex: 2 }}>
+      <main id="main-content" tabIndex={-1}>
+        <section className="lp-hero px-5" aria-labelledby="hero-heading">
+          <div className="lp-hero-inner max-w-[1152px] mx-auto">
+            <div className="lp-hero-content">
+              <p className="lp-hero-kicker">
+                <Sparkles size={16} aria-hidden="true" />
+                Artículos para fiesta en Uruapan
+              </p>
 
-        <PublicSiteHeader />
+              <h1 id="hero-heading" className="font-display">
+                Todo para tu <span>próxima fiesta.</span>
+              </h1>
+              <p className="lp-hero-copy">
+                Globos, decoración y artículos para celebrar. Compra por pieza o al mayoreo y envía tu pedido por WhatsApp.
+              </p>
 
-        {/* ══ CONTENIDO PRINCIPAL ════════════════════════ */}
-        <main id="main-content">
+              <form className="lp-hero-search" role="search" onSubmit={buscarEnCatalogo}>
+                <Search size={19} aria-hidden="true" />
+                <label htmlFor="landing-catalog-search" className="sr-only">Buscar productos</label>
+                <input
+                  id="landing-catalog-search"
+                  type="search"
+                  name="q"
+                  value={catalogSearch}
+                  onChange={(event) => setCatalogSearch(event.target.value)}
+                  placeholder="Ej. globos"
+                  autoComplete="off"
+                />
+                <button type="submit">Buscar</button>
+              </form>
 
-        {/* ══ HERO ═══════════════════════════════════════ */}
-        <section
-          className="lp-hero relative px-5 pt-16 pb-12 text-center overflow-visible"
-          aria-labelledby="hero-heading"
-        >
-          {/* Globos decorativos */}
-          <div className="hidden sm:block absolute left-[7%] top-16 balloon-sway pointer-events-none" style={{ zIndex: 0 }} aria-hidden="true"><Balloon color={C.pink} size={62} rotate={-8} /></div>
-          <div className="hidden sm:block absolute left-[12%] bottom-24 balloon-sway-r pointer-events-none" style={{ zIndex: 0 }} aria-hidden="true"><Balloon color={C.yellow} size={48} rotate={5} /></div>
-          <div className="hidden sm:block absolute right-[8%] top-10 balloon-sway-r pointer-events-none" style={{ zIndex: 0 }} aria-hidden="true"><Balloon color={C.cyan} size={76} rotate={10} /></div>
-          <div className="hidden sm:block absolute right-[11%] bottom-24 balloon-sway pointer-events-none" style={{ zIndex: 0 }} aria-hidden="true"><Balloon color={C.green} size={54} rotate={-5} /></div>
-
-          <div className="relative max-w-4xl mx-auto" style={{ zIndex: 1 }}>
-            <h1 id="hero-heading" className="sr-only">
-              Full Party Uruapan - mayoreo y menudeo de artículos para fiesta
-            </h1>
-            <span
-              className="lp-hero-kicker inline-flex items-center gap-2 text-xs font-black px-5 py-2 rounded-full mb-6"
-              style={{ color: C.textMuted }}
-            >
-              <Sparkles size={12} aria-hidden="true" style={{ color: C.pink }} />
-              +500 PRODUCTOS · MAYOREO Y MENUDEO
-            </span>
-
-            <div className="relative mb-6">
-              <div className="lp-hero-aura" aria-hidden="true" />
-              <BranchTyper branchNames={[ENV.suc1.nombre, ENV.suc2.nombre]} />
-            </div>
-
-            <p className="lp-hero-copy text-base sm:text-lg leading-relaxed mb-7 max-w-2xl mx-auto" style={{ color: C.textBody }}>
-              Todo para tu celebración, por pieza o mayoreo. Encuentra globos por color,
-              medida o gama y envía tu pedido listo por WhatsApp.
-            </p>
-
-            <form className="lp-hero-search" role="search" onSubmit={buscarEnCatalogo}>
-              <Search size={19} aria-hidden="true" />
-              <label htmlFor="landing-catalog-search" className="sr-only">Buscar en el catálogo</label>
-              <input
-                id="landing-catalog-search"
-                type="search"
-                value={catalogSearch}
-                onChange={(event) => setCatalogSearch(event.target.value)}
-                placeholder="Busca globos, colores, medidas o decoración"
-                autoComplete="off"
-              />
-              <button type="submit" aria-label="Buscar en el catálogo">
-                <span>Buscar</span>
-                <ArrowRight size={16} aria-hidden="true" />
-              </button>
-            </form>
-
-            <div className="lp-hero-actions w-full max-w-[340px] mx-auto sm:max-w-none flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Button
-                variant="primary"
-                size="lg"
-                pulse
-                fullWidth
-                onClick={irAlCatalogo}
-                iconRight={<ArrowRight size={16} aria-hidden="true" />}
-                className="lp-hero-primary max-w-full sm:w-auto"
-              >
-                Explorar productos
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                as="a"
-                href={WA_HREF}
-                target="_blank"
-                rel="noopener noreferrer"
-                iconLeft={<WaIcon size={18} />}
-                fullWidth
-                className="lp-hero-whatsapp max-w-full sm:w-auto whitespace-nowrap"
-                onClick={() => trackEvent('hero_whatsapp_click')}
-              >
-                Cotizar por WhatsApp
-              </Button>
-            </div>
-
-            <div className="lp-hero-proof mt-7 mx-auto text-xs sm:text-sm" style={{ color: C.textBody }} aria-label="Ventajas de comprar en Full Party">
-              {[
-                { icon: Star,       label: '4.7 en Google',        color: C.orange },
-                { icon: BadgeCheck, label: 'Compra desde 1 pieza', color: C.green  },
-                { icon: Truck,      label: 'Envíos a todo México', color: C.cyan   },
-                { icon: MapPin,     label: '2 sucursales',         color: C.pink   },
-              ].map(({ icon: Icon, label, color }) => (
-                <span key={label} className="lp-proof-item">
-                  <span className="lp-proof-icon" style={{ background: `${color}1a`, color }} aria-hidden="true">
-                    <Icon size={12} strokeWidth={2.75} />
-                  </span>
-                  {label}
-                </span>
-              ))}
-            </div>
-
-            {/* Stats */}
-            <Reveal delay={0.35}>
-              <div className="hidden mt-14 flex-wrap justify-center gap-10">
-                {[
-                  { value: '500+', label: 'Productos',  color: C.pink   },
-                  { value: '12+',  label: 'Categorías', color: C.purple },
-                  { value: '2',    label: 'Sucursales', color: C.cyan   },
-                  { value: '💜',   label: 'Uruapan',    color: C.orange },
-                ].map(s => (
-                  <div key={s.label} className="text-center">
-                    <div className="font-display text-3xl" style={{ color: s.color }}>{s.value}</div>
-                    <div className="text-xs font-bold uppercase tracking-wide mt-0.5" style={{ color: C.textMuted }}>{s.label}</div>
-                  </div>
-                ))}
+              <div className="lp-hero-actions">
+                <Button
+                  as={Link}
+                  to="/catalogo"
+                  size="lg"
+                  onClick={trackCatalogClick}
+                  iconLeft={<ShoppingBag size={18} aria-hidden="true" />}
+                  className="lp-hero-primary"
+                >
+                  Ver catálogo
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  as="a"
+                  href={WA_HREF}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  iconLeft={<WaIcon size={18} />}
+                  className="lp-hero-whatsapp"
+                  onClick={() => trackEvent('hero_whatsapp_click')}
+                >
+                  Cotizar por WhatsApp
+                </Button>
               </div>
-            </Reveal>
+            </div>
+
+            <picture className="lp-hero-media" aria-hidden="true">
+              <img
+                src="/landing-globos.webp"
+                srcSet="/landing-globos-640.webp 640w, /landing-globos.webp 1280w"
+                sizes="(min-width: 1180px) 546px, (min-width: 880px) 46vw, calc(100vw - 72px)"
+                width="1280"
+                height="960"
+                fetchPriority="high"
+                alt=""
+              />
+            </picture>
           </div>
+
+          <ul className="lp-hero-proof max-w-[1152px] mx-auto" aria-label="Ventajas de comprar en Full Party">
+            <li><BadgeCheck size={19} aria-hidden="true" /> Compra desde 1 pieza</li>
+            <li><Truck size={19} aria-hidden="true" /> Envíos a todo México</li>
+            <li>
+              <a href="#sucursales">
+                <MapPin size={19} aria-hidden="true" /> 2 sucursales en Uruapan
+              </a>
+            </li>
+          </ul>
         </section>
 
         <CatalogQuickLinks />
@@ -616,35 +448,6 @@ export default function LandingPage() {
                       <p className="text-sm leading-relaxed"  style={{ color: C.textBody }}>{desc}</p>
                     </div>
                   </GradCard>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ══ CATEGORÍAS ══════════════════════════════════ */}
-        <section className="lp-below-fold lp-section-tint lp-categories-section px-5 py-16">
-          <div className="max-w-5xl mx-auto">
-            <Reveal><SectionTitle eyebrow="Explora" title="Categorías Destacadas" subtitle="Los artículos más solicitados para tus eventos." /></Reveal>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {CATEGORIAS.map(({ icon: Icon, titulo, desc, color, href }, i) => (
-                <Reveal key={titulo} delay={i * 0.08}>
-                  <Link
-                    to={href}
-                    className="lp-cat-card w-full rounded-2xl p-5 text-center flex flex-col items-center gap-3"
-                    style={{
-                      '--cat-accent':       color,
-                      '--cat-border-hover': `${color}66`,
-                      '--cat-shadow-hover': `0 8px 28px ${color}22`,
-                    }}
-                  >
-                    <span className="lp-cat-icon" aria-hidden="true">
-                      <Icon size={25} strokeWidth={1.8} />
-                    </span>
-                    <h3 className="font-display text-sm leading-snug" style={{ color: C.textHead }}>{titulo}</h3>
-                    <p  className="text-xs leading-snug"              style={{ color: C.textMuted }}>{desc}</p>
-                    <span className="text-xs font-black flex items-center gap-1" style={{ color }}>Ver más <ArrowRight size={11} aria-hidden="true" /></span>
-                  </Link>
                 </Reveal>
               ))}
             </div>
@@ -807,7 +610,7 @@ export default function LandingPage() {
                   variant="primary"
                   size="sm"
                   as="a"
-                  href={`https://wa.me/${ENV.waNumber}?text=${encodeURIComponent('¡Hola! Quiero compartir la foto de mi decoración con productos Full Party 🎉')}`}
+                  href={buildContactWhatsAppUrl('¡Hola! Quiero compartir la foto de mi decoración con productos Full Party 🎉')}
                   target="_blank"
                   rel="noopener noreferrer"
                   iconLeft={<WaIcon size={14} />}
@@ -847,8 +650,8 @@ export default function LandingPage() {
           <div className="max-w-5xl mx-auto">
             <Reveal><SectionTitle eyebrow="Visítanos" title="Nuestras Sucursales" subtitle="Visítanos en Uruapan, Michoacán." /></Reveal>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {SUCURSALES.map(({ nombre, direccion, horario, mapsUrl, embedUrl, badge, color, accent, facebook }, i) => (
-                <Reveal key={nombre} delay={i * 0.1} direction={i === 0 ? 'left' : 'right'}>
+              {SUCURSALES.map(({ id, nombre, direccion, horario, horarioExtra, mapsUrl, embedUrl, badge, color, accent, textColor, facebook }, i) => (
+                <Reveal key={id} delay={i * 0.1}>
                   <GradCard
                     gradient={`linear-gradient(135deg, ${color}, ${accent})`}
                     hoverColor={`${color}22`}
@@ -862,32 +665,33 @@ export default function LandingPage() {
                       >
                         <LazyMapIframe
                           src={embedUrl}
-                          title={`Mapa de ${ENV.negocio} ${nombre}`}
+                          title={`Mapa de ${NOMBRE_NEGOCIO} ${nombre}`}
                         />
                         <span
                           className="absolute top-3 left-3 text-xs font-black px-3 py-1 rounded-full z-10"
                           style={{
                             background:    'rgba(255,255,255,0.9)',
-                            color,
+                            color:         textColor,
                             border:        `1px solid ${color}44`,
                             backdropFilter:'blur(6px)',
                           }}
                         >{badge}</span>
                       </div>
                       <div className="lp-branch-content p-5 flex flex-col gap-3">
-                        <h3 className="font-display text-base" style={{ color: C.textHead }}>{ENV.negocio} {nombre}</h3>
+                        <h3 className="font-display text-base" style={{ color: C.textHead }}>{NOMBRE_NEGOCIO} {nombre}</h3>
                         <p className="flex items-start gap-2 text-sm" style={{ color: C.textBody }}>
                           <MapPin size={13} className="mt-0.5 flex-shrink-0" style={{ color }} aria-hidden="true" />{direccion}
                         </p>
-                        <p className="flex items-center gap-2 text-sm" style={{ color: C.textBody }}>
-                          <Clock size={13} style={{ color }} aria-hidden="true" />{horario}
+                        <p className="flex items-start gap-2 text-sm" style={{ color: C.textBody }}>
+                          <Clock size={13} className="mt-1 flex-shrink-0" style={{ color: textColor }} aria-hidden="true" />
+                          <span>{horario}<br />{horarioExtra}</span>
                         </p>
                         <a
                           href={mapsUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="lp-branch-action mt-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-black"
-                          style={{ background: `${color}12`, color, border: `1px solid ${color}33` }}
+                          style={{ background: `${color}12`, color: textColor, border: `1px solid ${color}33` }}
                           onClick={() => trackEvent('maps_link_click', { sucursal: nombre })}
                         >
                           <Navigation size={13} aria-hidden="true" /> Ver en Google Maps
@@ -937,7 +741,9 @@ export default function LandingPage() {
                     <Button
                       variant="primary"
                       size="lg"
-                      onClick={irAlCatalogo}
+                      as={Link}
+                      to="/catalogo"
+                      onClick={trackCatalogClick}
                       iconLeft={<ShoppingBag size={18} aria-hidden="true" />}
                       className="lp-cta-btn-white"
                     >
@@ -963,16 +769,16 @@ export default function LandingPage() {
           </div>
         </section>
 
-        </main>
+      </main>
 
         {/* ══ FOOTER — 3 columnas ══════════════════════════ */}
-        <footer className="lp-footer lp-below-fold">
+      <footer className="lp-footer lp-below-fold">
           <div className="max-w-5xl mx-auto px-5 pt-10 pb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
 
             {/* Columna 1: Logo + tagline + WhatsApp */}
             <div>
               <div className="flex items-center gap-2.5 mb-3">
-                <img src="/icons/icon-48.png" alt={ENV.negocio} width="32" height="32" className="w-8 h-8 rounded-lg" />
+                <img src="/icons/icon-48.png" alt={NOMBRE_NEGOCIO} width="32" height="32" className="w-8 h-8 rounded-lg" />
                 <span
                   className="font-display text-base"
                   style={{
@@ -982,7 +788,7 @@ export default function LandingPage() {
                     backgroundClip:       'text',
                   }}
                 >
-                  {ENV.negocio}
+                  {NOMBRE_NEGOCIO}
                 </span>
               </div>
               <p className="lp-footer-text text-xs leading-relaxed mb-4">
@@ -1003,42 +809,42 @@ export default function LandingPage() {
                 >
                   WhatsApp
                 </Button>
-                {ENV.suc1.facebook && (
+                {SUCURSALES[0].facebook && (
                   <Button
                     variant="facebook"
                     size="sm"
                     as="a"
-                    href={ENV.suc1.facebook}
+                    href={SUCURSALES[0].facebook}
                     target="_blank"
                     rel="noopener noreferrer"
                     iconLeft={<FbIcon size={12} />}
                     onClick={() => trackEvent('footer_facebook_suc1_click')}
-                    aria-label={`Facebook Suc. ${ENV.suc1.nombre}`}
+                    aria-label={`Facebook Suc. ${SUCURSALES[0].nombre}`}
                   >
-                    Suc. {ENV.suc1.nombre}
+                    Suc. {SUCURSALES[0].nombre}
                   </Button>
                 )}
-                {ENV.suc2.facebook && (
+                {SUCURSALES[1].facebook && (
                   <Button
                     variant="facebook"
                     size="sm"
                     as="a"
-                    href={ENV.suc2.facebook}
+                    href={SUCURSALES[1].facebook}
                     target="_blank"
                     rel="noopener noreferrer"
                     iconLeft={<FbIcon size={12} />}
                     onClick={() => trackEvent('footer_facebook_suc2_click')}
-                    aria-label={`Facebook Suc. ${ENV.suc2.nombre}`}
+                    aria-label={`Facebook Suc. ${SUCURSALES[1].nombre}`}
                   >
-                    Suc. {ENV.suc2.nombre}
+                    Suc. {SUCURSALES[1].nombre}
                   </Button>
                 )}
-                {ENV.tiktok && (
+                {TIKTOK_URL && (
                   <Button
                     variant="tiktok"
                     size="sm"
                     as="a"
-                    href={ENV.tiktok}
+                    href={TIKTOK_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     iconLeft={<TikTokIcon size={12} />}
@@ -1057,61 +863,20 @@ export default function LandingPage() {
               <ul className="flex flex-col gap-2">
                 {NAV_LINKS.map(l => (
                   <li key={l.label}>
-                    <button
-                      onClick={() => handleNav(l)}
-                      className="lp-footer-link text-xs font-bold text-left"
-                    >
+                    <Link to={l.href} className="lp-footer-link text-sm font-bold">
                       {l.label}
-                    </button>
+                    </Link>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Columna 3: Secciones */}
             <div>
-              <h3 className="lp-footer-heading font-display text-sm mb-4">Secciones</h3>
+              <h3 className="lp-footer-heading font-display text-sm mb-4">En esta página</h3>
               <ul className="flex flex-col gap-2">
-                <li>
-                  <Link
-                    to="/catalogo"
-                    className="lp-footer-link text-xs font-bold"
-                  >
-                    Catálogo
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/destacados"
-                    className="lp-footer-link text-xs font-bold"
-                  >
-                    Categorías destacadas
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/sucursales"
-                    className="lp-footer-link text-xs font-bold"
-                  >
-                    Sucursales
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/como-funciona"
-                    className="lp-footer-link text-xs font-bold"
-                  >
-                    ¿Cómo hacer un pedido?
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/blog"
-                    className="lp-footer-link text-xs font-bold"
-                  >
-                    Blog
-                  </Link>
-                </li>
+                <li><a href="#resenas" className="lp-footer-link text-sm font-bold">Reseñas</a></li>
+                <li><a href="#sucursales" className="lp-footer-link text-sm font-bold">Direcciones y horarios</a></li>
+                <li><a href="#faq" className="lp-footer-link text-sm font-bold">Preguntas frecuentes</a></li>
               </ul>
             </div>
 
@@ -1119,26 +884,20 @@ export default function LandingPage() {
             <div>
               <h3 className="lp-footer-heading font-display text-sm mb-4">Contacto</h3>
               <ul className="lp-footer-text flex flex-col gap-3 text-xs">
-                <li className="flex items-start gap-2">
-                  <MapPin size={12} className="mt-0.5 flex-shrink-0" style={{ color: C.pink }} aria-hidden="true" />
-                  <span>
-                    <span className="font-bold" style={{ color: '#ede7fb' }}>Suc. Francisco Villa</span><br />
-                    C. Francisco Villa 103, Centro<br />
-                    <Clock size={10} className="inline mr-0.5" aria-hidden="true" />Lun–Sáb 9am–7pm
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <MapPin size={12} className="mt-0.5 flex-shrink-0" style={{ color: C.purple }} aria-hidden="true" />
-                  <span>
-                    <span className="font-bold" style={{ color: '#ede7fb' }}>Suc. Sol Naciente</span><br />
-                    Universo 117, Sol Naciente<br />
-                    <Clock size={10} className="inline mr-0.5" aria-hidden="true" />Lun–Sáb 9am–7pm · Dom 9am–2pm
-                  </span>
-                </li>
+                {SUCURSALES.map(({ id, nombre, direccion, horario, color }) => (
+                  <li className="flex items-start gap-2" key={id}>
+                    <MapPin size={14} className="mt-0.5 flex-shrink-0" style={{ color }} aria-hidden="true" />
+                    <span>
+                      <span className="font-bold text-white">{nombre}</span><br />
+                      {direccion}<br />
+                      {horario}
+                    </span>
+                  </li>
+                ))}
                 <li className="flex items-center gap-2">
                   <MessageCircle size={12} style={{ color: C.pink }} aria-hidden="true" />
                   <a href={WA_HREF} target="_blank" rel="noopener noreferrer" className="lp-footer-link font-bold">
-                    WhatsApp: 452 104 0377
+                    Escríbenos por WhatsApp
                   </a>
                 </li>
               </ul>
@@ -1149,42 +908,10 @@ export default function LandingPage() {
           <div
             className="lp-footer-bottom px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs"
           >
-            <span>© {new Date().getFullYear()} {ENV.negocio} · Uruapan, Michoacán · Todos los derechos reservados</span>
-            <div className="flex gap-4">
-              <button
-                onClick={irAlCatalogo}
-                className="lp-footer-link font-bold"
-              >
-                Catálogo
-              </button>
-              <a
-                href={WA_HREF}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="lp-footer-link font-bold"
-              >
-                WhatsApp
-              </a>
-            </div>
+            <span>© {new Date().getFullYear()} {NOMBRE_NEGOCIO} · Uruapan, Michoacán · Todos los derechos reservados</span>
+            <a href="#top" className="lp-footer-link font-bold">Volver al inicio</a>
           </div>
-        </footer>
-      </div>
-
-      {/* ══ BOTÓN FLOTANTE WHATSAPP ══════════════════════ */}
-      <aside aria-label="Contacto rápido">
-        <a
-          href={WA_HREF}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="wa-pulse fixed bottom-6 right-6 z-50 flex items-center justify-center rounded-full font-black text-sm text-white lp-scale-hover w-14 h-14 p-0 sm:w-auto sm:h-auto sm:gap-2.5 sm:pl-4 sm:pr-5 sm:py-3.5"
-          style={{ background: 'linear-gradient(135deg, #25d366, #1aab56)', boxShadow: '0 6px 20px rgba(37,211,102,0.5)' }}
-          aria-label="¿Dudas? ¡Escríbenos!"
-          onClick={() => trackEvent('fab_whatsapp_click')}
-        >
-          <WaIcon size={20} />
-          <span className="hidden sm:inline">¿Dudas? ¡Escríbenos!</span>
-        </a>
-      </aside>
+      </footer>
     </div>
   );
 }

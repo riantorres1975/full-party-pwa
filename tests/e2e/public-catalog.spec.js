@@ -191,6 +191,71 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.clear());
 });
 
+test('keeps home navigation visible and opens the store section below it', async ({ page }) => {
+  await mockCatalogV2(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.route('https://www.google.com/maps/**', (route) => route.fulfill({ body: '<title>Mapa</title>' }));
+  await page.goto('/');
+
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Todo para tu próxima fiesta.');
+  const heroImage = page.locator('.lp-hero-media img');
+  await expect.poll(() => heroImage.evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
+  await page.keyboard.press('Tab');
+  const skipLink = page.getByRole('link', { name: 'Saltar al contenido principal' });
+  await expect(skipLink).toBeFocused();
+  await expect(skipLink).toHaveCSS('clip', 'auto');
+  await expect(skipLink).toHaveCSS('position', 'fixed');
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('main')).toBeFocused();
+
+  await page.getByRole('link', { name: '2 sucursales en Uruapan' }).click();
+  await expect(page).toHaveURL(/#sucursales$/);
+
+  const nav = page.getByRole('navigation', { name: 'Navegación principal' });
+  await expect.poll(() => nav.evaluate((element) => element.getBoundingClientRect().top)).toBe(0);
+  const branchSection = page.locator('#sucursales');
+  await expect(branchSection.getByRole('heading', { name: 'Nuestras Sucursales' })).toBeInViewport();
+  const mapsLinks = await branchSection.getByRole('link', { name: 'Ver en Google Maps' }).evaluateAll(
+    (links) => links.map((link) => link.getAttribute('href')),
+  );
+  expect(mapsLinks).toHaveLength(2);
+  expect(new Set(mapsLinks).size).toBe(2);
+  mapsLinks.forEach((href) => expect(href).toMatch(/^https:\/\//));
+});
+
+test('opens a catalog search from home and keeps the query', async ({ page }) => {
+  await mockCatalogV2(page);
+  await page.goto('/');
+
+  const categories = page.getByRole('region', { name: 'Compra por categoría' });
+  await expect(categories.getByRole('link', { name: 'Ver todo el catálogo', exact: true })).toHaveCount(1);
+  await expect(categories.getByRole('link', { name: /Globos de figuras/ })).toHaveAttribute('href', '/catalogo/globos/globos-figuras');
+
+  await page.getByRole('searchbox', { name: 'Buscar productos' }).fill('  Glomex  ');
+  await page.getByRole('button', { name: 'Buscar', exact: true }).click();
+
+  await expect(page).toHaveURL(/\/catalogo\?q=Glomex$/);
+  await expect(page.getByRole('searchbox', { name: /Buscar en el cat.logo/ })).toHaveValue('Glomex');
+  await expect(page.getByRole('heading', { name: /Globo Latex Glomex/ })).toBeVisible();
+});
+
+test('closes the mobile home menu with Escape and restores focus', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'The mobile menu is only shown at narrow widths');
+  await mockCatalogV2(page);
+  await page.goto('/');
+
+  const toggle = page.getByRole('button', { name: 'Abrir menú' });
+  await toggle.click();
+  const menu = page.locator('#public-site-mobile-menu');
+  await expect(menu).toBeVisible();
+
+  await menu.getByRole('link', { name: 'Catálogo' }).focus();
+  await page.keyboard.press('Escape');
+
+  await expect(menu).toBeHidden();
+  await expect(toggle).toBeFocused();
+});
+
 test('renders the V2 catalog and searches through the canonical RPC', async ({ page }) => {
   const requests = await mockCatalogV2(page);
   await page.goto('/catalogo');

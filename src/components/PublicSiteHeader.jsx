@@ -1,15 +1,15 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { C } from '../styles/tokens';
 import { WaIcon } from './icons/SocialIcons';
 import Button from './ui/Button';
 import { trackEvent } from '../utils/analytics';
+import { buildContactWhatsAppUrl } from '../data/siteContact';
 import './PublicSiteHeader.css';
 
 const BUSINESS_NAME = import.meta.env.VITE_NOMBRE_NEGOCIO || 'Full Party';
-const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || '5214521040377';
-const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hola, vi su página web y quiero ayuda para cotizar un pedido')}`;
+const WHATSAPP_URL = buildContactWhatsAppUrl('Hola, vi su página web y quiero ayuda para cotizar un pedido');
 
 const NAV_LINKS = [
   { label: 'Catálogo', href: '/catalogo' },
@@ -21,20 +21,28 @@ const NAV_LINKS = [
 
 export default function PublicSiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuToggleRef = useRef(null);
 
   const closeMenu = () => setMenuOpen(false);
 
+  const handleMenuKeyDown = (event) => {
+    if (event.key !== 'Escape' || !menuOpen) return;
+    closeMenu();
+    menuToggleRef.current?.focus();
+  };
+
   return (
-    <nav className="lp-main-nav sticky top-0 z-50" aria-label="Navegación principal">
+    <nav className="lp-main-nav sticky top-0 z-50" aria-label="Navegación principal" onKeyDown={handleMenuKeyDown}>
       <div className="lp-main-nav-inner max-w-6xl mx-auto px-5 flex items-center justify-between">
         <Link
           to="/"
           onClick={closeMenu}
+          aria-label={`Inicio de ${BUSINESS_NAME}`}
           className="flex items-center gap-3 min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
         >
           <img
             src="/icons/icon-192.png"
-            alt={`${BUSINESS_NAME} logo`}
+            alt=""
             width="44"
             height="44"
             className="w-11 h-11 rounded-xl flex-shrink-0"
@@ -78,8 +86,9 @@ export default function PublicSiteHeader() {
 
         <button
           type="button"
-          className="lg:hidden p-2 rounded-xl flex-shrink-0"
-          style={{ background: C.surfaceLavender, color: C.purple }}
+          ref={menuToggleRef}
+          className="lp-mobile-nav-toggle lg:hidden p-2 rounded-xl flex-shrink-0"
+          style={{ background: C.surfaceLavender, color: '#5b3080' }}
           onClick={() => setMenuOpen((open) => !open)}
           aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
           aria-expanded={menuOpen}
@@ -89,41 +98,40 @@ export default function PublicSiteHeader() {
         </button>
       </div>
 
-      {menuOpen && (
-        <div
-          id="public-site-mobile-menu"
-          className="lg:hidden border-t bg-white px-5 py-4 flex flex-col gap-1"
-          style={{ borderColor: C.borderSoft }}
-        >
-          {NAV_LINKS.map((link) => (
-            <NavLink
-              key={link.label}
-              to={link.href}
-              onClick={closeMenu}
-              className={({ isActive }) => `lp-mobile-nav-link text-left px-4 py-3 rounded-xl text-sm font-black transition-all hover:bg-purple-50${isActive ? ' is-active' : ''}`}
-            >
-              {link.label}
-            </NavLink>
-          ))}
-          <Button
-            variant="primary"
-            size="md"
-            as="a"
-            href={WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            iconLeft={<WaIcon size={14} />}
-            fullWidth
-            className="lp-nav-whatsapp mt-1"
-            onClick={() => {
-              closeMenu();
-              trackEvent('nav_whatsapp_click');
-            }}
+      <div
+        id="public-site-mobile-menu"
+        className="lp-mobile-nav-panel border-t bg-white px-5 py-4 gap-1"
+        hidden={!menuOpen}
+        style={{ borderColor: C.borderSoft }}
+      >
+        {NAV_LINKS.map((link) => (
+          <NavLink
+            key={link.label}
+            to={link.href}
+            onClick={closeMenu}
+            className={({ isActive }) => `lp-mobile-nav-link text-left px-4 py-3 rounded-xl text-sm font-black transition-all hover:bg-purple-50${isActive ? ' is-active' : ''}`}
           >
-            Contactar por WhatsApp
-          </Button>
-        </div>
-      )}
+            {link.label}
+          </NavLink>
+        ))}
+        <Button
+          variant="primary"
+          size="md"
+          as="a"
+          href={WHATSAPP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          iconLeft={<WaIcon size={14} />}
+          fullWidth
+          className="lp-nav-whatsapp mt-1"
+          onClick={() => {
+            closeMenu();
+            trackEvent('nav_whatsapp_click');
+          }}
+        >
+          Contactar por WhatsApp
+        </Button>
+      </div>
     </nav>
   );
 }
