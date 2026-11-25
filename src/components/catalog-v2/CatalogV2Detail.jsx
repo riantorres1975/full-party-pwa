@@ -12,9 +12,10 @@ import {
   Share2,
   X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { useFocusTrap } from '../../hooks/useFocusTrap.js';
 import { usePresentationPricing } from '../../hooks/catalog/usePresentationPricing.js';
 import { useProductDetail } from '../../hooks/catalog/useProductDetail.js';
 import { useVariantSelection } from '../../hooks/catalog/useVariantSelection.js';
@@ -205,14 +206,13 @@ function MobileColorOptionGroup({
   const [activeFilter, setActiveFilter] = useState('todos');
   const [draftColorId, setDraftColorId] = useState(null);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const closeOnEscape = (event) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [open]);
+  const panelRef = useRef(null);
+  const closePicker = () => {
+    setQuery('');
+    setActiveFilter('todos');
+    setOpen(false);
+  };
+  useFocusTrap(panelRef, open, 'container', closePicker);
 
   if (!state?.visible) return null;
   if (state.options.length <= 12 && !forceVisual) {
@@ -239,12 +239,6 @@ function MobileColorOptionGroup({
     (activeFilter === 'todos' || option.filter === activeFilter)
     && (!normalizedQuery || normalizeColorSearch(option.name).includes(normalizedQuery))
   ));
-
-  const closePicker = () => {
-    setQuery('');
-    setActiveFilter('todos');
-    setOpen(false);
-  };
 
   const openPicker = () => {
     setDraftColorId(state.value);
@@ -340,9 +334,12 @@ function MobileColorOptionGroup({
               className="catalog-v2-color-sheet__backdrop"
               onClick={closePicker}
               aria-label="Cerrar selector de colores"
+              tabIndex={-1}
             />
             <section
               id="catalog-v2-mobile-color-picker"
+              ref={panelRef}
+              tabIndex={-1}
               className="catalog-v2-color-sheet__panel"
               role="dialog"
               aria-modal="true"
@@ -373,7 +370,6 @@ function MobileColorOptionGroup({
                   placeholder="Buscar color..."
                   aria-label="Buscar color"
                   autoComplete="off"
-                  autoFocus
                 />
               </label>
 
@@ -517,6 +513,17 @@ export default function CatalogV2Detail({
   onSelectionChange,
   onClose,
 }) {
+  const panelRef = useRef(null);
+  const isOpen = Boolean(slug);
+  useFocusTrap(panelRef, isOpen, 'first', onClose);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [isOpen]);
+
   const { detail, loading, error, refresh } = useProductDetail(slug);
   const [selectionPath, setSelectionPath] = useState(
     initialColorSlug ? 'color' : initialLineSlug ? 'line' : 'color',
@@ -703,8 +710,8 @@ export default function CatalogV2Detail({
 
   return (
     <div className="catalog-v2-detail" role="dialog" aria-modal="true" aria-label={product?.name || 'Detalle del producto'}>
-      <button type="button" className="catalog-v2-detail__backdrop" onClick={onClose} aria-label="Cerrar detalle" />
-      <section className="catalog-v2-detail__panel">
+      <button type="button" className="catalog-v2-detail__backdrop" onClick={onClose} aria-label="Cerrar detalle" tabIndex={-1} />
+      <section ref={panelRef} className="catalog-v2-detail__panel" tabIndex={-1}>
         <div className="catalog-v2-detail__topbar">
           <button type="button" className="catalog-v2-icon-button" onClick={onClose} aria-label="Regresar">
             <ChevronLeft size={21} />

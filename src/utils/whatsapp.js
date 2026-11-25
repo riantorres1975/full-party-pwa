@@ -157,6 +157,7 @@ export function notificarCliente(pedido, articulosSurtidos = null) {
     const sinStock = articulosSurtidos.filter(a => (Number(a.cantidad_surtida) || 0) === 0);
     const parciales = surtidos.filter(a => (Number(a.cantidad_surtida) || 0) < Number(a.cantidad));
     const nuevoTotal = surtidos.reduce((s, a) => s + (Number(a.precio) || 0) * (Number(a.cantidad_surtida) || 0), 0);
+    const descripcion = (a) => [a.nombre, a.gama, a.color, a.medida || a.tamano, a.presentacion].filter(Boolean).join(' · ');
 
     const listaSurtidos = surtidos
       .map(a => {
@@ -164,18 +165,18 @@ export function notificarCliente(pedido, articulosSurtidos = null) {
         const cp = Number(a.cantidad) || 0;
         const sub = (Number(a.precio) || 0) * cs;
         const cantTexto = cs < cp ? `${cs}x (pediste ${cp})` : `${cs}x`;
-        return `  ${EMOJI.check} ${cantTexto} ${a.nombre} - ${SIMBOLO_MONEDA}${sub.toFixed(2)}`;
+        return `  ${EMOJI.check} ${cantTexto} ${descripcion(a)} - ${SIMBOLO_MONEDA}${sub.toFixed(2)}`;
       })
       .join('\n');
 
     let infoFaltantes = '';
     if (sinStock.length > 0) {
       infoFaltantes += `\n${EMOJI.alerta} *Lamentablemente no tuvimos en existencia:*\n` +
-        sinStock.map(a => `  ${EMOJI.cruz} ${a.nombre}`).join('\n') + '\n';
+        sinStock.map(a => `  ${EMOJI.cruz} ${descripcion(a)}`).join('\n') + '\n';
     }
     if (parciales.length > 0) {
       infoFaltantes += `\n${EMOJI.alerta} *Cantidad ajustada por inventario:*\n` +
-        parciales.map(a => `  ${EMOJI.cruz} ${a.nombre}: pediste ${a.cantidad}, surtimos ${a.cantidad_surtida}`).join('\n') + '\n';
+        parciales.map(a => `  ${EMOJI.cruz} ${descripcion(a)}: pediste ${a.cantidad}, surtimos ${a.cantidad_surtida}`).join('\n') + '\n';
     }
 
     if (esEnvio) {
@@ -208,7 +209,9 @@ export function notificarCliente(pedido, articulosSurtidos = null) {
           : `¡Buenas noticias ${nombre}! ${EMOJI.fiesta} Tu pedido *${folio}* ya está listo para recoger. Puedes pasar cuando gustes. ¡Te esperamos! ${EMOJI.festejo}`;
         break;
       case 'Enviado':
-        mensaje = `¡Hola ${nombre}! ${String.fromCodePoint(0x1F69A)} Tu pedido *${folio}* ya salió de la tienda y va en camino hacia ti. Pronto lo tendrás. ¡Que lo disfrutes! ${EMOJI.globo}`;
+        mensaje = esEnvio
+          ? `¡Hola ${nombre}! ${String.fromCodePoint(0x1F69A)} Tu pedido *${folio}* ya salió de la tienda y va en camino hacia ti. Pronto lo tendrás. ¡Que lo disfrutes! ${EMOJI.globo}`
+          : `¡Hola ${nombre}! ${EMOJI.check} Registramos la entrega de tu pedido *${folio}* en tienda. ¡Gracias por tu compra! ${EMOJI.globo}`;
         break;
       case 'Cancelado':
         mensaje = `Hola ${nombre}, lamentamos informarte que tu pedido *${folio}* ha sido cancelado. ${EMOJI.cruz}\n\nSi tienes dudas, no dudes en escribirnos. ¡Esperamos verte pronto! ${EMOJI.globo}`;

@@ -336,11 +336,10 @@ test('opens a V2 product, applies tier information and adds it to the order', as
   await cart.getByRole('button', { name: 'Continuar a mis datos' }).click();
   await expect(cart.getByLabel('Nombre completo')).toHaveValue('Cliente Pruebas');
 
-  await page.context().route('https://api.whatsapp.com/**', (route) => route.fulfill({ body: '<title>WhatsApp de prueba</title>' }));
   await cart.getByLabel('Teléfono de WhatsApp').fill('452 123 4567');
   await cart.getByLabel('Sucursal para recoger').selectOption('francisco-villa');
   const submitted = page.waitForRequest('**/rpc/catalog_create_order');
-  await cart.getByRole('button', { name: 'Registrar y abrir WhatsApp' }).click();
+  await cart.getByRole('button', { name: 'Registrar pedido' }).click();
   expect((await submitted).postDataJSON()).toMatchObject({
     p_tipo_entrega: 'tienda',
     p_location_slug: 'francisco-villa',
@@ -349,6 +348,12 @@ test('opens a V2 product, applies tier information and adds it to the order', as
   await expect(cart.getByRole('heading', { name: 'FP-PRUEBA-001' })).toBeVisible();
   const whatsapp = await cart.getByRole('link', { name: 'Abrir WhatsApp' }).getAttribute('href');
   expect(new URL(whatsapp).searchParams.get('text')).toContain('Suc. Francisco Villa');
+  expect(page.context().pages()).toHaveLength(1);
+  await expect(cart.getByRole('link', { name: 'Ver estado del pedido' })).toHaveAttribute('href', '/rastrear/FP-PRUEBA-001');
+
+  await page.reload();
+  await page.getByRole('button', { name: 'Mi pedido', exact: true }).click();
+  await expect(cart.getByRole('link', { name: 'Ver mi último pedido' })).toHaveAttribute('href', '/rastrear/FP-PRUEBA-001');
 });
 
 test('groups product lines and keeps color, size and quantity choices on one product', async ({ page }) => {
@@ -414,6 +419,19 @@ test('groups product lines and keeps color, size and quantity choices on one pro
   await dialog.getByRole('button', { name: 'Elegir 12', exact: true }).click();
   await expect(quantity).toHaveValue('12');
   await expect(dialog.getByRole('button', { name: /Agregar al pedido.*936/ })).toBeEnabled();
+
+  await dialog.getByRole('button', { name: /Agregar al pedido.*936/ }).click();
+  await dialog.getByRole('button', { name: '9 pulgadas', exact: true }).click();
+  await dialog.getByRole('textbox', { name: 'Cantidad a pedir' }).fill('1');
+  await dialog.getByRole('textbox', { name: 'Cantidad a pedir' }).press('Tab');
+  await dialog.getByRole('button', { name: /Agregar al pedido.*85/ }).click();
+  await dialog.getByRole('button', { name: 'Ver mi pedido' }).click();
+
+  const cart = page.getByRole('dialog', { name: 'Mi pedido' });
+  await expect(cart.getByRole('heading', { name: 'Globo Latex Glomex' })).toHaveCount(1);
+  await expect(cart.getByText(/Rojo · 12 pulgadas/)).toBeVisible();
+  await expect(cart.getByText(/Rojo · 9 pulgadas/)).toBeVisible();
+  await expect(cart.getByRole('button', { name: /^Reducir .*9 pulgadas/ })).toBeDisabled();
 });
 
 test('lets customers choose visually by color across product lines', async ({ page }) => {
@@ -435,6 +453,26 @@ test('lets customers choose visually by color across product lines', async ({ pa
   await expect(page).toHaveURL(/seleccionColor=azul-pastel/);
   await expect(page).toHaveURL(/seleccionMedida=12(\+|%20)pulgadas/);
   await expect(dialog.getByRole('button', { name: /Agregar al pedido/ })).toBeEnabled();
+});
+
+test('closes the color picker and product independently with Escape', async ({ page }) => {
+  await mockCatalogV2(page);
+  await page.goto('/catalogo?producto=globo-latex-glomex');
+
+  const product = page.getByRole('dialog', { name: 'Globo Latex Glomex' });
+  await expect(product.getByRole('button', { name: 'Regresar' })).toBeFocused();
+  const trigger = product.getByTestId('catalog-v2-global-color-trigger');
+  await trigger.click();
+  const picker = page.getByRole('dialog', { name: 'Explora por color' });
+  await expect(picker).toBeFocused();
+
+  await page.keyboard.press('Escape');
+  await expect(picker).toBeHidden();
+  await expect(trigger).toBeFocused();
+
+  await page.keyboard.press('Escape');
+  await expect(product).toBeHidden();
+  await expect(page).toHaveURL(/\/catalogo$/);
 });
 
 test('keeps the product-line path active while selecting a line', async ({ page }) => {

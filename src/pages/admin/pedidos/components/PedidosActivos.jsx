@@ -1,23 +1,22 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Search } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Search, X } from 'lucide-react';
 import { useAdminData } from '../../../../contexts/AdminDataContext';
 import { useBreadcrumb } from '../../../../contexts/BreadcrumbContext';
 import { useLanguage } from '../../../../hooks/useLanguage';
-import { ESTADOS_ACTIVOS, ESTADO_META, estadoLabel } from '../../../../lib/estadoMeta';
+import { ESTADOS_ACTIVOS, estadoLabel } from '../../../../lib/estadoMeta';
 import ColumnaKanban from './ColumnaKanban';
-import TarjetaPedido from './TarjetaPedido';
 import TarjetaPedidoMobile from './TarjetaPedidoMobile';
 import ModalDetallePedido from './ModalDetallePedido';
 
 export default function PedidosActivos({ busquedaInput, setBusquedaInput, busquedaDebounced, setBusqueda }) {
   const { t } = useLanguage();
   const [pedidoModal, setPedidoModal] = useState(null);
+  const [estadoVisible, setEstadoVisible] = useState('todos');
   const {
     setPedidos,
     actualizando,
-    setFiltroEstado,
     notificando,
-    pedidosPorBusqueda,
+    pedidos, pedidosPorBusqueda,
     cambiarEstado, cancelarPedido, notificar, confirmarPagoPedido,
   } = useAdminData();
 
@@ -28,32 +27,41 @@ export default function PedidosActivos({ busquedaInput, setBusquedaInput, busque
     setBreadcrumb([t('admin.nav.orders')]);
   }, [t, setBreadcrumb]);
 
-  const cambiarEstadoYFiltrar = useCallback(async (pedidoId, nuevoEstado) => {
-    await cambiarEstado(pedidoId, nuevoEstado);
-  }, [cambiarEstado]);
+  const pedidosPorEstado = useMemo(() => Object.fromEntries(
+    ESTADOS_ACTIVOS.map(estado => [estado, pedidosPorBusqueda.filter(p => p.estado === estado)]),
+  ), [pedidosPorBusqueda]);
+  const estadosVisibles = estadoVisible === 'todos' ? ESTADOS_ACTIVOS : [estadoVisible];
+  const activos = ESTADOS_ACTIVOS.reduce((total, estado) => total + pedidosPorEstado[estado].length, 0);
+  const hayResultados = estadosVisibles.some(estado => pedidosPorEstado[estado].length > 0);
+
+  const avanzarDesdeTarjeta = async (id, estado) => {
+    const pedido = pedidos.find(item => item.id === id);
+    if (pedido && estado === 'Armando Pedido') setPedidoModal(pedido);
+    return cambiarEstado(id, estado);
+  };
 
   return (
     <>
       {pedidoModal && (
         <ModalDetallePedido
-          pedido={pedidosPorBusqueda.find(p => p.id === pedidoModal.id) ?? pedidoModal}
+          pedido={pedidos.find(p => p.id === pedidoModal.id) ?? pedidoModal}
           onClose={() => setPedidoModal(null)}
-          onCambiarEstado={cambiarEstadoYFiltrar}
+          onCambiarEstado={cambiarEstado}
           actualizando={actualizando}
           notificando={notificando}
           onNotificar={notificar}
           onCancelar={cancelarPedido}
           onConfirmarPago={confirmarPagoPedido}
           setPedidos={setPedidos}
-          setFiltroEstado={setFiltroEstado}
         />
       )}
 
       {/* Barra de búsqueda */}
       <div className="relative mb-4">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-admin-muted" />
+        <Search size={16} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-admin-muted" />
         <input
-          type="text"
+          type="search"
+          aria-label={t('admin.orders.searchPlaceholder')}
           value={busquedaInput}
           onChange={e => setBusquedaInput(e.target.value)}
           placeholder={t('admin.orders.searchPlaceholder')}
@@ -68,71 +76,73 @@ export default function PedidosActivos({ busquedaInput, setBusquedaInput, busque
             className="absolute right-3 top-1/2 -translate-y-1/2 text-admin-inactive hover:text-admin-muted"
             aria-label={t('admin.orders.clearSearch')}
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X size={16} aria-hidden="true" />
           </button>
         )}
       </div>
 
-      {/* Mobile: secciones compactas por estado */}
-      <div className="lg:hidden space-y-3 pb-6" aria-live="polite">
-        {ESTADOS_ACTIVOS.map(estado => {
-          const meta = ESTADO_META[estado];
-          const pedidosDelEstado = pedidosPorBusqueda.filter(p => p.estado === estado);
+      <div role="group" aria-label="Filtrar pedidos por estado" className="mb-4 flex flex-wrap gap-2">
+        {['todos', ...ESTADOS_ACTIVOS].map((estado) => {
+          const activo = estadoVisible === estado;
+          const cantidad = estado === 'todos' ? activos : pedidosPorEstado[estado].length;
           return (
-            <section key={estado}>
-              {/* Header con color del estado */}
-              <div
-                className="flex items-center justify-between px-3 py-2 rounded-xl mb-2"
-                style={{ background: meta.bg, border: `1px solid ${meta.color}33` }}
-              >
-                <h3 className="text-xs font-body font-black flex items-center gap-1.5" style={{ color: meta.color }}>
-                  <meta.icon size={13} />
-                  {estadoLabel(estado, t)}
-                </h3>
-                <span
-                  className="text-xs font-body font-black px-2 py-0.5 rounded-full"
-                  style={{ background: meta.color, color: 'white' }}
-                >
-                  {pedidosDelEstado.length}
-                </span>
-              </div>
+            <button
+              type="button"
+              key={estado}
+              onClick={() => setEstadoVisible(estado)}
+              aria-pressed={activo}
+              className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 text-sm font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-500 ${activo
+                ? 'border-violet-600 bg-violet-700 text-white'
+                : 'border-admin-border bg-admin-card text-admin-text hover:bg-admin-elevated'}`}
+            >
+              {estado === 'todos' ? t('common.all') : estadoLabel(estado, t)}
+              <span className={`rounded-md px-1.5 py-0.5 text-xs tabular-nums ${activo ? 'bg-white/20' : 'bg-admin-elevated text-admin-muted'}`}>{cantidad}</span>
+            </button>
+          );
+        })}
+      </div>
 
-              {pedidosDelEstado.length === 0 ? (
-                <p className="text-center text-xs text-admin-muted py-3">{t('common.noOrders')}</p>
-              ) : (
+      {!hayResultados ? (
+        <div className="rounded-2xl border border-dashed border-admin-border bg-admin-card px-5 py-8 text-center" role="status">
+          <p className="font-bold text-admin-text">{t('common.noOrders')}</p>
+          {busquedaInput && <button type="button" className="mt-2 min-h-11 px-3 text-sm font-bold text-admin-text underline" onClick={() => setBusquedaInput('')}>Limpiar búsqueda</button>}
+        </div>
+      ) : (
+        <>
+          <div className="lg:hidden space-y-4 pb-6">
+            {estadosVisibles.filter(estado => pedidosPorEstado[estado].length).map((estado) => (
+              <section key={estado}>
+                <h3 className="mb-2 text-sm font-black text-admin-text">{estadoLabel(estado, t)}</h3>
                 <div className="space-y-2">
-                  {pedidosDelEstado.map(pedido => (
+                  {pedidosPorEstado[estado].map(pedido => (
                     <TarjetaPedidoMobile
                       key={pedido.id}
                       pedido={pedido}
                       actualizando={actualizando}
                       notificando={notificando}
-                      onCambiarEstado={cambiarEstadoYFiltrar}
+                      onCambiarEstado={avanzarDesdeTarjeta}
                       onNotificar={notificar}
-                      onConfirmarPago={confirmarPagoPedido}
                       onTap={() => setPedidoModal(pedido)}
                     />
                   ))}
                 </div>
-              )}
-            </section>
-          );
-        })}
-      </div>
+              </section>
+            ))}
+          </div>
 
-      {/* Desktop Kanban */}
-      <div className="hidden lg:grid grid-cols-3 gap-3 pb-2" style={{ height: 'calc(100dvh - 380px)', minHeight: 200 }}>
-        {ESTADOS_ACTIVOS.map(estado => (
-          <ColumnaKanban
-            key={estado}
-            estado={estado}
-            pedidos={pedidosPorBusqueda.filter(p => p.estado === estado)}
-            onCardClick={setPedidoModal}
-          />
-        ))}
-      </div>
+          <div className={`hidden gap-3 pb-2 lg:grid ${estadosVisibles.length === 1 ? 'grid-cols-1' : 'grid-cols-3'}`}>
+            {estadosVisibles.map(estado => (
+              <ColumnaKanban
+                key={estado}
+                estado={estado}
+                pedidos={pedidosPorEstado[estado]}
+                onCardClick={setPedidoModal}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
     </>
   );
 }

@@ -29,7 +29,6 @@ export default function TarjetaPedidoMobile({
   notificando,
   onCambiarEstado,
   onNotificar,
-  onConfirmarPago,
   onTap,
 }) {
   const { t, lang } = useLanguage();
@@ -45,18 +44,19 @@ export default function TarjetaPedidoMobile({
   const MetodoPagoIcon = pedido.metodo_pago ? (METODOS_ICONO[pedido.metodo_pago] || MoreHorizontal) : null;
 
   return (
-    <div
-      onClick={onTap}
-      role="button"
-      tabIndex={0}
-      onKeyDown={e => e.key === 'Enter' && onTap()}
-      className="w-full text-left bg-admin-card rounded-2xl border border-admin-border overflow-hidden transition-all active:scale-[0.98] shadow-card cursor-pointer"
+    <article
+      className="w-full bg-admin-card rounded-2xl border border-admin-border overflow-hidden shadow-card"
       style={{ opacity: isLoading ? 0.6 : 1 }}
     >
       {/* Banda de color por estado */}
       <div className="h-1 w-full" style={{ background: meta.color }} />
 
-      <div className="p-3 space-y-2.5">
+      <button
+        type="button"
+        onClick={onTap}
+        aria-label={`Abrir pedido ${pedido.folio}`}
+        className="block w-full space-y-2.5 p-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-violet-500"
+      >
         {/* Fila 1: folio + tiempo + estado */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
@@ -88,14 +88,15 @@ export default function TarjetaPedidoMobile({
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
             <span className="font-body font-black text-base" style={{ color: meta.color }}>
-              {SIMBOLO_MONEDA}{Number(pedido.total).toFixed(0)}
+              {SIMBOLO_MONEDA}{Number(pedido.total).toFixed(2)}
             </span>
             <ChevronRight size={14} className="text-admin-muted" />
           </div>
         </div>
 
-        {/* Fila 3: acciones rápidas */}
-        <div className="flex items-center gap-2 pt-0.5" onClick={e => e.stopPropagation()}>
+      </button>
+
+      <div className="flex flex-wrap items-center gap-2 border-t border-admin-border-soft p-3">
 
           {/* Pago — solo en Listo para Entrega */}
           {pedido.estado === 'Listo para Entrega' && (
@@ -110,8 +111,9 @@ export default function TarjetaPedidoMobile({
               </span>
             ) : (
               <button
-                onClick={e => { e.stopPropagation(); onTap(); }}
-                className="flex items-center gap-1 text-[11px] font-body font-bold px-2.5 py-1.5 rounded-lg flex-shrink-0 transition-all active:scale-95"
+                type="button"
+                onClick={onTap}
+                className="flex items-center gap-1 min-h-10 text-xs font-body font-bold px-2.5 py-1.5 rounded-lg flex-shrink-0 transition-all active:scale-95"
                 style={{ background: '#d9770615', color: '#d97706', border: '1px solid #d9770633' }}
               >
                 <AlertCircle size={11} />
@@ -120,13 +122,19 @@ export default function TarjetaPedidoMobile({
             )
           )}
 
+          {pedido.estado === 'Armando Pedido' && (
+            <button type="button" onClick={onTap} className="min-h-10 rounded-lg bg-violet-700 px-3 text-xs font-black text-white">
+              Continuar surtido
+            </button>
+          )}
+
           {/* Notificar */}
           {pedido.estado !== 'Armando Pedido' && (
             <Can permission="pedidos.notify">
               <button
                 onClick={() => !yaNotificado && !notificando && onNotificar(pedido)}
                 disabled={yaNotificado || !!notificando}
-                className="flex items-center gap-1 text-[11px] font-body font-bold px-2.5 py-1.5 rounded-lg flex-shrink-0 transition-all active:scale-95 disabled:opacity-50"
+                className="flex items-center gap-1 min-h-10 text-xs font-body font-bold px-2.5 py-1.5 rounded-lg flex-shrink-0 transition-all active:scale-95 disabled:opacity-50"
                 style={yaNotificado
                   ? { background: '#d1fae5', color: '#6ee7b7' }
                   : { background: 'linear-gradient(135deg, #25D366, #1db954)', color: 'white' }
@@ -148,19 +156,17 @@ export default function TarjetaPedidoMobile({
                 onClick={() => !bloqueadoPorPago && onCambiarEstado(pedido.id, siguiente)}
                 disabled={isLoading || bloqueadoPorPago}
                 title={bloqueadoPorPago ? 'Confirma el pago primero' : undefined}
-                className="ml-auto flex items-center gap-1 text-[11px] font-body font-bold px-2.5 py-1.5 rounded-lg flex-shrink-0 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-white"
-                style={{ background: meta.color }}
+                className="ml-auto flex items-center gap-1 min-h-10 text-xs font-body font-bold px-2.5 py-1.5 rounded-lg flex-shrink-0 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed bg-violet-700 text-white"
               >
                 {isLoading
                   ? <span className="w-2.5 h-2.5 border-[1.5px] border-white/40 border-t-white rounded-full animate-spin" />
                   : <meta.icon size={11} />
                 }
-                {estadoLabel(siguiente, t)}
+                {pedido.estado === 'Por Surtir' ? 'Empezar a surtir' : pedido.tipo_entrega === 'envio' ? 'Marcar como enviado' : 'Registrar entrega'}
               </button>
             </Can>
           )}
-        </div>
       </div>
-    </div>
+    </article>
   );
 }

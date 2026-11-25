@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-const FOCUSABLE = 'button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+const FOCUSABLE = 'button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),summary,[tabindex]:not([tabindex="-1"])';
 
 /**
  * useFocusTrap — traps keyboard focus inside a container (WCAG 2.4.3).
@@ -20,6 +20,8 @@ export function useFocusTrap(ref, active, initialFocus = 'first', onEscape) {
 
     const el = ref.current;
     const previouslyFocused = document.activeElement;
+    const getFocusable = () => [...el.querySelectorAll(FOCUSABLE)]
+      .filter((node) => node.getClientRects().length > 0 && !node.matches(':disabled'));
 
     const focusFrame = requestAnimationFrame(() => {
       if (initialFocus === 'container') {
@@ -27,18 +29,18 @@ export function useFocusTrap(ref, active, initialFocus = 'first', onEscape) {
         return;
       }
 
-      const nodes = el.querySelectorAll(FOCUSABLE);
-      nodes[0]?.focus({ preventScroll: true });
+      (getFocusable()[0] ?? el).focus({ preventScroll: true });
     });
 
     function trap(e) {
       if (e.key === 'Escape' && typeof onEscapeRef.current === 'function') {
+        e.preventDefault();
         e.stopPropagation();
         onEscapeRef.current(e);
         return;
       }
       if (e.key !== 'Tab') return;
-      const nodes = el.querySelectorAll(FOCUSABLE);
+      const nodes = getFocusable();
       if (nodes.length === 0) return;
 
       const first = nodes[0];

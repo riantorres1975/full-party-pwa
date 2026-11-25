@@ -24,6 +24,7 @@ export default function ClientesPage() {
     cambiarEstado,
     cancelarPedido,
     notificar,
+    confirmarPagoPedido,
   } = useAdminData();
   const { clientes, loading, error, refetch: refetchClientes } = useClientes();
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
@@ -146,15 +147,13 @@ export default function ClientesPage() {
         <ModalDetallePedido
           pedido={pedidos.find(p => p.id === pedidoModal.id) ?? pedidoModal}
           onClose={() => setPedidoModal(null)}
-          onCambiarEstado={async (pedidoId, nuevoEstado) => {
-            await cambiarEstado(pedidoId, nuevoEstado);
-          }}
+          onCambiarEstado={cambiarEstado}
           actualizando={actualizando}
           notificando={notificando}
           onNotificar={notificar}
           onCancelar={cancelarPedido}
+          onConfirmarPago={confirmarPagoPedido}
           setPedidos={setPedidos}
-          setFiltroEstado={() => {}}
         />
       )}
 

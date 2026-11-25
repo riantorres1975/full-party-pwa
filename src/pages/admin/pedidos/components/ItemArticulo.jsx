@@ -2,13 +2,15 @@ import { memo, useEffect, useState } from 'react';
 import { SIMBOLO_MONEDA } from '../../../../data/productos';
 import { getProductPlaceholderUrl, getSafeProductImageUrl } from '../../../../utils/imagenes';
 
-function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChange, onResetEstado, onConfirmarYAvanzar, fueEditado, modoGuiado, vistaResumen, guardandoPaso, esDesktop }) {
+function ItemArticulo({ item, modoPicking, encontrado, onCantidadChange, onResetEstado, onConfirmarYAvanzar, fueEditado, modoGuiado, guardandoPaso, esDesktop }) {
   const fallbackImage = getProductPlaceholderUrl(item.nombre, '80x80');
   const imageSrc = getSafeProductImageUrl(item.imagen_url, item.nombre, '80x80');
   const precioSurtido = Number(item.precio_surtido ?? item.precio) || 0;
   const precioAplicado = Number(item.precio) || 0;
   const cantidadPedida = Number(item.cantidad) || 1;
   const cantidadSurtida = Number(item.cantidad_surtida ?? (modoPicking ? 0 : item.cantidad)) || 0;
+  const opciones = [item.gama, item.color, item.medida || item.tamano, item.presentacion].filter(Boolean).join(' · ');
+  const sku = item.sku ? `SKU ${item.sku}` : '';
   const [cantidadParcial, setCantidadParcial] = useState(cantidadPedida);
   const tachado = !modoPicking && cantidadSurtida === 0 && encontrado === false;
 
@@ -23,58 +25,6 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChang
     const esCompleto  = cantidadSurtida === cantidadPedida && cantidadSurtida > 0;
     const esParcial   = !esPendiente && !esNoSurtido && !esCompleto;
 
-    if (vistaResumen) {
-      const subtotalResumen = (precioSurtido * cantidadSurtida).toFixed(2);
-      const estadoTexto = esPendiente ? 'Pendiente' : esNoSurtido ? 'No surtido' : esParcial ? 'Parcial' : '✓ Listo';
-      const estadoStyle = esPendiente
-        ? { background: '#fef3c7', color: '#92400e' }
-        : esNoSurtido
-          ? { background: '#fee2e2', color: '#b91c1c' }
-          : esParcial
-            ? { background: '#fff7ed', color: '#9a3412' }
-            : { background: '#dcfce7', color: '#15803d' };
-
-      return (
-        <div className="flex items-center gap-2 py-1.5 border-b border-admin-border-soft/80 last:border-0">
-          <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-gray-50 border border-gray-100 flex items-center justify-center">
-            <img
-              src={imageSrc}
-              alt={item.nombre}
-              loading="lazy"
-              onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackImage; }}
-              className="w-full h-full object-contain"
-            />
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-body font-bold text-admin-text truncate leading-tight">{item.nombre}</p>
-            <p className="text-[10px] font-body text-admin-muted truncate mt-0.5">
-              {item.tamano ? `${item.tamano} · ` : ''}{cantidadSurtida}/{cantidadPedida} surtido
-            </p>
-          </div>
-
-          <div className="w-[96px] shrink-0 text-right flex flex-col items-end">
-            <span
-              className="inline-flex h-5 items-center text-[10px] font-body font-black px-2 rounded-full uppercase tracking-wide"
-              style={estadoStyle}
-            >
-              {estadoTexto}
-            </span>
-            <p className="text-sm font-body font-black text-admin-text mt-0.5 tabular-nums">{SIMBOLO_MONEDA}{subtotalResumen}</p>
-            {esCompleto && (
-              <button
-                type="button"
-                onClick={() => onCantidadChange(0)}
-                className="text-[10px] font-body font-semibold text-gray-400 mt-0.5 hover:text-gray-500"
-              >
-                Deshacer
-              </button>
-            )}
-          </div>
-        </div>
-      );
-    }
-
     if (modoGuiado && !esDesktop) {
       const esCompletoSeleccionado = cantidadParcial === cantidadPedida;
       const esParcialSeleccionado = cantidadParcial > 0 && cantidadParcial < cantidadPedida;
@@ -85,7 +35,8 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChang
         <div className="rounded-2xl bg-white border border-admin-border-soft shadow-card p-3 mb-1">
           <div className="min-w-0 mb-2">
             <p className="font-body font-black text-base text-admin-text leading-tight line-clamp-2">{item.nombre}</p>
-            {item.tamano && <p className="text-xs font-body text-admin-muted mt-0.5">{item.tamano}</p>}
+            {opciones && <p className="text-sm text-slate-700 mt-1">{opciones}</p>}
+            {sku && <p className="text-xs text-slate-600">{sku}</p>}
           </div>
 
           <div className="rounded-xl bg-gray-50 border border-gray-100 p-2 mb-2 flex items-center justify-center">
@@ -99,8 +50,8 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChang
           </div>
 
           <div className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 mb-2">
-            <p className="text-[11px] font-body font-bold text-amber-700">Debes surtir</p>
-            <p className="text-2xl font-body font-black text-amber-800 leading-none mt-0.5">{cantidadPedida} piezas</p>
+            <p className="text-xs font-body font-bold text-amber-800">Cantidad pedida</p>
+            <p className="text-2xl font-body font-black text-amber-900 leading-none mt-0.5">{cantidadPedida}</p>
           </div>
 
           <div className="rounded-xl border border-admin-border-soft p-2 mb-2">
@@ -109,19 +60,30 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChang
               <button
                 type="button"
                 onClick={() => setCantidadParcial(prev => Math.max(0, prev - 1))}
-                disabled={guardandoPaso}
-                className="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 text-2xl font-black active:scale-95"
+                aria-label="Reducir cantidad surtida"
+                disabled={guardandoPaso || cantidadParcial === 0}
+                className="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 text-2xl font-black active:scale-95 disabled:opacity-40"
               >
-                -
+                −
               </button>
-              <div className="flex-1 text-center">
-                <p className="text-2xl font-body font-black text-admin-text leading-none tabular-nums">{cantidadParcial}</p>
-              </div>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={cantidadPedida}
+                value={cantidadParcial}
+                disabled={guardandoPaso}
+                onFocus={event => event.currentTarget.select()}
+                onChange={event => setCantidadParcial(Math.max(0, Math.min(cantidadPedida, Math.floor(Number(event.target.value)) || 0)))}
+                aria-label={`Cantidad surtida de ${item.nombre}`}
+                className="min-w-0 flex-1 py-1 rounded-lg border border-slate-200 text-center text-xl font-black text-slate-900"
+              />
               <button
                 type="button"
                 onClick={() => setCantidadParcial(prev => Math.min(cantidadPedida, prev + 1))}
-                disabled={guardandoPaso}
-                className="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 text-2xl font-black active:scale-95"
+                aria-label="Aumentar cantidad surtida"
+                disabled={guardandoPaso || cantidadParcial >= cantidadPedida}
+                className="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 text-2xl font-black active:scale-95 disabled:opacity-40"
               >
                 +
               </button>
@@ -200,9 +162,8 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChang
 
           <div className="flex-1 min-w-0">
             <p className="font-body font-bold text-sm text-gray-800 leading-tight truncate">{item.nombre}</p>
-            {item.tamano && (
-              <p className="text-[11px] font-body text-gray-400 leading-none mt-0.5">{item.tamano}</p>
-            )}
+            {opciones && <p className="text-xs text-slate-700 mt-0.5">{opciones}</p>}
+            {sku && <p className="text-xs text-slate-600">{sku}</p>}
           </div>
 
           <span
@@ -223,6 +184,9 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChang
           {cantidadPedida > 1 ? (
             <div className="flex items-center gap-2">
               <button
+                type="button"
+                aria-label={`Reducir cantidad surtida de ${item.nombre}`}
+                disabled={esPendiente || cantidadSurtida === 0}
                 onClick={e => { e.stopPropagation(); onCantidadChange(Math.max(0, cantidadSurtida - 1)); }}
                 className="w-8 h-8 rounded-lg flex items-center justify-center font-bold active:scale-90 transition-all text-lg select-none"
                 style={{ background: '#f3f4f6', color: '#374151' }}
@@ -235,6 +199,8 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChang
                 <span className="text-[10px] font-body text-gray-400 leading-none">de {cantidadPedida}</span>
               </div>
               <button
+                type="button"
+                aria-label={`Aumentar cantidad surtida de ${item.nombre}`}
                 onClick={e => { e.stopPropagation(); onCantidadChange(Math.min(cantidadPedida, cantidadSurtida + 1)); }}
                 disabled={cantidadSurtida >= cantidadPedida}
                 className="w-8 h-8 rounded-lg flex items-center justify-center font-bold active:scale-90 transition-all text-lg disabled:opacity-30 select-none"
@@ -247,14 +213,15 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChang
             </p>
           )}
 
-          <div className="flex items-center gap-1.5">
-            {(esParcial || esCompleto) && (
+          <div className="flex flex-wrap items-center justify-end gap-1.5">
+            {(esPendiente || esParcial || esCompleto) && (
               <button
-                onClick={e => { e.stopPropagation(); onCantidadChange(0); }}
+                type="button"
+                onClick={() => esCompleto ? onResetEstado?.() : onCantidadChange(0)}
                 className="text-[11px] font-body font-bold px-2.5 py-1.5 rounded-lg transition-all active:scale-95"
                 style={{ background: '#f3f4f6', color: '#6b7280' }}
               >
-                {esCompleto ? 'Deshacer' : 'No surtir'}
+                {esCompleto ? 'Marcar pendiente' : 'No surtir'}
               </button>
             )}
             {esNoSurtido && (
@@ -295,7 +262,9 @@ function ItemArticulo({ item, modoPicking, encontrado, onToggle, onCantidadChang
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-body font-bold text-admin-text truncate">{item.nombre}</p>
-        {item.tamano && <p className="text-xs font-body text-admin-muted">{item.tamano}</p>}
+        {opciones && <p className="text-xs font-body text-admin-muted">{opciones}</p>}
+        {sku && <p className="text-xs font-body text-admin-muted">{sku}</p>}
+        <p className="text-xs font-body text-admin-muted">Cantidad {typeof item.cantidad_surtida === 'number' ? cantidadSurtida : cantidadPedida}</p>
       </div>
       <div className="text-sm font-body font-bold shrink-0 text-right">
         <p className={tachado ? 'line-through text-admin-inactive' : 'text-admin-text'}>

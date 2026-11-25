@@ -23,18 +23,23 @@ function esErrorColumnasFechaHistorial(error) {
   return detalle.includes('fecha_envio') || detalle.includes('fecha_cancelado');
 }
 
-async function actualizarPedidoConFallbackHistorial(pedidoId, payloadConFechas, payloadBase) {
-  let respuesta = await guardedQuery((client) =>
-    client.from('pedidos').update(payloadConFechas).eq('id', pedidoId)
-  );
+async function actualizarPedidoConFallbackHistorial(
+  pedidoId,
+  payloadConFechas,
+  payloadBase,
+  { estadoActual, requierePago = false } = {},
+) {
+  const actualizar = (payload) => guardedQuery((client) => {
+    let query = client.from('pedidos').update(payload).eq('id', pedidoId);
+    if (estadoActual) query = query.eq('estado', estadoActual);
+    if (requierePago) query = query.eq('pago_estado', 'confirmado');
+    return query.select('id').maybeSingle();
+  });
 
-  if (respuesta.error && esErrorColumnasFechaHistorial(respuesta.error)) {
-    respuesta = await guardedQuery((client) =>
-      client.from('pedidos').update(payloadBase).eq('id', pedidoId)
-    );
-  }
-
-  return respuesta;
+  const respuesta = await actualizar(payloadConFechas);
+  return respuesta.error && esErrorColumnasFechaHistorial(respuesta.error)
+    ? actualizar(payloadBase)
+    : respuesta;
 }
 
 export { ESTADOS, ESTADOS_CON_CANCELADO };
@@ -90,7 +95,7 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
           icon: '/icons/icon-192.png',
           badge: '/icons/icon-192.png',
           tag: `order-${order.id}`,
-          data: { url: '/admin' },
+          data: { url: order.folio && !isTest ? `/admin/pedidos?q=${encodeURIComponent(order.folio)}` : '/admin/pedidos' },
           vibrate: [200, 120, 200],
         });
         return;
@@ -213,63 +218,64 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
 
   // ── Confirmar pago de un pedido ────────────────────────────────
   const confirmarPagoPedido = useCallback(async (pedidoId, { metodo_pago } = {}) => {
-    const { error: err } = await supabase
-      .from('pedidos')
-      .update({ pago_estado: 'confirmado', metodo_pago: metodo_pago || null, pago_fecha: new Date().toISOString() })
-      .eq('id', pedidoId);
-    if (err) {
+    const pago = { pago_estado: 'confirmado', metodo_pago: metodo_pago || null, pago_fecha: new Date().toISOString() };
+    try {
+      const { data, error: err } = await supabase.from('pedidos').update(pago)
+        .eq('id', pedidoId).eq('estado', 'Listo para Entrega')
+        .or('pago_estado.is.null,pago_estado.neq.confirmado').select('id').maybeSingle();
+      if (err) throw err;
+      if (!data) {
+        await fetchPedidos();
+        toast.error('El pedido cambió desde otra sesión. Revisa el estado del pago.');
+        return false;
+      }
+      setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, ...pago } : p));
+      toast.success('Pago confirmado');
+      return true;
+    } catch (err) {
       toast.error('Error al confirmar pago: ' + err.message);
       return false;
     }
-    setPedidos(prev => prev.map(p =>
-      p.id === pedidoId ? { ...p, pago_estado: 'confirmado', metodo_pago: metodo_pago || p.metodo_pago } : p
-    ));
-    toast.success('Pago confirmado');
-    return true;
-  }, [toast]);
+  }, [toast, fetchPedidos]);
 
   // ── Cambiar estado (solo avance secuencial) ────────────────────
   const cambiarEstado = useCallback(async (pedidoId, nuevoEstado) => {
     const pedido = pedidos.find(p => p.id === pedidoId);
-    if (pedido) {
-      const idxActual = ESTADOS.indexOf(pedido.estado);
-      const idxNuevo  = ESTADOS.indexOf(nuevoEstado);
-      if (idxNuevo !== idxActual + 1) {
-        toast.error('Solo puedes avanzar al siguiente estado');
-        return;
-      }
-      if (nuevoEstado === 'Enviado' && pedido.pago_estado !== 'confirmado') {
-        toast.error('Confirma el pago antes de marcar como Enviado');
-        return;
-      }
+    const idxActual = ESTADOS.indexOf(pedido?.estado);
+    const idxNuevo = ESTADOS.indexOf(nuevoEstado);
+    if (!pedido || idxActual < 0 || idxNuevo !== idxActual + 1) {
+      toast.error('Solo puedes avanzar al siguiente estado.');
+      return false;
     }
+    const requierePago = nuevoEstado === 'Enviado';
+    if (requierePago && pedido.pago_estado !== 'confirmado') {
+      toast.error('Confirma el pago antes de marcar el pedido como entregado.');
+      return false;
+    }
+
     setActualizando(pedidoId);
-    const fechaEnvio = nuevoEstado === 'Enviado' ? new Date().toISOString() : null;
+    const fechaEnvio = requierePago ? new Date().toISOString() : null;
     const payloadBase = { estado: nuevoEstado, notificado_estado: null };
-    const payloadConFechas = fechaEnvio
-      ? { ...payloadBase, fecha_envio: fechaEnvio }
-      : payloadBase;
-
-    const { error: err } = await actualizarPedidoConFallbackHistorial(
-      pedidoId,
-      payloadConFechas,
-      payloadBase
-    );
-
-    if (err) toast.error('Error al actualizar: ' + err.message);
-    else {
-      setPedidos(prev => prev.map(p => {
-        if (p.id !== pedidoId) return p;
-        return {
-          ...p,
-          estado: nuevoEstado,
-          notificado_estado: null,
-          ...(fechaEnvio ? { fecha_envio: fechaEnvio } : {}),
-        };
-      }));
+    const payloadConFechas = fechaEnvio ? { ...payloadBase, fecha_envio: fechaEnvio } : payloadBase;
+    try {
+      const { data, error: err } = await actualizarPedidoConFallbackHistorial(
+        pedidoId, payloadConFechas, payloadBase, { estadoActual: pedido.estado, requierePago },
+      );
+      if (err) throw err;
+      if (!data) {
+        await fetchPedidos();
+        toast.error('El pedido cambió desde otra sesión. Revisa su estado e inténtalo de nuevo.');
+        return false;
+      }
+      setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, ...payloadConFechas } : p));
+      return true;
+    } catch (err) {
+      toast.error('Error al actualizar: ' + err.message);
+      return false;
+    } finally {
+      setActualizando(null);
     }
-    setActualizando(null);
-  }, [toast, pedidos]);
+  }, [toast, pedidos, fetchPedidos]);
 
   // Cancel order
   const cancelarPedido = useCallback(async (pedido) => {
@@ -279,7 +285,7 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
       confirmLabel: 'Sí, cancelar',
       variant: 'danger',
     });
-    if (!ok) return;
+    if (!ok) return false;
 
     setActualizando(pedido.id);
     try {
@@ -296,12 +302,11 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
       } else {
         const payloadBase = { estado: 'Cancelado', notificado_estado: null };
         const payloadConFechas = { ...payloadBase, fecha_cancelado: fechaCancelado };
-        const { error } = await actualizarPedidoConFallbackHistorial(
-          pedido.id,
-          payloadConFechas,
-          payloadBase,
+        const { data, error } = await actualizarPedidoConFallbackHistorial(
+          pedido.id, payloadConFechas, payloadBase, { estadoActual: pedido.estado },
         );
         if (error) throw error;
+        if (!data) throw new Error('El pedido cambió. Actualiza el panel y revisa su estado.');
       }
 
       setPedidos(prev => prev.map(p => p.id === pedido.id
@@ -317,8 +322,10 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
       notificarCliente({ ...pedido, estado: 'Cancelado' });
       await supabase.from('pedidos').update({ notificado_estado: 'Cancelado' }).eq('id', pedido.id);
       setPedidos(prev => prev.map(p => p.id === pedido.id ? { ...p, notificado_estado: 'Cancelado' } : p));
+      return true;
     } catch (error) {
       toast.error('Error al cancelar: ' + error.message);
+      return false;
     } finally {
       setActualizando(null);
     }
@@ -327,7 +334,10 @@ export function usePedidosAdmin({ toast, confirmCancelar }) {
   // ── Notificar ──────────────────────────────────────────────────
   const notificar = useCallback(async (pedido) => {
     setNotificando(pedido.id);
-    notificarCliente(pedido);
+    const surtido = pedido.estado === 'Listo para Entrega' && pedido.detalles_json?.some(
+      (item) => typeof item.cantidad_surtida === 'number',
+    ) ? pedido.detalles_json : null;
+    notificarCliente(pedido, surtido);
     const { error: err } = await supabase
       .from('pedidos').update({ notificado_estado: pedido.estado }).eq('id', pedido.id);
     if (!err) {

@@ -56,15 +56,34 @@ export default function TarjetaPedido({ pedido, onCambiarEstado, actualizando, n
   const pagado = pedido.pago_estado === 'confirmado';
   const necesitaPago = !pagado && pedido.estado === 'Listo para Entrega';
 
+  const siguienteEstado = ESTADOS[ESTADOS.indexOf(pedido.estado) + 1];
+  const avanzarPedido = siguienteEstado && pedido.estado !== 'Armando Pedido' ? (
+    <Can permission="pedidos.edit">
+      <button
+        type="button"
+        onClick={() => onCambiarEstado(pedido.id, siguienteEstado)}
+        disabled={esActualizando || (siguienteEstado === 'Enviado' && !pagado)}
+        className="flex min-h-11 w-full items-center justify-center rounded-xl bg-violet-700 px-4 text-sm font-black text-white hover:bg-violet-800 disabled:cursor-not-allowed disabled:opacity-45"
+      >
+        {esActualizando ? 'Guardando…' : pedido.estado === 'Por Surtir'
+          ? 'Empezar a surtir'
+          : pedido.tipo_entrega === 'envio' ? 'Marcar como enviado' : 'Registrar entrega'}
+      </button>
+    </Can>
+  ) : null;
+
   async function handleConfirmarPago() {
     if (!onConfirmarPago) return;
     setConfirmandoPago(true);
-    await onConfirmarPago(pedido.id, { metodo_pago: metodoPago || null });
-    setConfirmandoPago(false);
+    try {
+      await onConfirmarPago(pedido.id, { metodo_pago: metodoPago || null });
+    } finally {
+      setConfirmandoPago(false);
+    }
   }
 
   function copiarDatosEnvio() {
-    const total = (totalPicking !== null ? totalPicking : Number(pedido.total)).toFixed(2);
+    const total = Number(pedido.total).toFixed(2);
     const texto =
       `📦 Datos de entrega\n` +
       `Cliente: ${pedido.cliente_nombre}\n` +
@@ -106,6 +125,8 @@ export default function TarjetaPedido({ pedido, onCambiarEstado, actualizando, n
           )}
         </div>
       )}
+
+      {pedido.estado === 'Por Surtir' && avanzarPedido && <div className="mb-4">{avanzarPedido}</div>}
 
       {pedido.detalles_json?.length > 0 && (
         <ListaArticulos
@@ -190,34 +211,7 @@ export default function TarjetaPedido({ pedido, onCambiarEstado, actualizando, n
         </button>
       )}
 
-      {!esPickingGuiado && <div className="relative mb-3">
-        {esActualizando && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 rounded-xl bg-admin-card/80">
-            <div className="w-4 h-4 rounded-full border-2 border-ink-200 border-t-ink-600 animate-spin" />
-          </div>
-        )}
-        {(() => {
-          const idxActual = ESTADOS.indexOf(pedido.estado);
-          const siguiente = ESTADOS[idxActual + 1];
-          if (!siguiente || pedido.estado === 'Armando Pedido') return null;
-          const m = ESTADO_META[siguiente];
-          const bloqueadoPorPago = siguiente === 'Enviado' && !pagado;
-          return (
-            <Can permission="pedidos.edit">
-              <button
-                onClick={() => onCambiarEstado(pedido.id, siguiente)}
-                disabled={esActualizando || bloqueadoPorPago}
-                title={bloqueadoPorPago ? 'Confirma el pago antes de enviar' : undefined}
-                className="w-full py-2.5 px-5 rounded-xl text-sm font-body font-bold whitespace-nowrap transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 text-white flex items-center justify-center gap-2"
-                style={m.activeStyle}
-              >
-                <m.icon size={14} strokeWidth={2.5} />
-                <span>{t('admin.orders.moveTo', { status: estadoLabel(siguiente, t) })}</span>
-              </button>
-            </Can>
-          );
-        })()}
-      </div>}
+      {pedido.estado === 'Listo para Entrega' && avanzarPedido && <div className="mb-3">{avanzarPedido}</div>}
 
       {!esPickingGuiado && <div className="flex items-center gap-2">
         {pedido.estado !== 'Cancelado' && (

@@ -74,6 +74,7 @@ export function buildCatalogCartItem({
     lineName: variant.line_name || null,
     colorName: variant.color_name || null,
     sizeName: variant.size_name || null,
+    finishName: variant.finish || null,
     presentationName: presentation.name || 'Presentación',
     presentationType: presentation.presentationType || 'otro',
     sku: presentation.sku || variant.sku || null,
@@ -161,6 +162,17 @@ export function updateCatalogCartQuantity(items, key, quantity) {
     }
     return normalized;
   });
+}
+
+export function groupCatalogCartItems(items) {
+  const groups = new Map();
+  items.forEach((item, index) => {
+    const group = groups.get(item.productId);
+    const line = { item, index };
+    if (group) group.lines.push(line);
+    else groups.set(item.productId, { product: item, lines: [line] });
+  });
+  return [...groups.values()];
 }
 
 export function getCatalogCartTotal(items) {

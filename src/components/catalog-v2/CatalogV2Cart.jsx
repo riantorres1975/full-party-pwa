@@ -8,18 +8,21 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { SUCURSALES } from '../../data/sucursales.js';
 import { CATALOG_ERROR_TYPES } from '../../services/catalog/errors.js';
 import { useFocusTrap } from '../../hooks/useFocusTrap.js';
 import { createOrder } from '../../services/catalog/ordersRepository.js';
-import { getCatalogCartFingerprint } from '../../services/catalog/cart.js';
+import { getCatalogCartFingerprint, groupCatalogCartItems } from '../../services/catalog/cart.js';
+import { getMaximumPurchasableQuantity } from '../../services/catalog/variantSelection.js';
 import { validarTelefonoMX } from '../../utils/validarTelefono.js';
 import { generarMensajeWhatsAppCatalogoV2 } from '../../utils/whatsapp.js';
 import { getInlineProductPlaceholder } from '../../utils/imagenes.js';
 
 const CHECKOUT_STORAGE_KEY = 'fullPartyCatalogCheckoutV2';
 const ORDER_ATTEMPT_STORAGE_KEY = 'fullPartyCatalogOrderAttemptV2';
+const LAST_ORDER_FOLIO_KEY = 'fullPartyLastOrderFolio';
 const DEFAULT_PICKUP_ID = 'sol-naciente';
 
 function money(value) {
@@ -48,6 +51,30 @@ function readCheckoutDraft() {
       pickupId: DEFAULT_PICKUP_ID,
     };
   }
+}
+
+function readLastOrderFolio() {
+  try {
+    return window.sessionStorage.getItem(LAST_ORDER_FOLIO_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+function saveLastOrderFolio(folio) {
+  try {
+    window.sessionStorage.setItem(LAST_ORDER_FOLIO_KEY, folio);
+  } catch {
+    // The receipt stays available until the page is closed.
+  }
+}
+
+function OrderTrackingLink({ folio, children }) {
+  return (
+    <Link to={`/rastrear/${encodeURIComponent(folio)}`} className="catalog-v2-cart__tracking">
+      {children}
+    </Link>
+  );
 }
 
 function generateUuid() {
@@ -126,9 +153,12 @@ function CartLine({ item, issue, onQuantity, onRemove }) {
     Number(item.presentation.minimumOrderQuantity) || 1,
   );
   const fallback = getInlineProductPlaceholder(item.productName);
+  const maximum = getMaximumPurchasableQuantity(item.presentation, item.presentation.availableQuantity);
+  const options = [item.lineName, item.colorName, item.sizeName, item.finishName].filter(Boolean);
+  const lineLabel = [item.productName, ...options, item.presentationName].filter(Boolean).join(', ');
 
   return (
-    <article className={`catalog-v2-cart__line ${issue ? 'has-issue' : ''}`}>
+    <li className={`catalog-v2-cart__line ${issue ? 'has-issue' : ''}`}>
       <img
         src={item.imageUrl || fallback}
         alt=""
@@ -141,14 +171,8 @@ function CartLine({ item, issue, onQuantity, onRemove }) {
       />
       <div className="catalog-v2-cart__line-body">
         <div>
-          <span>{item.brandName || 'Full Party'}</span>
-          <h3>{item.productName}</h3>
-          <p>
-            {[item.lineName, item.colorName, item.sizeName]
-              .filter(Boolean)
-              .join(' · ')}
-          </p>
-          <small>{item.presentationName}</small>
+          <p className="catalog-v2-cart__presentation">{item.presentationName}</p>
+          {options.length > 0 && <p className="catalog-v2-cart__variant">{options.join(' · ')}</p>}
         </div>
         <div className="catalog-v2-cart__line-price">
           <strong>{money(item.unitPrice)} c/u</strong>
@@ -163,19 +187,18 @@ function CartLine({ item, issue, onQuantity, onRemove }) {
           <div className="catalog-v2-quantity">
             <button
               type="button"
-              onClick={() => onQuantity(
-                item.key,
-                item.quantity <= minimum ? 0 : item.quantity - step,
-              )}
-              aria-label={`Reducir ${item.productName}`}
+              disabled={item.quantity <= minimum}
+              onClick={() => onQuantity(item.key, item.quantity - step)}
+              aria-label={`Reducir ${lineLabel}`}
             >
               <Minus size={15} />
             </button>
             <strong>{item.quantity}</strong>
             <button
               type="button"
+              disabled={maximum != null && item.quantity + step > maximum}
               onClick={() => onQuantity(item.key, item.quantity + step)}
-              aria-label={`Aumentar ${item.productName}`}
+              aria-label={`Aumentar ${lineLabel}`}
             >
               <Plus size={15} />
             </button>
@@ -185,7 +208,7 @@ function CartLine({ item, issue, onQuantity, onRemove }) {
             type="button"
             className="catalog-v2-cart__remove"
             onClick={() => onRemove(item.key)}
-            aria-label={`Eliminar ${item.productName}`}
+            aria-label={`Eliminar ${lineLabel}`}
           >
             <Trash2 size={16} />
           </button>
@@ -197,7 +220,7 @@ function CartLine({ item, issue, onQuantity, onRemove }) {
           </p>
         )}
       </div>
-    </article>
+    </li>
   );
 }
 
@@ -211,6 +234,7 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [completed, setCompleted] = useState(null);
+  const [lastOrderFolio, setLastOrderFolio] = useState(readLastOrderFolio);
   const closeCart = () => {
     if (!submitting) onClose();
   };
@@ -241,7 +265,7 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
   useEffect(() => {
     if (!open) return;
     scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' });
-    if (step === 'delivery' || completed) stepTitleRef.current?.focus({ preventScroll: true });
+    stepTitleRef.current?.focus({ preventScroll: true });
   }, [open, step, completed]);
 
   const issuesByLine = useMemo(
@@ -251,6 +275,8 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
     ])),
     [cart.validation],
   );
+
+  const groups = useMemo(() => groupCatalogCartItems(cart.items), [cart.items]);
 
   if (!open) return null;
 
@@ -271,13 +297,6 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
     if (!navigator.onLine) {
       setSubmitError('Necesitas conexión para confirmar precios y existencia.');
       return;
-    }
-
-    const whatsappWindow = window.open('about:blank', '_blank');
-    if (whatsappWindow) {
-      whatsappWindow.opener = null;
-      whatsappWindow.document.title = 'Preparando tu pedido';
-      whatsappWindow.document.body.textContent = 'Confirmando precio y existencia...';
     }
 
     setSubmitting(true);
@@ -313,6 +332,8 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
           }
         }
       }
+      if (!order?.folio) throw new Error('No pudimos confirmar el folio. Inténtalo de nuevo.');
+
       const whatsappUrl = generarMensajeWhatsAppCatalogoV2(
         validated.lines,
         order.total,
@@ -326,6 +347,8 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
         },
       );
 
+      saveLastOrderFolio(order.folio);
+      setLastOrderFolio(order.folio);
       clearOrderAttempt();
       cart.clear();
       setCompleted({
@@ -333,12 +356,7 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
         total: order.total,
         whatsappUrl,
       });
-
-      if (whatsappWindow && !whatsappWindow.closed) {
-        whatsappWindow.location.replace(whatsappUrl);
-      }
     } catch (error) {
-      if (whatsappWindow && !whatsappWindow.closed) whatsappWindow.close();
       if (error.type === CATALOG_ERROR_TYPES.OUT_OF_STOCK) {
         setSubmitError(form.tipoEntrega === 'tienda'
           ? 'No hay suficiente existencia para todo el pedido en esa sucursal. Elige otra o ajusta las cantidades.'
@@ -358,6 +376,7 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
         className="catalog-v2-cart__backdrop"
         onClick={closeCart}
         aria-label="Cerrar pedido"
+        tabIndex={-1}
       />
       <section ref={panelRef} className="catalog-v2-cart__panel" tabIndex="-1">
         <header className="catalog-v2-cart__header">
@@ -379,12 +398,12 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
             <h2 ref={stepTitleRef} tabIndex={-1}>{completed.folio}</h2>
             <strong>{money(completed.total)}</strong>
             <p>
-              Ya reservamos la existencia. Envía el mensaje para que la sucursal
-              confirme y prepare tu pedido.
+              Guarda tu folio. Si quieres avisar a la sucursal, abre WhatsApp y envía el mensaje preparado.
             </p>
-            <a href={completed.whatsappUrl} target="_blank" rel="noopener noreferrer">
+            <a className="catalog-v2-cart__whatsapp" href={completed.whatsappUrl} target="_blank" rel="noopener noreferrer">
               Abrir WhatsApp
             </a>
+            <OrderTrackingLink folio={completed.folio}>Ver estado del pedido</OrderTrackingLink>
             <button type="button" onClick={closeCart}>Seguir comprando</button>
           </div>
         ) : cart.items.length === 0 ? (
@@ -393,6 +412,7 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
             <h2>Tu pedido está vacío</h2>
             <p>Agrega algún producto del catálogo para empezar.</p>
             <button type="button" onClick={closeCart}>Explorar productos</button>
+            {lastOrderFolio && <OrderTrackingLink folio={lastOrderFolio}>Ver mi último pedido</OrderTrackingLink>}
           </div>
         ) : (
           <form onSubmit={submitOrder}>
@@ -409,16 +429,23 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
                 <section className="catalog-v2-cart__items" aria-labelledby="catalog-cart-review-title">
                   <div className="catalog-v2-cart__step-heading">
                     <p>Paso 1 de 2</p>
-                    <h2 id="catalog-cart-review-title">Revisa tus productos</h2>
+                    <h2 ref={stepTitleRef} id="catalog-cart-review-title" tabIndex={-1}>Revisa tus productos</h2>
                   </div>
-                  {cart.items.map((item, index) => (
-                    <CartLine
-                      key={item.key}
-                      item={item}
-                      issue={issuesByLine.get(index)}
-                      onQuantity={cart.setQuantity}
-                      onRemove={cart.removeItem}
-                    />
+                  {groups.map(({ product, lines }) => (
+                    <section key={product.productId} className="catalog-v2-cart__group" aria-label={product.productName}>
+                      <h3>{product.productName}</h3>
+                      <ul>
+                        {lines.map(({ item, index }) => (
+                          <CartLine
+                            key={item.key}
+                            item={item}
+                            issue={issuesByLine.get(index)}
+                            onQuantity={cart.setQuantity}
+                            onRemove={cart.removeItem}
+                          />
+                        ))}
+                      </ul>
+                    </section>
                   ))}
                 </section>
               ) : (
@@ -539,7 +566,7 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
                 <>
                   <small>Revisaremos el precio y la existencia antes de registrar tu pedido.</small>
                   <button type="submit" className="catalog-v2-primary-button" disabled={submitting || cart.validating}>
-                    {submitting || cart.validating ? 'Registrando…' : 'Registrar y abrir WhatsApp'}
+                    {submitting || cart.validating ? 'Registrando…' : 'Registrar pedido'}
                   </button>
                   <button type="button" className="catalog-v2-cart__back-link" disabled={submitting} onClick={() => {
                     setSubmitError('');

@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { ChevronDown, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import { SIMBOLO_MONEDA } from '../../../../data/productos';
-import { notificarCliente } from '../../../../utils/whatsapp';
 import { obtenerPrecioAplicable } from '../../../../utils/precios';
 import { useToast } from '../../../../components/ui/ToastProvider';
 import { useLanguage } from '../../../../hooks/useLanguage';
@@ -20,19 +19,29 @@ export default function ListaArticulos({ items, meta, estadoPedido, pedido, onPi
   const [abierto, setAbierto] = useState(estadoPedido === 'Armando Pedido');
   const [articulosSurtidos, setArticulosSurtidos] = useState(() => normalizarArticulos(items, modoPicking));
   const [guardando, setGuardando] = useState(false);
+  const guardandoRef = useRef(false);
   const [itemsEditados, setItemsEditados] = useState({});
   const [indiceActivo, setIndiceActivo] = useState(0);
   const [mostrarTodos, setMostrarTodos] = useState(false);
   const [feedbackGuardado, setFeedbackGuardado] = useState(false);
   const timerAutoAvanceRef = useRef(null);
+  const surtidoBaseRef = useRef(null);
 
   useEffect(() => {
+    const surtidoBase = JSON.stringify([pedido?.id, estadoPedido, items]);
+    if (surtidoBaseRef.current === surtidoBase) return;
+    surtidoBaseRef.current = surtidoBase;
+    if (timerAutoAvanceRef.current) {
+      window.clearTimeout(timerAutoAvanceRef.current);
+      timerAutoAvanceRef.current = null;
+    }
+    if (modoPicking) setAbierto(true);
     setArticulosSurtidos(normalizarArticulos(items, modoPicking));
     setItemsEditados({});
     setIndiceActivo(0);
     setMostrarTodos(false);
     setFeedbackGuardado(false);
-  }, [items, modoPicking, pedido?.id, pedido?.updated_at, pedido?.estado]);
+  }, [items, modoPicking, pedido?.id, estadoPedido]);
 
   useEffect(() => {
     return () => {
@@ -44,7 +53,7 @@ export default function ListaArticulos({ items, meta, estadoPedido, pedido, onPi
 
   const { nuevoTotal, totalOriginal, hayFaltantes, todosEncontrados, totalUnidades, surtidoUnidades, surtidosCount } = useMemo(() => {
     const totalNuevo = articulosSurtidos.reduce((s, a) => s + (Number(a.precio_surtido ?? a.precio) || 0) * (Number(a.cantidad_surtida) || 0), 0);
-    const totalBase = items.reduce((s, a) => s + a.precio * a.cantidad, 0);
+    const totalBase = items.reduce((s, a) => s + (Number(a.precio_original ?? a.precio) || 0) * Number(a.cantidad), 0);
     const faltantes = articulosSurtidos.some(a => (Number(a.cantidad_surtida) || 0) < Number(a.cantidad));
     const completos = articulosSurtidos.every(a => (Number(a.cantidad_surtida) || 0) === Number(a.cantidad));
     const unidadesTotales = items.reduce((s, a) => s + Number(a.cantidad), 0);
@@ -68,7 +77,7 @@ export default function ListaArticulos({ items, meta, estadoPedido, pedido, onPi
   const clampCantidad = useCallback((cantidad, maximo) => {
     const numero = Number(cantidad);
     if (!Number.isFinite(numero)) return 0;
-    return Math.min(Math.max(0, numero), Math.max(0, Number(maximo) || 0));
+    return Math.min(Math.max(0, Math.floor(numero)), Math.max(0, Number(maximo) || 0));
   }, []);
 
   const cambiarCantidadSurtida = useCallback((idx, nuevaCantidad) => {
@@ -97,14 +106,17 @@ export default function ListaArticulos({ items, meta, estadoPedido, pedido, onPi
   }, [clampCantidad]);
 
   const resetearEstadoItem = useCallback((idx) => {
+    cambiarCantidadSurtida(idx, 0);
     setItemsEditados(prev => {
       const siguiente = { ...prev };
       delete siguiente[idx];
       return siguiente;
     });
-  }, []);
+  }, [cambiarCantidadSurtida]);
 
   async function pasarAListo() {
+    if (guardandoRef.current || pendientesCount > 0 || surtidoUnidades === 0) return;
+    guardandoRef.current = true;
     setGuardando(true);
     try {
       const esPedidoV2 = articulosSurtidos.length > 0
@@ -126,36 +138,31 @@ export default function ListaArticulos({ items, meta, estadoPedido, pedido, onPi
       } else {
         detallesFinales = articulosSurtidos.map((item) => ({
           ...item,
+          precio_original: Number(item.precio_original ?? item.precio) || 0,
           precio: Number(item.precio_surtido ?? item.precio) || 0,
         }));
-        const { error } = await supabase.from('pedidos').update({
+        const { data, error } = await supabase.from('pedidos').update({
           estado: 'Listo para Entrega',
           total: totalFinal,
           detalles_json: detallesFinales,
           notificado_estado: null,
-        }).eq('id', pedido.id);
+        }).eq('id', pedido.id).eq('estado', estadoPedido).select('id').maybeSingle();
         if (error) throw error;
+        if (!data) throw new Error('El pedido cambió en otra sesión. Revisa su estado.');
       }
 
-      const pedidoListo = {
+      onPickingListo?.({
         ...pedido,
         estado: 'Listo para Entrega',
         total: totalFinal,
         detalles_json: detallesFinales,
-      };
-      notificarCliente(pedidoListo, detallesFinales);
-      await supabase
-        .from('pedidos')
-        .update({ notificado_estado: 'Listo para Entrega' })
-        .eq('id', pedido.id);
-
-      onPickingListo?.({
-        ...pedidoListo,
-        notificado_estado: 'Listo para Entrega',
+        notificado_estado: null,
       });
+      toast.success('Pedido listo para entrega.');
     } catch (error) {
       toast.error(`Error: ${error.message}`);
     } finally {
+      guardandoRef.current = false;
       setGuardando(false);
     }
   }
@@ -239,18 +246,16 @@ export default function ListaArticulos({ items, meta, estadoPedido, pedido, onPi
         item={item}
         modoPicking={modoPicking}
         encontrado={item.encontrado}
-        onToggle={() => {}}
         onCantidadChange={(nuevaCantidad) => cambiarCantidadSurtida(idx, nuevaCantidad)}
         onResetEstado={() => resetearEstadoItem(idx)}
         onConfirmarYAvanzar={(cantidadConfirmada) => confirmarYAvanzar(idx, cantidadConfirmada)}
         fueEditado={Boolean(itemsEditados[idx])}
         modoGuiado={modoGuiadoMobile && !mostrarTodos}
-        vistaResumen={modoGuiadoMobile && mostrarTodos}
         guardandoPaso={feedbackGuardado}
         esDesktop={esDesktop}
       />
     );
-  }, [cambiarCantidadSurtida, confirmarYAvanzar, esDesktop, feedbackGuardado, itemsEditados, modoGuiadoMobile, mostrarTodos, resetearEstadoItem]);
+  }, [cambiarCantidadSurtida, confirmarYAvanzar, esDesktop, feedbackGuardado, itemsEditados, modoGuiadoMobile, modoPicking, mostrarTodos, resetearEstadoItem]);
 
   const itemActivo = articulosSurtidos[indiceActivo] || null;
   const procesadosCount = items.length - pendientesCount;
@@ -262,6 +267,8 @@ export default function ListaArticulos({ items, meta, estadoPedido, pedido, onPi
 
       {/* Header acordeón */}
       <button
+        type="button"
+        aria-expanded={abierto}
         onClick={() => setAbierto(v => !v)}
         className="w-full flex items-center justify-between px-4 py-3 transition-colors duration-150"
         style={{ background: meta.bg }}
@@ -321,7 +328,7 @@ export default function ListaArticulos({ items, meta, estadoPedido, pedido, onPi
 
                 {feedbackGuardado && (
                   <div className="mb-1.5 rounded-lg border border-green-200 bg-green-50 px-2 py-1 text-center">
-                    <span className="text-xs font-body font-black text-green-700">✓ Guardado</span>
+                    <span className="text-xs font-body font-black text-green-700">✓ Cantidad revisada</span>
                   </div>
                 )}
 
@@ -329,8 +336,8 @@ export default function ListaArticulos({ items, meta, estadoPedido, pedido, onPi
                   renderItem(itemActivo, indiceActivo)
                 ) : (
                   <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-5 mb-2">
-                    <p className="text-sm font-body font-black text-green-700">Todo surtido correctamente</p>
-                    <p className="text-xs font-body text-green-700/90 mt-1">Ya no hay productos pendientes por surtir.</p>
+                    <p className="text-sm font-body font-black text-green-700">Revisión completa</p>
+                    <p className="text-xs font-body text-green-700/90 mt-1">Ya revisaste todos los artículos. Guarda el surtido cuando esté listo.</p>
                   </div>
                 )}
               </div>
@@ -338,10 +345,7 @@ export default function ListaArticulos({ items, meta, estadoPedido, pedido, onPi
               <div>
                 {modoGuiadoMobile && (
                   <div className="flex items-center justify-between mb-1.5 rounded-lg px-2 py-1.5" style={{ background: '#f8fafc', border: '1px solid #e5e7eb' }}>
-                    <div className="min-w-0 pr-2">
-                      <p className="text-[11px] font-body font-black text-gray-700">Vista general del pedido</p>
-                      <p className="text-[10px] font-body text-gray-500">Resumen compacto</p>
-                    </div>
+                    <p className="min-w-0 pr-2 text-[11px] font-body font-black text-gray-700">Todos los artículos</p>
                     <button
                       type="button"
                       onClick={() => setMostrarTodos(false)}
@@ -364,7 +368,7 @@ export default function ListaArticulos({ items, meta, estadoPedido, pedido, onPi
               style={{ background: '#f9fafb', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
             >
               {/* Totales */}
-              <div className="px-4 py-3 space-y-1.5">
+              {(!modoPicking || pendientesCount === 0) && <div className="px-4 py-3 space-y-1.5">
                 {hayFaltantes && (
                   <div className="flex justify-between items-center text-xs font-body">
                     <span className="text-gray-400 font-bold">{t('admin.orders.originalTotal')}</span>
@@ -385,10 +389,10 @@ export default function ListaArticulos({ items, meta, estadoPedido, pedido, onPi
                     {SIMBOLO_MONEDA}{nuevoTotal.toFixed(2)}
                   </span>
                 </div>
-              </div>
+              </div>}
 
               {/* Aviso faltantes */}
-              {hayFaltantes && modoPicking && mostrarResumenDurantePicking && (
+              {hayFaltantes && modoPicking && pendientesCount === 0 && (
                 <div className="flex items-center gap-2 px-4 py-2 border-t border-orange-100" style={{ background: '#fff7ed' }}>
                   <span className="text-orange-400 flex-shrink-0 text-sm" aria-hidden="true">⚠</span>
                   <p className="text-[11px] font-body text-orange-700 leading-snug">
@@ -403,17 +407,20 @@ export default function ListaArticulos({ items, meta, estadoPedido, pedido, onPi
               {modoPicking && (
                 <Can permission="pedidos.picking">
                   <div className="p-2.5 pt-2">
+                    {pendientesCount > 0 && <p className="mb-2 text-sm font-bold text-gray-700">Revisa los artículos pendientes antes de guardar.</p>}
+                    {pendientesCount === 0 && surtidoUnidades === 0 && <p className="mb-2 text-sm font-bold text-gray-700">Agrega al menos un artículo surtido para pasar a listo.</p>}
                     <button
+                      type="button"
                       onClick={pasarAListo}
-                      disabled={guardando || nuevoTotal === 0}
+                      disabled={guardando || pendientesCount > 0 || surtidoUnidades === 0}
                       className="w-full py-3 rounded-xl font-body font-black text-white text-sm
                                  flex items-center justify-center gap-2
                                  transition-all duration-200 active:scale-[0.98] disabled:opacity-40"
                       style={{
-                        background: nuevoTotal === 0
+                        background: pendientesCount > 0 || surtidoUnidades === 0
                           ? '#d1d5db'
                           : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-                        boxShadow: nuevoTotal === 0
+                        boxShadow: pendientesCount > 0 || surtidoUnidades === 0
                           ? 'none'
                           : '0 3px 10px rgba(34,197,94,0.28)',
                       }}

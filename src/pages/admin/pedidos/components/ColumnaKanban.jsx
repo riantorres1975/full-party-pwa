@@ -6,8 +6,7 @@ export default function ColumnaKanban({ estado, pedidos, onCardClick }) {
   const { t, lang } = useLanguage();
   const meta = ESTADO_META[estado] ?? ESTADO_META['Por Surtir'];
   return (
-    <div className="min-w-0 flex flex-col border border-admin-border rounded-lg overflow-hidden"
-         style={{ minHeight: 220, maxHeight: 'calc(100dvh - 380px)' }}>
+    <section className="min-w-0 flex flex-col border border-admin-border rounded-xl overflow-hidden min-h-56 max-h-[calc(100dvh-270px)]">
       <div className="flex items-center justify-between px-4 py-3" style={{ background: meta.color }}>
         <h3 className="text-sm font-body font-black text-white flex items-center gap-2">
           <meta.icon size={16} /> {estadoLabel(estado, t)}
@@ -25,13 +24,15 @@ export default function ColumnaKanban({ estado, pedidos, onCardClick }) {
           pedidos.map(pedido => (
             <button
               key={pedido.id}
+              type="button"
+              aria-label={`Abrir pedido ${pedido.folio}`}
               onClick={() => onCardClick(pedido)}
               className="w-full text-left p-3 rounded-lg bg-admin-card border border-admin-border hover:bg-admin-elevated hover:border-admin-border-soft transition-all cursor-pointer"
             >
               <div className="flex items-start justify-between gap-2 mb-1">
                 <p className="font-body font-bold text-sm text-admin-text">{pedido.folio}</p>
                 <span className="text-xs font-body px-1.5 py-0.5 rounded-full" style={{ background: meta.color, color: 'white' }}>
-                  {t('common.total')}: ${Number(pedido.total).toFixed(0)}
+                  {t('common.total')}: ${Number(pedido.total).toFixed(2)}
                 </span>
               </div>
               <p className="text-xs font-body text-admin-muted truncate">{pedido.cliente_nombre}</p>
@@ -41,6 +42,6 @@ export default function ColumnaKanban({ estado, pedidos, onCardClick }) {
           ))
         )}
       </div>
-    </div>
+    </section>
   );
 }

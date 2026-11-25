@@ -274,15 +274,12 @@ export default function PedidosHistorial() {
         <ModalDetallePedido
           pedido={filtered.find(p => p.id === pedidoModal.id) ?? pedidoModal}
           onClose={() => setPedidoModal(null)}
-          onCambiarEstado={async (pedidoId, nuevoEstado) => {
-            await cambiarEstado(pedidoId, nuevoEstado);
-          }}
+          onCambiarEstado={cambiarEstado}
           actualizando={actualizando}
           notificando={notificando}
           onNotificar={notificar}
           onCancelar={cancelarPedido}
           setPedidos={setPedidos}
-          setFiltroEstado={() => {}}
         />
       )}
 
