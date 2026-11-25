@@ -121,6 +121,12 @@ export default function InventarioPage() {
     return { results, counts };
   }, [searchIndex, deferredSearch, filtro, sucursal]);
 
+  useEffect(() => {
+    if (productoEditar || triggerRef.current?.isConnected !== false) return;
+    triggerRef.current = null;
+    if (document.activeElement === document.body) searchRef.current?.focus({ preventScroll: true });
+  }, [productoEditar, results]);
+
   const changeFilter = (key, value) => {
     setParams(current => {
       const next = new URLSearchParams(current);
@@ -147,9 +153,6 @@ export default function InventarioPage() {
 
   const closeEditor = () => {
     setProductoEditar(null);
-    requestAnimationFrame(() => {
-      if (!triggerRef.current?.isConnected) searchRef.current?.focus({ preventScroll: true });
-    });
   };
 
   return (

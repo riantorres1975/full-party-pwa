@@ -45,7 +45,7 @@ const ADMIN_PRODUCT_SELECT = `
 `;
 
 export async function listAdminProducts(
-  { offset = 0, limit = 18, search = '' } = {},
+  { offset = 0, limit = 18, search = '', active, categoryId } = {},
   { client = defaultClient, signal } = {},
 ) {
   const safeOffset = Math.max(0, Number(offset) || 0);
@@ -59,17 +59,21 @@ export async function listAdminProducts(
     .select(ADMIN_PRODUCT_SELECT, { count: 'exact' })
     .order('updated_at', { ascending: false })
     .order('name', { ascending: true })
+    .order('id', { ascending: true })
     .range(safeOffset, safeOffset + safeLimit - 1);
   if (safeSearch) {
     query = query.or(`name.ilike.%${safeSearch}%,slug.ilike.%${safeSearch}%`);
   }
+  if (typeof active === 'boolean') query = query.eq('active', active);
+  if (categoryId) query = query.eq('category_id', categoryId);
   if (signal && typeof query.abortSignal === 'function') query = query.abortSignal(signal);
 
   const { data, error, count } = await query;
   if (error) throw classifyCatalogError(error, 'No se pudieron cargar los productos V2.');
+  const products = (Array.isArray(data) ? data : []).map(adaptAdminProduct);
   return {
-    products: (Array.isArray(data) ? data : []).map(adaptAdminProduct),
-    total: count ?? 0,
+    products,
+    total: count ?? (safeOffset + products.length),
     offset: safeOffset,
     limit: safeLimit,
   };

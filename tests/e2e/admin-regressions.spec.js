@@ -32,7 +32,7 @@ test.describe('authenticated admin V2 regressions', () => {
     await expect(main.getByRole('heading', { name: 'Productos a la venta' })).toBeVisible();
     await expect(main).toBeVisible();
 
-    const firstEditorButton = main.getByRole('button', { name: 'Editar producto' }).first();
+    const firstEditorButton = main.getByRole('button', { name: /Editar producto|Continuar borrador/ }).first();
     await expect(firstEditorButton).toBeVisible();
     await firstEditorButton.click();
     const productEditor = page.getByRole('dialog').filter({ has: page.getByRole('button', { name: 'Cerrar editor' }) });

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Boxes,
   CheckCircle2,
@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import {
   createAdminProductDraft,
-  getAdminProductReadiness,
   PRODUCT_GROUP_MODES,
   validateAdminProductPayload,
 } from '../../../services/catalog/adminProductModel.js';
@@ -23,6 +22,9 @@ import {
   VariantsStep,
 } from './ProductCommercialSections.jsx';
 import ProductBulkTools from './ProductBulkTools.jsx';
+import ConfirmModal from '../../ui/ConfirmModal';
+import { useConfirm } from '../../../hooks/useConfirm';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 const STEPS = [
   { id: 'general', label: 'Datos del producto', icon: PackageOpen },
@@ -64,6 +66,7 @@ function RelationSelect({ label, value, options, error, required, onChange }) {
 
 export default function ProductEditorDrawer({
   product,
+  initialStep = 'general',
   lookups,
   saving,
   canEdit,
@@ -73,11 +76,32 @@ export default function ProductEditorDrawer({
   onBulkApply,
   onClose,
 }) {
-  const [step, setStep] = useState('general');
+  const [step, setStep] = useState(initialStep);
   const [draft, setDraft] = useState(() => buildDraft(product));
   const [errors, setErrors] = useState({});
   const [slugTouched, setSlugTouched] = useState(Boolean(product?.slug));
-  const readiness = getAdminProductReadiness(product);
+  const panelRef = useRef(null);
+  const confirmingRef = useRef(false);
+  const { isOpen, config, confirm, onConfirm, onCancel } = useConfirm();
+  const dirty = canEdit && JSON.stringify(draft) !== JSON.stringify(buildDraft(product));
+
+  const close = async () => {
+    if (saving || confirmingRef.current) return;
+    if (dirty) {
+      confirmingRef.current = true;
+      const accepted = await confirm({
+        title: 'Descartar cambios del producto',
+        message: 'Se perderán los cambios de la ficha que todavía no guardaste.',
+        confirmLabel: 'Descartar cambios',
+        variant: 'warning',
+      });
+      confirmingRef.current = false;
+      if (!accepted) return;
+    }
+    onClose();
+  };
+
+  useFocusTrap(panelRef, true, 'first', close);
 
   useEffect(() => {
     setDraft(buildDraft(product));
@@ -103,31 +127,27 @@ export default function ProductEditorDrawer({
       return;
     }
     const saved = await onSave(result.payload, product?.id ?? null);
-    if (saved && !product) setStep('variants');
+    if (saved) {
+      setDraft(buildDraft(saved));
+      if (!product) setStep('variants');
+    }
   };
 
   const inputClass = 'w-full rounded-xl border border-admin-border bg-admin-input px-3 py-2.5 text-sm text-admin-text outline-none focus:border-fiesta-magenta';
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-[#120720]/55 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-labelledby="product-editor-title">
-      <div className="flex h-full w-full max-w-4xl flex-col border-l border-admin-border bg-admin-card shadow-2xl">
+    <>
+    <div className="fixed inset-0 z-50 flex justify-end bg-[#120720]/55 backdrop-blur-[2px]">
+      <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="product-editor-title" className="flex h-full w-full max-w-4xl flex-col border-l border-admin-border bg-admin-card shadow-2xl">
         <header className="border-b border-admin-border px-5 py-4 sm:px-7">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-fiesta-magenta">Editor de producto</p>
-              <h2 id="product-editor-title" className="mt-1 truncate text-xl font-black text-admin-text">
+              <h2 id="product-editor-title" className="break-words text-xl font-black text-admin-text">
                 {product?.name || 'Nuevo producto con opciones'}
               </h2>
-              {product && (
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="h-1.5 w-28 overflow-hidden rounded-full bg-admin-elevated">
-                    <div className="h-full rounded-full bg-gradient-to-r from-pink-500 to-violet-600" style={{ width: `${readiness.percent}%` }} />
-                  </div>
-                  <span className="text-[10px] font-bold text-admin-muted">{readiness.percent}% listo</span>
-                </div>
-              )}
+              {product && <p className="mt-1 text-sm font-bold text-admin-muted">{product.active ? 'Publicado' : 'Borrador'}</p>}
             </div>
-            <button type="button" onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-xl text-admin-muted hover:bg-admin-elevated" aria-label="Cerrar editor">
+            <button type="button" onClick={close} disabled={saving} className="flex size-10 shrink-0 items-center justify-center rounded-xl text-admin-muted hover:bg-admin-elevated disabled:opacity-50" aria-label="Cerrar editor">
               <X size={20} />
             </button>
           </div>
@@ -137,7 +157,7 @@ export default function ProductEditorDrawer({
                 const Icon = item.icon;
                 const active = step === item.id;
                 return (
-                  <button key={item.id} type="button" onClick={() => setStep(item.id)} disabled={!canEdit && item.id === 'bulk'} className={`inline-flex min-w-max items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black ${active ? 'border-fiesta-magenta/40 bg-fiesta-magenta/10 text-fiesta-magenta' : 'border-admin-border text-admin-muted hover:bg-admin-elevated'} disabled:opacity-35`}>
+                  <button key={item.id} type="button" onClick={() => setStep(item.id)} aria-pressed={active} disabled={saving || (!canEdit && item.id === 'bulk')} className={`inline-flex min-h-10 min-w-max items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black ${active ? 'border-violet-700 bg-violet-700 text-white' : 'border-admin-border text-admin-text-secondary hover:bg-admin-elevated'} disabled:opacity-50`}>
                     <Icon size={14} /> {item.label}
                   </button>
                 );
@@ -148,7 +168,7 @@ export default function ProductEditorDrawer({
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-7">
           {step === 'general' && (
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+            <fieldset disabled={!canEdit || saving} className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
               <div className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label>
@@ -214,13 +234,13 @@ export default function ProductEditorDrawer({
                   </div>
                 </div>
                 {[['featured', 'Producto destacado'], ['active', 'Publicado']].map(([name, label]) => (
-                  <button key={name} type="button" onClick={() => update(name, !draft[name])} className={`flex w-full items-center justify-between rounded-xl border px-3 py-3 text-xs font-black ${draft[name] ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600' : 'border-admin-border text-admin-muted'}`}>
+                  <button key={name} type="button" aria-pressed={draft[name]} onClick={() => update(name, !draft[name])} className={`flex w-full items-center justify-between rounded-xl border px-3 py-3 text-xs font-black ${draft[name] ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600' : 'border-admin-border text-admin-muted'}`}>
                     {label}
                     {draft[name] ? <CheckCircle2 size={16} /> : <ChevronRight size={16} />}
                   </button>
                 ))}
               </aside>
-            </div>
+            </fieldset>
           )}
           {step === 'variants' && (
             <VariantsStep product={product} lookups={lookups} saving={saving} canEdit={canEdit} canDelete={canDelete} actions={commercialActions} />
@@ -241,13 +261,17 @@ export default function ProductEditorDrawer({
           )}
         </div>
 
-        <footer className="flex items-center justify-between gap-3 border-t border-admin-border bg-admin-bg/70 px-5 py-4 sm:px-7">
-          <p className="hidden text-[11px] text-admin-muted sm:block">Configura los colores, medidas y precios después de guardar los datos.</p>
-          <button type="button" onClick={submit} disabled={!canEdit || saving || step !== 'general'} className="ml-auto inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-violet-600 px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-pink-500/20 disabled:cursor-not-allowed disabled:opacity-40">
-            <Save size={16} /> {saving ? 'Guardando…' : product ? 'Guardar cambios' : 'Guardar y configurar opciones'}
-          </button>
-        </footer>
+        {canEdit && (step === 'general' || dirty) && (
+          <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-admin-border bg-admin-bg/70 px-5 py-4 sm:px-7">
+            {dirty && <p className="mr-auto text-xs font-bold text-admin-muted">Cambios sin guardar</p>}
+            <button type="button" onClick={submit} disabled={saving} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-violet-700 px-4 text-sm font-black text-white hover:bg-violet-800 disabled:opacity-50">
+              <Save size={16} aria-hidden="true" /> {saving ? 'Guardando…' : product ? 'Guardar cambios' : 'Guardar y configurar opciones'}
+            </button>
+          </footer>
+        )}
       </div>
     </div>
+    <ConfirmModal open={isOpen} {...config} onConfirm={onConfirm} onCancel={onCancel} />
+    </>
   );
 }

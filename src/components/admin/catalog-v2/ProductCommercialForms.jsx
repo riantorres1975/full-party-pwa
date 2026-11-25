@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { CheckCircle2, Save, X } from 'lucide-react';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 import {
   createInventoryDraft,
   createPresentationDraft,
@@ -56,8 +57,11 @@ function ActiveButton({ active, onChange }) {
 }
 
 function FormModal({ title, subtitle, saving, onClose, onSubmit, children }) {
+  const dialogRef = useRef(null);
+  const close = () => { if (!saving) onClose(); };
+  useFocusTrap(dialogRef, true, 'first', close);
   return (
-    <div role="dialog" aria-modal="true" aria-label={title} className="fixed inset-0 z-[70] flex items-center justify-center bg-[#120720]/65 p-3 backdrop-blur-sm">
+    <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className="fixed inset-0 z-[70] flex items-center justify-center bg-[#120720]/65 p-3 backdrop-blur-sm">
       <form
         onSubmit={onSubmit}
         className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-admin-border bg-admin-card shadow-2xl"
@@ -67,7 +71,7 @@ function FormModal({ title, subtitle, saving, onClose, onSubmit, children }) {
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-fiesta-magenta">{subtitle}</p>
             <h3 className="mt-1 text-lg font-black text-admin-text">{title}</h3>
           </div>
-          <button type="button" onClick={onClose} className="rounded-xl p-2 text-admin-muted hover:bg-admin-elevated" aria-label="Cerrar formulario">
+          <button type="button" onClick={close} disabled={saving} className="rounded-xl p-2 text-admin-muted hover:bg-admin-elevated disabled:opacity-50" aria-label="Cerrar formulario">
             <X size={18} />
           </button>
         </header>

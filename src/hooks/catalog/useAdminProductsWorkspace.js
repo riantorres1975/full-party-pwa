@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   deleteAdminProduct,
   getAdminProductById,
@@ -21,7 +21,7 @@ import { applyAdminCommercialRows } from '../../services/catalog/adminBulkReposi
 
 const PAGE_SIZE = 18;
 
-export function useAdminProductsWorkspace(search = '') {
+export function useAdminProductsWorkspace({ search = '', active, categoryId } = {}) {
   const [products, setProducts] = useState([]);
   const [total, setTotal] = useState(0);
   const [lookups, setLookups] = useState({
@@ -36,23 +36,23 @@ export function useAdminProductsWorkspace(search = '') {
   const [loadingMore, setLoadingMore] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [moreError, setMoreError] = useState(null);
+  const [lookupsError, setLookupsError] = useState(null);
+  const [lookupsLoading, setLookupsLoading] = useState(true);
   const [reloadToken, setReloadToken] = useState(0);
+  const [lookupsToken, setLookupsToken] = useState(0);
+  const listingRef = useRef(null);
 
   const refresh = useCallback(() => setReloadToken((value) => value + 1), []);
+  const retryLookups = () => setLookupsToken(value => value + 1);
 
   useEffect(() => {
-    let cancelled = false;
     const controller = new AbortController();
-
-    async function load() {
-      setLoading(true);
-      setError(null);
+    const load = async () => {
+      setLookupsLoading(true);
+      setLookupsError(null);
       try {
-        const [page, categories, brands, lines, colors, sizes, locations] = await Promise.all([
-          listAdminProducts(
-            { offset: 0, limit: PAGE_SIZE, search },
-            { signal: controller.signal },
-          ),
+        const [categories, brands, lines, colors, sizes, locations] = await Promise.all([
           listAdminCatalogResource('categories', { signal: controller.signal }),
           listAdminCatalogResource('brands', { signal: controller.signal }),
           listAdminCatalogResource('lines', { signal: controller.signal }),
@@ -60,56 +60,74 @@ export function useAdminProductsWorkspace(search = '') {
           listAdminCatalogResource('sizes', { signal: controller.signal }),
           listAdminCatalogResource('locations', { signal: controller.signal }),
         ]);
-        if (cancelled) return;
+        if (!controller.signal.aborted) setLookups({ categories, brands, lines, colors, sizes, locations });
+      } catch (loadError) {
+        if (!controller.signal.aborted) setLookupsError(loadError);
+      } finally {
+        if (!controller.signal.aborted) setLookupsLoading(false);
+      }
+    };
+    load();
+    return () => controller.abort();
+  }, [lookupsToken]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const listing = { controller, loadingMore: false };
+    listingRef.current = listing;
+    setLoading(true);
+    setLoadingMore(false);
+    setError(null);
+    setMoreError(null);
+
+    listAdminProducts({ limit: PAGE_SIZE, search, active, categoryId }, { signal: controller.signal })
+      .then(page => {
+        if (controller.signal.aborted) return;
         setProducts(page.products);
         setTotal(page.total);
-        setLookups({ categories, brands, lines, colors, sizes, locations });
-      } catch (loadError) {
-        if (!cancelled && loadError?.name !== 'AbortError') setError(loadError);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
+      })
+      .catch(loadError => { if (!controller.signal.aborted) setError(loadError); })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
 
-    load();
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [reloadToken, search]);
+    return () => controller.abort();
+  }, [active, categoryId, reloadToken, search]);
 
   const loadMore = useCallback(async () => {
-    if (loadingMore || products.length >= total) return;
+    const listing = listingRef.current;
+    if (!listing || listing.loadingMore || loading || products.length >= total) return;
+    const { signal } = listing.controller;
+    listing.loadingMore = true;
     setLoadingMore(true);
+    setMoreError(null);
     try {
       const page = await listAdminProducts({
         offset: products.length,
         limit: PAGE_SIZE,
         search,
-      });
+        active,
+        categoryId,
+      }, { signal });
+      if (signal.aborted) return;
       setProducts((current) => [...current, ...page.products]);
       setTotal(page.total);
+    } catch (loadError) {
+      if (!signal.aborted) setMoreError(loadError);
     } finally {
-      setLoadingMore(false);
+      listing.loadingMore = false;
+      if (!signal.aborted) setLoadingMore(false);
     }
-  }, [loadingMore, products.length, search, total]);
+  }, [active, categoryId, loading, products.length, search, total]);
 
   const saveProduct = useCallback(async (input, id = null) => {
     setSaving(true);
     try {
       const saved = await saveAdminProduct(input, { id });
-      setProducts((current) => {
-        const exists = current.some((product) => product.id === saved.id);
-        return exists
-          ? current.map((product) => (product.id === saved.id ? saved : product))
-          : [saved, ...current];
-      });
-      if (!id) setTotal((current) => current + 1);
+      refresh();
       return saved;
     } finally {
       setSaving(false);
     }
-  }, []);
+  }, [refresh]);
 
   const registerQuickProduct = useCallback(async (registration) => {
     try {
@@ -123,12 +141,11 @@ export function useAdminProductsWorkspace(search = '') {
     setSaving(true);
     try {
       await deleteAdminProduct(id);
-      setProducts((current) => current.filter((product) => product.id !== id));
-      setTotal((current) => Math.max(0, current - 1));
+      refresh();
     } finally {
       setSaving(false);
     }
-  }, []);
+  }, [refresh]);
 
   const mutateCommercial = useCallback(async (productId, operation) => {
     setSaving(true);
@@ -196,10 +213,14 @@ export function useAdminProductsWorkspace(search = '') {
     products,
     total,
     lookups,
+    lookupsLoading,
+    lookupsError,
+    retryLookups,
     loading,
     loadingMore,
     saving,
     error,
+    moreError,
     refresh,
     saveProduct,
     registerQuickProduct,

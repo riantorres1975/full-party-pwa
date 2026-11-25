@@ -182,3 +182,11 @@ export function getAdminProductReadiness(product) {
     publishable: checks.every((check) => check.ready),
   };
 }
+
+export function getAdminDraftStep(product) {
+  if (!product?.name || !product.slug || !product.category_id) return 'general';
+  const variants = asArray(product.variants).filter(variant => variant.active !== false);
+  if (!variants.length) return 'variants';
+  if (!variants.some(variant => asArray(variant.presentations).some(presentation => presentation.active !== false))) return 'commercial';
+  return 'publish';
+}

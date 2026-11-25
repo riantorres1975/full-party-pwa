@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Box,
@@ -10,20 +10,34 @@ import {
   Search,
   Trash2,
   Warehouse,
+  X,
 } from 'lucide-react';
 import DataErrorState from '../DataErrorState.jsx';
 import { usePermission } from '../../../hooks/usePermission.js';
 import { useToast } from '../../ui/ToastProvider.jsx';
 import { useAdminProductsWorkspace } from '../../../hooks/catalog/useAdminProductsWorkspace.js';
-import { getAdminProductReadiness } from '../../../services/catalog/adminProductModel.js';
+import { getAdminDraftStep } from '../../../services/catalog/adminProductModel.js';
+import { useDebounce } from '../../../hooks/useDebounce.js';
 import ProductEditorDrawer from './ProductEditorDrawer.jsx';
 import ProductQuickCreateDrawer from './ProductQuickCreateDrawer.jsx';
 
 const PRODUCT_GRID_CLASS = 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,290px),1fr))] gap-3';
+const PRODUCT_STATES = [
+  { value: '', label: 'Todos' },
+  { value: 'publicados', label: 'Publicados' },
+  { value: 'borradores', label: 'Borradores' },
+];
+const draftGuidance = {
+  general: 'Completa los datos del producto.',
+  variants: 'Agrega o activa una variante.',
+  commercial: 'Configura una presentación y su precio.',
+  publish: 'Revisa la ficha para publicar.',
+};
+const UUID_PATTERN = /^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i;
 
 function ProductSkeleton() {
   return (
-    <div className={PRODUCT_GRID_CLASS}>
+    <div className={PRODUCT_GRID_CLASS} aria-busy="true" aria-label="Cargando productos">
       {[0, 1, 2, 3, 4].map((item) => <div key={item} className="h-64 animate-pulse rounded-2xl border border-admin-border bg-admin-card" />)}
     </div>
   );
@@ -42,27 +56,55 @@ function Stat({ icon: Icon, label, value }) {
 }
 
 export default function AdminProductsWorkspace() {
+  const [params, setParams] = useSearchParams();
   const [search, setSearch] = useState('');
-  const deferredSearch = useDeferredValue(search.trim().toLocaleLowerCase('es'));
-  const workspace = useAdminProductsWorkspace(deferredSearch);
+  const searchRef = useRef(null);
+  const debouncedSearch = useDebounce(search.trim(), 250);
+  const requestedState = params.get('estado');
+  const status = PRODUCT_STATES.some(option => option.value === requestedState) ? requestedState : '';
+  const requestedCategory = params.get('categoria') ?? '';
+  const categoryId = UUID_PATTERN.test(requestedCategory) ? requestedCategory : '';
+  const active = status ? status === 'publicados' : undefined;
+  const workspace = useAdminProductsWorkspace({ search: debouncedSearch, active, categoryId });
+  const hasFilters = Boolean(status || categoryId || search.trim());
   const [editorOpen, setEditorOpen] = useState(false);
+  const [editorStep, setEditorStep] = useState('general');
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const canEdit = usePermission('catalogo.edit');
   const canDelete = usePermission('catalogo.delete');
   const toast = useToast();
-  const [params, setParams] = useSearchParams();
+  const canUseEditor = !workspace.lookupsLoading && !workspace.lookupsError;
+
+  const changeFilter = (key, value) => setParams(current => {
+    const next = new URLSearchParams(current);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    return next;
+  }, { replace: true });
+
+  const clearFilters = () => {
+    setSearch('');
+    setParams(current => {
+      const next = new URLSearchParams(current);
+      next.delete('estado');
+      next.delete('categoria');
+      return next;
+    }, { replace: true });
+    searchRef.current?.focus();
+  };
 
   useEffect(() => {
-    if (params.get('nuevo') !== '1' || workspace.loading || workspace.error) return;
+    if (params.get('nuevo') !== '1' || !canUseEditor) return;
     if (canEdit) setQuickCreateOpen(true);
     const siguiente = new URLSearchParams(params);
     siguiente.delete('nuevo');
     setParams(siguiente, { replace: true });
-  }, [canEdit, params, setParams, workspace.error, workspace.loading]);
+  }, [canEdit, canUseEditor, params, setParams]);
 
-  const openEditor = (product = null) => {
+  const openEditor = (product = null, step = 'general') => {
     setSelectedProduct(product);
+    setEditorStep(step === 'publish' ? 'general' : step);
     setEditorOpen(true);
   };
 
@@ -127,18 +169,35 @@ export default function AdminProductsWorkspace() {
             <p className="mt-1 max-w-xl text-sm text-admin-muted">Agrega productos o actualiza sus precios y existencias.</p>
           </div>
           {canEdit && (
-            <button type="button" onClick={() => setQuickCreateOpen(true)} disabled={workspace.loading || Boolean(workspace.error)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#a71962] px-4 py-2.5 text-sm font-black text-white disabled:opacity-50">
+            <button type="button" onClick={() => setQuickCreateOpen(true)} disabled={!canUseEditor} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-black text-white hover:bg-violet-800 disabled:opacity-50">
               <Plus size={17} /> Nuevo producto
             </button>
           )}
         </div>
       </section>
 
-      <div className="flex items-center gap-3 rounded-2xl border border-admin-border bg-admin-card p-3">
-        <Search size={17} className="ml-1 shrink-0 text-admin-muted" />
-        <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} aria-label="Buscar producto por nombre" placeholder="Buscar por nombre…" className="min-w-0 flex-1 bg-transparent text-sm text-admin-text outline-none placeholder:text-admin-inactive" />
-        <span className="rounded-lg bg-admin-elevated px-2.5 py-1 text-[10px] font-black text-admin-muted">{workspace.total} productos</span>
+      <div className="space-y-2.5 rounded-2xl border border-admin-border bg-admin-card p-3.5">
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(10rem,0.5fr)]">
+          <div className="relative">
+            <Search size={17} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-admin-muted" />
+            <input ref={searchRef} type="search" value={search} onChange={event => setSearch(event.target.value)} aria-label="Buscar producto por nombre" placeholder="Buscar producto por nombre" className="min-h-11 w-full rounded-xl border border-admin-border bg-admin-input py-2 pl-9 pr-10 text-base text-admin-text outline-none focus:ring-2 focus:ring-violet-600/60 sm:text-sm [&::-webkit-search-cancel-button]:hidden" />
+            {search && <button type="button" aria-label="Limpiar búsqueda" onClick={() => { setSearch(''); searchRef.current?.focus(); }} className="absolute right-1 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-lg text-admin-muted hover:bg-admin-elevated"><X size={16} aria-hidden="true" /></button>}
+          </div>
+          <select aria-label="Filtrar por categoría" value={categoryId} onChange={event => changeFilter('categoria', event.target.value)} disabled={workspace.lookupsLoading} className="min-h-11 w-full rounded-xl border border-admin-border bg-admin-input px-3 text-base font-bold text-admin-text sm:text-sm">
+            <option value="">Todas las categorías</option>
+            {categoryId && !workspace.lookups.categories.some(category => category.id === categoryId) && <option value={categoryId}>Categoría seleccionada</option>}
+            {workspace.lookups.categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}
+          </select>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div role="group" aria-label="Filtrar por estado de publicación" className="flex flex-wrap gap-2">
+            {PRODUCT_STATES.map(({ value, label }) => <button key={value} type="button" aria-pressed={status === value} onClick={() => changeFilter('estado', value)} className={`min-h-10 rounded-xl border px-3 text-sm font-bold ${status === value ? 'border-violet-700 bg-violet-700 text-white' : 'border-admin-border text-admin-text-secondary hover:bg-admin-elevated'}`}>{label}</button>)}
+          </div>
+          <p role="status" className="text-sm font-semibold text-admin-muted">{workspace.loading && !workspace.error ? 'Buscando…' : !workspace.error && `${workspace.total} ${workspace.total === 1 ? 'producto' : 'productos'}`}</p>
+        </div>
       </div>
+
+      {workspace.lookupsError && <DataErrorState message="No se pudieron cargar las categorías y opciones del editor." onRetry={workspace.retryLookups} compact />}
 
       {workspace.loading ? (
         <ProductSkeleton />
@@ -148,12 +207,13 @@ export default function AdminProductsWorkspace() {
         <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-dashed border-admin-border bg-admin-card px-6 text-center">
           <PackagePlus size={34} className="text-admin-inactive" />
           <h3 className="mt-3 text-sm font-black text-admin-text">No hay productos para mostrar</h3>
-          <p className="mt-1 text-xs text-admin-muted">Agrega un producto o prueba con otro nombre.</p>
+          <p className="mt-1 text-sm text-admin-muted">{hasFilters ? 'Prueba con otro nombre o cambia los filtros.' : 'Los productos registrados aparecerán aquí.'}</p>
+          {hasFilters && <button type="button" onClick={clearFilters} className="mt-3 min-h-10 rounded-lg border border-admin-border px-3 text-sm font-bold text-admin-text-secondary hover:bg-admin-elevated">Quitar filtros</button>}
         </div>
       ) : (
         <div className={PRODUCT_GRID_CLASS}>
           {workspace.products.map((product) => {
-            const readiness = getAdminProductReadiness(product);
+            const draftStep = product.active ? null : getAdminDraftStep(product);
             return (
               <article key={product.id} className="group overflow-hidden rounded-2xl border border-admin-border bg-admin-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg">
                 <div className="relative aspect-[16/9] bg-admin-elevated">
@@ -170,23 +230,16 @@ export default function AdminProductsWorkspace() {
                       <h3 className="mt-0.5 line-clamp-2 text-sm font-black leading-tight text-admin-text">{product.name}</h3>
                       <p className="mt-1 text-[10px] text-admin-muted">{product.category?.name || 'Sin categoria'}</p>
                     </div>
-                    <span className="shrink-0 text-xs font-black text-admin-text">{product.minPrice == null ? 'S/P' : `$${product.minPrice.toFixed(2)}`}</span>
+                    <span className="shrink-0 text-xs font-black text-admin-text">{product.minPrice == null ? 'Sin precio' : `$${product.minPrice.toFixed(2)}`}</span>
                   </div>
-                  <div className="mt-3 grid grid-cols-3 divide-x divide-admin-border rounded-lg bg-admin-bg/65 px-1">
+                  <div className="mt-3 grid grid-cols-3 divide-x divide-admin-border rounded-lg bg-admin-elevated/50 px-1">
                     <Stat icon={Layers3} label="Variantes" value={product.variantCount} />
-                    <Stat icon={CircleDollarSign} label="Formas" value={product.presentationCount} />
+                    <Stat icon={CircleDollarSign} label="Presentaciones" value={product.presentationCount} />
                     <Stat icon={Warehouse} label="Disponible" value={product.inventoryAvailable} />
                   </div>
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between text-[9px] font-bold text-admin-muted">
-                      <span>Preparacion</span><span>{readiness.percent}%</span>
-                    </div>
-                    <div className="mt-1 h-1 overflow-hidden rounded-full bg-admin-elevated">
-                      <div className="h-full rounded-full bg-gradient-to-r from-pink-500 to-violet-600" style={{ width: `${readiness.percent}%` }} />
-                    </div>
-                  </div>
+                  {draftStep && <p className="mt-3 rounded-lg bg-amber-100 px-2.5 py-2 text-xs font-bold text-amber-900">{draftGuidance[draftStep]}</p>}
                   <div className="mt-3 flex gap-1.5">
-                    <button type="button" onClick={() => openEditor(product)} className="inline-flex min-h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-admin-border px-2.5 py-1.5 text-[11px] font-black text-admin-text hover:border-fiesta-magenta/40 hover:text-fiesta-magenta"><Edit3 size={13} /> Editar producto</button>
+                    <button type="button" disabled={!canUseEditor} onClick={() => openEditor(product, canEdit && draftStep ? draftStep : 'general')} className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg border border-admin-border px-2.5 py-1.5 text-xs font-black text-admin-text hover:bg-admin-elevated disabled:opacity-50"><Edit3 size={14} aria-hidden="true" /> {canEdit ? draftStep ? 'Continuar borrador' : 'Editar producto' : 'Ver ficha'}</button>
                     {canDelete && <button type="button" onClick={() => removeProduct(product)} className="flex h-8 w-8 items-center justify-center rounded-lg text-admin-muted hover:bg-red-500/10 hover:text-red-500" aria-label={`Eliminar ${product.name}`}><Trash2 size={14} /></button>}
                   </div>
                 </div>
@@ -196,8 +249,9 @@ export default function AdminProductsWorkspace() {
         </div>
       )}
 
-      {workspace.products.length < workspace.total && (
-        <div className="flex justify-center">
+      {!workspace.loading && !workspace.error && workspace.products.length < workspace.total && (
+        <div className="flex flex-col items-center gap-2">
+          {workspace.moreError && <p role="alert" className="text-sm text-admin-text">No se pudieron cargar más productos.</p>}
           <button
             type="button"
             onClick={workspace.loadMore}
@@ -205,8 +259,8 @@ export default function AdminProductsWorkspace() {
             className="rounded-xl border border-admin-border bg-admin-card px-5 py-2.5 text-sm font-black text-admin-text hover:border-fiesta-magenta/40 hover:text-fiesta-magenta disabled:opacity-50"
           >
             {workspace.loadingMore
-              ? 'Cargando...'
-              : `Cargar mas (${workspace.total - workspace.products.length} pendientes)`}
+              ? 'Cargando…'
+              : workspace.moreError ? 'Reintentar' : `Cargar más (${workspace.total - workspace.products.length} restantes)`}
           </button>
         </div>
       )}
@@ -217,7 +271,6 @@ export default function AdminProductsWorkspace() {
           onRegister={async (registration) => {
             const saved = await workspace.registerQuickProduct(registration);
             setQuickCreateOpen(false);
-            setSearch('');
             toast.success(saved.name, { title: 'Producto publicado' });
           }}
           onAdvanced={() => { setQuickCreateOpen(false); openEditor(); }}
@@ -228,6 +281,7 @@ export default function AdminProductsWorkspace() {
       {editorOpen && (
         <ProductEditorDrawer
           product={selectedProduct}
+          initialStep={editorStep}
           lookups={workspace.lookups}
           saving={workspace.saving}
           canEdit={canEdit}
