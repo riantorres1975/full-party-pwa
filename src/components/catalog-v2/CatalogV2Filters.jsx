@@ -1,5 +1,7 @@
+import { useRef } from 'react';
 import { Check, SlidersHorizontal, X } from 'lucide-react';
 
+import { useDialogFocus } from '../../hooks/useDialogFocus.js';
 import { sizeNameToSlug } from '../../services/catalog/filterUrl.js';
 
 function FilterGroup({ title, items, selected, onToggle, color = false }) {
@@ -46,90 +48,75 @@ export default function CatalogV2Filters({
   onToggle,
   onSet,
   onClear,
-  mobile = false,
+  collections,
   open = false,
   onClose,
 }) {
-  const content = (
-    <>
-      <div className="catalog-v2-filters__header">
-        <div>
-          <SlidersHorizontal size={18} />
-          <h2>Filtros</h2>
-          {activeCount > 0 && <span>{activeCount}</span>}
-        </div>
-        <button type="button" onClick={onClear} disabled={activeCount === 0}>
-          Limpiar todos
-        </button>
-        {mobile && (
-          <button type="button" className="catalog-v2-icon-button" onClick={onClose} aria-label="Cerrar filtros">
-            <X size={20} />
-          </button>
-        )}
-      </div>
-
-      <FilterGroup
-        title="Marca"
-        items={facets.brands}
-        selected={filters.brands}
-        onToggle={(value) => onToggle('brands', value)}
-      />
-      <FilterGroup
-        title="Gama / línea"
-        items={facets.lines}
-        selected={filters.lines}
-        onToggle={(value) => onToggle('lines', value)}
-      />
-      <FilterGroup
-        title="Familia de color"
-        items={facets.colorFamilies}
-        selected={filters.colorFamilies}
-        onToggle={(value) => onToggle('colorFamilies', value)}
-        color
-      />
-      <FilterGroup
-        title="Color exacto"
-        items={facets.colors}
-        selected={filters.colors}
-        onToggle={(value) => onToggle('colors', value)}
-        color
-      />
-      <FilterGroup
-        title="Medida"
-        items={facets.sizes}
-        selected={filters.sizes}
-        onToggle={(value) => onToggle('sizes', value)}
-      />
-
-      <section className="catalog-v2-filter-group">
-        <h3>Disponibilidad</h3>
-        <button
-          type="button"
-          className={`catalog-v2-stock-filter ${filters.inStock === true ? 'is-selected' : ''}`}
-          onClick={() => onSet('inStock', filters.inStock === true ? null : true)}
-        >
-          <span className="catalog-v2-filter-check">
-            {filters.inStock === true && <Check size={12} strokeWidth={3} />}
-          </span>
-          Solo disponibles
-          <small>{facets.availability.inStock}</small>
-        </button>
-      </section>
-
-      {mobile && (
-        <button type="button" className="catalog-v2-primary-button catalog-v2-apply-filters" onClick={onClose}>
-          Ver resultados
-        </button>
-      )}
-    </>
-  );
-
-  if (!mobile) return <aside className="catalog-v2-filters">{content}</aside>;
+  const panelRef = useRef(null);
+  useDialogFocus({ open, containerRef: panelRef, onClose });
   if (!open) return null;
+
   return (
-    <div className="catalog-v2-filter-sheet" role="dialog" aria-modal="true" aria-label="Filtros del catálogo">
-      <button type="button" className="catalog-v2-filter-sheet__backdrop" onClick={onClose} aria-label="Cerrar filtros" />
-      <div className="catalog-v2-filter-sheet__panel">{content}</div>
+    <div className="catalog-v2-filter-sheet catalog-v2-filter-sheet--simple" role="dialog" aria-modal="true" aria-labelledby="catalog-filters-title">
+      <div className="catalog-v2-filter-sheet__backdrop" aria-hidden="true" onClick={onClose} />
+      <div ref={panelRef} tabIndex={-1} className="catalog-v2-filter-sheet__panel">
+        <div className="catalog-v2-filters__header">
+          <div>
+            <SlidersHorizontal size={19} aria-hidden="true" />
+            <h2 id="catalog-filters-title">Filtros</h2>
+          </div>
+          <button type="button" onClick={onClear} disabled={activeCount === 0}>Limpiar filtros</button>
+          <button type="button" className="catalog-v2-icon-button" onClick={onClose} aria-label="Cerrar filtros">
+            <X size={20} aria-hidden="true" />
+          </button>
+        </div>
+
+        <section className="catalog-v2-filter-group">
+          <label className="catalog-v2-filter-select">
+            <span>Ordenar por</span>
+            <select value={filters.sort} onChange={(event) => onSet('sort', event.target.value)}>
+              <option value="featured">Destacados</option>
+              <option value="price_asc">Menor precio</option>
+              <option value="price_desc">Mayor precio</option>
+              <option value="name_asc">Nombre A–Z</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            className={`catalog-v2-stock-filter ${filters.inStock === true ? 'is-selected' : ''}`}
+            onClick={() => onSet('inStock', filters.inStock === true ? null : true)}
+            aria-pressed={filters.inStock === true}
+          >
+            <span className="catalog-v2-filter-check">
+              {filters.inStock === true && <Check size={12} strokeWidth={3} aria-hidden="true" />}
+            </span>
+            Solo productos disponibles
+          </button>
+        </section>
+
+        <FilterGroup title="Color" items={facets.colors} selected={filters.colors} onToggle={(value) => onToggle('colors', value)} color />
+        <FilterGroup title="Medida" items={facets.sizes} selected={filters.sizes} onToggle={(value) => onToggle('sizes', value)} />
+
+        <details className="catalog-v2-filter-more">
+          <summary>Más filtros</summary>
+          {collections.length > 0 && (
+            <label className="catalog-v2-filter-select">
+              <span>Colección</span>
+              <select value={filters.collectionSlug || ''} onChange={(event) => onSet('collectionSlug', event.target.value || null)}>
+                <option value="">Todas las colecciones</option>
+                {collections.map((collection) => <option key={collection.id} value={collection.slug}>{collection.name}</option>)}
+              </select>
+            </label>
+          )}
+          <FilterGroup title="Marca" items={facets.brands} selected={filters.brands} onToggle={(value) => onToggle('brands', value)} />
+          <FilterGroup title="Gama" items={facets.lines} selected={filters.lines} onToggle={(value) => onToggle('lines', value)} />
+          <FilterGroup title="Familia de color" items={facets.colorFamilies} selected={filters.colorFamilies} onToggle={(value) => onToggle('colorFamilies', value)} color />
+        </details>
+
+        <div className="catalog-v2-filter-actions">
+          <button type="button" className="catalog-v2-primary-button" onClick={onClose}>Ver productos</button>
+        </div>
+      </div>
     </div>
   );
 }

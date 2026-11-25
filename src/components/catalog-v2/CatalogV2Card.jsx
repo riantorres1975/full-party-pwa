@@ -1,4 +1,4 @@
-import { Heart, Layers3, Palette, Plus, Ruler } from 'lucide-react';
+import { Heart } from 'lucide-react';
 
 import { getInlineProductPlaceholder } from '../../utils/imagenes.js';
 import {
@@ -21,15 +21,13 @@ export default function CatalogV2Card({
   onToggleFavorite,
   onOpen,
   searchQuery = '',
+  eagerImage = false,
 }) {
   const action = getCardAction(card);
   const title = buildCardTitle(card);
   const searchMatch = getCardSearchMatch(card, searchQuery);
   const image = card.imageUrl || getInlineProductPlaceholder(title);
-  const sizeLabels = searchMatch?.sizeName
-    ? [searchMatch.sizeName]
-    : card.sizes.map((size) => size.name).filter(Boolean);
-  const presentation = getPrimaryPresentationType(card.presentationTypes);
+  const presentation = card.presentationTypes.length === 1 ? getPrimaryPresentationType(card.presentationTypes) : null;
 
   return (
     <article className="catalog-v2-card">
@@ -40,7 +38,7 @@ export default function CatalogV2Card({
             alt={`${title}, ${searchMatch.colorName}`}
             width="520"
             height="520"
-            loading="lazy"
+            loading={eagerImage ? 'eager' : 'lazy'}
             decoding="async"
             onError={(event) => {
               event.currentTarget.hidden = true;
@@ -63,7 +61,7 @@ export default function CatalogV2Card({
             alt={title}
             width="520"
             height="520"
-            loading="lazy"
+            loading={eagerImage ? 'eager' : 'lazy'}
             decoding="async"
             onError={(event) => {
               event.currentTarget.onerror = null;
@@ -108,7 +106,6 @@ export default function CatalogV2Card({
 
         {searchMatch && (
           <div className="catalog-v2-card__search-match">
-            <span>Coincidencia encontrada</span>
             <strong>
               {searchMatch.colorHex && (
                 <i style={{ background: searchMatch.colorHex }} aria-hidden="true" />
@@ -118,26 +115,11 @@ export default function CatalogV2Card({
           </div>
         )}
 
-        <div className="catalog-v2-card__facts">
-          {card.colorCount > 0 && (
-            <span>
-              <Palette size={14} />
-              {searchMatch?.colorCount
-                ? `${searchMatch.colorCount} ${searchMatch.colorCount === 1 ? 'tono encontrado' : 'tonos encontrados'}`
-                : `${card.colorCount} colores`}
-            </span>
-          )}
-          {sizeLabels.length > 0 && (
-            <span><Ruler size={14} /> {sizeLabels.join(', ')}</span>
-          )}
-          <span><Layers3 size={14} /> {presentation}</span>
-        </div>
-
         <div className="catalog-v2-card__price">
-          <span>Desde</span>
-          <strong>{formatMoney(card.minPrice)}</strong>
+          {card.minPrice != null && action.kind !== 'simple' && <span>Desde</span>}
+          <strong>{card.minPrice == null ? 'Precio por confirmar' : formatMoney(card.minPrice)}</strong>
         </div>
-        <p className="catalog-v2-card__wholesale">Precios especiales por cantidad</p>
+        {presentation && <p className="catalog-v2-card__unit">Por {presentation}</p>}
 
         <button
           type="button"
@@ -146,7 +128,6 @@ export default function CatalogV2Card({
           onClick={() => onOpen(card, searchMatch)}
         >
           <span>{searchMatch && !action.disabled ? 'Ver esta combinación' : action.label}</span>
-          {!action.disabled && <Plus size={19} aria-hidden="true" />}
         </button>
       </div>
     </article>

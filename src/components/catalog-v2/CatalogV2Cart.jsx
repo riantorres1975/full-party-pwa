@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { SUCURSALES } from '../../data/sucursales.js';
+import { CATALOG_ERROR_TYPES } from '../../services/catalog/errors.js';
 import { useFocusTrap } from '../../hooks/useFocusTrap.js';
 import { createOrder } from '../../services/catalog/ordersRepository.js';
 import { getCatalogCartFingerprint } from '../../services/catalog/cart.js';
@@ -18,6 +20,7 @@ import { getInlineProductPlaceholder } from '../../utils/imagenes.js';
 
 const CHECKOUT_STORAGE_KEY = 'fullPartyCatalogCheckoutV2';
 const ORDER_ATTEMPT_STORAGE_KEY = 'fullPartyCatalogOrderAttemptV2';
+const DEFAULT_PICKUP_ID = 'sol-naciente';
 
 function money(value) {
   return new Intl.NumberFormat('es-MX', {
@@ -34,6 +37,7 @@ function readCheckoutDraft() {
       telefono: String(parsed?.telefono || ''),
       tipoEntrega: parsed?.tipoEntrega === 'envio' ? 'envio' : 'tienda',
       direccion: String(parsed?.direccion || ''),
+      pickupId: SUCURSALES.some(({ id }) => id === parsed?.pickupId) ? parsed.pickupId : DEFAULT_PICKUP_ID,
     };
   } catch {
     return {
@@ -41,6 +45,7 @@ function readCheckoutDraft() {
       telefono: '',
       tipoEntrega: 'tienda',
       direccion: '',
+      pickupId: DEFAULT_PICKUP_ID,
     };
   }
 }
@@ -198,15 +203,22 @@ function CartLine({ item, issue, onQuantity, onRemove }) {
 
 export default function CatalogV2Cart({ open, onClose, cart }) {
   const panelRef = useRef(null);
+  const scrollRef = useRef(null);
+  const stepTitleRef = useRef(null);
+  const [step, setStep] = useState('review');
   const [form, setForm] = useState(readCheckoutDraft);
   const [honeypot, setHoneypot] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [completed, setCompleted] = useState(null);
-  useFocusTrap(panelRef, open, 'first', onClose);
+  const closeCart = () => {
+    if (!submitting) onClose();
+  };
+  useFocusTrap(panelRef, open, 'first', closeCart);
 
   useEffect(() => {
     if (!open) {
+      setStep('review');
       setCompleted(null);
       setSubmitError('');
       return undefined;
@@ -226,6 +238,12 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
     }
   }, [form]);
 
+  useEffect(() => {
+    if (!open) return;
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+    if (step === 'delivery' || completed) stepTitleRef.current?.focus({ preventScroll: true });
+  }, [open, step, completed]);
+
   const issuesByLine = useMemo(
     () => new Map((cart.validation?.issues || []).map((issue) => [
       issue.line - 1,
@@ -243,7 +261,7 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
 
   const submitOrder = async (event) => {
     event.preventDefault();
-    if (honeypot) return;
+    if (step !== 'delivery' || honeypot || submitting) return;
 
     const formError = getFormError(form);
     if (formError) {
@@ -267,6 +285,7 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
     try {
       const validated = await cart.validate();
       if (!validated.valid) {
+        setStep('review');
         throw new Error('Revisa los artículos marcados antes de confirmar.');
       }
 
@@ -276,12 +295,24 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
         tipoEntrega: form.tipoEntrega,
         direccion: form.tipoEntrega === 'envio' ? form.direccion.trim() : null,
       };
-      const fingerprint = getCatalogCartFingerprint(cart.items, customer);
-      const order = await createOrder({
-        ...customer,
-        items: cart.items,
-        idempotencyKey: getOrderAttempt(fingerprint),
-      });
+      const pickup = customer.tipoEntrega === 'tienda' ? SUCURSALES.find(({ id }) => id === form.pickupId) : null;
+      const fingerprint = getCatalogCartFingerprint(cart.items, { ...customer, locationSlug: pickup?.id });
+      const request = { ...customer, items: cart.items, idempotencyKey: getOrderAttempt(fingerprint) };
+      let order;
+
+      if (pickup) {
+        order = await createOrder({ ...request, locationSlug: pickup.id });
+      } else {
+        const locations = [null, ...SUCURSALES.map(({ id }) => id)];
+        for (const locationSlug of locations) {
+          try {
+            order = await createOrder({ ...request, locationSlug });
+            break;
+          } catch (error) {
+            if (error.type !== CATALOG_ERROR_TYPES.OUT_OF_STOCK || locationSlug === locations.at(-1)) throw error;
+          }
+        }
+      }
       const whatsappUrl = generarMensajeWhatsAppCatalogoV2(
         validated.lines,
         order.total,
@@ -290,6 +321,7 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
           nombre: customer.nombre,
           telefono: customer.telefono,
           direccion: customer.direccion,
+          sucursal: pickup?.nombre,
           folio: order.folio,
         },
       );
@@ -307,7 +339,13 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
       }
     } catch (error) {
       if (whatsappWindow && !whatsappWindow.closed) whatsappWindow.close();
-      setSubmitError(error?.message || 'No pudimos registrar el pedido.');
+      if (error.type === CATALOG_ERROR_TYPES.OUT_OF_STOCK) {
+        setSubmitError(form.tipoEntrega === 'tienda'
+          ? 'No hay suficiente existencia para todo el pedido en esa sucursal. Elige otra o ajusta las cantidades.'
+          : 'No hay existencia para surtir todo el pedido. Vuelve a tus productos y ajusta las cantidades.');
+      } else {
+        setSubmitError(error?.message || 'No pudimos registrar el pedido.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -318,7 +356,7 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
       <button
         type="button"
         className="catalog-v2-cart__backdrop"
-        onClick={onClose}
+        onClick={closeCart}
         aria-label="Cerrar pedido"
       />
       <section ref={panelRef} className="catalog-v2-cart__panel" tabIndex="-1">
@@ -326,11 +364,10 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
           <div>
             <span><ShoppingBag size={18} /></span>
             <div>
-              <p>Tu selección</p>
               <h2>Mi pedido</h2>
             </div>
           </div>
-          <button type="button" className="catalog-v2-icon-button" onClick={onClose} aria-label="Cerrar">
+          <button type="button" className="catalog-v2-icon-button" onClick={closeCart} aria-label="Cerrar">
             <X size={20} />
           </button>
         </header>
@@ -339,7 +376,7 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
           <div className="catalog-v2-cart__success">
             <span><CheckCircle2 size={32} /></span>
             <p>Pedido registrado</p>
-            <h2>{completed.folio}</h2>
+            <h2 ref={stepTitleRef} tabIndex={-1}>{completed.folio}</h2>
             <strong>{money(completed.total)}</strong>
             <p>
               Ya reservamos la existencia. Envía el mensaje para que la sucursal
@@ -348,124 +385,136 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
             <a href={completed.whatsappUrl} target="_blank" rel="noopener noreferrer">
               Abrir WhatsApp
             </a>
-            <button type="button" onClick={onClose}>Seguir comprando</button>
+            <button type="button" onClick={closeCart}>Seguir comprando</button>
           </div>
         ) : cart.items.length === 0 ? (
           <div className="catalog-v2-cart__empty">
             <span><ShoppingBag size={28} /></span>
             <h2>Tu pedido está vacío</h2>
-            <p>Elige una combinación y una presentación para comenzar.</p>
-            <button type="button" onClick={onClose}>Explorar productos</button>
+            <p>Agrega algún producto del catálogo para empezar.</p>
+            <button type="button" onClick={closeCart}>Explorar productos</button>
           </div>
         ) : (
           <form onSubmit={submitOrder}>
-            <div className="catalog-v2-cart__scroll">
-              {cart.legacyCartDetected && (
+            <div ref={scrollRef} className="catalog-v2-cart__scroll">
+              {step === 'review' && cart.legacyCartDetected && (
                 <div className="catalog-v2-cart__legacy">
                   <AlertCircle size={18} />
-                  <p>
-                    Encontramos un carrito anterior. No se mezcló porque no
-                    contiene variantes ni presentaciones V2.
-                  </p>
+                  <p>Los artículos de un pedido anterior deben volver a agregarse desde el catálogo.</p>
                   <button type="button" onClick={cart.dismissLegacyCart}>Entendido</button>
                 </div>
               )}
 
-              <section className="catalog-v2-cart__items" aria-label="Artículos del pedido">
-                {cart.items.map((item, index) => (
-                  <CartLine
-                    key={item.key}
-                    item={item}
-                    issue={issuesByLine.get(index)}
-                    onQuantity={cart.setQuantity}
-                    onRemove={cart.removeItem}
-                  />
-                ))}
-              </section>
-
-              <section className="catalog-v2-checkout" aria-labelledby="catalog-checkout-title">
-                <div>
-                  <p>Paso final</p>
-                  <h2 id="catalog-checkout-title">¿Quién recibe el pedido?</h2>
-                </div>
-
-                <label>
-                  <span>Nombre completo</span>
-                  <input
-                    type="text"
-                    autoComplete="name"
-                    maxLength="120"
-                    value={form.nombre}
-                    onChange={(event) => updateForm('nombre', event.target.value)}
-                    required
-                  />
-                </label>
-                <label>
-                  <span>Teléfono de WhatsApp</span>
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    autoComplete="tel"
-                    maxLength="16"
-                    value={form.telefono}
-                    onChange={(event) => updateForm('telefono', event.target.value)}
-                    placeholder="452 123 4567"
-                    required
-                  />
-                </label>
-
-                <fieldset>
-                  <legend>Forma de entrega</legend>
-                  <div className="catalog-v2-checkout__delivery">
-                    <label className={form.tipoEntrega === 'tienda' ? 'is-selected' : ''}>
-                      <input
-                        type="radio"
-                        name="delivery"
-                        value="tienda"
-                        checked={form.tipoEntrega === 'tienda'}
-                        onChange={() => updateForm('tipoEntrega', 'tienda')}
-                      />
-                      <strong>Recoger en tienda</strong>
-                      <span>La sucursal confirma por WhatsApp</span>
-                    </label>
-                    <label className={form.tipoEntrega === 'envio' ? 'is-selected' : ''}>
-                      <input
-                        type="radio"
-                        name="delivery"
-                        value="envio"
-                        checked={form.tipoEntrega === 'envio'}
-                        onChange={() => updateForm('tipoEntrega', 'envio')}
-                      />
-                      <strong>Envío a domicilio</strong>
-                      <span>El costo se confirma por WhatsApp</span>
-                    </label>
+              {step === 'review' ? (
+                <section className="catalog-v2-cart__items" aria-labelledby="catalog-cart-review-title">
+                  <div className="catalog-v2-cart__step-heading">
+                    <p>Paso 1 de 2</p>
+                    <h2 id="catalog-cart-review-title">Revisa tus productos</h2>
                   </div>
-                </fieldset>
+                  {cart.items.map((item, index) => (
+                    <CartLine
+                      key={item.key}
+                      item={item}
+                      issue={issuesByLine.get(index)}
+                      onQuantity={cart.setQuantity}
+                      onRemove={cart.removeItem}
+                    />
+                  ))}
+                </section>
+              ) : (
+                <section className="catalog-v2-checkout" aria-labelledby="catalog-checkout-title">
+                  <div className="catalog-v2-cart__step-heading">
+                    <p>Paso 2 de 2</p>
+                    <h2 ref={stepTitleRef} id="catalog-checkout-title" tabIndex={-1}>Tus datos y entrega</h2>
+                  </div>
 
-                {form.tipoEntrega === 'envio' && (
                   <label>
-                    <span>Dirección completa</span>
-                    <textarea
-                      rows="3"
-                      maxLength="500"
-                      value={form.direccion}
-                      onChange={(event) => updateForm('direccion', event.target.value)}
+                    <span>Nombre completo</span>
+                    <input
+                      type="text"
+                      autoComplete="name"
+                      maxLength="120"
+                      value={form.nombre}
+                      onChange={(event) => updateForm('nombre', event.target.value)}
                       required
                     />
                   </label>
-                )}
+                  <label>
+                    <span>Teléfono de WhatsApp</span>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      maxLength="16"
+                      value={form.telefono}
+                      onChange={(event) => updateForm('telefono', event.target.value)}
+                      placeholder="452 123 4567"
+                      required
+                    />
+                  </label>
 
-                <label className="catalog-v2-checkout__honeypot" aria-hidden="true">
-                  Sitio web
-                  <input
-                    type="text"
-                    tabIndex="-1"
-                    autoComplete="off"
-                    value={honeypot}
-                    onChange={(event) => setHoneypot(event.target.value)}
-                  />
-                </label>
-              </section>
+                  <fieldset>
+                    <legend>Forma de entrega</legend>
+                    <div className="catalog-v2-checkout__delivery">
+                      <label className={form.tipoEntrega === 'tienda' ? 'is-selected' : ''}>
+                        <input
+                          type="radio"
+                          name="delivery"
+                          value="tienda"
+                          checked={form.tipoEntrega === 'tienda'}
+                          onChange={() => updateForm('tipoEntrega', 'tienda')}
+                        />
+                        <strong>Recoger en tienda</strong>
+                        <span>La sucursal confirma por WhatsApp</span>
+                      </label>
+                      <label className={form.tipoEntrega === 'envio' ? 'is-selected' : ''}>
+                        <input
+                          type="radio"
+                          name="delivery"
+                          value="envio"
+                          checked={form.tipoEntrega === 'envio'}
+                          onChange={() => updateForm('tipoEntrega', 'envio')}
+                        />
+                        <strong>Envío a domicilio</strong>
+                        <span>El costo se confirma por WhatsApp</span>
+                      </label>
+                    </div>
+                  </fieldset>
+
+                  {form.tipoEntrega === 'tienda' && (
+                    <label>
+                      <span>Sucursal para recoger</span>
+                      <select className="catalog-v2-checkout__branch" value={form.pickupId} onChange={(event) => updateForm('pickupId', event.target.value)}>
+                        {SUCURSALES.map(({ id, nombre }) => <option key={id} value={id}>{nombre}</option>)}
+                      </select>
+                    </label>
+                  )}
+
+                  {form.tipoEntrega === 'envio' && (
+                    <label>
+                      <span>Dirección completa</span>
+                      <textarea
+                        rows="3"
+                        maxLength="500"
+                        value={form.direccion}
+                        onChange={(event) => updateForm('direccion', event.target.value)}
+                        required
+                      />
+                    </label>
+                  )}
+
+                  <label className="catalog-v2-checkout__honeypot" aria-hidden="true">
+                    Sitio web
+                    <input
+                      type="text"
+                      tabIndex="-1"
+                      autoComplete="off"
+                      value={honeypot}
+                      onChange={(event) => setHoneypot(event.target.value)}
+                    />
+                  </label>
+                </section>
+              )}
             </div>
 
             <footer className="catalog-v2-cart__footer">
@@ -479,18 +528,27 @@ export default function CatalogV2Cart({ open, onClose, cart }) {
                 <span>Total estimado</span>
                 <strong>{money(cart.total)}</strong>
               </div>
-              <small>
-                Supabase volverá a validar precio y existencia antes de crear el folio.
-              </small>
-              <button
-                type="submit"
-                className="catalog-v2-primary-button"
-                disabled={submitting || cart.validating}
-              >
-                {submitting || cart.validating
-                  ? 'Confirmando...'
-                  : `Confirmar y enviar · ${money(cart.total)}`}
-              </button>
+              {step === 'review' ? (
+                <button type="button" className="catalog-v2-primary-button" onClick={() => {
+                  setSubmitError('');
+                  setStep('delivery');
+                }}>
+                  Continuar a mis datos
+                </button>
+              ) : (
+                <>
+                  <small>Revisaremos el precio y la existencia antes de registrar tu pedido.</small>
+                  <button type="submit" className="catalog-v2-primary-button" disabled={submitting || cart.validating}>
+                    {submitting || cart.validating ? 'Registrando…' : 'Registrar y abrir WhatsApp'}
+                  </button>
+                  <button type="button" className="catalog-v2-cart__back-link" disabled={submitting} onClick={() => {
+                    setSubmitError('');
+                    setStep('review');
+                  }}>
+                    Volver a mis productos
+                  </button>
+                </>
+              )}
             </footer>
           </form>
         )}

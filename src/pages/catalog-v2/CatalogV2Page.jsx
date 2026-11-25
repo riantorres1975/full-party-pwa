@@ -1,9 +1,5 @@
 import {
-  ChevronDown,
-  Grid3X3,
   Heart,
-  Home,
-  Menu,
   Search,
   ShoppingBag,
   SlidersHorizontal,
@@ -17,6 +13,7 @@ import {
   useState,
 } from 'react';
 import {
+  Link,
   useLocation,
   useNavigate,
   useSearchParams,
@@ -50,9 +47,9 @@ import { getInlineProductPlaceholder } from '../../utils/imagenes.js';
 
 const LOGO_COLORS = ['#7c3aed', '#22c55e', '#0ea5e9', '#f43f5e', '#f59e0b'];
 
-function FullPartyLogo() {
+function FullPartyLogo({ onClick }) {
   return (
-    <a href="/catalogo" className="catalog-v2-logo" aria-label="Full Party, inicio del catálogo">
+    <Link to="/catalogo" onClick={onClick} className="catalog-v2-logo" aria-label="Full Party, inicio del catálogo">
       <strong>
         {'Full'.split('').map((letter, index) => (
           <span key={`${letter}-${index}`} style={{ color: LOGO_COLORS[index] }}>{letter}</span>
@@ -62,7 +59,7 @@ function FullPartyLogo() {
         ))}
       </strong>
       <small>URUAPAN</small>
-    </a>
+    </Link>
   );
 }
 
@@ -99,15 +96,15 @@ export default function CatalogV2Page() {
   );
   const { setCategoryPresentation } = useCatalogSeo();
   const searchInputRef = useRef(null);
+  const searchEditedRef = useRef(false);
   const detailOriginParamsRef = useRef(null);
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const cart = useCatalogCart();
   const toast = useToast();
   const { favoriteIds, isFavorite, toggleFavorite, recordViewedProduct } = useProductPreferences();
-  const { tree: categories, bySlug, loading: categoriesLoading } = useCatalogCategories();
+  const { tree: categories, bySlug, loading: categoriesLoading, error: categoriesError, refresh: refreshCategories } = useCatalogCategories();
   const { collections } = useCatalogCollections();
 
   const pathParts = useMemo(
@@ -132,7 +129,7 @@ export default function CatalogV2Page() {
     collectionSlug: searchParams.get('coleccion') || null,
     search: searchParams.get('q') || null,
   }), [resolvedCategory?.slug, searchParams]);
-  const { facets, loading: facetsLoading, error: facetsError } = useCatalogFacets(facetContext);
+  const { facets, loading: facetsLoading, error: facetsError, refresh: refreshFacets } = useCatalogFacets(facetContext);
   const catalogFilters = useCatalogFilters({ facetSizes: facets.sizes });
   const [searchDraft, setSearchDraft] = useState(catalogFilters.filters.search);
   const debouncedSearch = useDebounce(searchDraft.trim(), 280);
@@ -159,7 +156,7 @@ export default function CatalogV2Page() {
   const selectedProductId = cards.find((card) => card.slug === selectedProductSlug)?.productId;
 
   useEffect(() => {
-    if (categoriesLoading || !categoryPath) return;
+    if (categoriesLoading || categoriesError || !categoryPath) return;
     if (!resolvedCategory) {
       navigate({ pathname: '/catalogo', search: location.search }, { replace: true });
       return;
@@ -173,6 +170,7 @@ export default function CatalogV2Page() {
   }, [
     canonicalCategoryPath,
     categoriesLoading,
+    categoriesError,
     categoryPath,
     location.search,
     navigate,
@@ -180,13 +178,16 @@ export default function CatalogV2Page() {
   ]);
 
   useEffect(() => {
+    searchEditedRef.current = false;
     setSearchDraft(catalogFilters.filters.search);
   }, [catalogFilters.filters.search]);
 
   useEffect(() => {
-    if (debouncedSearch === catalogFilters.filters.search) return;
-    catalogFilters.setFilter('search', debouncedSearch, { replace: true });
-  }, [catalogFilters, debouncedSearch]);
+    if (!searchEditedRef.current || debouncedSearch !== searchDraft.trim()) return;
+    if (debouncedSearch !== catalogFilters.filters.search) {
+      catalogFilters.setFilter('search', debouncedSearch, { replace: true });
+    }
+  }, [catalogFilters, debouncedSearch, searchDraft]);
 
   useEffect(() => {
     if (!resolvedCategory) {
@@ -225,7 +226,8 @@ export default function CatalogV2Page() {
       || (catalogFilters.filters.collectionSlug
         ? collections.find((item) => item.slug === catalogFilters.filters.collectionSlug)?.name
         : null)
-      || 'Catálogo completo';
+      || (catalogFilters.filters.search ? `Resultados para «${catalogFilters.filters.search}»` : 'Catálogo completo');
+  const visibleTotal = favoritesOnly ? visibleCards.length : total;
 
   const openCard = (card, searchMatch) => {
     detailOriginParamsRef.current = searchParams.toString();
@@ -251,20 +253,34 @@ export default function CatalogV2Page() {
   }, [selectedProductSlug, setSearchParams]);
 
   const selectCategory = (category) => {
-    setMobileMenuOpen(false);
-    navigate(buildCategoryHref(category));
+    const query = searchDraft.trim();
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (catalogFilters.filters.sort !== 'featured') params.set('orden', catalogFilters.filters.sort);
+    navigate({ pathname: buildCategoryHref(category), search: params.toString() });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
-  const selectCollection = (slug) => {
-    catalogFilters.setFilter(
-      'collectionSlug',
-      catalogFilters.filters.collectionSlug === slug ? null : slug,
-    );
+  const editSearch = (value) => {
+    searchEditedRef.current = true;
+    setSearchDraft(value);
   };
 
-  const focusSearch = () => {
-    setMobileMenuOpen(false);
-    requestAnimationFrame(() => searchInputRef.current?.focus());
+  const resetCatalog = () => {
+    searchEditedRef.current = false;
+    setSearchDraft('');
+    setFavoritesOnly(false);
+  };
+
+  const retryCatalog = () => {
+    if (categoriesError) refreshCategories();
+    if (facetsError) refreshFacets();
+    if (error) refresh();
+  };
+
+  const viewOrderFromProduct = () => {
+    closeDetail();
+    setCartOpen(true);
   };
 
   const addToCart = (selection) => {
@@ -276,256 +292,105 @@ export default function CatalogV2Page() {
     toast.success(result.item.productName, {
       title: 'Agregado a tu pedido',
       actionLabel: 'Ver mi pedido',
-      onAction: () => setCartOpen(true),
+      onAction: viewOrderFromProduct,
     });
   };
 
   return (
     <div className="catalog-v2-shell">
       <header className="catalog-v2-header">
-        <div className="catalog-v2-header__main">
-          <button
-            type="button"
-            className="catalog-v2-icon-button catalog-v2-header__menu"
-            onClick={() => setMobileMenuOpen((current) => !current)}
-            aria-label="Abrir categorías"
-            aria-expanded={mobileMenuOpen}
-          >
-            {mobileMenuOpen ? <X size={21} /> : <Menu size={21} />}
-          </button>
-          <FullPartyLogo />
-
-          <label className="catalog-v2-search">
-            <Search size={18} aria-hidden="true" />
+        <div className="catalog-v2-header__main catalog-v2-simple-header">
+          <FullPartyLogo onClick={resetCatalog} />
+          <form className="catalog-v2-search catalog-v2-simple-search" role="search" onSubmit={(event) => {
+            event.preventDefault();
+            catalogFilters.setFilter('search', searchDraft.trim(), { replace: true });
+            searchInputRef.current?.blur();
+          }}>
+            <Search size={19} aria-hidden="true" />
             <input
               ref={searchInputRef}
               type="search"
               value={searchDraft}
-              onChange={(event) => setSearchDraft(event.target.value)}
-              placeholder="Buscar productos, marcas, colores, medidas..."
+              onChange={(event) => editSearch(event.target.value)}
+              placeholder="Ej. globos rosas"
               aria-label="Buscar en el catálogo"
+              maxLength={80}
             />
             {searchDraft && (
-              <button type="button" onClick={() => setSearchDraft('')} aria-label="Limpiar búsqueda">
-                <X size={16} />
+              <button type="button" aria-label="Limpiar búsqueda" onClick={() => {
+                editSearch('');
+                catalogFilters.setFilter('search', '', { replace: true });
+                searchInputRef.current?.focus();
+              }}>
+                <X size={18} aria-hidden="true" />
               </button>
             )}
-          </label>
-
-          <div className="catalog-v2-header__actions">
-            <button
-              type="button"
-              className={favoritesOnly ? 'is-active' : ''}
-              onClick={() => setFavoritesOnly((current) => !current)}
-              aria-pressed={favoritesOnly}
-              aria-label="Mis favoritos"
-            >
-              <Heart size={18} fill={favoritesOnly ? 'currentColor' : 'none'} />
-              <span>Mis favoritos</span>
-              {favoriteIds.length > 0 && <small>{favoriteIds.length}</small>}
-            </button>
-            <button
-              type="button"
-              className={cartOpen ? 'is-active' : ''}
-              onClick={() => setCartOpen(true)}
-              aria-label="Mi pedido"
-            >
-              <ShoppingBag size={18} />
-              <span>Mi pedido</span>
-              {cart.quantity > 0 && <small>{cart.quantity}</small>}
-            </button>
-          </div>
+            <button type="submit" className="catalog-v2-search-submit">Buscar</button>
+          </form>
+          <button type="button" className="catalog-v2-order-button" onClick={() => setCartOpen(true)}>
+            <ShoppingBag size={19} aria-hidden="true" />
+            Mi pedido
+            {cart.quantity > 0 && <span aria-label={`${cart.quantity} en tu pedido`}>{cart.quantity}</span>}
+          </button>
         </div>
-
-        <nav className={`catalog-v2-category-nav ${mobileMenuOpen ? 'is-open' : ''}`} aria-label="Categorías principales">
-          <a href="/catalogo" className={!resolvedCategory ? 'is-active' : ''}>Inicio</a>
-          {categories.map((category) => (
-            <button
-              type="button"
-              key={category.id}
-              className={resolvedCategory?.path?.[0] === category.slug ? 'is-active' : ''}
-              onClick={() => selectCategory(category)}
-            >
-              {category.name}
-              {category.children.length > 0 && <ChevronDown size={13} />}
-            </button>
-          ))}
-        </nav>
       </header>
 
       <main className="catalog-v2-main">
-        {!resolvedCategory && !catalogFilters.hasActive && (
-          <section className="catalog-v2-discovery" aria-labelledby="catalog-discovery-title">
-            {collections.length > 0 && (
-              <div className="catalog-v2-quick-pills" aria-label="Accesos rápidos">
-                {collections.slice(0, 4).map((collection) => (
-                  <button
-                    type="button"
-                    key={collection.id}
-                    onClick={() => selectCollection(collection.slug)}
-                  >
-                    {collection.name}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="catalog-v2-section-heading">
-              <div>
-                <p>Encuentra todo para celebrar</p>
-                <h1 id="catalog-discovery-title">Categorías principales</h1>
-              </div>
-              <a href="#catalog-results-title">Ver todas</a>
-            </div>
-            <div className="catalog-v2-category-circles">
-              {categories.map((category) => (
-                <CategoryCircle key={category.id} category={category} onSelect={selectCategory} />
-              ))}
-            </div>
-
-            {collections.length > 0 && (
-              <div className="catalog-v2-collections">
-                <div className="catalog-v2-section-heading">
-                  <div>
-                    <p>Compra por evento</p>
-                    <h2>Colecciones para cada ocasión</h2>
-                  </div>
-                </div>
-                <div>
-                  {collections.slice(0, 8).map((collection) => (
-                    <button
-                      type="button"
-                      key={collection.id}
-                      onClick={() => selectCollection(collection.slug)}
-                    >
-                      <span>{collection.name.slice(0, 1)}</span>
-                      <strong>{collection.name}</strong>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {facets.colors.length > 0 && (
-              <div className="catalog-v2-colors">
-                <div className="catalog-v2-section-heading">
-                  <div>
-                    <p>Combina tu celebración</p>
-                    <h2>Comprar por color</h2>
-                  </div>
-                  <a href="#catalog-results-title">Ver todos</a>
-                </div>
-                <div>
-                  {facets.colors.slice(0, 7).map((color) => (
-                    <button
-                      type="button"
-                      key={color.slug}
-                      onClick={() => catalogFilters.toggleFilter('colors', color.slug)}
-                    >
-                      <span style={{ background: color.hex || '#e5e7eb' }} />
-                      <strong>{color.name}</strong>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </section>
-        )}
-
-        <div className="catalog-v2-content">
-          <CatalogV2Filters
-            facets={facets}
-            filters={catalogFilters.filters}
-            activeCount={catalogFilters.activeCount}
-            onToggle={catalogFilters.toggleFilter}
-            onSet={catalogFilters.setFilter}
-            onClear={catalogFilters.clearAll}
-          />
-
+        <div className="catalog-v2-content catalog-v2-content--simple">
           <section
             className={`catalog-v2-results ${!resolvedCategory && !catalogFilters.hasActive ? 'catalog-v2-results--home' : ''}`}
             aria-labelledby="catalog-results-title"
           >
-            <div className="catalog-v2-breadcrumbs">
-              <a href="/catalogo">Inicio</a>
-              {resolvedCategory?.path?.map((slug) => {
-                const item = bySlug.get(slug);
-                return item ? <span key={slug}>/ {item.name}</span> : null;
-              })}
-            </div>
-
             <div className="catalog-v2-results__heading">
               <div>
-                <p>{resolvedCategory?.parentId ? 'Categoría' : 'Explora Full Party'}</p>
                 <h1 id="catalog-results-title">{pageTitle}</h1>
-                <span>
-                  {favoritesOnly ? visibleCards.length : total} productos agrupados
-                </span>
-              </div>
-              <div>
-                <button
-                  type="button"
-                  className="catalog-v2-mobile-filter-button"
-                  onClick={() => setMobileFiltersOpen(true)}
-                >
-                  <SlidersHorizontal size={16} />
-                  Filtros
-                  {catalogFilters.activeCount > 0 && <small>{catalogFilters.activeCount}</small>}
-                </button>
-                <label>
-                  <span>Ordenar por</span>
-                  <select
-                    value={catalogFilters.filters.sort}
-                    onChange={(event) => catalogFilters.setFilter('sort', event.target.value)}
-                    aria-label="Ordenar productos"
-                  >
-                    <option value="featured">Destacados</option>
-                    <option value="price_asc">Menor precio</option>
-                    <option value="price_desc">Mayor precio</option>
-                    <option value="name_asc">Nombre A-Z</option>
-                  </select>
-                </label>
+                {!loading && <span aria-live="polite">{visibleTotal} {visibleTotal === 1 ? 'producto' : 'productos'}</span>}
               </div>
             </div>
 
-            {childCategories.length > 0 && (
-              <section
-                className="catalog-v2-subcategories"
-                aria-labelledby="catalog-subcategories-title"
+            <div className="catalog-v2-shopping-tools" aria-label="Opciones del catálogo">
+              <div className="catalog-v2-category-picker">
+                <label htmlFor="catalog-category-picker">Categoría</label>
+                <select
+                  id="catalog-category-picker"
+                  value={resolvedCategory?.slug ?? ''}
+                  disabled={categoriesLoading || categories.length === 0}
+                  onChange={(event) => selectCategory(bySlug.get(event.target.value))}
+                >
+                  <option value="">Todas las categorías</option>
+                  {categories.map((category) => category.children.length > 0 ? (
+                    <optgroup key={category.slug} label={category.name}>
+                      <option value={category.slug}>Todo en {category.name}</option>
+                      {Array.from(bySlug.values())
+                        .filter((item) => item.path.length > 1 && item.path[0] === category.slug)
+                        .map((item) => <option key={item.slug} value={item.slug}>{item.name}</option>)}
+                    </optgroup>
+                  ) : <option key={category.slug} value={category.slug}>{category.name}</option>)}
+                </select>
+              </div>
+
+              <button type="button" className="catalog-v2-shopping-tool" aria-haspopup="dialog" aria-expanded={filtersOpen} onClick={() => setFiltersOpen(true)}>
+                <SlidersHorizontal size={18} aria-hidden="true" />
+                Filtros
+                {catalogFilters.activeCount > 0 && <small>{catalogFilters.activeCount}</small>}
+              </button>
+              <button
+                type="button"
+                className="catalog-v2-shopping-tool"
+                onClick={() => setFavoritesOnly((current) => !current)}
+                aria-pressed={favoritesOnly}
               >
-                <div className="catalog-v2-section-heading">
-                  <div>
-                    <p>Sigue explorando</p>
-                    <h2 id="catalog-subcategories-title">
-                      Categorías de {resolvedCategory.name}
-                    </h2>
-                  </div>
-                  <span>{childCategories.length} opciones</span>
-                </div>
+                <Heart size={18} fill={favoritesOnly ? 'currentColor' : 'none'} aria-hidden="true" />
+                Favoritos
+              </button>
+            </div>
+
+            {childCategories.length > 0 && !favoritesOnly && !catalogFilters.filters.search && (
+              <section className="catalog-v2-subcategories" aria-label={`Más categorías de ${resolvedCategory.name}`}>
                 <div className="catalog-v2-category-circles">
-                  {childCategories.map((category) => (
-                    <CategoryCircle
-                      key={category.id}
-                      category={category}
-                      onSelect={selectCategory}
-                    />
-                  ))}
+                  {childCategories.map((category) => <CategoryCircle key={category.id} category={category} onSelect={selectCategory} />)}
                 </div>
               </section>
-            )}
-
-            {collections.length > 0 && (
-              <div className="catalog-v2-collection-pills" aria-label="Colecciones">
-                {collections.slice(0, 7).map((collection) => (
-                  <button
-                    type="button"
-                    key={collection.id}
-                    className={catalogFilters.filters.collectionSlug === collection.slug ? 'is-selected' : ''}
-                    onClick={() => selectCollection(collection.slug)}
-                  >
-                    {collection.name}
-                  </button>
-                ))}
-              </div>
             )}
 
             {catalogFilters.hasActive && (
@@ -535,23 +400,24 @@ export default function CatalogV2Page() {
               </div>
             )}
 
-            {(facetsError || error) && (
+            {(facetsError || error || categoriesError) && (
               <div className="catalog-v2-error" role="alert">
                 <div>
                   <strong>No pudimos actualizar el catálogo</strong>
                   <span>Revisa tu conexión e inténtalo nuevamente.</span>
                 </div>
-                <button type="button" onClick={() => refresh()}>Reintentar</button>
+                <button type="button" onClick={retryCatalog}>Reintentar</button>
               </div>
             )}
 
             <div className="catalog-v2-grid" aria-busy={loading || facetsLoading}>
               {loading
                 ? Array.from({ length: 8 }, (_, index) => <CardSkeleton key={index} />)
-                : visibleCards.map((card) => (
+                : visibleCards.map((card, index) => (
                   <CatalogV2Card
                     key={card.groupKey}
                     card={card}
+                    eagerImage={index < 4}
                     favorite={isFavorite(card.productId)}
                     onToggleFavorite={toggleFavorite}
                     onOpen={openCard}
@@ -563,60 +429,41 @@ export default function CatalogV2Page() {
             {!loading && visibleCards.length === 0 && (
               <div className="catalog-v2-empty">
                 <span><Search size={24} /></span>
-                <h2>{favoritesOnly ? 'Aún no guardas favoritos' : 'No encontramos productos'}</h2>
-                <p>Prueba otra categoría, color o término de búsqueda.</p>
+                <h2>{favoritesOnly
+                  ? (favoriteIds.length ? 'No encontramos tus favoritos en esta búsqueda' : 'Aún no guardas favoritos')
+                  : 'No encontramos productos'}</h2>
+                <p>{favoritesOnly && !favoriteIds.length
+                  ? 'Toca el corazón de un producto para guardarlo aquí.'
+                  : 'Prueba con otra categoría o usa menos filtros.'}</p>
                 <button type="button" onClick={() => {
-                  setFavoritesOnly(false);
-                  catalogFilters.clearAll();
+                  resetCatalog();
+                  navigate('/catalogo');
                 }}>
                   Ver todo el catálogo
                 </button>
               </div>
             )}
 
-            {!favoritesOnly && hasMore && (
+            {hasMore && (!favoritesOnly || favoriteIds.length > 0) && (
               <button
                 type="button"
                 className="catalog-v2-load-more"
                 onClick={loadMore}
                 disabled={loadingMore}
               >
-                {loadingMore ? 'Cargando...' : 'Ver más productos'}
+                {loadingMore ? 'Cargando…' : favoritesOnly ? 'Buscar más favoritos' : 'Ver más productos'}
               </button>
             )}
           </section>
         </div>
       </main>
 
-      <nav className="catalog-v2-bottom-nav" aria-label="Navegación móvil">
-        <button type="button" className={!resolvedCategory && !favoritesOnly ? 'is-active' : ''} onClick={() => navigate('/catalogo')}>
-          <Home size={20} /><span>Inicio</span>
-        </button>
-        <button type="button" onClick={() => setMobileMenuOpen(true)}>
-          <Grid3X3 size={20} /><span>Categorías</span>
-        </button>
-        <button type="button" onClick={focusSearch}>
-          <Search size={20} /><span>Buscar</span>
-        </button>
-        <button type="button" className={favoritesOnly ? 'is-active' : ''} onClick={() => setFavoritesOnly((current) => !current)}>
-          <Heart size={20} fill={favoritesOnly ? 'currentColor' : 'none'} /><span>Favoritos</span>
-        </button>
-        <button
-          type="button"
-          className={cartOpen ? 'is-active' : ''}
-          onClick={() => setCartOpen(true)}
-        >
-          <ShoppingBag size={20} /><span>Mi pedido</span>
-          {cart.quantity > 0 && <small>{cart.quantity}</small>}
-        </button>
-      </nav>
-
       <CatalogV2Filters
-        mobile
-        open={mobileFiltersOpen}
-        onClose={() => setMobileFiltersOpen(false)}
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
         facets={facets}
         filters={catalogFilters.filters}
+        collections={collections}
         activeCount={catalogFilters.activeCount}
         onToggle={catalogFilters.toggleFilter}
         onSet={catalogFilters.setFilter}
@@ -632,6 +479,7 @@ export default function CatalogV2Page() {
         favorite={selectedProductId ? isFavorite(selectedProductId) : false}
         onToggleFavorite={toggleFavorite}
         onAddToCart={addToCart}
+        onViewOrder={viewOrderFromProduct}
         onSelectionChange={syncDetailSelection}
         onClose={closeDetail}
       />

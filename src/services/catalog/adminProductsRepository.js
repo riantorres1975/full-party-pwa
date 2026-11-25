@@ -1,4 +1,6 @@
 import { supabase as defaultClient } from '../../lib/supabase.js';
+import { applyAdminCommercialRows } from './adminBulkRepository.js';
+import { QUICK_PHOTO_EXTENSIONS } from './adminQuickProduct.js';
 import { classifyCatalogError } from './errors.js';
 import {
   adaptAdminProduct,
@@ -92,12 +94,12 @@ export async function getAdminProductById(
 
 export async function saveAdminProduct(
   input,
-  { id = null, client = defaultClient } = {},
+  { id = null, newId = null, client = defaultClient } = {},
 ) {
   const payload = normalizeAdminProductPayload(input);
   let query = id
     ? client.from('catalog_products').update(payload).eq('id', id)
-    : client.from('catalog_products').insert(payload);
+    : client.from('catalog_products').insert(newId ? { ...payload, id: newId } : payload);
 
   const { data, error } = await query
     .select('id')
@@ -112,4 +114,57 @@ export async function deleteAdminProduct(
 ) {
   const { error } = await client.from('catalog_products').delete().eq('id', productId);
   if (error) throw classifyCatalogError(error, 'No se pudo eliminar el producto V2.');
+}
+
+/** Keep the product private until the sale, price and inventory row is complete. */
+export async function registerAdminQuickProduct(
+  { productId, product, row, photo },
+  { client = defaultClient } = {},
+) {
+  const existing = await getAdminProductById(productId, { client });
+  if (existing?.active) return existing;
+
+  const publish = async (draft) => {
+    try {
+      return await saveAdminProduct({ ...draft, active: true }, { id: productId, client });
+    } catch (error) {
+      error.readyToPublish = true;
+      throw error;
+    }
+  };
+
+  // The commercial row is transactional. If it was accepted before the browser
+  // lost its connection, publishing must not write stock or prices a second time.
+  if (existing?.presentationCount > 0) return publish(existing);
+
+  let draft = await saveAdminProduct(
+    { ...product, main_image_url: existing?.main_image_url, active: false },
+    { id: existing?.id, newId: productId, client },
+  );
+
+  if (photo) {
+    const storage = client.storage.from('productos-imagenes');
+    const path = `catalogo/${productId}/principal.${QUICK_PHOTO_EXTENSIONS[photo.type]}`;
+    const { error } = await storage.upload(path, photo, { upsert: true, contentType: photo.type });
+    if (error) throw new Error('No se pudo subir la foto. Revisa tu conexión e inténtalo de nuevo.');
+    const { data } = storage.getPublicUrl(path);
+    draft = await saveAdminProduct(
+      { ...draft, main_image_url: data.publicUrl },
+      { id: productId, client },
+    );
+  }
+
+  let report;
+  try {
+    report = await applyAdminCommercialRows(productId, [row], { client });
+  } catch (error) {
+    // A lost response is ambiguous. Keep the input stable until the retry can check.
+    error.readyToPublish = true;
+    throw error;
+  }
+  if (report.created + report.updated !== 1) {
+    throw new Error('No se pudo guardar el precio y la existencia. Revisa los datos e inténtalo de nuevo.');
+  }
+
+  return publish(draft);
 }

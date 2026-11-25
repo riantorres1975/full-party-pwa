@@ -16,6 +16,7 @@ import { useToast } from '../../ui/ToastProvider.jsx';
 import { useAdminProductsWorkspace } from '../../../hooks/catalog/useAdminProductsWorkspace.js';
 import { getAdminProductReadiness } from '../../../services/catalog/adminProductModel.js';
 import ProductEditorDrawer from './ProductEditorDrawer.jsx';
+import ProductQuickCreateDrawer from './ProductQuickCreateDrawer.jsx';
 
 const PRODUCT_GRID_CLASS = 'grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-3';
 
@@ -44,6 +45,7 @@ export default function AdminProductsWorkspace() {
   const deferredSearch = useDeferredValue(search.trim().toLocaleLowerCase('es'));
   const workspace = useAdminProductsWorkspace(deferredSearch);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const canEdit = usePermission('catalogo.edit');
   const canDelete = usePermission('catalogo.delete');
@@ -58,9 +60,11 @@ export default function AdminProductsWorkspace() {
     try {
       const saved = await workspace.saveProduct(payload, id);
       setSelectedProduct(saved);
-      toast.success('Producto V2 guardado.');
+      toast.success('Producto guardado.');
+      return saved;
     } catch (error) {
       toast.error(error.message || 'No se pudo guardar el producto.');
+      return null;
     }
   };
 
@@ -109,12 +113,11 @@ export default function AdminProductsWorkspace() {
         <div className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-gradient-to-br from-pink-500/16 to-violet-600/14 blur-2xl" />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-fiesta-magenta">Familias de producto</p>
-            <h2 className="mt-1 text-xl font-black text-admin-text">Productos V2</h2>
-            <p className="mt-1 max-w-xl text-xs text-admin-muted">Una familia concentra sus combinaciones, formas de venta, precios e inventario.</p>
+            <h2 className="text-xl font-black text-admin-text">Productos a la venta</h2>
+            <p className="mt-1 max-w-xl text-sm text-admin-muted">Agrega productos o actualiza sus precios y existencias.</p>
           </div>
           {canEdit && (
-            <button type="button" onClick={() => openEditor()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-violet-600 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-pink-500/20">
+            <button type="button" onClick={() => setQuickCreateOpen(true)} disabled={workspace.loading || Boolean(workspace.error)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#a71962] px-4 py-2.5 text-sm font-black text-white disabled:opacity-50">
               <Plus size={17} /> Nuevo producto
             </button>
           )}
@@ -123,7 +126,7 @@ export default function AdminProductsWorkspace() {
 
       <div className="flex items-center gap-3 rounded-2xl border border-admin-border bg-admin-card p-3">
         <Search size={17} className="ml-1 shrink-0 text-admin-muted" />
-        <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto o slug..." className="min-w-0 flex-1 bg-transparent text-sm text-admin-text outline-none placeholder:text-admin-inactive" />
+        <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} aria-label="Buscar producto por nombre" placeholder="Buscar por nombre…" className="min-w-0 flex-1 bg-transparent text-sm text-admin-text outline-none placeholder:text-admin-inactive" />
         <span className="rounded-lg bg-admin-elevated px-2.5 py-1 text-[10px] font-black text-admin-muted">{workspace.total} productos</span>
       </div>
 
@@ -135,7 +138,7 @@ export default function AdminProductsWorkspace() {
         <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-dashed border-admin-border bg-admin-card px-6 text-center">
           <PackagePlus size={34} className="text-admin-inactive" />
           <h3 className="mt-3 text-sm font-black text-admin-text">No hay productos para mostrar</h3>
-          <p className="mt-1 text-xs text-admin-muted">Crea una familia o cambia la busqueda.</p>
+          <p className="mt-1 text-xs text-admin-muted">Agrega un producto o prueba con otro nombre.</p>
         </div>
       ) : (
         <div className={PRODUCT_GRID_CLASS}>
@@ -173,7 +176,7 @@ export default function AdminProductsWorkspace() {
                     </div>
                   </div>
                   <div className="mt-3 flex gap-1.5">
-                    <button type="button" onClick={() => openEditor(product)} className="inline-flex min-h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-admin-border px-2.5 py-1.5 text-[11px] font-black text-admin-text hover:border-fiesta-magenta/40 hover:text-fiesta-magenta"><Edit3 size={13} /> Abrir editor</button>
+                    <button type="button" onClick={() => openEditor(product)} className="inline-flex min-h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-admin-border px-2.5 py-1.5 text-[11px] font-black text-admin-text hover:border-fiesta-magenta/40 hover:text-fiesta-magenta"><Edit3 size={13} /> Editar producto</button>
                     {canDelete && <button type="button" onClick={() => removeProduct(product)} className="flex h-8 w-8 items-center justify-center rounded-lg text-admin-muted hover:bg-red-500/10 hover:text-red-500" aria-label={`Eliminar ${product.name}`}><Trash2 size={14} /></button>}
                   </div>
                 </div>
@@ -196,6 +199,20 @@ export default function AdminProductsWorkspace() {
               : `Cargar mas (${workspace.total - workspace.products.length} pendientes)`}
           </button>
         </div>
+      )}
+
+      {quickCreateOpen && (
+        <ProductQuickCreateDrawer
+          lookups={workspace.lookups}
+          onRegister={async (registration) => {
+            const saved = await workspace.registerQuickProduct(registration);
+            setQuickCreateOpen(false);
+            setSearch('');
+            toast.success(saved.name, { title: 'Producto publicado' });
+          }}
+          onAdvanced={() => { setQuickCreateOpen(false); openEditor(); }}
+          onClose={() => setQuickCreateOpen(false)}
+        />
       )}
 
       {editorOpen && (

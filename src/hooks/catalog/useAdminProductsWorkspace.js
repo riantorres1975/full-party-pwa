@@ -3,6 +3,7 @@ import {
   deleteAdminProduct,
   getAdminProductById,
   listAdminProducts,
+  registerAdminQuickProduct,
   saveAdminProduct,
 } from '../../services/catalog/adminProductsRepository.js';
 import { listAdminCatalogResource } from '../../services/catalog/adminCatalogRepository.js';
@@ -110,6 +111,14 @@ export function useAdminProductsWorkspace(search = '') {
     }
   }, []);
 
+  const registerQuickProduct = useCallback(async (registration) => {
+    try {
+      return await registerAdminQuickProduct(registration);
+    } finally {
+      refresh();
+    }
+  }, [refresh]);
+
   const removeProduct = useCallback(async (id) => {
     setSaving(true);
     try {
@@ -193,6 +202,7 @@ export function useAdminProductsWorkspace(search = '') {
     error,
     refresh,
     saveProduct,
+    registerQuickProduct,
     removeProduct,
     loadMore,
     commercial,

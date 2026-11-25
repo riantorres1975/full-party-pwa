@@ -1,3 +1,4 @@
+import { CONTACT_WHATSAPP_NUMBER } from '../data/siteContact';
 import { NUMERO_WHATSAPP, NOMBRE_NEGOCIO, SIMBOLO_MONEDA } from '../data/productos';
 import { construirUrlRastreo } from './rastreo';
 
@@ -84,10 +85,6 @@ export function generarMensajeWhatsApp(items, total, entrega) {
 }
 
 export function generarMensajeWhatsAppCatalogoV2(items, total, entrega) {
-  if (!NUMERO_WHATSAPP || !/^\d{10,15}$/.test(NUMERO_WHATSAPP)) {
-    throw new Error('NUMERO_WHATSAPP no está configurado o es inválido.');
-  }
-
   const lines = Array.isArray(items) ? items : [];
   const money = (value) => `${SIMBOLO_MONEDA}${(Number(value) || 0).toFixed(2)}`;
   const fecha = new Date().toLocaleDateString('es-MX', {
@@ -97,7 +94,7 @@ export function generarMensajeWhatsAppCatalogoV2(items, total, entrega) {
   });
   const delivery = entrega.tipo === 'envio'
     ? `Envío a domicilio\nDirección: ${entrega.direccion}`
-    : 'Recoger en tienda';
+    : ['Recoger en tienda', entrega.sucursal].filter(Boolean).join(' · ');
 
   let mensaje = `*Nuevo pedido - ${NOMBRE_NEGOCIO}*\n`;
   mensaje += `Fecha: ${fecha}\n`;
@@ -129,7 +126,7 @@ export function generarMensajeWhatsAppCatalogoV2(items, total, entrega) {
   mensaje += 'La existencia y el precio serán confirmados por la sucursal al preparar el pedido.';
 
   const params = new URLSearchParams({
-    phone: NUMERO_WHATSAPP,
+    phone: CONTACT_WHATSAPP_NUMBER,
     text: mensaje,
   });
   return `https://api.whatsapp.com/send?${params.toString()}`;

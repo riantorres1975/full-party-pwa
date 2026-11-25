@@ -20,8 +20,8 @@ export default function CatalogoPage() {
   return (
     <>
       <PageHeader
-        title="Catalogo V2"
-        subtitle="Administra la estructura normalizada que alimentara la nueva experiencia de compra."
+        title="Catálogo"
+        subtitle="Administra los productos que ven tus clientes."
         actions={(
           <div className="flex rounded-xl border border-admin-border bg-admin-card p-1">
             <button
@@ -40,7 +40,7 @@ export default function CatalogoPage() {
                 baseMode ? 'bg-fiesta-magenta text-white' : 'text-admin-muted hover:bg-admin-elevated'
               }`}
             >
-              <Database size={14} /> Datos base
+              <Database size={14} /> Configuración
             </button>
           </div>
         )}

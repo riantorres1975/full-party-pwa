@@ -203,6 +203,7 @@ export function getCatalogCartFingerprint(items, customer) {
     name: String(customer?.nombre || '').trim(),
     phone: String(customer?.telefono || '').replace(/\D/g, ''),
     delivery: customer?.tipoEntrega || 'tienda',
+    location: customer?.locationSlug || undefined,
     address: customer?.tipoEntrega === 'envio'
       ? String(customer?.direccion || '').trim()
       : '',

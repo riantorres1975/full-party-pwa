@@ -173,6 +173,9 @@ async function mockCatalogV2(page) {
     }
     if (url.pathname.endsWith('/rpc/catalog_get_facets')) body = facets;
     if (url.pathname.endsWith('/rpc/catalog_get_product_detail')) body = detail;
+    if (url.pathname.endsWith('/rpc/catalog_create_order')) {
+      body = { folio: 'FP-PRUEBA-001', total: 85 };
+    }
     if (url.pathname.endsWith('/rpc/catalog_validate_cart')) {
       body = { valid: true, issues: [], lines: [], total: 85 };
     }
@@ -262,12 +265,36 @@ test('renders the V2 catalog and searches through the canonical RPC', async ({ p
 
   await expect(page.getByRole('heading', { name: /Cat.logo completo/ })).toBeVisible();
   await expect(page.getByRole('heading', { name: /Globo Latex Glomex/ })).toBeVisible();
-  await expect(page.getByText('Desde').first()).toBeVisible();
+  await expect(page.locator('article').getByText('$85.00')).toBeVisible();
+  const cardAction = page.locator('article').getByRole('button', { name: 'Ver producto' });
+  await expect(cardAction.getByText('Ver producto')).toHaveCSS('position', 'static');
 
   await page.getByRole('searchbox', { name: /Buscar en el cat.logo/ }).fill('Glomex');
   await expect(page).toHaveURL(/q=Glomex/);
   await expect.poll(() => requests.filter((path) => path.endsWith('/rpc/catalog_list_cards')).length).toBeGreaterThan(1);
   expect(requests.some((path) => path.endsWith('/productos'))).toBe(false);
+});
+
+test('keeps the main results visible until the shopper opens the filters', async ({ page }) => {
+  await mockCatalogV2(page);
+  await page.goto('/catalogo');
+
+  const filters = page.getByRole('dialog', { name: 'Filtros' });
+  const trigger = page.getByRole('button', { name: /^Filtros(?: \d+)?$/ });
+  await expect(filters).toHaveCount(0);
+  await page.getByRole('combobox', { name: 'Categoría', exact: true }).selectOption('globos');
+  await expect(page).toHaveURL(/catalogo\/globos$/);
+  await trigger.click();
+
+  await expect(filters.getByText('Marca', { exact: true })).toBeHidden();
+  await filters.getByRole('button', { name: /^Rojo/ }).click();
+  await filters.getByText('Más filtros', { exact: true }).click();
+  await expect(filters.getByText('Marca', { exact: true })).toBeVisible();
+  await filters.getByRole('button', { name: 'Ver productos' }).click();
+
+  await expect(filters).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await expect(page).toHaveURL(/color=rojo/);
 });
 
 test('opens a V2 product, applies tier information and adds it to the order', async ({ page }) => {
@@ -281,18 +308,34 @@ test('opens a V2 product, applies tier information and adds it to the order', as
   await expect(dialog.getByRole('heading', { name: 'Precios por cantidad' })).toBeVisible();
 
   await dialog.getByRole('button', { name: /Agregar al pedido/ }).click();
-  await dialog.getByRole('button', { name: 'Regresar' }).click();
-  const mobile = page.viewportSize()?.width < 820;
-  if (mobile) {
-    await expect(page.getByRole('alert')).toBeHidden({ timeout: 10_000 });
-  }
-  const cartNavigation = mobile
-    ? page.locator('.catalog-v2-bottom-nav')
-    : page.locator('.catalog-v2-header__actions');
-  await cartNavigation.getByRole('button', { name: 'Mi pedido' }).click();
+  await dialog.getByRole('button', { name: 'Ver mi pedido' }).click();
+  await expect(dialog).toBeHidden();
   const cart = page.getByRole('dialog', { name: 'Mi pedido' });
   await expect(cart.getByText('Globo Latex Glomex')).toBeVisible();
-  await expect(cart.getByRole('heading', { name: /Qui.n recibe el pedido/ })).toBeVisible();
+  await expect(cart.getByRole('heading', { name: 'Revisa tus productos' })).toBeVisible();
+  await expect(cart.getByLabel('Nombre completo')).toHaveCount(0);
+  await cart.getByRole('button', { name: 'Continuar a mis datos' }).click();
+  await expect(cart.getByRole('heading', { name: 'Tus datos y entrega' })).toBeFocused();
+  await cart.getByLabel('Nombre completo').fill('Cliente Pruebas');
+  await expect(cart.getByLabel('Sucursal para recoger')).toHaveValue('sol-naciente');
+  await cart.getByRole('button', { name: 'Volver a mis productos' }).click();
+  await expect(cart.getByText('Globo Latex Glomex')).toBeVisible();
+  await cart.getByRole('button', { name: 'Continuar a mis datos' }).click();
+  await expect(cart.getByLabel('Nombre completo')).toHaveValue('Cliente Pruebas');
+
+  await page.context().route('https://api.whatsapp.com/**', (route) => route.fulfill({ body: '<title>WhatsApp de prueba</title>' }));
+  await cart.getByLabel('Teléfono de WhatsApp').fill('452 123 4567');
+  await cart.getByLabel('Sucursal para recoger').selectOption('francisco-villa');
+  const submitted = page.waitForRequest('**/rpc/catalog_create_order');
+  await cart.getByRole('button', { name: 'Registrar y abrir WhatsApp' }).click();
+  expect((await submitted).postDataJSON()).toMatchObject({
+    p_tipo_entrega: 'tienda',
+    p_location_slug: 'francisco-villa',
+    p_items: [{ variant_id: variantId, sale_presentation_id: presentationId, quantity: 1 }],
+  });
+  await expect(cart.getByRole('heading', { name: 'FP-PRUEBA-001' })).toBeVisible();
+  const whatsapp = await cart.getByRole('link', { name: 'Abrir WhatsApp' }).getAttribute('href');
+  expect(new URL(whatsapp).searchParams.get('text')).toContain('Suc. Francisco Villa');
 });
 
 test('lets customers choose visually by color across product lines', async ({ page }) => {
@@ -300,7 +343,7 @@ test('lets customers choose visually by color across product lines', async ({ pa
   await page.goto('/catalogo?producto=globo-latex-glomex');
 
   const dialog = page.getByRole('dialog', { name: 'Globo Latex Glomex' });
-  await expect(dialog.getByRole('heading', { name: '¿Cómo quieres empezar?' })).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'Elige las opciones de tu producto' })).toBeVisible();
   await dialog.getByTestId('catalog-v2-global-color-trigger').click();
 
   const colorPicker = page.getByRole('dialog', { name: 'Explora por color' });

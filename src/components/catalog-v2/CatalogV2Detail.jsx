@@ -481,6 +481,7 @@ export default function CatalogV2Detail({
   favorite,
   onToggleFavorite,
   onAddToCart,
+  onViewOrder,
   onSelectionChange,
   onClose,
 }) {
@@ -742,39 +743,15 @@ export default function CatalogV2Detail({
                   className="catalog-v2-detail__selection-guide"
                   aria-labelledby="catalog-v2-selection-guide-title"
                 >
-                  <div className="catalog-v2-detail__selection-guide-heading">
-                    <div>
-                      <span>Te ayudamos a elegir</span>
-                      <h3 id="catalog-v2-selection-guide-title">¿Cómo quieres empezar?</h3>
-                    </div>
-                    <small>Puedes cambiar de opción cuando quieras</small>
-                  </div>
+                  <h3 id="catalog-v2-selection-guide-title">Elige las opciones de tu producto</h3>
                   <div className="catalog-v2-detail__selection-paths" role="group" aria-label="Forma de elegir">
-                    <button
-                      type="button"
-                      className={selectionPath === 'color' ? 'is-selected' : ''}
-                      onClick={() => setSelectionPath('color')}
-                      aria-pressed={selectionPath === 'color'}
-                    >
-                      <Palette size={19} aria-hidden="true" />
-                      <span>
-                        <strong>Elegir por color</strong>
-                        <small>Quiero ver fotos y tonos</small>
-                      </span>
-                      {selectionPath === 'color' && <Check size={15} />}
+                    <button type="button" className={selectionPath === 'color' ? 'is-selected' : ''} onClick={() => setSelectionPath('color')} aria-pressed={selectionPath === 'color'}>
+                      <Palette size={17} aria-hidden="true" />
+                      <strong>Elegir por color</strong>
                     </button>
-                    <button
-                      type="button"
-                      className={selectionPath === 'line' ? 'is-selected' : ''}
-                      onClick={() => setSelectionPath('line')}
-                      aria-pressed={selectionPath === 'line'}
-                    >
-                      <Layers3 size={19} aria-hidden="true" />
-                      <span>
-                        <strong>Conozco la gama</strong>
-                        <small>Estándar, Pastel, Retro...</small>
-                      </span>
-                      {selectionPath === 'line' && <Check size={15} />}
+                    <button type="button" className={selectionPath === 'line' ? 'is-selected' : ''} onClick={() => setSelectionPath('line')} aria-pressed={selectionPath === 'line'}>
+                      <Layers3 size={17} aria-hidden="true" />
+                      <strong>Conozco la gama</strong>
                     </button>
                   </div>
 
@@ -840,9 +817,9 @@ export default function CatalogV2Detail({
               <OptionGroup label="Medida" state={selection.dimensionStates.sizeId} onSelect={selection.selectSize} />
               <OptionGroup label={finishLabel} state={selection.dimensionStates.finish} onSelect={selection.selectFinish} />
 
-              {variant && (
+              {selection.presentations.length > 1 && (
                 <fieldset className="catalog-v2-detail__presentations">
-                  <legend>¿Cómo deseas comprar?</legend>
+                  <legend>¿Cómo lo quieres comprar?</legend>
                   <div>
                     {selection.presentations.map((item) => (
                       <button
@@ -920,7 +897,7 @@ export default function CatalogV2Detail({
                         )}
                       </div>
                       <div className="catalog-v2-detail__price-summary">
-                        <span>Precio aplicado</span>
+                        <span>Precio por {presentation.presentationType || 'unidad'}</span>
                         <strong>{money(price.pricing?.unitPrice)} c/u</strong>
                         {price.pricing?.nextTier && (
                           <small>
@@ -990,6 +967,12 @@ export default function CatalogV2Detail({
                   </small>
                 )}
               </button>
+
+              {cartQuantity > 0 && (
+                <button type="button" className="catalog-v2-detail__view-order" onClick={onViewOrder}>
+                  Ver mi pedido
+                </button>
+              )}
 
               {presentation?.tiers?.length > 0 && (
                 <details className="catalog-v2-detail__tiers">

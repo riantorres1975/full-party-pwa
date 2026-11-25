@@ -6,6 +6,7 @@ const FOCUSABLE_SELECTOR = [
   'input:not([disabled])',
   'select:not([disabled])',
   'textarea:not([disabled])',
+  'summary',
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
@@ -20,9 +21,12 @@ export function useDialogFocus({ open, containerRef, initialFocusRef, onClose })
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
+    const getFocusable = () => Array.from(containerRef.current?.querySelectorAll(FOCUSABLE_SELECTOR) ?? [])
+      .filter((element) => element.getClientRects().length && !element.matches(':disabled'));
+
     const focusTimer = window.setTimeout(() => {
       const initial = initialFocusRef?.current
-        || containerRef.current?.querySelector(FOCUSABLE_SELECTOR)
+        || getFocusable()[0]
         || containerRef.current;
       initial?.focus();
     }, 0);
@@ -35,7 +39,7 @@ export function useDialogFocus({ open, containerRef, initialFocusRef, onClose })
       }
 
       if (event.key !== 'Tab' || !containerRef.current) return;
-      const focusable = Array.from(containerRef.current.querySelectorAll(FOCUSABLE_SELECTOR));
+      const focusable = getFocusable();
       if (focusable.length === 0) {
         event.preventDefault();
         containerRef.current.focus();
