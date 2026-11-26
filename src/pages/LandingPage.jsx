@@ -17,11 +17,13 @@ import ReviewsCarousel from '../components/landing/ReviewsCarousel';
 import GaleriaCard from '../components/landing/GaleriaCard';
 import BrandCard from '../components/landing/BrandCard';
 import CatalogQuickLinks from '../components/landing/CatalogQuickLinks';
+import HeroPartyStage from '../components/landing/HeroPartyStage';
 import NovedadesPlaceholder from '../components/landing/NovedadesPlaceholder';
 import PublicSiteHeader from '../components/PublicSiteHeader';
 import { trackEvent } from '../utils/analytics';
 import { SUCURSALES as DATOS_SUCURSALES } from '../data/sucursales';
 import { buildContactWhatsAppUrl } from '../data/siteContact';
+import { useReveal } from '../hooks/landing/useReveal';
 
 const NovedadesSection = lazy(() => import('../components/landing/NovedadesSection'));
 
@@ -289,6 +291,7 @@ const GALERIA = [
 export default function LandingPage() {
   const [loadNovedades, setLoadNovedades] = useState(false);
   const [catalogSearch, setCatalogSearch] = useState('');
+  const [stepsRef, stepsVisible] = useReveal();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -395,17 +398,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <picture className="lp-hero-media" aria-hidden="true">
-              <img
-                src="/landing-globos.webp"
-                srcSet="/landing-globos-640.webp 640w, /landing-globos.webp 1280w"
-                sizes="(min-width: 1180px) 546px, (min-width: 880px) 46vw, calc(100vw - 72px)"
-                width="1280"
-                height="960"
-                fetchPriority="high"
-                alt=""
-              />
-            </picture>
+            <HeroPartyStage />
           </div>
 
           <ul className="lp-hero-proof max-w-[1152px] mx-auto" aria-label="Ventajas de comprar en Full Party">
@@ -456,16 +449,12 @@ export default function LandingPage() {
 
         {/* ══ CÓMO FUNCIONA ═══════════════════════════════ */}
         <section className="lp-below-fold lp-section-white lp-steps-section px-5 py-16">
-          <div className="max-w-5xl mx-auto">
+          <div ref={stepsRef} data-visible={stepsVisible} className="lp-steps-reveal max-w-5xl mx-auto">
             <Reveal><SectionTitle eyebrow="Paso a paso" title="¿Cómo funciona?" subtitle="Pedir al mayoreo nunca había sido tan fácil." /></Reveal>
 
             {/* Desktop */}
             <div className="lp-steps-panel hidden md:grid grid-cols-4 gap-0 relative">
-              <div
-                className="absolute top-[38px] left-[13%] right-[13%] h-[2px] rounded-full"
-                style={{ background: `linear-gradient(90deg, ${C.pink}, ${C.purple}, ${C.cyan}, ${C.green})` }}
-                aria-hidden="true"
-              />
+              <div className="lp-steps-line absolute top-[38px] left-[13%] right-[13%] h-[2px] rounded-full" aria-hidden="true" />
               {PASOS.map(({ num, icon: Icon, titulo, desc, color }, i) => (
                 <Reveal key={num} delay={i * 0.12}>
                   <div className="lp-step flex flex-col items-center text-center px-4">
@@ -489,11 +478,7 @@ export default function LandingPage() {
 
             {/* Mobile */}
             <div className="lp-steps-mobile md:hidden flex flex-col gap-0 relative">
-              <div
-                className="absolute left-[19px] top-5 bottom-5 w-[2px] rounded-full"
-                style={{ background: `linear-gradient(180deg, ${C.pink}, ${C.purple}, ${C.cyan}, ${C.green})` }}
-                aria-hidden="true"
-              />
+              <div className="lp-steps-line absolute left-[19px] top-5 bottom-5 w-[2px] rounded-full" aria-hidden="true" />
               {PASOS.map(({ num, icon: Icon, titulo, desc, color }, i) => (
                 <Reveal key={num} delay={i * 0.1} direction="left">
                   <div className={`lp-step-mobile grid grid-cols-[40px_minmax(0,1fr)] gap-4 items-start relative ${i === PASOS.length - 1 ? 'pb-0' : 'pb-9'}`}>

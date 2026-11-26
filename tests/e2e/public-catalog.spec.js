@@ -249,6 +249,30 @@ test('opens a catalog search from home and keeps the query', async ({ page }) =>
   await expect(page.getByRole('heading', { name: /Globo Latex Glomex/ })).toBeVisible();
 });
 
+test('launches confetti from the keyboard and respects reduced motion', async ({ page }) => {
+  await mockCatalogV2(page);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/');
+
+  const launch = page.getByRole('button', { name: 'Lanzar confeti' });
+  const particles = page.locator('.lp-party-burst__piece');
+  const heading = page.getByRole('heading', { level: 1 });
+  await expect(heading).toHaveCSS('animation-name', 'lp-hero-entrance');
+  await launch.focus();
+  await launch.press('Enter');
+  await expect(particles).toHaveCount(20);
+  await expect(particles.first()).toHaveCSS('animation-name', 'lp-confetti-flight');
+  await expect(launch).toBeFocused();
+  await expect(particles).toHaveCount(0);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(heading).toHaveCSS('animation-name', 'none');
+  await launch.click();
+  await expect(particles).toHaveCount(20);
+  await expect(particles.first()).toHaveCSS('animation-name', 'none');
+  await expect(launch).toBeFocused();
+});
+
 test('closes the mobile home menu with Escape and restores focus', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'The mobile menu is only shown at narrow widths');
   await mockCatalogV2(page);

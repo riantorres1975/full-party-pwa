@@ -1,5 +1,6 @@
-import { CircleDot, Shapes, PanelsTopLeft, Zap, PartyPopper } from 'lucide-react';
+import { ArrowUpRight, CircleDot, Shapes, PanelsTopLeft, Zap, PartyPopper } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import Reveal from './Reveal';
 
 const QUICK_LINKS = [
   { title: 'Globos de látex', description: 'Colores y medidas', href: '/catalogo/globos/globos-latex', icon: CircleDot, accent: '#a71962', background: '#fce5f2' },
@@ -19,19 +20,24 @@ export default function CatalogQuickLinks() {
         </div>
 
         <ul className="lp-catalog-entry__grid">
-          {QUICK_LINKS.map(({ title, description, href, icon: Icon, accent, background }) => (
+          {QUICK_LINKS.map(({ title, description, href, icon: Icon, accent, background }, index) => (
             <li key={href}>
-              <Link
-                to={href}
-                className="lp-catalog-entry__card"
-                style={{ '--quick-accent': accent, '--quick-background': background }}
-              >
-                <Icon className="lp-catalog-entry__icon" size={22} aria-hidden="true" />
-                <span>
-                  <strong>{title}</strong>
-                  <small>{description}</small>
-                </span>
-              </Link>
+              <Reveal delay={index * 0.045} className="lp-catalog-entry__reveal">
+                <Link
+                  to={href}
+                  className="lp-catalog-entry__card"
+                  style={{ '--quick-accent': accent, '--quick-background': background }}
+                >
+                  <span className="lp-catalog-entry__top">
+                    <Icon className="lp-catalog-entry__icon" size={22} aria-hidden="true" />
+                    <ArrowUpRight className="lp-catalog-entry__arrow" size={17} aria-hidden="true" />
+                  </span>
+                  <span>
+                    <strong>{title}</strong>
+                    <small>{description}</small>
+                  </span>
+                </Link>
+              </Reveal>
             </li>
           ))}
         </ul>
