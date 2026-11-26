@@ -7,6 +7,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { MapPin, Clock, MessageCircle } from 'lucide-react';
 import { WaIcon, FbIcon, TikTokIcon } from './icons/SocialIcons';
 import { buildContactWhatsAppUrl } from '../data/siteContact';
+import { LATEX_CATALOG_PATH } from '../data/siteLinks';
 
 const ENV = {
   negocio:  import.meta.env.VITE_NOMBRE_NEGOCIO  || 'Full Party',
@@ -36,6 +37,7 @@ const NAV_LINKS = [
 
 const SECCIONES = [
   { label: 'Catálogo',               href: '/catalogo'      },
+  { label: 'Globos de látex',         href: LATEX_CATALOG_PATH },
   { label: 'Categorías destacadas',  href: '/destacados'    },
   { label: 'Sucursales',             href: '/sucursales'    },
   { label: '¿Cómo hacer un pedido?', href: '/como-funciona' },

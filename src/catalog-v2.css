@@ -4277,6 +4277,23 @@
   margin: 0;
 }
 
+.catalog-v2-listing-header .catalog-v2-latex-help {
+  margin-top: 0.45rem;
+  color: #594762;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  line-height: 1.5;
+  text-transform: none;
+}
+
+.catalog-v2-latex-help a {
+  color: #782266;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
 .catalog-v2-card__variants {
   display: flex;
   flex-wrap: wrap;

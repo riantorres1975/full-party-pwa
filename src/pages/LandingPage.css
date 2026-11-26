@@ -1215,6 +1215,13 @@
   line-height: 1.6;
 }
 
+.lp-hero-latex {
+  color: #782266;
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
 .lp-hero-search {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;

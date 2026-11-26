@@ -1,3 +1,4 @@
+import { ArrowLeft, PackageSearch, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { usePedido } from '../hooks/usePedido';
 import { SIMBOLO_MONEDA } from '../data/productos';
@@ -250,8 +251,6 @@ export default function RastreoPedido({ onCerrar, initialFolio = '' }) {
     setPedidos(resultado);
   };
 
-  const handleBuscar = () => buscarFolio(query);
-
   useEffect(() => {
     if (!normalizedInitialFolio || searchedInitialFolio.current === normalizedInitialFolio) return;
     searchedInitialFolio.current = normalizedInitialFolio;
@@ -259,87 +258,77 @@ export default function RastreoPedido({ onCerrar, initialFolio = '' }) {
     buscarFolio(normalizedInitialFolio);
   }, [normalizedInitialFolio]);
 
-  const handleKeyDown = (e) => { if (e.key === 'Enter') handleBuscar(); };
-
   return (
-    <div className="min-h-screen flex flex-col items-center" style={{ background: 'var(--surface-primary)' }}>
-      <div className="w-full max-w-xl flex flex-col min-h-screen">
-
-      <div className="flex-shrink-0 px-5 pt-6 pb-4">
-        <div className="flex items-center gap-3 mb-1">
+    <main className="rastreo-container min-h-screen" style={{ background: 'var(--surface-primary)' }}>
+      <div className="mx-auto w-full max-w-xl px-5 py-7 sm:py-12">
+        <header className="rounded-t-[1.25rem] border border-b-0 border-[color:var(--tracking-border)] bg-[color:var(--tracking-tint)] p-5 sm:p-7">
           {onCerrar && (
-            <button onClick={onCerrar} aria-label={t('common.close')}
-              className="p-2 rounded-full bg-ink-100 hover:bg-ink-200 text-ink-500 transition-colors">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-              </svg>
+            <button
+              type="button"
+              onClick={onCerrar}
+              className="mb-3 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-extrabold text-[color:var(--tracking-accent)] underline underline-offset-4"
+            >
+              <ArrowLeft size={17} aria-hidden="true" /> {t('tracking.backToCatalog')}
             </button>
           )}
-          <div>
-            <h1 className="font-display text-2xl text-ink-900">{t('tracking.title')}</h1>
-            <p className="text-xs font-body text-ink-400 mt-0.5">{t('tracking.subtitle')}</p>
+          <h1 className="font-display text-3xl text-ink-900">{t('tracking.title')}</h1>
+          <p className="mt-2 text-sm text-[color:var(--tracking-copy)]">{t('tracking.subtitle')}</p>
+        </header>
+
+        <form
+          className="rounded-b-[1.25rem] border border-[color:var(--tracking-border)] bg-white p-5 sm:p-7"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!buscando) buscarFolio(query);
+          }}
+        >
+          <label htmlFor="tracking-folio" className="mb-2 block text-sm font-extrabold text-ink-900">
+            {t('tracking.folioLabel')}
+          </label>
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <input
+              id="tracking-folio"
+              type="text"
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setPedidos(null);
+                setErrorMsg('');
+              }}
+              autoCapitalize="characters"
+              autoComplete="off"
+              placeholder={t('tracking.placeholder')}
+              className="min-w-0 rounded-xl border border-ink-200 bg-white px-3 py-2.5 font-bold text-ink-900 placeholder:text-ink-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tracking-accent)]"
+            />
+            <button
+              type="submit"
+              disabled={!query.trim() || buscando || enCooldown}
+              className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#8c286f] px-4 py-2.5 text-sm font-black text-white hover:bg-[#71205c] disabled:opacity-60"
+            >
+              {buscando
+                ? <span className="size-4 rounded-full border-2 border-white/40 border-t-white motion-safe:animate-spin" aria-hidden="true" />
+                : <Search size={16} aria-hidden="true" />}
+              {enCooldown ? t('tracking.wait') : t('common.search')}
+            </button>
           </div>
+          {errorMsg && (
+            <p role="alert" className="mt-3 text-sm font-bold text-[color:var(--tracking-accent)]">{errorMsg}</p>
+          )}
+        </form>
+
+        <div className="mt-5 space-y-4" aria-live="polite" aria-busy={buscando}>
+          {!buscando && !errorMsg && (!pedidos || pedidos.length === 0) && (
+            <div className="flex flex-col items-center rounded-2xl border border-[color:var(--tracking-border)] bg-white p-6 text-center">
+              <PackageSearch size={30} className="mb-3 text-[color:var(--tracking-accent)]" aria-hidden="true" />
+              {pedidos && <p className="mb-1 font-display text-lg text-ink-900">{t('tracking.noResults')}</p>}
+              <p className="max-w-xs text-sm text-[color:var(--tracking-copy)]">
+                {t(pedidos ? 'tracking.noResultsHint' : 'tracking.initialHint')}
+              </p>
+            </div>
+          )}
+          {pedidos?.map((pedido) => <TarjetaPedido key={pedido.folio} pedido={pedido} />)}
         </div>
       </div>
-
-      <div className="flex-shrink-0 px-5 pb-4">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={query}
-            onChange={e => { setQuery(e.target.value); setPedidos(null); setErrorMsg(''); }}
-            onKeyDown={handleKeyDown}
-            placeholder={t('tracking.placeholder')}
-            className="flex-1 bg-white rounded-2xl px-4 py-3 text-sm font-body font-semibold
-                       text-ink-900 placeholder:text-ink-300 outline-none
-                       border-2 border-ink-200 focus:border-fiesta-magenta transition-colors"
-          />
-          <button
-            onClick={handleBuscar}
-            disabled={!query.trim() || buscando || enCooldown}
-            className="px-4 py-3 rounded-2xl text-white font-body font-black text-sm
-                       transition-all duration-200 active:scale-95 disabled:opacity-50
-                       flex items-center gap-2 flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg, #ff3dac, #a855f7)',
-                     boxShadow: '0 4px 14px #ff3dac33' }}
-          >
-            {buscando
-              ? <div className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-              : <span aria-hidden="true">🔍</span>}
-            {enCooldown ? t('tracking.wait') : t('common.search')}
-          </button>
-        </div>
-        {errorMsg && (
-          <p className="text-xs font-body font-bold text-fiesta-magenta mt-2 pl-1">{errorMsg}</p>
-        )}
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-5 pb-8 space-y-4">
-        {pedidos === null && !buscando && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="text-5xl mb-3 animate-float" aria-hidden="true">🎁</div>
-            <p className="font-display text-lg text-ink-500">{t('tracking.initialTitle')}</p>
-            <p className="text-xs font-body text-ink-400 mt-1 max-w-xs">
-              {t('tracking.initialHint')}
-            </p>
-          </div>
-        )}
-
-        {pedidos !== null && pedidos.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="text-5xl mb-3" aria-hidden="true">😔</div>
-            <p className="font-display text-lg text-ink-500">{t('tracking.noResults')}</p>
-            <p className="text-xs font-body text-ink-400 mt-1">
-              {t('tracking.noResultsHint')}
-            </p>
-          </div>
-        )}
-
-        {pedidos?.map(pedido => (
-          <TarjetaPedido key={pedido.folio} pedido={pedido} />
-        ))}
-      </div>
-      </div>
-    </div>
+    </main>
   );
 }

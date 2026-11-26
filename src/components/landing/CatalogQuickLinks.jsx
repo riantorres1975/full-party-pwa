@@ -1,9 +1,10 @@
 import { ArrowUpRight, CircleDot, Shapes, PanelsTopLeft, Zap, PartyPopper } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { LATEX_CATALOG_PATH } from '../../data/siteLinks';
 import Reveal from './Reveal';
 
 const QUICK_LINKS = [
-  { title: 'Globos de látex', description: 'Colores y medidas', href: '/catalogo/globos/globos-latex', icon: CircleDot, accent: '#a71962', background: '#fce5f2' },
+  { title: 'Globos de látex', description: 'Elige color y medida', href: LATEX_CATALOG_PATH, icon: CircleDot, accent: '#a71962', background: '#fce5f2' },
   { title: 'Globos de figuras', description: 'Formas y personajes', href: '/catalogo/globos/globos-figuras', icon: Shapes, accent: '#6929ab', background: '#efe5fc' },
   { title: 'Decoración', description: 'Cortinas y guirnaldas', href: '/catalogo/decoracion', icon: PanelsTopLeft, accent: '#3457a6', background: '#e7edff' },
   { title: 'Inflado y helio', description: 'Bombas y accesorios', href: '/catalogo/inflado-y-helio', icon: Zap, accent: '#0b6965', background: '#dcf5ef' },

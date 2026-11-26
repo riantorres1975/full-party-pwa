@@ -1,36 +1,68 @@
-import { WaIcon } from './icons/SocialIcons';
+import { ArrowLeft, MessageCircle } from 'lucide-react';
+import { useLayoutEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { buildContactWhatsAppUrl } from '../data/siteContact';
 import PublicSiteHeader from './PublicSiteHeader';
 import SiteFooter from './SiteFooter';
+import './SitePages.css';
 
-const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || '5214521040377';
-const WA_HREF = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hola, me interesa hacer un pedido')}`;
+export function SitePageHero({ title, description, back, meta, children }) {
+  return (
+    <header className="site-page-hero">
+      <div className="site-page-container site-page-hero__inner">
+        <Link to={back?.to ?? '/'} className="site-page-hero__back">
+          <ArrowLeft size={16} aria-hidden="true" /> {back?.label ?? 'Volver al inicio'}
+        </Link>
+        {meta}
+        <h1 className="font-display">{title}</h1>
+        <p>{description}</p>
+        {children && <div className="site-actions">{children}</div>}
+      </div>
+    </header>
+  );
+}
+
+export function SiteCallout({ title, description, children }) {
+  return (
+    <section className="site-callout">
+      <div>
+        <h2 className="font-display">{title}</h2>
+        <p>{description}</p>
+      </div>
+      <div className="site-actions">{children}</div>
+    </section>
+  );
+}
+
+export function SiteWhatsAppLink({ message, children }) {
+  return (
+    <a href={buildContactWhatsAppUrl(message)} target="_blank" rel="noopener noreferrer" className="site-button site-button--outline">
+      <MessageCircle size={17} aria-hidden="true" /> {children}
+    </a>
+  );
+}
 
 export default function SiteLayout({ children }) {
+  const { pathname, hash } = useLocation();
+
+  useLayoutEffect(() => {
+    if (hash) {
+      document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [pathname, hash]);
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#FEFAFF' }}>
+    <div className="site-page min-h-screen flex flex-col">
+      <a className="site-skip-link" href="#site-main">Saltar al contenido</a>
       <PublicSiteHeader />
 
-      {/* ══ CONTENIDO ════════════════════════════════════════ */}
-      <main className="flex-1">
+      <main className="flex-1" id="site-main" tabIndex={-1}>
         {children}
       </main>
 
       <SiteFooter />
-
-      {/* ══ FAB WhatsApp ═════════════════════════════════════ */}
-      <aside aria-label="Contacto rápido">
-        <a
-          href={WA_HREF}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="fixed bottom-6 right-6 z-50 flex items-center justify-center rounded-full font-black text-sm text-white w-14 h-14 sm:w-auto sm:h-auto sm:gap-2.5 sm:pl-4 sm:pr-5 sm:py-3.5 transition-transform hover:scale-[1.07]"
-          style={{ background: 'linear-gradient(135deg, #25d366, #1aab56)', boxShadow: '0 6px 20px rgba(37,211,102,0.5)' }}
-          aria-label="Contactar por WhatsApp"
-        >
-          <WaIcon size={20} />
-          <span className="hidden sm:inline">¿Dudas? ¡Escríbenos!</span>
-        </a>
-      </aside>
     </div>
   );
 }

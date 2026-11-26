@@ -21,6 +21,14 @@ const categories = [{
   sort_order: 1,
 }];
 
+const latexCategory = {
+  id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+  name: 'Globos de látex',
+  slug: 'globos-latex',
+  parent_id: categories[0].id,
+  sort_order: 1,
+};
+
 const card = {
   group_key: `${productId}:glomex-estandar`,
   product_id: productId,
@@ -150,7 +158,9 @@ const facets = {
   availability: { in_stock: 1, out_of_stock: 0 },
 };
 
-async function mockCatalogV2(page, { listing = [card], productDetail = detail, unavailablePickup = null } = {}) {
+async function mockCatalogV2(page, {
+  listing = [card], productDetail = detail, unavailablePickup = null, catalogCategories = categories,
+} = {}) {
   const requests = [];
   await page.route('**/rest/v1/**', async (route) => {
     const request = route.request();
@@ -163,7 +173,7 @@ async function mockCatalogV2(page, { listing = [card], productDetail = detail, u
     }
 
     let body = [];
-    if (url.pathname.endsWith('/catalog_categories')) body = categories;
+    if (url.pathname.endsWith('/catalog_categories')) body = catalogCategories;
     if (url.pathname.endsWith('/catalog_collections')) body = [];
     if (url.pathname.endsWith('/rpc/catalog_list_cards')) {
       const params = request.postDataJSON();
@@ -199,6 +209,44 @@ async function mockCatalogV2(page, { listing = [card], productDetail = detail, u
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.clear());
+});
+
+test('links latex decoration guides to the correct catalog category', async ({ page }) => {
+  await mockCatalogV2(page, { catalogCategories: [...categories, latexCategory] });
+  await page.goto('/');
+
+  await expect(page.getByRole('link', { name: 'Globos de látex', exact: true })).toHaveAttribute('href', '/catalogo/globos/globos-latex');
+  await page.getByRole('link', { name: 'Cómo armar un arco', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/cómo armar un arco orgánico de globos/);
+
+  const latexRequest = page.waitForRequest((request) => request.url().endsWith('/rpc/catalog_list_cards')
+    && request.method() === 'POST'
+    && request.postDataJSON().p_category_slug === 'globos-latex');
+  await page.getByRole('link', { name: 'Ver globos de látex', exact: true }).click();
+  await latexRequest;
+
+  await expect(page).toHaveURL(/\/catalogo\/globos\/globos-latex$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Globos de látex');
+  await expect(page.getByRole('heading', { name: /Globo Latex Glomex/ })).toBeVisible();
+});
+
+test('connects the order guide, store directions, and tracking pages', async ({ page }) => {
+  await mockCatalogV2(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.route('https://www.google.com/maps/**', (route) => route.fulfill({ body: '<title>Mapa</title>' }));
+  await page.goto('/como-funciona');
+
+  await expect(page.getByRole('heading', { name: 'Guarda tu folio' })).toBeVisible();
+  await page.getByRole('link', { name: 'Ver sucursales', exact: true }).click();
+  await page.getByRole('link', { name: 'Suc. Sol Naciente', exact: true }).click();
+  await expect(page).toHaveURL(/\/sucursales#sol-naciente$/);
+  const branch = page.locator('#sol-naciente');
+  await expect(branch.getByRole('link', { name: 'Cómo llegar' })).toBeVisible();
+  await expect(branch.getByRole('link', { name: /Llamar al/ })).toHaveAttribute('href', 'tel:+524521040377');
+
+  await page.goto('/rastrear/FP-PRUEBA-001');
+  await expect(page.getByLabel('Folio del pedido')).toHaveValue('FP-PRUEBA-001');
+  await expect(page.getByText('FP-PRUEBA-001', { exact: true })).toBeVisible();
 });
 
 test('keeps home navigation visible and opens the store section below it', async ({ page }) => {

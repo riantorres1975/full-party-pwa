@@ -262,7 +262,18 @@ body.theme-dark [aria-modal="true"] section[role="dialog"] button.bg-white\/95 {
 }
 
 /* ── RastreoPedido ───────────────────────────────────────────────────── */
+.rastreo-container {
+  --tracking-accent: #782266;
+  --tracking-tint: #f8edf9;
+  --tracking-border: #e9daee;
+  --tracking-copy: #524160;
+}
+
 body.theme-dark .rastreo-container {
+  --tracking-accent: #f3aee4;
+  --tracking-tint: #201535;
+  --tracking-border: #363b64;
+  --tracking-copy: #c4b5fd;
   background: #0f1124 !important;
 }
 

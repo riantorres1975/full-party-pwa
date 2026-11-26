@@ -32,6 +32,7 @@ import {
   useCatalogFilters,
 } from '../../hooks/catalog/index.js';
 import { useToast } from '../../components/ui/ToastProvider.jsx';
+import { BALLOON_ARCH_GUIDE_SLUG, LATEX_CATALOG_PATH } from '../../data/siteLinks.js';
 import { useDebounce } from '../../hooks/useDebounce.js';
 import { useProductPreferences } from '../../hooks/useProductPreferences.js';
 import { useCatalogSeo } from '../../contexts/CatalogSeoContext.jsx';
@@ -353,6 +354,11 @@ export default function CatalogV2Page() {
                     <span aria-live="polite">
                       {visibleTotal} {visibleTotal === 1 ? 'producto' : 'productos'}{hasMore ? ' a la vista' : ''}
                     </span>
+                  )}
+                  {`/catalogo/${canonicalCategoryPath}` === LATEX_CATALOG_PATH && (
+                    <p className="catalog-v2-latex-help">
+                      Abre un producto para elegir color, medida y presentación. <Link to={`/blog/${BALLOON_ARCH_GUIDE_SLUG}`}>Guía para armar un arco</Link>
+                    </p>
                   )}
                 </div>
               </div>

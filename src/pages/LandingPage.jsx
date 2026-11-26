@@ -17,12 +17,14 @@ import ReviewsCarousel from '../components/landing/ReviewsCarousel';
 import GaleriaCard from '../components/landing/GaleriaCard';
 import BrandCard from '../components/landing/BrandCard';
 import CatalogQuickLinks from '../components/landing/CatalogQuickLinks';
+import LatexFeature from '../components/LatexFeature';
 import HeroPartyStage from '../components/landing/HeroPartyStage';
 import NovedadesPlaceholder from '../components/landing/NovedadesPlaceholder';
 import PublicSiteHeader from '../components/PublicSiteHeader';
 import { trackEvent } from '../utils/analytics';
 import { SUCURSALES as DATOS_SUCURSALES } from '../data/sucursales';
 import { buildContactWhatsAppUrl } from '../data/siteContact';
+import { LATEX_CATALOG_PATH } from '../data/siteLinks';
 import { useReveal } from '../hooks/landing/useReveal';
 
 const NovedadesSection = lazy(() => import('../components/landing/NovedadesSection'));
@@ -353,7 +355,7 @@ export default function LandingPage() {
                 Todo para tu <span>próxima fiesta.</span>
               </h1>
               <p className="lp-hero-copy">
-                Globos, decoración y artículos para celebrar. Compra por pieza o al mayoreo y envía tu pedido por WhatsApp.
+                <Link to={LATEX_CATALOG_PATH} className="lp-hero-latex">Globos de látex</Link>, decoración y artículos para celebrar. Compra por pieza o al mayoreo y haz tu pedido en línea.
               </p>
 
               <form className="lp-hero-search" role="search" onSubmit={buscarEnCatalogo}>
@@ -413,6 +415,10 @@ export default function LandingPage() {
         </section>
 
         <CatalogQuickLinks />
+
+        <div className="site-page-container my-8 sm:my-12">
+          <LatexFeature />
+        </div>
 
         {/* ══ NOVEDADES ═══════════════════════════════════ */}
         <Suspense fallback={<NovedadesPlaceholder />}>

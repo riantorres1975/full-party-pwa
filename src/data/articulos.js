@@ -1,6 +1,8 @@
 // Artículos del blog — contenido real indexable por Google.
 // Cada artículo se renderiza en /blog/[slug].
 
+import { BALLOON_ARCH_GUIDE_SLUG } from './siteLinks';
+
 export const ARTICULOS = [
   {
     slug: 'cuantos-globos-necesito-cumpleanos',
@@ -9,9 +11,8 @@ export const ARTICULOS = [
     fecha: '2026-04-17',
     fechaLegible: '17 de abril, 2026',
     categoria: 'Guías',
+    latex: true,
     autor: 'Full Party Uruapan',
-    emoji: '🎈',
-    color: 'pink',
     parrafos: [
       'Una de las preguntas más frecuentes que recibimos en Full Party Uruapan es cuántos globos se necesitan para decorar un cumpleaños. La respuesta depende de tres factores clave: el tipo de decoración, el tamaño del espacio y el estilo visual que buscas. En esta guía te damos los números reales que usan los decoradores profesionales para que tu fiesta luzca espectacular sin desperdiciar material.',
       'Para un cumpleaños infantil en casa, con un arco de globos sencillo sobre la mesa de pastel, calcula entre 80 y 120 globos de látex de 12 pulgadas. Si prefieres un arco orgánico grande tipo arco de puerta, necesitarás entre 180 y 250 globos en tamaños mezclados (5", 11" y 16"). Para decorar todo el salón con centros de mesa, columnas y arco principal, de 400 a 600 globos es lo habitual.',
@@ -22,15 +23,14 @@ export const ARTICULOS = [
     ],
   },
   {
-    slug: 'como-armar-arco-organico-globos',
+    slug: BALLOON_ARCH_GUIDE_SLUG,
     titulo: 'Guía paso a paso: cómo armar un arco orgánico de globos',
     extracto: 'El arco orgánico es la decoración estrella de fiestas y bodas. Aprende a armarlo desde cero con materiales, técnicas y tips de decoradores profesionales.',
     fecha: '2026-04-10',
     fechaLegible: '10 de abril, 2026',
     categoria: 'Tutoriales',
+    latex: true,
     autor: 'Full Party Uruapan',
-    emoji: '🎨',
-    color: 'purple',
     parrafos: [
       'El arco orgánico de globos se ha convertido en la decoración favorita de bodas, XV años, cumpleaños y eventos corporativos. A diferencia del arco tradicional uniforme, el orgánico juega con tamaños mixtos, densidades variables y clústers asimétricos que le dan un aspecto moderno y natural. En esta guía te enseñamos a armarlo paso a paso, igual que lo hacemos para nuestros clientes decoradores.',
       'Materiales que vas a necesitar: entre 180 y 300 globos de látex en tamaños 5", 11" y 16" (mezcla de colores); una estructura base (tubo PVC, malla de gallina o marco de metal); hilo de nylon o cáñamo grueso; pistola de silicón caliente con barras; una bomba de inflado eléctrica (ahorra muchísimo tiempo); y tus accesorios decorativos: hojas de palma, eucalipto o flores artificiales si quieres.',
@@ -44,14 +44,13 @@ export const ARTICULOS = [
   },
   {
     slug: 'globos-metalizados-vs-latex',
+    latex: true,
     titulo: 'Globos metalizados vs látex: diferencias, usos y cuándo elegir cada uno',
     extracto: 'Comparamos globos metalizados (foil) y de látex para que elijas el indicado según tu evento: duración, costo, acabado y versatilidad.',
     fecha: '2026-04-03',
     fechaLegible: '3 de abril, 2026',
     categoria: 'Guías',
     autor: 'Full Party Uruapan',
-    emoji: '💫',
-    color: 'cyan',
     parrafos: [
       'Una duda común al planear la decoración de un evento es si conviene usar globos de látex, globos metalizados (foil) o una combinación de ambos. Cada tipo tiene ventajas específicas según el uso que le quieras dar, el presupuesto disponible y la duración esperada. Aquí te explicamos las diferencias principales para que tomes la mejor decisión.',
       'Los globos de látex son los más tradicionales y económicos. Están hechos de caucho natural, vienen en decenas de colores y tamaños (desde 5" hasta 36"), y son 100% biodegradables. Son ideales para arcos orgánicos, racimos, columnas y decoraciones masivas donde necesitas volumen visual. Su costo por unidad es bajo, lo que los hace perfectos para compras al mayoreo.',
@@ -71,8 +70,6 @@ export const ARTICULOS = [
     fechaLegible: '25 de marzo, 2026',
     categoria: 'Inspiración',
     autor: 'Full Party Uruapan',
-    emoji: '👑',
-    color: 'orange',
     parrafos: [
       'La fiesta de XV años es uno de los eventos más importantes en la vida de una quinceañera, y la decoración juega un papel protagónico. En los últimos años, las tendencias han evolucionado hacia estilos más modernos, fotogénicos y personalizados. Aquí te compartimos las ideas más solicitadas por nuestras clientas decoradoras y organizadoras de eventos en Uruapan y toda la región.',
       'Paleta 1: rosa empolvado con dorado y blanco. Esta combinación clásica elegante sigue siendo la más pedida. Usa globos de látex en rosa pastel, rosa pálido y nude, acompañados de foil dorado para números y letras. Agrega detalles de blanco roto y toques de champagne. Es una paleta romántica que funciona tanto para ambientes intimistas como para salones grandes.',
